@@ -1,0 +1,130 @@
+// =====================================================
+// SISRH-INDECI — Estilos globales
+// Material 21 theming + paleta institucional INDECI
+// =====================================================
+
+@use '@angular/material' as mat;
+
+// ----- Material Symbols Outlined (woff2 en public/fonts; MatIconRegistry: material-symbols-outlined) -----
+@font-face {
+  font-family: 'Material Symbols Outlined';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/material-symbols-outlined.woff2') format('woff2');
+}
+
+// ----- Tema institucional INDECI (Material 21 — Material 3 system) -----
+html {
+  @include mat.theme((
+    color: (
+      primary: mat.$azure-palette,
+      tertiary: mat.$orange-palette,
+    ),
+    typography: (
+      plain-family: ('Source Sans 3', 'Segoe UI', system-ui, sans-serif),
+      brand-family: ('Source Sans 3', 'Segoe UI', system-ui, sans-serif),
+      regular-weight: 400,
+      medium-weight: 600,
+      bold-weight: 700,
+    ),
+    density: 0,
+  ));
+}
+
+// ----- Tokens de diseño base -----
+:root {
+  --sisrh-font-sans: 'Source Sans 3', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --sisrh-color-success: #2e7d32;
+  --sisrh-color-warning: #ef6c00;
+  --sisrh-color-error: #c62828;
+  --sisrh-spacing-xs: 0.25rem;
+  --sisrh-spacing-sm: 0.5rem;
+  --sisrh-spacing-md: 1rem;
+  --sisrh-spacing-lg: 1.5rem;
+  --sisrh-spacing-xl: 2rem;
+  --sisrh-radius-sm: 4px;
+  --sisrh-radius-md: 8px;
+  --sisrh-radius-lg: 16px;
+}
+
+// ----- Reset mínimo -----
+html, body {
+  height: 100%;
+  margin: 0;
+  font-family: var(--sisrh-font-sans);
+  // WCAG 2.1 AA: contraste mínimo 4.5:1 — Material light theme cumple por defecto
+}
+
+// Material Symbols Outlined: variación compacta (opsz 20); ligaduras para fontIcon
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined', sans-serif;
+  font-weight: normal;
+  font-style: normal;
+  font-size: 18px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-feature-settings: 'liga';
+  font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+  font-variation-settings:
+    'FILL' 0,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 20;
+}
+
+.mat-icon.material-symbols-outlined,
+mat-icon.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined', sans-serif;
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  line-height: 18px;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-font-feature-settings: 'liga';
+  font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+  font-variation-settings:
+    'FILL' 0,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 20;
+}
+
+// Botones solo-ícono: color primario corporativo compacto (excluye deshabilitados; no aplica a mat-flat)
+.mat-mdc-icon-button:not(.mat-mdc-button-disabled):not([disabled]):not([aria-disabled='true']) .mat-icon,
+.mat-mdc-icon-button:not(.mat-mdc-button-disabled):not([disabled]):not([aria-disabled='true']) mat-icon {
+  color: var(--mat-sys-primary);
+}
+
+.mat-mdc-icon-button:not(.mat-mdc-button-disabled):not([disabled]):not([aria-disabled='true']):hover .mat-icon,
+.mat-mdc-icon-button:not(.mat-mdc-button-disabled):not([disabled]):not([aria-disabled='true']):hover mat-icon,
+.mat-mdc-icon-button:not(.mat-mdc-button-disabled):not([disabled]):not([aria-disabled='true']):focus-visible .mat-icon,
+.mat-mdc-icon-button:not(.mat-mdc-button-disabled):not([disabled]):not([aria-disabled='true']):focus-visible mat-icon {
+  color: color-mix(in srgb, var(--mat-sys-primary) 88%, black);
+}
+
+// Contenedor responsive: scroll horizontal sin pérdida de columnas
+.sisrh-table-scroll {
+  overflow-x: auto;
+  max-width: 100%;
+  -webkit-overflow-scrolling: touch;
+  margin-bottom: 0.5rem;
+}
+
+// ----- Snackbar de éxito (FR-017, T072) -----
+.success-snackbar {
+  --mdc-snackbar-container-color: var(--sisrh-color-success);
+  --mat-snack-bar-button-color: #fff;
+  --mdc-snackbar-supporting-text-color: #fff;
+}
