@@ -1,0 +1,27 @@
+# Entornos de desarrollo, IA y editores
+.claude/
+.cursor/
+.cursorrules
+.specify/
+.vscode/
+
+# Documentación de IA y archivos de planificación locales
+AGENTS.md
+CLAUDE.md
+CLAUDEx.md
+MANUAL_USUARIO_SISRH.md
+RESUME.md
+ROADMAP_ETAPA3.md
+SPEC_SISTEMA_PLANILLAS.md
+
+# Directorios de diseño y documentación interna
+design-system/
+docs/
+specs/
+
+# Datos temporales y archivos locales
+csv/
+plametxt/
+
+# Dependencias de Node
+node_modules/
