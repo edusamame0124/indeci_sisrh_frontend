@@ -35,6 +35,8 @@ export interface AccessTokenClaims extends JwtBaseClaims {
   readonly newPassOk: true;
   readonly roles: ReadonlyArray<string>;
   readonly permisos: ReadonlyArray<string>;
+  /** Spec 011 / B2 — empleado vinculado a la cuenta (null si no tiene). */
+  readonly empleadoId?: number | null;
 }
 
 /** Refresh token (24h) emitido junto con access definitivo */

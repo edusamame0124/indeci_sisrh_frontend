@@ -11,6 +11,9 @@ import { TokenStorageService } from '../services/token-storage.service';
 /**
  * Tests US4 (T082, T083) — escenarios de cola del refresh transparente.
  * Complementan los tests básicos en auth.interceptor.spec.ts (Phase 2).
+ *
+ * Spec 013 / C4 — el refresh token vive en cookie HttpOnly: ya no hay token en
+ * `localStorage`; el refresh se intenta siempre y la cookie viaja sola.
  */
 describe('authInterceptor — queue + returnUrl scenarios (US4)', () => {
   let http: HttpClient;
@@ -36,7 +39,6 @@ describe('authInterceptor — queue + returnUrl scenarios (US4)', () => {
 
   it('T082: 3 simultaneous 401s trigger ONE refresh + 3 retries with new token', () => {
     storage.setAccess('expired-access');
-    storage.setRefresh('valid-refresh');
 
     // Disparar 3 peticiones simultáneas
     const responses: unknown[] = [];
@@ -71,10 +73,9 @@ describe('authInterceptor — queue + returnUrl scenarios (US4)', () => {
     const refreshReqs = httpMock.match('/api/auth/refresh');
     expect(refreshReqs.length).toBe(1);
 
-    // Refresh exitoso
+    // Refresh exitoso (el nuevo refresh token va en la cookie, no en el body)
     refreshReqs[0].flush({
       token: 'new-access',
-      refreshToken: 'new-refresh',
       roles: [],
       permisos: [],
     });
@@ -97,7 +98,6 @@ describe('authInterceptor — queue + returnUrl scenarios (US4)', () => {
 
   it('T083: refresh fails → clearSession + navigate /auth/login with returnUrl', () => {
     storage.setAccess('expired-access');
-    storage.setRefresh('expired-refresh');
 
     http.get('/api/rrhh/persona').subscribe({ error: () => undefined });
 
@@ -106,15 +106,14 @@ describe('authInterceptor — queue + returnUrl scenarios (US4)', () => {
       { status: 401, statusText: 'Unauthorized' },
     );
 
-    // Refresh dispara y falla con 403
+    // Refresh dispara y falla con 403 (cookie ausente o expirada en backend)
     httpMock.expectOne('/api/auth/refresh').flush(
       { status: 403, mensaje: 'Refresh expirado', requiereCaptcha: false },
       { status: 403, statusText: 'Forbidden' },
     );
 
-    // Tokens limpios
+    // Access token limpio
     expect(storage.getAccess()).toBeNull();
-    expect(storage.getRefresh()).toBeNull();
 
     // Navigate a /auth/login con returnUrl
     expect(router.navigate).toHaveBeenCalledWith(
@@ -125,9 +124,8 @@ describe('authInterceptor — queue + returnUrl scenarios (US4)', () => {
     );
   });
 
-  it('T083 bis: refresh fails when no refreshToken in storage → immediate logout', () => {
+  it('T083 bis: refresh responde 200 sin token → logout', () => {
     storage.setAccess('expired-access');
-    // NO setRefresh — no hay refresh disponible
 
     http.get('/api/rrhh/persona').subscribe({ error: () => undefined });
 
@@ -136,10 +134,9 @@ describe('authInterceptor — queue + returnUrl scenarios (US4)', () => {
       { status: 401, statusText: 'Unauthorized' },
     );
 
-    // NO debe haber petición a /api/auth/refresh (no hay refresh token)
-    httpMock.expectNone('/api/auth/refresh');
+    // El refresh se intenta siempre; respuesta 200 pero sin token utilizable
+    httpMock.expectOne('/api/auth/refresh').flush({ roles: [], permisos: [] });
 
-    // Logout directo
     expect(storage.getAccess()).toBeNull();
     expect(router.navigate).toHaveBeenCalledWith(
       ['/auth/login'],

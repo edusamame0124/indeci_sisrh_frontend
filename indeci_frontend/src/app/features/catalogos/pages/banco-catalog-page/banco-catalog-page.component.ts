@@ -5,6 +5,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -17,9 +18,11 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { sisrhConfirmDialogConfig, sisrhFormDialogConfig } from '../../../../core/config/sisrh-dialog.config';
 import { ConfirmDialogComponent } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
-import { CatalogoApiService } from '../../../rrhh/services/catalogo-api.service';
-import type { BankCatalogItem } from '../../../rrhh/models/catalog-item.model';
+import { EmptyStateComponent } from '../../../../shared/components/empty-state/empty-state.component';
+import { CatalogoApiService } from '../../../empleados/services/catalogo-api.service';
+import type { BankCatalogItem } from '../../../empleados/models/catalog-item.model';
 import { ErrorMessageService } from '../../../../core/services/error-message.service';
 import { isErrorResponse } from '../../../../core/models/error-response.model';
 import { ClientTelemetryService } from '../../../../core/services/client-telemetry.service';
@@ -32,6 +35,7 @@ import {
   selector: 'app-banco-catalog-page',
   standalone: true,
   imports: [
+    RouterLink,
     MatCardModule,
     MatTableModule,
     MatButtonModule,
@@ -43,122 +47,137 @@ import {
     MatPaginatorModule,
     MatProgressSpinnerModule,
     MatSnackBarModule,
+    EmptyStateComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <mat-card class="card">
-      <mat-card-header>
-        <mat-card-title>Catálogo de bancos</mat-card-title>
-        <mat-card-subtitle>Administración — solo lectura hasta habilitar escritura en el servidor</mat-card-subtitle>
-      </mat-card-header>
-      <mat-card-content>
-        <p class="hint" role="status">
-          Los nombres se normalizan en MAYÚSCULAS al guardar. La baja es lógica cuando el backend
-          lo implemente (ver especificación 006 — BKD-001).
-        </p>
-        <div class="toolbar">
-          <mat-form-field appearance="outline" class="filter">
-            <mat-label>Buscar</mat-label>
-            <input
-              matInput
-              type="search"
-              [value]="filterText()"
-              (input)="onFilter($event)"
-              aria-label="Filtrar bancos por nombre"
-            />
-          </mat-form-field>
-          <button mat-flat-button color="primary" type="button" (click)="openCreate()">
-            <mat-icon fontIcon="add" aria-hidden="true" />
-            Nuevo banco
-          </button>
-        </div>
+    <div class="page sisrh-page">
+      <nav class="crumbs sisrh-crumbs" aria-label="Ubicación">
+        <a mat-button routerLink="/">Inicio</a>
+        <span class="crumbs__sep" aria-hidden="true">/</span>
+        <span class="crumbs__group">Catálogos</span>
+        <span class="crumbs__sep" aria-hidden="true">/</span>
+        <span class="crumbs__here">Bancos</span>
+      </nav>
 
-        @if (loading()) {
-          <div class="loading" aria-busy="true">
-            <mat-progress-spinner mode="indeterminate" diameter="48" aria-label="Cargando bancos" />
-          </div>
-        } @else {
-          <div class="sisrh-table-scroll">
-            <table mat-table class="tbl" [dataSource]="pagedDisplayed()">
-            <ng-container matColumnDef="id">
-              <th mat-header-cell *matHeaderCellDef scope="col">Código</th>
-              <td mat-cell *matCellDef="let row">{{ row.id }}</td>
-            </ng-container>
-            <ng-container matColumnDef="name">
-              <th mat-header-cell *matHeaderCellDef scope="col">Nombre</th>
-              <td mat-cell *matCellDef="let row">{{ row.name }}</td>
-            </ng-container>
-            <ng-container matColumnDef="acciones">
-              <th mat-header-cell *matHeaderCellDef scope="col">Acciones</th>
-              <td mat-cell *matCellDef="let row">
-                <button
-                  type="button"
-                  mat-icon-button
-                  (click)="openEdit(row)"
-                  [attr.aria-label]="'Editar banco ' + row.name"
-                  matTooltip="Editar"
-                >
-                  <mat-icon fontIcon="edit" aria-hidden="true" />
+      <mat-card class="page-card sisrh-elevated">
+        <mat-card-header>
+          <mat-card-title>Catálogo de bancos</mat-card-title>
+          <mat-card-subtitle>Administración — escritura sujeta a endpoints del servidor (BKD-001)</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <p class="page-hint" role="status">
+            Los nombres se normalizan en MAYÚSCULAS al guardar. La baja es lógica cuando el backend lo implemente.
+          </p>
+
+          @if (!loading() && !loadError()) {
+            <div class="toolbar sisrh-toolbar">
+              <mat-form-field appearance="outline" class="toolbar__search">
+                <mat-label>Buscar</mat-label>
+                <input
+                  matInput
+                  type="search"
+                  autocomplete="off"
+                  [value]="filterText()"
+                  (input)="onFilter($event)"
+                  aria-label="Filtrar bancos por nombre"
+                />
+                <mat-icon matSuffix fontIcon="search" aria-hidden="true" />
+              </mat-form-field>
+              <span class="toolbar__count" role="status" aria-live="polite">
+                {{ displayed().length }} de {{ rows().length }} registros
+              </span>
+              <div class="toolbar__actions">
+                <button mat-flat-button color="primary" type="button" (click)="openCreate()">
+                  <mat-icon fontIcon="add" aria-hidden="true" />
+                  Nuevo banco
                 </button>
-                <button
-                  type="button"
-                  mat-icon-button
-                  (click)="confirmDelete(row)"
-                  [attr.aria-label]="'Dar de baja banco ' + row.name"
-                  matTooltip="Dar de baja"
-                >
-                  <mat-icon fontIcon="delete_outline" aria-hidden="true" />
-                </button>
-              </td>
-            </ng-container>
-            <tr mat-header-row *matHeaderRowDef="cols"></tr>
-            <tr mat-row *matRowDef="let row; columns: cols"></tr>
-            </table>
-          </div>
-          <mat-paginator
-            [length]="displayed().length"
-            [pageIndex]="pageIndex()"
-            [pageSize]="pageSize()"
-            [pageSizeOptions]="pageSizeOptions"
-            (page)="onPage($event)"
-            showFirstLastButtons
-            aria-label="Paginador catálogo de bancos"
-          />
-        }
-      </mat-card-content>
-    </mat-card>
+              </div>
+            </div>
+          }
+
+          @if (loading()) {
+            <div class="page-loading" aria-busy="true">
+              <mat-progress-spinner mode="indeterminate" diameter="48" aria-label="Cargando bancos" />
+            </div>
+          } @else if (loadError()) {
+            <app-empty-state
+              variant="error"
+              icon="error_outline"
+              title="No se pudo cargar la información"
+              [description]="loadError()!"
+            >
+              <button mat-stroked-button type="button" (click)="reload()">Reintentar</button>
+            </app-empty-state>
+          } @else if (rows().length === 0) {
+            <app-empty-state
+              icon="account_balance"
+              title="Sin bancos registrados"
+              description="No hay entidades bancarias en el catálogo. Registre el primero para habilitar cuentas de haberes."
+            >
+              <button mat-flat-button color="primary" type="button" (click)="openCreate()">
+                <mat-icon fontIcon="add" aria-hidden="true" />
+                Nuevo banco
+              </button>
+            </app-empty-state>
+          } @else if (displayed().length === 0) {
+            <app-empty-state
+              icon="search_off"
+              title="Sin coincidencias"
+              [description]="'No se encontraron bancos para: ' + filterText() + '. Revise el texto e intente de nuevo.'"
+            />
+          } @else {
+            <div class="sisrh-table-scroll">
+              <table mat-table class="tbl" [dataSource]="pagedDisplayed()">
+                <ng-container matColumnDef="id">
+                  <th mat-header-cell *matHeaderCellDef scope="col">Código</th>
+                  <td mat-cell *matCellDef="let row">{{ row.id }}</td>
+                </ng-container>
+                <ng-container matColumnDef="name">
+                  <th mat-header-cell *matHeaderCellDef scope="col">Nombre</th>
+                  <td mat-cell *matCellDef="let row">{{ row.name }}</td>
+                </ng-container>
+                <ng-container matColumnDef="acciones">
+                  <th mat-header-cell *matHeaderCellDef scope="col">Acciones</th>
+                  <td mat-cell *matCellDef="let row">
+                    <button
+                      type="button"
+                      mat-icon-button
+                      (click)="openEdit(row)"
+                      [attr.aria-label]="'Editar banco ' + row.name"
+                      matTooltip="Editar"
+                    >
+                      <mat-icon fontIcon="edit" aria-hidden="true" />
+                    </button>
+                    <button
+                      type="button"
+                      mat-icon-button
+                      (click)="confirmDelete(row)"
+                      [attr.aria-label]="'Dar de baja banco ' + row.name"
+                      matTooltip="Dar de baja"
+                    >
+                      <mat-icon fontIcon="delete_outline" aria-hidden="true" />
+                    </button>
+                  </td>
+                </ng-container>
+                <tr mat-header-row *matHeaderRowDef="cols"></tr>
+                <tr mat-row *matRowDef="let row; columns: cols"></tr>
+              </table>
+            </div>
+            <mat-paginator
+              [length]="displayed().length"
+              [pageIndex]="pageIndex()"
+              [pageSize]="pageSize()"
+              [pageSizeOptions]="pageSizeOptions"
+              (page)="onPage($event)"
+              showFirstLastButtons
+              aria-label="Paginador catálogo de bancos"
+            />
+          }
+        </mat-card-content>
+      </mat-card>
+    </div>
   `,
-  styles: [
-    `
-      .card {
-        margin: 1rem;
-      }
-      .hint {
-        font-size: 0.875rem;
-        color: #475569;
-        margin: 0 0 1rem;
-      }
-      .toolbar {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 1rem;
-        align-items: center;
-        margin-bottom: 1rem;
-      }
-      .filter {
-        flex: 1 1 220px;
-        min-width: 200px;
-      }
-      .tbl {
-        width: 100%;
-      }
-      .loading {
-        display: flex;
-        justify-content: center;
-        padding: 2rem;
-      }
-    `,
-  ],
 })
 export class BancoCatalogPageComponent {
   private readonly api = inject(CatalogoApiService);
@@ -170,6 +189,7 @@ export class BancoCatalogPageComponent {
   readonly cols = ['id', 'name', 'acciones'] as const;
   readonly pageSizeOptions = [10, 20, 50] as const;
   readonly loading = signal(true);
+  readonly loadError = signal<string | null>(null);
   readonly rows = signal<readonly BankCatalogItem[]>([]);
   readonly filterText = signal('');
   readonly pageIndex = signal(0);
@@ -211,7 +231,7 @@ export class BancoCatalogPageComponent {
       initialName: '',
       submitLabel: 'Guardar',
     };
-    const ref = this.dialog.open(CatalogNameFormDialogComponent, { data, width: '400px' });
+    const ref = this.dialog.open(CatalogNameFormDialogComponent, sisrhFormDialogConfig('sm', { data }));
     ref.afterClosed().subscribe((name) => {
       if (!name) return;
       this.api.crearBanco({ name }).subscribe({
@@ -234,7 +254,7 @@ export class BancoCatalogPageComponent {
       initialName: row.name,
       submitLabel: 'Guardar cambios',
     };
-    const ref = this.dialog.open(CatalogNameFormDialogComponent, { data, width: '400px' });
+    const ref = this.dialog.open(CatalogNameFormDialogComponent, sisrhFormDialogConfig('sm', { data }));
     ref.afterClosed().subscribe((name) => {
       if (!name) return;
       this.api.actualizarBanco(row.id, { name }).subscribe({
@@ -248,14 +268,16 @@ export class BancoCatalogPageComponent {
   }
 
   confirmDelete(row: BankCatalogItem): void {
-    const ref = this.dialog.open(ConfirmDialogComponent, {
-      data: {
+    const ref = this.dialog.open(
+      ConfirmDialogComponent,
+      sisrhConfirmDialogConfig({
         title: 'Dar de baja banco',
         message: `¿Confirmas la baja del banco "${row.name}"? Esta acción puede afectar referencias existentes.`,
         confirmLabel: 'Dar de baja',
         cancelLabel: 'Cancelar',
-      },
-    });
+        severity: 'danger',
+      }),
+    );
     ref.afterClosed().subscribe((ok) => {
       if (!ok) return;
       this.api.eliminarBanco(row.id).subscribe({
@@ -268,8 +290,9 @@ export class BancoCatalogPageComponent {
     });
   }
 
-  private reload(): void {
+  reload(): void {
     this.loading.set(true);
+    this.loadError.set(null);
     this.api.listarBancos().subscribe({
       next: (list) => {
         this.rows.set(list);
@@ -277,7 +300,8 @@ export class BancoCatalogPageComponent {
       },
       error: (e: unknown) => {
         this.loading.set(false);
-        this.snack.open(this.resolveLoadError(e), 'Cerrar', { duration: 6000 });
+        this.rows.set([]);
+        this.loadError.set(this.resolveLoadError(e));
         this.telemetry.track('CATALOG_ADMIN_UI', { extra: { action: 'BANK_LOAD_FAIL' } });
       },
     });

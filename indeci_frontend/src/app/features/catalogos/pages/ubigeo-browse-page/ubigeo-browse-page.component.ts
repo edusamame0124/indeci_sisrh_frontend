@@ -5,7 +5,9 @@ import {
   inject,
   signal,
 } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
+import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -14,15 +16,18 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
-import { CatalogoApiService } from '../../../rrhh/services/catalogo-api.service';
-import type { UbigeoOption } from '../../../rrhh/models/ubigeo.model';
+import { CatalogoApiService } from '../../../empleados/services/catalogo-api.service';
+import type { UbigeoOption } from '../../../empleados/models/ubigeo.model';
 import { ErrorMessageService } from '../../../../core/services/error-message.service';
 import { isErrorResponse } from '../../../../core/models/error-response.model';
+import { EmptyStateComponent } from '../../../../shared/components/empty-state/empty-state.component';
 
 @Component({
   selector: 'app-ubigeo-browse-page',
   standalone: true,
   imports: [
+    RouterLink,
+    MatButtonModule,
     MatCardModule,
     MatListModule,
     MatFormFieldModule,
@@ -31,24 +36,43 @@ import { isErrorResponse } from '../../../../core/models/error-response.model';
     MatPaginatorModule,
     MatProgressSpinnerModule,
     MatSnackBarModule,
+    EmptyStateComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <mat-card class="card">
-      <mat-card-header>
-        <mat-card-title>Ubigeo (solo lectura)</mat-card-title>
-        <mat-card-subtitle>INEI — Departamento, provincia y distrito</mat-card-subtitle>
-      </mat-card-header>
-      <mat-card-content>
-        <p class="hint" role="status">
+    <div class="page sisrh-page">
+      <nav class="crumbs sisrh-crumbs" aria-label="Ubicación">
+        <a mat-button routerLink="/">Inicio</a>
+        <span class="crumbs__sep" aria-hidden="true">/</span>
+        <span class="crumbs__group">Catálogos</span>
+        <span class="crumbs__sep" aria-hidden="true">/</span>
+        <span class="crumbs__here">Ubigeo</span>
+      </nav>
+
+      <mat-card class="page-card sisrh-elevated">
+        <mat-card-header>
+          <mat-card-title>Ubigeo (solo lectura)</mat-card-title>
+          <mat-card-subtitle>INEI — Departamento, provincia y distrito</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+        <p class="page-hint" role="status">
           Los datos no se modifican desde esta aplicación. Selecciona un departamento y una provincia
           para ver los distritos.
         </p>
 
         @if (loading()) {
-          <div class="loading" aria-busy="true">
+          <div class="page-loading" aria-busy="true">
             <mat-progress-spinner mode="indeterminate" diameter="48" aria-label="Cargando ubigeo" />
           </div>
+        } @else if (loadError()) {
+          <app-empty-state
+            variant="error"
+            icon="error_outline"
+            title="No se pudo cargar la información"
+            [description]="loadError()!"
+          >
+            <button mat-stroked-button type="button" (click)="reload()">Reintentar</button>
+          </app-empty-state>
         } @else {
           <div class="cols">
             <section class="col" aria-labelledby="ubigeo-depto-title">
@@ -82,7 +106,11 @@ import { isErrorResponse } from '../../../../core/models/error-response.model';
             <section class="col" aria-labelledby="ubigeo-prov-title">
               <h2 class="col-title" id="ubigeo-prov-title">Provincia</h2>
               @if (!deptoSeleccionado()) {
-                <p class="empty">Selecciona un departamento.</p>
+                <app-empty-state
+                  icon="map"
+                  title="Seleccione un departamento"
+                  description="Elija un departamento en la primera columna para ver sus provincias."
+                />
               } @else {
                 <mat-form-field appearance="outline" class="filter">
                   <mat-label>Filtrar</mat-label>
@@ -114,7 +142,17 @@ import { isErrorResponse } from '../../../../core/models/error-response.model';
             <section class="col col--wide" aria-labelledby="ubigeo-dist-title">
               <h2 class="col-title" id="ubigeo-dist-title">Distritos</h2>
               @if (!deptoSeleccionado() || !provSeleccionada()) {
-                <p class="empty">Selecciona departamento y provincia.</p>
+                <app-empty-state
+                  icon="location_on"
+                  title="Seleccione departamento y provincia"
+                  description="Complete la jerarquía para listar los distritos del ubigeo."
+                />
+              } @else if (distritosDisplayed().length === 0) {
+                <app-empty-state
+                  icon="search_off"
+                  title="Sin distritos"
+                  description="No hay distritos que coincidan con el filtro indicado."
+                />
               } @else {
                 <mat-form-field appearance="outline" class="filter">
                   <mat-label>Buscar distrito</mat-label>
@@ -154,18 +192,11 @@ import { isErrorResponse } from '../../../../core/models/error-response.model';
           </div>
         }
       </mat-card-content>
-    </mat-card>
+      </mat-card>
+    </div>
   `,
   styles: [
     `
-      .card {
-        margin: 1rem;
-      }
-      .hint {
-        font-size: 0.875rem;
-        color: #475569;
-        margin: 0 0 1rem;
-      }
       .cols {
         display: grid;
         gap: 1rem;
@@ -177,9 +208,11 @@ import { isErrorResponse } from '../../../../core/models/error-response.model';
         }
       }
       .col-title {
+        font-family: var(--sisrh-font-heading);
         font-size: 1rem;
         font-weight: 600;
         margin: 0 0 0.5rem;
+        color: var(--sisrh-color-primary);
       }
       .filter {
         width: 100%;
@@ -188,21 +221,11 @@ import { isErrorResponse } from '../../../../core/models/error-response.model';
       .list {
         max-height: 360px;
         overflow: auto;
-        border: 1px solid #e2e8f0;
+        border: 1px solid var(--sisrh-border, #e2e8f0);
         border-radius: 0.375rem;
       }
       .is-active {
-        background: #eff6ff;
-      }
-      .empty {
-        color: #64748b;
-        font-size: 0.875rem;
-        margin: 0.5rem 0;
-      }
-      .loading {
-        display: flex;
-        justify-content: center;
-        padding: 2rem;
+        background: color-mix(in srgb, var(--sisrh-color-cta, #0369a1) 8%, white);
       }
       .tbl {
         width: 100%;
@@ -216,6 +239,7 @@ export class UbigeoBrowsePageComponent {
   private readonly errors = inject(ErrorMessageService);
 
   readonly loading = signal(true);
+  readonly loadError = signal<string | null>(null);
   readonly rows = signal<readonly UbigeoOption[]>([]);
 
   readonly deptoSeleccionado = signal<string | null>(null);
@@ -289,6 +313,12 @@ export class UbigeoBrowsePageComponent {
   });
 
   constructor() {
+    this.reload();
+  }
+
+  reload(): void {
+    this.loading.set(true);
+    this.loadError.set(null);
     this.api.listarUbigeo().subscribe({
       next: (data) => {
         this.rows.set(data);
@@ -296,7 +326,8 @@ export class UbigeoBrowsePageComponent {
       },
       error: (err: unknown) => {
         this.loading.set(false);
-        this.snack.open(this.resolveError(err), 'Cerrar', { duration: 6000 });
+        this.rows.set([]);
+        this.loadError.set(this.resolveError(err));
       },
     });
   }

@@ -50,7 +50,7 @@ describe('authInterceptor', () => {
 
   it('does NOT inject Bearer for /api/auth/refresh (public)', () => {
     storage.setAccess('test-access-token');
-    http.post('/api/auth/refresh', { refreshToken: 'r' }).subscribe();
+    http.post('/api/auth/refresh', {}).subscribe();
     const req = httpMock.expectOne('/api/auth/refresh');
     expect(req.request.headers.has('Authorization')).toBe(false);
     req.flush({});
@@ -58,7 +58,6 @@ describe('authInterceptor', () => {
 
   it('triggers refresh on 401 and redirects to login on refresh failure', () => {
     storage.setAccess('expired-access');
-    storage.setRefresh('valid-refresh');
 
     http.get('/api/rrhh/persona').subscribe({ error: () => undefined });
     const req1 = httpMock.expectOne('/api/rrhh/persona');

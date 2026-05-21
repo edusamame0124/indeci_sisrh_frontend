@@ -1,0 +1,208 @@
+<div class="page">
+  <nav class="crumbs" aria-label="Ubicación">
+    <a mat-button routerLink="/">Inicio</a>
+    <span class="crumbs__sep" aria-hidden="true">/</span>
+    <span class="crumbs__here">Resumen por meta</span>
+  </nav>
+
+  <mat-card class="page-card sisrh-elevated">
+    <mat-card-header>
+      <mat-card-title>Resumen por meta presupuestal</mat-card-title>
+      <mat-card-subtitle>
+        Costo de planilla agrupado por meta presupuestal y centro de costo
+        (hojas RES.COMPROMISO + RES.METAS).
+      </mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      @if (loading()) {
+        <div class="loading" aria-busy="true">
+          <mat-progress-spinner mode="indeterminate" diameter="48" aria-label="Cargando datos" />
+        </div>
+      } @else if (periodos().length === 0) {
+        <p class="empty" role="status">
+          Aún no hay periodos registrados. Crea uno desde
+          <a mat-button routerLink="/planilla/periodos">Periodos</a>.
+        </p>
+      } @else {
+        <div class="toolbar">
+          <mat-form-field appearance="outline" class="periodo-select">
+            <mat-label>Periodo</mat-label>
+            <mat-select
+              [value]="periodoSeleccionado()"
+              (selectionChange)="onPeriodoChange($event.value)"
+              aria-label="Seleccionar periodo"
+            >
+              @for (p of periodos(); track p.id) {
+                <mat-option [value]="p.periodo">{{ p.periodo }} — {{ p.estado }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        @if (tableLoading()) {
+          <div class="sisrh-skeleton-table" aria-busy="true" aria-label="Cargando resumen">
+            @for (i of [1, 2, 3, 4, 5]; track i) {
+              <div class="sisrh-skeleton-table__row"></div>
+            }
+          </div>
+        } @else if (metas().length === 0) {
+          <p class="empty" role="status">
+            No hay movimientos de planilla en este periodo. Genera la planilla
+            desde <a mat-button routerLink="/planilla/movimientos">Movimientos</a>.
+          </p>
+        } @else {
+          <div class="sisrh-totales-bar" role="status" aria-label="Totales del periodo">
+            <div class="sisrh-totales-bar__item">
+              <span class="sisrh-totales-bar__label">Ingresos</span>
+              <span class="sisrh-totales-bar__value sisrh-tabular">S/ {{ fmtMonto(totalesGenerales().ingresos) }}</span>
+            </div>
+            <div class="sisrh-totales-bar__item">
+              <span class="sisrh-totales-bar__label">ESSALUD</span>
+              <span class="sisrh-totales-bar__value sisrh-tabular">S/ {{ fmtMonto(totalesGenerales().essalud) }}</span>
+            </div>
+            <div class="sisrh-totales-bar__item">
+              <span class="sisrh-totales-bar__label">Aportes</span>
+              <span class="sisrh-totales-bar__value sisrh-tabular">S/ {{ fmtMonto(totalesGenerales().aportes) }}</span>
+            </div>
+            <div class="sisrh-totales-bar__item">
+              <span class="sisrh-totales-bar__label">Total CUC</span>
+              <span class="sisrh-totales-bar__value sisrh-tabular">S/ {{ fmtMonto(totalesGenerales().total) }}</span>
+            </div>
+          </div>
+
+          <div class="sisrh-table-scroll">
+            <table mat-table [dataSource]="metas()" multiTemplateDataRows class="tbl">
+              <ng-container matColumnDef="meta">
+                <th mat-header-cell *matHeaderCellDef scope="col">Meta</th>
+                <td mat-cell *matCellDef="let row"><strong>{{ row.meta }}</strong></td>
+                <td mat-footer-cell *matFooterCellDef>TOTAL GENERAL</td>
+              </ng-container>
+
+              <ng-container matColumnDef="centroCosto">
+                <th mat-header-cell *matHeaderCellDef scope="col">Centro de costo</th>
+                <td mat-cell *matCellDef="let row">{{ row.centroCosto || '—' }}</td>
+                <td mat-footer-cell *matFooterCellDef></td>
+              </ng-container>
+
+              <ng-container matColumnDef="pea">
+                <th mat-header-cell *matHeaderCellDef scope="col" class="num">PEA</th>
+                <td mat-cell *matCellDef="let row" class="num sisrh-tabular">{{ row.pea }}</td>
+                <td mat-footer-cell *matFooterCellDef class="num sisrh-tabular">
+                  {{ totalesGenerales().pea }}
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="ingresos">
+                <th mat-header-cell *matHeaderCellDef scope="col" class="num">Ingresos</th>
+                <td mat-cell *matCellDef="let row" class="num sisrh-tabular">
+                  S/ {{ fmtMonto(row.ingresos) }}
+                </td>
+                <td mat-footer-cell *matFooterCellDef class="num sisrh-tabular">
+                  S/ {{ fmtMonto(totalesGenerales().ingresos) }}
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="essalud">
+                <th mat-header-cell *matHeaderCellDef scope="col" class="num">ESSALUD</th>
+                <td mat-cell *matCellDef="let row" class="num sisrh-tabular">
+                  S/ {{ fmtMonto(row.essalud) }}
+                </td>
+                <td mat-footer-cell *matFooterCellDef class="num sisrh-tabular">
+                  S/ {{ fmtMonto(totalesGenerales().essalud) }}
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="aportes">
+                <th mat-header-cell *matHeaderCellDef scope="col" class="num">Aportes</th>
+                <td mat-cell *matCellDef="let row" class="num sisrh-tabular">
+                  S/ {{ fmtMonto(row.aportes) }}
+                </td>
+                <td mat-footer-cell *matFooterCellDef class="num sisrh-tabular">
+                  S/ {{ fmtMonto(totalesGenerales().aportes) }}
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="total">
+                <th mat-header-cell *matHeaderCellDef scope="col" class="num">Total</th>
+                <td mat-cell *matCellDef="let row" class="num sisrh-tabular">
+                  <strong>S/ {{ fmtMonto(row.total) }}</strong>
+                </td>
+                <td mat-footer-cell *matFooterCellDef class="num sisrh-tabular">
+                  <strong>S/ {{ fmtMonto(totalesGenerales().total) }}</strong>
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="expand">
+                <th mat-header-cell *matHeaderCellDef scope="col"></th>
+                <td mat-cell *matCellDef="let row">
+                  <button
+                    mat-icon-button
+                    type="button"
+                    (click)="toggle(row.meta)"
+                    [attr.aria-label]="'Detalle de empleados de la meta ' + row.meta"
+                    [attr.aria-expanded]="metaExpandida() === row.meta"
+                  >
+                    <mat-icon
+                      [fontIcon]="metaExpandida() === row.meta ? 'expand_less' : 'expand_more'"
+                      aria-hidden="true"
+                    />
+                  </button>
+                </td>
+                <td mat-footer-cell *matFooterCellDef></td>
+              </ng-container>
+
+              <!-- Fila de detalle expandible: empleados de la meta -->
+              <ng-container matColumnDef="detalle">
+                <td mat-cell *matCellDef="let row" [attr.colspan]="columns.length">
+                  @if (metaExpandida() === row.meta) {
+                    <div class="detalle">
+                      <table class="detalle-tbl">
+                        <thead>
+                          <tr>
+                            <th scope="col">Empleado</th>
+                            <th scope="col" class="num">Ingresos</th>
+                            <th scope="col" class="num">ESSALUD</th>
+                            <th scope="col" class="num">Aportes</th>
+                            <th scope="col" class="num">Total</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          @for (e of row.empleados; track e.empleadoId) {
+                            <tr>
+                              <td>{{ nombreEmpleado(e.empleadoId) }}</td>
+                              <td class="num sisrh-tabular">S/ {{ fmtMonto(e.ingresos) }}</td>
+                              <td class="num sisrh-tabular">S/ {{ fmtMonto(e.essalud) }}</td>
+                              <td class="num sisrh-tabular">S/ {{ fmtMonto(e.aportes) }}</td>
+                              <td class="num sisrh-tabular">S/ {{ fmtMonto(e.total) }}</td>
+                            </tr>
+                          }
+                        </tbody>
+                      </table>
+                    </div>
+                  }
+                </td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="columns"></tr>
+              <tr
+                mat-row
+                *matRowDef="let row; columns: columns"
+                class="meta-row"
+                [class.meta-row--abierta]="metaExpandida() === row.meta"
+              ></tr>
+              <tr mat-row *matRowDef="let row; columns: ['detalle']" class="detalle-row"></tr>
+              <tr mat-footer-row *matFooterRowDef="columns" class="fila-totales"></tr>
+            </table>
+          </div>
+        }
+
+        <p class="ref-nota">
+          Base: SPEC §12.2 PANTALLA-05 — Resumen por Meta Presupuestal
+          (RES.COMPROMISO + RES.METAS). Total = ingresos + ESSALUD empleador
+          (costo entidad, LEY-07). El semáforo vs certificación presupuestal
+          (Ley 28411) se habilitará cuando se modele el monto certificado por meta.
+        </p>
+      }
+    </mat-card-content>
+  </mat-card>
+</div>

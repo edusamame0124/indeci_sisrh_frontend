@@ -11,7 +11,6 @@ export const environment = {
   apiUrl: 'https://app.indeci.gob.pe/api',
   appName: 'SISRH-INDECI',
   tokenKey: 'sisrh_access_token',
-  refreshKey: 'sisrh_refresh_token',
   /**
    * Cloudflare Turnstile site key. Reemplazar por la clave real del portal Cloudflare
    * antes de desplegar a producción. Esta clave es PÚBLICA (segura para frontend).

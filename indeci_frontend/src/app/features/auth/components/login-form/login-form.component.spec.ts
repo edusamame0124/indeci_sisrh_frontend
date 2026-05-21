@@ -11,6 +11,21 @@ describe('LoginFormComponent', () => {
     });
   });
 
+  it('renders decorative prefix icons for username and password', () => {
+    const fixture = TestBed.createComponent(LoginFormComponent);
+    fixture.componentRef.setInput('captchaSiteKey', 'test-key');
+    fixture.detectChanges();
+
+    const root = fixture.nativeElement as HTMLElement;
+    const personIcon = root.querySelector('mat-icon[fonticon="person"]');
+    const lockIcon = root.querySelector('mat-icon[fonticon="lock"]');
+
+    expect(personIcon).toBeTruthy();
+    expect(lockIcon).toBeTruthy();
+    expect(personIcon?.getAttribute('aria-hidden')).toBe('true');
+    expect(lockIcon?.getAttribute('aria-hidden')).toBe('true');
+  });
+
   it('canSubmit is false when form is empty', () => {
     const fixture = TestBed.createComponent(LoginFormComponent);
     fixture.componentRef.setInput('captchaSiteKey', 'test-key');

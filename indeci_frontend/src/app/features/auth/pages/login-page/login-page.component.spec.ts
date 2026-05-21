@@ -79,7 +79,7 @@ describe('LoginPageComponent (US1 integration)', () => {
     fixture.detectChanges();
 
     expect(fixture.componentInstance.errorMessage()).toBe(
-      'Sin conexión. Verifica tu red e intenta nuevamente.',
+      'Sin conexión. Verifique su red e intente nuevamente.',
     );
     expect(loginForm.form.value).toEqual({ username: 'jdoe', password: 'secret-pass' });
     expect(fixture.componentInstance.isSubmitting()).toBe(false);

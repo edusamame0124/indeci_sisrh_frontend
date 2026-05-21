@@ -30,8 +30,14 @@ import { TurnstileWidgetComponent } from '../../../../shared/components/turnstil
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
-      <mat-form-field appearance="outline" class="full-width">
+      <mat-form-field appearance="outline" class="full-width" subscriptSizing="dynamic">
         <mat-label>Usuario</mat-label>
+        <mat-icon
+          matPrefix
+          class="field-prefix-icon material-symbols-outlined"
+          aria-hidden="true"
+          fontIcon="person"
+        />
         <input
           matInput
           formControlName="username"
@@ -40,12 +46,18 @@ import { TurnstileWidgetComponent } from '../../../../shared/components/turnstil
           [attr.aria-invalid]="usernameInvalid()"
         />
         @if (usernameInvalid()) {
-          <mat-error aria-live="polite">Ingresa tu usuario</mat-error>
+          <mat-error aria-live="polite">Ingrese su usuario</mat-error>
         }
       </mat-form-field>
 
-      <mat-form-field appearance="outline" class="full-width">
+      <mat-form-field appearance="outline" class="full-width" subscriptSizing="dynamic">
         <mat-label>Contraseña</mat-label>
+        <mat-icon
+          matPrefix
+          class="field-prefix-icon material-symbols-outlined"
+          aria-hidden="true"
+          fontIcon="lock"
+        />
         <input
           matInput
           [type]="passwordVisible() ? 'text' : 'password'"
@@ -66,7 +78,7 @@ import { TurnstileWidgetComponent } from '../../../../shared/components/turnstil
           <mat-icon [fontIcon]="passwordVisible() ? 'visibility_off' : 'visibility'" />
         </button>
         @if (passwordInvalid()) {
-          <mat-error aria-live="polite">Ingresa tu contraseña</mat-error>
+          <mat-error aria-live="polite">Ingrese su contraseña</mat-error>
         }
       </mat-form-field>
 
@@ -79,8 +91,8 @@ import { TurnstileWidgetComponent } from '../../../../shared/components/turnstil
           />
           @if (captchaLoadFailed()) {
             <p class="captcha-error" role="alert">
-              El verificador de seguridad no pudo cargarse. Desactiva tus bloqueadores de
-              anuncios o intenta desde otro navegador.
+              El verificador de seguridad no pudo cargarse. Desactive sus bloqueadores de
+              anuncios o intente desde otro navegador.
             </p>
           }
         </div>
@@ -103,11 +115,24 @@ import { TurnstileWidgetComponent } from '../../../../shared/components/turnstil
         display: block;
         font-family: var(--sisrh-font-sans, 'Source Sans 3', 'Segoe UI', system-ui, sans-serif);
       }
+      form {
+        display: flex;
+        flex-direction: column;
+        gap: var(--sisrh-spacing-lg, 1.25rem);
+      }
       .full-width {
         width: 100%;
+        margin: 0;
+      }
+      .field-prefix-icon {
+        color: var(--sisrh-color-muted);
+        width: 20px !important;
+        height: 20px !important;
+        font-size: 20px !important;
+        line-height: 20px !important;
       }
       .submit-btn {
-        margin-top: 0.25rem;
+        margin-top: var(--sisrh-spacing-sm, 0.4375rem);
         min-height: 44px;
         font-size: 0.9375rem;
         font-weight: 600;
@@ -127,7 +152,7 @@ import { TurnstileWidgetComponent } from '../../../../shared/components/turnstil
         height: 24px !important;
         font-size: 24px !important;
         line-height: 24px !important;
-        color: #475569;
+        color: var(--sisrh-color-secondary);
       }
       .pwd-toggle-btn:hover .mat-icon,
       .pwd-toggle-btn:focus-visible .mat-icon {
@@ -138,25 +163,31 @@ import { TurnstileWidgetComponent } from '../../../../shared/components/turnstil
         color: #fff;
       }
       .submit-btn.mat-mdc-button-disabled {
-        color: rgba(15, 23, 42, 0.45) !important;
-        background-color: #e2e8f0 !important;
+        color: color-mix(in srgb, var(--sisrh-color-primary, #0f172a) 45%, transparent) !important;
+        background-color: var(--sisrh-color-border, #e2e8f0) !important;
       }
       .captcha-wrapper {
         display: flex;
         flex-direction: column;
         align-items: center;
-        margin: 1rem 0;
+        margin: 0;
       }
       .captcha-error {
         color: var(--sisrh-color-error);
         margin-top: 0.5rem;
         text-align: center;
       }
+      :host ::ng-deep .full-width.mat-mdc-form-field {
+        margin-bottom: 0;
+      }
       :host ::ng-deep .full-width.mat-mdc-form-field .mat-mdc-text-field-wrapper {
         font-family: inherit;
       }
       :host ::ng-deep .full-width.mat-mdc-form-field input {
         font-size: 0.9375rem;
+      }
+      :host ::ng-deep .full-width.mat-mdc-form-field .mat-mdc-form-field-subscript-wrapper {
+        margin-top: 0.125rem;
       }
     `,
   ],

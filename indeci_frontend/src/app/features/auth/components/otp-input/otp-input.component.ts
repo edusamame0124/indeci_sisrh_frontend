@@ -63,7 +63,7 @@ import { NumericOnlyDirective } from '../../../../shared/directives/numeric-only
         text-align: center;
         padding: 0.75rem 1rem;
         width: 12rem;
-        border: 1px solid #999;
+        border: 1px solid var(--sisrh-color-border-strong, #cbd5e1);
         border-radius: var(--sisrh-radius-md);
         font-family: 'Roboto Mono', monospace;
       }

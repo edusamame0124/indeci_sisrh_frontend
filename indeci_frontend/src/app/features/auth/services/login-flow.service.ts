@@ -71,7 +71,7 @@ export class LoginFlowService {
     }
 
     // Caso 4: Sesión completa (raro: solo si backend salta OTP, ej. usuario sin OTP_HABILITADO en una config admin)
-    if (response.refreshToken) {
+    if (response.token) {
       this.auth.setSession(response);
       this._state.set({ kind: 'success' });
       void this.router.navigateByUrl(this._returnUrl());

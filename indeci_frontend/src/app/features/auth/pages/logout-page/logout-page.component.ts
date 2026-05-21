@@ -5,7 +5,9 @@ import { ClientTelemetryService } from '../../../../core/services/client-telemet
 import { AuthApiService } from '../../services/auth-api.service';
 
 /**
- * Logout: revoca refresh en backend (si existe) y limpia sesión local (FR-029, Spec 008).
+ * Logout: revoca el refresh token en backend y limpia la sesión local
+ * (FR-029, Spec 008). Spec 013 / C4 — el refresh token viaja en la cookie
+ * HttpOnly, así que `logout()` no necesita pasarlo: el navegador la adjunta.
  */
 @Component({
   selector: 'app-logout-page',
@@ -20,15 +22,10 @@ export class LogoutPageComponent implements OnInit {
   private readonly api = inject(AuthApiService);
 
   ngOnInit(): void {
-    const rt = this.auth.refreshToken();
-    if (rt) {
-      this.api.logout({ refreshToken: rt }).subscribe({
-        next: () => this.finalize(),
-        error: () => this.finalize(),
-      });
-      return;
-    }
-    this.finalize();
+    this.api.logout().subscribe({
+      next: () => this.finalize(),
+      error: () => this.finalize(),
+    });
   }
 
   private finalize(): void {

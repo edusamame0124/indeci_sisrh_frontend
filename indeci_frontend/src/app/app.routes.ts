@@ -7,6 +7,14 @@ export const routes: Routes = [
     loadChildren: () => import('./features/auth/auth.routes').then((m) => m.AUTH_ROUTES),
   },
   {
+    // Portal público de Transparencia (Ley 27806) — sin authGuard.
+    path: 'transparencia',
+    loadChildren: () =>
+      import('./features/transparencia/transparencia.routes').then(
+        (m) => m.TRANSPARENCIA_ROUTES,
+      ),
+  },
+  {
     path: '',
     canActivate: [authGuard],
     loadComponent: () =>
@@ -21,14 +29,36 @@ export const routes: Routes = [
         title: 'Inicio — SISRH-INDECI',
       },
       {
-        path: 'rrhh',
+        path: 'empleados',
         loadChildren: () =>
-          import('./features/rrhh/rrhh.routes').then((m) => m.RRHH_ROUTES),
+          import('./features/empleados/empleados.routes').then((m) => m.EMPLEADOS_ROUTES),
       },
       {
         path: 'catalogos',
         loadChildren: () =>
           import('./features/catalogos/catalogos.routes').then((m) => m.CATALOGOS_ROUTES),
+      },
+      {
+        path: 'asistencia',
+        loadChildren: () =>
+          import('./features/asistencia/asistencia.routes').then((m) => m.ASISTENCIA_ROUTES),
+      },
+      {
+        path: 'planilla',
+        loadChildren: () =>
+          import('./features/planilla/planilla.routes').then((m) => m.PLANILLA_ROUTES),
+      },
+      {
+        path: 'portal-empleado',
+        loadChildren: () =>
+          import('./features/portal-empleado/portal-empleado.routes').then(
+            (m) => m.PORTAL_EMPLEADO_ROUTES,
+          ),
+      },
+      {
+        path: 'reportes',
+        loadChildren: () =>
+          import('./features/reportes/reportes.routes').then((m) => m.REPORTES_ROUTES),
       },
       {
         path: 'admin',

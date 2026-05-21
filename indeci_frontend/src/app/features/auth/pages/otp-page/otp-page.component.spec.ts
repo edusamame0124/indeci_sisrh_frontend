@@ -70,6 +70,21 @@ describe('OtpPageComponent (US1 integration)', () => {
     expect(fixture.componentInstance.errorMessage()).toContain('Código incorrecto');
   });
 
+  it('muestra intentos restantes desde LoginFlowService', () => {
+    const fixture = TestBed.createComponent(OtpPageComponent);
+    fixture.detectChanges();
+    const el: HTMLElement = fixture.nativeElement as HTMLElement;
+    expect(el.textContent).toContain('5 intentos');
+  });
+
+  it('muestra texto de carga al verificar OTP', () => {
+    const fixture = TestBed.createComponent(OtpPageComponent);
+    fixture.componentInstance.isSubmitting.set(true);
+    fixture.detectChanges();
+    const el: HTMLElement = fixture.nativeElement as HTMLElement;
+    expect(el.textContent).toContain('Verificando código');
+  });
+
   it('after 3 failed attempts shows hour-sync hint (FR-012)', () => {
     const fixture = TestBed.createComponent(OtpPageComponent);
     fixture.detectChanges();

@@ -59,6 +59,11 @@ export interface CatalogNameFormDialogData {
   `,
   styles: [
     `
+      :host {
+        display: block;
+        min-width: 320px;
+        max-width: 480px;
+      }
       .full {
         width: 100%;
       }

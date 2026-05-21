@@ -1,0 +1,188 @@
+<div class="page">
+  <nav class="crumbs" aria-label="Ubicación">
+    <a mat-button routerLink="/">Inicio</a>
+    <span class="crumbs__sep" aria-hidden="true">/</span>
+    <a mat-button routerLink="/empleados/pension">Pensión</a>
+    <span class="crumbs__sep" aria-hidden="true">/</span>
+    <a mat-button [routerLink]="['/empleados/pension/personas', personaId()]">
+      {{ personaLabel() }}
+    </a>
+    <span class="crumbs__sep" aria-hidden="true">/</span>
+    <span class="crumbs__here">{{ isEdit() ? 'Editar pensión' : 'Nueva pensión' }}</span>
+  </nav>
+
+  <a mat-button [routerLink]="['/empleados/pension/personas', personaId()]">Volver</a>
+
+  @if (empleadoId() > 0 && !pageLoading()) {
+    <app-empleado-flow-warning-banner
+      [empleadoId]="empleadoId()"
+      [personaId]="personaId()"
+      [currentStep]="3"
+    />
+  }
+
+  @if (pageLoading()) {
+    <div class="loading">
+      <mat-progress-spinner diameter="48" mode="indeterminate" />
+    </div>
+  } @else {
+    <mat-card class="page-card sisrh-elevated">
+      <mat-card-header>
+        <mat-card-title>{{ isEdit() ? 'Editar pensión' : 'Registrar pensión' }}</mat-card-title>
+        <mat-card-subtitle>Régimen pensionario AFP u ONP según normativa vigente</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+          <div class="grid">
+            <mat-form-field appearance="outline" class="full">
+              <mat-label>Régimen pensionario</mat-label>
+              <mat-select
+                formControlName="regimenPensionarioId"
+                aria-label="Régimen pensionario"
+              >
+                @for (r of regimenes(); track r.id) {
+                  <mat-option [value]="r.id">{{ r.nombre }} ({{ r.tipo }})</mat-option>
+                }
+              </mat-select>
+              @if (form.controls.regimenPensionarioId.hasError('required')) {
+                <mat-error>Selecciona el régimen pensionario</mat-error>
+              }
+            </mat-form-field>
+
+            <!-- Spec 013 / C1 — ONP: no requiere CUSPP, comisión ni prima. -->
+            @if (esOnp()) {
+              <div class="onp-info" role="note">
+                <strong>Aporte 13% — Ley 19990.</strong>
+                Sin comisión ni prima de seguro. Solo se registra el régimen.
+              </div>
+            }
+
+            @if (esAfp()) {
+              <mat-form-field appearance="outline" class="full">
+                <mat-label>Tipo de comisión AFP</mat-label>
+                <mat-select
+                  formControlName="tipoComisionAfpId"
+                  aria-label="Tipo de comisión AFP"
+                >
+                  @for (t of tiposComision(); track t.id) {
+                    <mat-option [value]="t.id">{{ t.nombre }}</mat-option>
+                  }
+                </mat-select>
+                @if (form.controls.tipoComisionAfpId.hasError('required')) {
+                  <mat-error>Selecciona el tipo de comisión</mat-error>
+                }
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="full">
+                <mat-label>CUSPP</mat-label>
+                <input
+                  matInput
+                  formControlName="cuspp"
+                  maxlength="12"
+                  autocomplete="off"
+                  inputmode="text"
+                  (input)="onCusppInput($event)"
+                  class="cuspp-input"
+                  aria-describedby="cuspp-hint"
+                />
+                <mat-hint id="cuspp-hint">
+                  12 caracteres alfanuméricos — solo letras mayúsculas (A-Z) y dígitos (0-9).
+                </mat-hint>
+                @if (form.controls.cuspp.hasError('required')) {
+                  <mat-error>CUSPP requerido para AFP</mat-error>
+                }
+                @if (form.controls.cuspp.hasError('pattern')) {
+                  <mat-error>
+                    El CUSPP debe tener exactamente 12 caracteres (mayúsculas y números).
+                  </mat-error>
+                }
+              </mat-form-field>
+
+              <!-- Spec 013 / C1 — bloque "Tasas vigentes" autocompletado del catálogo -->
+              <section class="tasas-block full" aria-labelledby="tasas-vigentes-title">
+                <header class="tasas-block__header">
+                  <h3 id="tasas-vigentes-title" class="tasas-block__title">
+                    Tasas vigentes
+                  </h3>
+                  <button
+                    type="button"
+                    mat-button
+                    (click)="togglePersonalizar()"
+                    [attr.aria-pressed]="personalizarTasas()"
+                  >
+                    {{ personalizarTasas() ? 'Usar tasas del catálogo' : 'Personalizar tasas' }}
+                  </button>
+                </header>
+
+                @if (tasasLoading()) {
+                  <p class="hint">Cargando tasas vigentes…</p>
+                } @else if (tasasError()) {
+                  <p class="warn" role="alert">
+                    No se pudo cargar las tasas. Activa "Personalizar tasas" para ingresarlas a mano.
+                  </p>
+                } @else if (tasasVigentes()) {
+                  @if (!tasasVigentes()!.comisionParametrizada && !personalizarTasas()) {
+                    <p class="warn" role="alert">
+                      La comisión para esta AFP+tipo no está parametrizada.
+                      Usa "Personalizar tasas" para ingresarla.
+                    </p>
+                  }
+                }
+
+                <div class="grid">
+                  <mat-form-field appearance="outline" class="half">
+                    <mat-label>% Aporte</mat-label>
+                    <input
+                      matInput
+                      type="number"
+                      formControlName="porcentajeAporte"
+                      step="0.01"
+                      min="0"
+                      max="100"
+                    />
+                    <mat-hint>TUO SPP — 10% global</mat-hint>
+                  </mat-form-field>
+                  <mat-form-field appearance="outline" class="half">
+                    <mat-label>% Comisión</mat-label>
+                    <input
+                      matInput
+                      type="number"
+                      formControlName="porcentajeComision"
+                      step="0.01"
+                      min="0"
+                      max="100"
+                    />
+                    <mat-hint>Según AFP + tipo (catálogo)</mat-hint>
+                  </mat-form-field>
+                  <mat-form-field appearance="outline" class="half">
+                    <mat-label>% Seguro</mat-label>
+                    <input
+                      matInput
+                      type="number"
+                      formControlName="porcentajeSeguro"
+                      step="0.01"
+                      min="0"
+                      max="100"
+                    />
+                    <mat-hint>Prima 1.37% (con tope SPP)</mat-hint>
+                  </mat-form-field>
+                </div>
+              </section>
+            }
+          </div>
+
+          <div class="actions">
+            <button
+              mat-flat-button
+              color="primary"
+              type="submit"
+              [disabled]="form.invalid || saving()"
+            >
+              Guardar
+            </button>
+          </div>
+        </form>
+      </mat-card-content>
+    </mat-card>
+  }
+</div>

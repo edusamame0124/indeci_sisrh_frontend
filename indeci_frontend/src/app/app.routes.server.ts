@@ -6,8 +6,8 @@ import { RenderMode, ServerRoute } from '@angular/ssr';
  * - `/auth/**` → CSR puro: Cloudflare Turnstile, QR canvas y localStorage requieren
  *   navegador (window/document). SSR causaría hydration mismatch (research.md R1, R13).
  *
- * - `/rrhh/**`, `/catalogos/**` y `/admin/**` → CSR puro: rutas privadas tras login
- *   (RRHH, catálogos ADMIN y módulo administración con parámetros dinámicos).
+ * - `/empleados/**`, `/catalogos/**`, `/planilla/**`, `/reportes/**` y `/admin/**` →
+ *   CSR puro: rutas privadas tras login con parámetros dinámicos (`:id`, `:empleadoId/:periodo`, etc.).
  *
  * - Resto (`/`, etc.) → SSR con hydration. Mejor TTFB para la pantalla de inicio del
  *   dashboard (que sí puede prerenderizarse parcialmente).
@@ -21,11 +21,31 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Client,
   },
   {
-    path: 'rrhh/**',
+    path: 'transparencia/**',
+    renderMode: RenderMode.Client,
+  },
+  {
+    path: 'empleados/**',
     renderMode: RenderMode.Client,
   },
   {
     path: 'catalogos/**',
+    renderMode: RenderMode.Client,
+  },
+  {
+    path: 'asistencia/**',
+    renderMode: RenderMode.Client,
+  },
+  {
+    path: 'planilla/**',
+    renderMode: RenderMode.Client,
+  },
+  {
+    path: 'portal-empleado/**',
+    renderMode: RenderMode.Client,
+  },
+  {
+    path: 'reportes/**',
     renderMode: RenderMode.Client,
   },
   {

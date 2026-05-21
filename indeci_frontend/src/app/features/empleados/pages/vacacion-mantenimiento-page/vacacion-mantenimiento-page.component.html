@@ -1,0 +1,168 @@
+<div class="page">
+  <nav class="crumbs" aria-label="Ubicación">
+    <a mat-button routerLink="/">Inicio</a>
+    <span class="crumbs__sep" aria-hidden="true">/</span>
+    <span class="crumbs__here">Vacaciones</span>
+  </nav>
+
+  <mat-card class="page-card sisrh-elevated">
+    <mat-card-header>
+      <mat-card-title>Saldo de vacaciones del empleado</mat-card-title>
+      <mat-card-subtitle>
+        Registro y actualización de los días de vacaciones por año.
+      </mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      @if (loading()) {
+        <div class="loading" aria-busy="true">
+          <mat-progress-spinner mode="indeterminate" diameter="48" aria-label="Cargando" />
+        </div>
+      } @else if (empleados().length === 0) {
+        <p class="empty" role="status">
+          No hay empleados registrados. Regístralos desde
+          <a mat-button routerLink="/empleados/personas">Datos personales</a>.
+        </p>
+      } @else {
+        <mat-form-field appearance="outline" class="sel-empleado">
+          <mat-label>Empleado</mat-label>
+          <mat-select
+            [value]="empleadoSeleccionado()"
+            (selectionChange)="onEmpleadoChange($event.value)"
+            aria-label="Seleccionar empleado"
+          >
+            @for (e of empleados(); track e.empleadoId) {
+              <mat-option [value]="e.empleadoId">{{ e.nombreCompleto }} — DNI {{ e.dni }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        @if (empleadoSeleccionado() !== null) {
+          @if (datosLoading()) {
+            <div class="loading" aria-busy="true">
+              <mat-progress-spinner mode="indeterminate" diameter="40" aria-label="Cargando vacaciones" />
+            </div>
+          } @else {
+            <div class="acciones-row">
+              @if (!mostrarForm()) {
+                <button mat-flat-button color="primary" type="button" (click)="abrirForm()">
+                  <mat-icon fontIcon="add" aria-hidden="true" />
+                  Registrar año
+                </button>
+              }
+            </div>
+
+            @if (mostrarForm()) {
+              <div class="form-alta">
+                <mat-form-field appearance="outline" class="f-num">
+                  <mat-label>Año</mat-label>
+                  <input
+                    matInput
+                    type="number"
+                    min="2000"
+                    [ngModel]="fAnio()"
+                    (ngModelChange)="fAnio.set($event)"
+                  />
+                </mat-form-field>
+                <mat-form-field appearance="outline" class="f-num">
+                  <mat-label>Días ganados</mat-label>
+                  <input
+                    matInput
+                    type="number"
+                    min="0"
+                    step="0.5"
+                    [ngModel]="fGanados()"
+                    (ngModelChange)="fGanados.set($event)"
+                  />
+                </mat-form-field>
+                <mat-form-field appearance="outline" class="f-num">
+                  <mat-label>Días gozados</mat-label>
+                  <input
+                    matInput
+                    type="number"
+                    min="0"
+                    step="0.5"
+                    [ngModel]="fGozados()"
+                    (ngModelChange)="fGozados.set($event)"
+                  />
+                </mat-form-field>
+                <mat-form-field appearance="outline" class="f-obs">
+                  <mat-label>Observación</mat-label>
+                  <input
+                    matInput
+                    [ngModel]="fObservacion()"
+                    (ngModelChange)="fObservacion.set($event)"
+                    maxlength="200"
+                  />
+                </mat-form-field>
+                <div class="form-alta__acciones">
+                  <button mat-button type="button" (click)="cancelarForm()">Cancelar</button>
+                  <button
+                    mat-flat-button
+                    color="primary"
+                    type="button"
+                    [disabled]="guardando()"
+                    (click)="guardar()"
+                  >
+                    Guardar año
+                  </button>
+                </div>
+              </div>
+            }
+
+            @if (vacaciones().length === 0) {
+              <p class="empty" role="status">El empleado no tiene saldos de vacaciones registrados.</p>
+            } @else {
+              <div class="sisrh-table-scroll">
+                <table mat-table [dataSource]="vacaciones()" class="tbl">
+                  <ng-container matColumnDef="anio">
+                    <th mat-header-cell *matHeaderCellDef scope="col">Año</th>
+                    <td mat-cell *matCellDef="let row">{{ row.anio }}</td>
+                  </ng-container>
+                  <ng-container matColumnDef="ganados">
+                    <th mat-header-cell *matHeaderCellDef scope="col" class="num">Ganados</th>
+                    <td mat-cell *matCellDef="let row" class="num sisrh-tabular">
+                      {{ fmtDias(row.diasGanados) }}
+                    </td>
+                  </ng-container>
+                  <ng-container matColumnDef="gozados">
+                    <th mat-header-cell *matHeaderCellDef scope="col" class="num">Gozados</th>
+                    <td mat-cell *matCellDef="let row" class="num sisrh-tabular">
+                      {{ fmtDias(row.diasGozados) }}
+                    </td>
+                  </ng-container>
+                  <ng-container matColumnDef="saldo">
+                    <th mat-header-cell *matHeaderCellDef scope="col" class="num">Saldo</th>
+                    <td mat-cell *matCellDef="let row" class="num sisrh-tabular">
+                      <strong>{{ fmtDias(row.diasSaldo) }}</strong>
+                    </td>
+                  </ng-container>
+                  <ng-container matColumnDef="acciones">
+                    <th mat-header-cell *matHeaderCellDef scope="col">Acciones</th>
+                    <td mat-cell *matCellDef="let row">
+                      <button
+                        mat-icon-button
+                        type="button"
+                        (click)="editar(row)"
+                        aria-label="Editar saldo del año"
+                      >
+                        <mat-icon fontIcon="edit" aria-hidden="true" />
+                      </button>
+                    </td>
+                  </ng-container>
+                  <tr mat-header-row *matHeaderRowDef="columns"></tr>
+                  <tr mat-row *matRowDef="let row; columns: columns"></tr>
+                </table>
+              </div>
+            }
+          }
+        }
+
+        <p class="ref-nota">
+          Base: Spec 011 / B5 — mantenimiento del saldo de vacaciones. El saldo
+          de días disponibles se deriva de los días ganados menos los gozados;
+          el registro es por año (se actualiza si el año ya existe).
+        </p>
+      }
+    </mat-card-content>
+  </mat-card>
+</div>

@@ -47,18 +47,21 @@ import {
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <mat-card class="change-card">
-      <mat-card-header>
-        <mat-card-title>Cambiar contraseña</mat-card-title>
-      </mat-card-header>
-      <mat-card-content>
+    <mat-card class="auth-card" appearance="outlined">
+      <header class="auth-head">
+        <h1 class="auth-head__title">Cambiar contraseña</h1>
         @if (username()) {
-          <p class="username-header" aria-live="polite">
+          <p class="auth-head__sub" aria-live="polite">
             Cuenta: <strong>{{ username() }}</strong>
           </p>
+        } @else {
+          <p class="auth-head__sub">Actualice su clave temporal para continuar</p>
         }
+      </header>
+
+      <mat-card-content class="auth-body">
         <p class="instructions">
-          Por seguridad, debes cambiar tu contraseña temporal antes de continuar.
+          Por seguridad, debe cambiar su contraseña temporal antes de continuar.
         </p>
 
         <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
@@ -129,8 +132,9 @@ import {
           </button>
 
           @if (inProgress()) {
-            <div class="spinner-wrapper">
-              <mat-progress-spinner mode="indeterminate" diameter="32" />
+            <div class="spinner-wrap" role="status" aria-live="polite">
+              <mat-progress-spinner mode="indeterminate" diameter="28" />
+              <span>Cambiando contraseña…</span>
             </div>
           }
         </form>
@@ -149,9 +153,45 @@ import {
         display: block;
         font-family: var(--sisrh-font-sans, 'Source Sans 3', 'Segoe UI', system-ui, sans-serif);
       }
-      .change-card { width: 100%; max-width: 480px; padding: 1.5rem; }
-      .username-header { text-align: center; color: #555; margin-bottom: 0.5rem; }
-      .instructions { margin-bottom: 1rem; color: #555; }
+      .auth-card {
+        width: 100%;
+        max-width: 420px;
+        margin: 0 auto;
+        padding: 0;
+        border-radius: 12px;
+        overflow: hidden;
+        background: #fff;
+        border-color: var(--sisrh-color-border, #e2e8f0) !important;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+      }
+      .auth-head {
+        padding: 1.25rem 1.5rem 1rem;
+        border-bottom: 1px solid var(--sisrh-color-border, #e2e8f0);
+        border-top: 3px solid var(--mat-sys-primary, #0d47a1);
+        background: #fafbfc;
+      }
+      .auth-head__title {
+        margin: 0;
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: var(--sisrh-color-primary, #0f172a);
+        letter-spacing: -0.01em;
+      }
+      .auth-head__sub {
+        margin: 0.35rem 0 0;
+        font-size: 0.875rem;
+        color: var(--sisrh-color-muted, #64748b);
+        line-height: 1.45;
+      }
+      .auth-body.mat-mdc-card-content {
+        padding: 1.375rem 1.5rem 1.5rem !important;
+      }
+      .instructions {
+        margin: 0 0 1rem;
+        font-size: 0.9375rem;
+        line-height: 1.5;
+        color: var(--sisrh-color-secondary, #334155);
+      }
       .full-width { width: 100%; }
       .pwd-toggle-btn {
         width: 44px;
@@ -165,7 +205,7 @@ import {
         height: 24px !important;
         font-size: 24px !important;
         line-height: 24px !important;
-        color: #475569;
+        color: var(--sisrh-color-secondary, #475569);
       }
       .pwd-toggle-btn:hover .mat-icon,
       .pwd-toggle-btn:focus-visible .mat-icon {
@@ -173,9 +213,17 @@ import {
       }
       .submit-btn { margin-top: 1rem; padding: 0.75rem; font-size: 1rem; font-family: var(--sisrh-font-sans); font-weight: 600; letter-spacing: 0.02em; }
       .error-msg { color: var(--sisrh-color-error); margin-top: 1rem; font-weight: 500; text-align: center; }
-      .spinner-wrapper { display: flex; justify-content: center; margin-top: 1rem; }
-      .actions { display: flex; justify-content: center; margin-top: 1.5rem; }
-      .abort-link { color: var(--mat-sys-primary); }
+      .spinner-wrap {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.625rem;
+        margin-top: 1rem;
+        color: var(--sisrh-color-muted, #64748b);
+        font-size: 0.875rem;
+      }
+      .actions { display: flex; justify-content: center; margin-top: 1.25rem; }
+      .abort-link { color: var(--sisrh-color-cta, #0369a1); }
     `,
   ],
 })

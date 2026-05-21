@@ -2,6 +2,7 @@ import { describe, expect, it, beforeEach, afterEach } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { provideRouter } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { BancoCatalogPageComponent } from './banco-catalog-page.component';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
@@ -15,6 +16,7 @@ describe('BancoCatalogPageComponent', () => {
       imports: [BancoCatalogPageComponent],
       providers: [
         provideAnimationsAsync('noop'),
+        provideRouter([]),
         provideHttpClient(),
         provideHttpClientTesting(),
         {
@@ -36,7 +38,9 @@ describe('BancoCatalogPageComponent', () => {
     expect(req.request.method).toBe('GET');
     req.flush({ estado: 'OK', mensaje: 'ok', data: [{ id: 1, name: 'BBVA' }] });
     fixture.detectChanges();
-    expect((fixture.nativeElement as HTMLElement).textContent ?? '').toContain('BBVA');
+    const host = fixture.nativeElement as HTMLElement;
+    expect(host.textContent ?? '').toContain('BBVA');
+    expect(host.querySelector('.page-card.sisrh-elevated')).toBeTruthy();
   });
 
   it('tabla usa scroll horizontal, paginador accesible y acciones solo ícono con aria-label', () => {
@@ -67,5 +71,17 @@ describe('BancoCatalogPageComponent', () => {
       expect(icon.classList.contains('material-symbols-outlined')).toBe(true);
       expect(icon.getAttribute('aria-hidden')).toBe('true');
     });
+  });
+
+  it('muestra empty-state de error cuando falla la carga inicial', () => {
+    const fixture = TestBed.createComponent(BancoCatalogPageComponent);
+    fixture.detectChanges();
+    const req = httpMock.expectOne('/api/catalogos/bancos');
+    req.flush({ estado: 'ERROR', mensaje: 'Error de red' }, { status: 500, statusText: 'Error' });
+    fixture.detectChanges();
+    const host = fixture.nativeElement as HTMLElement;
+    expect(host.querySelector('.sisrh-empty-state--error[role="alert"]')).toBeTruthy();
+    expect(host.textContent).toContain('Reintentar');
+    expect(host.querySelector('table.tbl')).toBeFalsy();
   });
 });

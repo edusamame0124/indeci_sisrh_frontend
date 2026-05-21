@@ -3,10 +3,14 @@ import { isPlatformBrowser } from '@angular/common';
 import { environment } from '../../../environments/environment';
 
 /**
- * Persistencia de tokens en localStorage del navegador.
+ * Persistencia del access token en localStorage del navegador.
  * Detecta disponibilidad al boot — si localStorage no está disponible (modo
  * incógnito, kioscos restringidos), las operaciones son no-op y el bootstrap
  * de la app debe redirigir a la pantalla de error de almacenamiento (FR-030).
+ *
+ * Spec 013 / C4 — el refresh token ya NO se guarda aquí: viaja en una cookie
+ * HttpOnly que el JavaScript del cliente no puede leer (defensa ante XSS).
+ * Solo el access token (corta vida) persiste para sobrevivir recargas.
  */
 @Injectable({ providedIn: 'root' })
 export class TokenStorageService {
@@ -14,7 +18,6 @@ export class TokenStorageService {
   private readonly isBrowser = isPlatformBrowser(this.platformId);
 
   private readonly tokenKey = environment.tokenKey;
-  private readonly refreshKey = environment.refreshKey;
 
   /**
    * Detecta si localStorage es realmente accesible. Algunas configuraciones
@@ -51,29 +54,10 @@ export class TokenStorageService {
     }
   }
 
-  getRefresh(): string | null {
-    if (!this.isBrowser) return null;
-    try {
-      return localStorage.getItem(this.refreshKey);
-    } catch {
-      return null;
-    }
-  }
-
-  setRefresh(token: string): void {
-    if (!this.isBrowser) return;
-    try {
-      localStorage.setItem(this.refreshKey, token);
-    } catch {
-      /* noop */
-    }
-  }
-
   clearAll(): void {
     if (!this.isBrowser) return;
     try {
       localStorage.removeItem(this.tokenKey);
-      localStorage.removeItem(this.refreshKey);
     } catch {
       /* noop */
     }

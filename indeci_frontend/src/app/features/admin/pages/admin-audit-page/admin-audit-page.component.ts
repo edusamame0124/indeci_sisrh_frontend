@@ -6,6 +6,7 @@ import {
   PLATFORM_ID,
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -30,6 +31,8 @@ import {
 import type { AdminAuditoriaRow } from '../../models/admin.models';
 import { isErrorResponse } from '../../../../core/models/error-response.model';
 import { auditoriaCsvFileName, buildAuditoriaCsv } from '../../utils/audit-csv-export';
+import { EmptyStateComponent } from '../../../../shared/components/empty-state/empty-state.component';
+import { MatIconModule } from '@angular/material/icon';
 
 function formatDatePicker(d: Date | null): string {
   if (!d) return '';
@@ -43,6 +46,7 @@ function formatDatePicker(d: Date | null): string {
   selector: 'app-admin-audit-page',
   standalone: true,
   imports: [
+    RouterLink,
     ReactiveFormsModule,
     MatCardModule,
     MatFormFieldModule,
@@ -53,105 +57,147 @@ function formatDatePicker(d: Date | null): string {
     MatTableModule,
     MatPaginatorModule,
     MatProgressSpinnerModule,
+    MatIconModule,
+    EmptyStateComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <mat-card class="card">
-      <mat-card-header>
-        <mat-card-title>Consulta de auditoría</mat-card-title>
-        <mat-card-subtitle>Lectura consultiva (append-only en base de datos). Exportación CSV acotada.</mat-card-subtitle>
-      </mat-card-header>
-      <mat-card-content>
-        <form [formGroup]="filterForm" class="filters" (ngSubmit)="aplicarFiltros()" novalidate>
-          <mat-form-field appearance="outline">
-            <mat-label>Usuario</mat-label>
-            <input matInput formControlName="usuario" maxlength="128" autocomplete="off" aria-label="Filtro usuario" />
-          </mat-form-field>
-          <mat-form-field appearance="outline">
-            <mat-label>Acción</mat-label>
-            <input matInput formControlName="accion" maxlength="128" autocomplete="off" aria-label="Filtro acción" />
-          </mat-form-field>
-          <mat-form-field appearance="outline">
-            <mat-label>Desde</mat-label>
-            <input matInput [matDatepicker]="dp1" formControlName="desde" />
-            <mat-datepicker-toggle matSuffix [for]="dp1" />
-            <mat-datepicker #dp1 />
-          </mat-form-field>
-          <mat-form-field appearance="outline">
-            <mat-label>Hasta</mat-label>
-            <input matInput [matDatepicker]="dp2" formControlName="hasta" />
-            <mat-datepicker-toggle matSuffix [for]="dp2" />
-            <mat-datepicker #dp2 />
-          </mat-form-field>
-          <mat-form-field appearance="outline">
-            <mat-label>Dirección IP</mat-label>
-            <input matInput formControlName="ip" maxlength="64" autocomplete="off" aria-label="Filtro IP" />
-          </mat-form-field>
-          <div class="row-actions">
-            <button mat-flat-button color="primary" type="submit" [disabled]="loading()">
-              Consultar
-            </button>
-            <button mat-stroked-button type="button" (click)="exportarCsv()" [disabled]="csvBusy()">
-              Exportar CSV (máx. 500 filas)
-            </button>
-          </div>
-        </form>
+    <div class="page sisrh-page">
+      <nav class="crumbs sisrh-crumbs" aria-label="Ubicación">
+        <a mat-button routerLink="/">Inicio</a>
+        <span class="crumbs__sep" aria-hidden="true">/</span>
+        <span class="crumbs__group">Administración</span>
+        <span class="crumbs__sep" aria-hidden="true">/</span>
+        <span class="crumbs__here">Auditoría</span>
+      </nav>
 
-        @if (loading()) {
-          <div class="spin"><mat-progress-spinner mode="indeterminate" diameter="48" aria-label="Cargando auditoría" /></div>
-        } @else {
-          <div class="sisrh-table-scroll" role="region" aria-labelledby="titulo-audit-table" tabindex="0">
-            <span id="titulo-audit-table" class="sr-only">Tabla auditoría institucional</span>
-            <table mat-table class="tbl" [dataSource]="rows()">
-              <ng-container matColumnDef="fecha">
-                <th mat-header-cell *matHeaderCellDef scope="col">Fecha</th>
-                <td mat-cell *matCellDef="let row">{{ row.fecha }}</td>
-              </ng-container>
-              <ng-container matColumnDef="usuario">
-                <th mat-header-cell *matHeaderCellDef scope="col">Usuario</th>
-                <td mat-cell *matCellDef="let row">{{ row.usuario }}</td>
-              </ng-container>
-              <ng-container matColumnDef="accion">
-                <th mat-header-cell *matHeaderCellDef scope="col">Acción</th>
-                <td mat-cell *matCellDef="let row">{{ row.accion }}</td>
-              </ng-container>
-              <ng-container matColumnDef="ip">
-                <th mat-header-cell *matHeaderCellDef scope="col">IP</th>
-                <td mat-cell *matCellDef="let row">{{ row.ip }}</td>
-              </ng-container>
-              <ng-container matColumnDef="estado">
-                <th mat-header-cell *matHeaderCellDef scope="col">Estado</th>
-                <td mat-cell *matCellDef="let row">{{ row.estado }}</td>
-              </ng-container>
-              <tr mat-header-row *matHeaderRowDef="cols"></tr>
-              <tr mat-row *matRowDef="let row; columns: cols"></tr>
-            </table>
-          </div>
+      <mat-card class="page-card sisrh-elevated">
+        <mat-card-header>
+          <mat-card-title>Consulta de auditoría</mat-card-title>
+          <mat-card-subtitle>Lectura consultiva (append-only en base de datos). Exportación CSV acotada.</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <form [formGroup]="filterForm" class="filters" (ngSubmit)="aplicarFiltros()" novalidate>
+            <mat-form-field appearance="outline">
+              <mat-label>Usuario</mat-label>
+              <input matInput formControlName="usuario" maxlength="128" autocomplete="off" aria-label="Filtro usuario" />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Acción</mat-label>
+              <input matInput formControlName="accion" maxlength="128" autocomplete="off" aria-label="Filtro acción" />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Desde</mat-label>
+              <input matInput [matDatepicker]="dp1" formControlName="desde" />
+              <mat-datepicker-toggle matSuffix [for]="dp1" />
+              <mat-datepicker #dp1 />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Hasta</mat-label>
+              <input matInput [matDatepicker]="dp2" formControlName="hasta" />
+              <mat-datepicker-toggle matSuffix [for]="dp2" />
+              <mat-datepicker #dp2 />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Dirección IP</mat-label>
+              <input matInput formControlName="ip" maxlength="64" autocomplete="off" aria-label="Filtro IP" />
+            </mat-form-field>
+            <div class="row-actions">
+              <button mat-flat-button color="primary" type="submit" [disabled]="loading()">
+                Consultar
+              </button>
+              <button mat-stroked-button type="button" (click)="exportarCsv()" [disabled]="csvBusy()">
+                Exportar CSV (máx. 500 filas)
+              </button>
+            </div>
+          </form>
 
-          <mat-paginator
-            [length]="total()"
-            [pageIndex]="pageIndex()"
-            [pageSize]="pageSize()"
-            [pageSizeOptions]="[10, 20, 50]"
-            (page)="onPage($event)"
-            showFirstLastButtons
-            aria-label="Paginador auditoría"
-          />
-        }
-      </mat-card-content>
-    </mat-card>
+          @if (!loading() && !loadError()) {
+            <span class="toolbar__count audit-count" role="status" aria-live="polite">
+              {{ total() }} registro{{ total() === 1 ? '' : 's' }}
+            </span>
+          }
+
+          @if (loading()) {
+            <div class="page-loading" aria-busy="true">
+              <mat-progress-spinner mode="indeterminate" diameter="48" aria-label="Cargando auditoría" />
+            </div>
+          } @else if (loadError()) {
+            <app-empty-state
+              variant="error"
+              icon="error_outline"
+              title="No se pudo cargar la información"
+              [description]="loadError()!"
+            >
+              <button mat-stroked-button type="button" (click)="reload()">Reintentar</button>
+            </app-empty-state>
+          } @else if (rows().length === 0) {
+            <app-empty-state
+              icon="history"
+              title="Sin registros de auditoría"
+              description="No hay eventos para los filtros indicados. Ajuste usuario, acción, fechas o IP y consulte de nuevo."
+            />
+          } @else {
+            <div class="sisrh-table-scroll" role="region" aria-labelledby="titulo-audit-table" tabindex="0">
+              <span id="titulo-audit-table" class="sr-only">Tabla auditoría institucional</span>
+              <table mat-table class="tbl" [dataSource]="rows()">
+                <ng-container matColumnDef="fecha">
+                  <th mat-header-cell *matHeaderCellDef scope="col">Fecha</th>
+                  <td mat-cell *matCellDef="let row">{{ row.fecha }}</td>
+                </ng-container>
+                <ng-container matColumnDef="usuario">
+                  <th mat-header-cell *matHeaderCellDef scope="col">Usuario</th>
+                  <td mat-cell *matCellDef="let row">{{ row.usuario }}</td>
+                </ng-container>
+                <ng-container matColumnDef="accion">
+                  <th mat-header-cell *matHeaderCellDef scope="col">Acción</th>
+                  <td mat-cell *matCellDef="let row">{{ row.accion }}</td>
+                </ng-container>
+                <ng-container matColumnDef="ip">
+                  <th mat-header-cell *matHeaderCellDef scope="col">IP</th>
+                  <td mat-cell *matCellDef="let row">{{ row.ip }}</td>
+                </ng-container>
+                <ng-container matColumnDef="estado">
+                  <th mat-header-cell *matHeaderCellDef scope="col">Estado</th>
+                  <td mat-cell *matCellDef="let row">
+                    @if (row.estado?.toUpperCase() === 'OK' || row.estado?.toUpperCase() === 'EXITO') {
+                      <span class="sisrh-badge sisrh-badge--success">{{ row.estado }}</span>
+                    } @else if (row.estado?.toUpperCase() === 'ERROR' || row.estado?.toUpperCase() === 'FALLO') {
+                      <span class="sisrh-badge sisrh-badge--danger">{{ row.estado }}</span>
+                    } @else {
+                      {{ row.estado }}
+                    }
+                  </td>
+                </ng-container>
+                <tr mat-header-row *matHeaderRowDef="cols"></tr>
+                <tr mat-row *matRowDef="let row; columns: cols"></tr>
+              </table>
+            </div>
+
+            <mat-paginator
+              [length]="total()"
+              [pageIndex]="pageIndex()"
+              [pageSize]="pageSize()"
+              [pageSizeOptions]="[10, 20, 50]"
+              (page)="onPage($event)"
+              showFirstLastButtons
+              aria-label="Paginador auditoría"
+            />
+          }
+        </mat-card-content>
+      </mat-card>
+    </div>
   `,
   styles: [
     `
-      .card {
-        margin: 1rem;
-      }
       .filters {
         display: flex;
         flex-wrap: wrap;
         gap: 0.75rem 1rem;
         align-items: center;
-        margin-bottom: 1rem;
+        margin-bottom: 0.75rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid var(--sisrh-border, #e2e8f0);
       }
       .row-actions {
         display: flex;
@@ -163,10 +209,9 @@ function formatDatePicker(d: Date | null): string {
         width: 100%;
         min-width: 640px;
       }
-      .spin {
-        display: flex;
-        justify-content: center;
-        padding: 2rem;
+      .audit-count {
+        display: block;
+        margin-bottom: 0.75rem;
       }
       .sr-only {
         position: absolute;
@@ -203,6 +248,7 @@ export class AdminAuditPageComponent {
   readonly pageIndex = signal(0);
   readonly pageSize = signal(20);
   readonly loading = signal(true);
+  readonly loadError = signal<string | null>(null);
   readonly csvBusy = signal(false);
 
   constructor() {
@@ -242,6 +288,7 @@ export class AdminAuditPageComponent {
 
   reload(): void {
     this.loading.set(true);
+    this.loadError.set(null);
     this.api.queryAuditoria(this.buildQuerySlice()).subscribe({
       next: (p) => {
         this.rows.set(p.content ?? []);
@@ -250,8 +297,10 @@ export class AdminAuditPageComponent {
       },
       error: (err: HttpErrorResponse) => {
         this.loading.set(false);
+        this.rows.set([]);
+        this.total.set(0);
         const raw = isErrorResponse(err.error) ? err.error.mensaje : null;
-        this.snack.open(this.errors.translateAdminApi(raw));
+        this.loadError.set(this.errors.translateAdminApi(raw));
       },
     });
   }

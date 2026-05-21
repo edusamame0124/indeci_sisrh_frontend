@@ -1,0 +1,88 @@
+<div class="page">
+  <nav class="crumbs" aria-label="Ubicación">
+    <a mat-button routerLink="/">Inicio</a>
+    <span class="crumbs__sep" aria-hidden="true">/</span>
+    <a mat-button routerLink="/planilla/movimientos">Movimientos</a>
+    <span class="crumbs__sep" aria-hidden="true">/</span>
+    <span class="crumbs__here">Resumen</span>
+  </nav>
+
+  @if (loading()) {
+    <div class="loading" aria-busy="true">
+      <mat-progress-spinner mode="indeterminate" diameter="48" aria-label="Cargando resumen" />
+    </div>
+  } @else {
+    <!-- Header empleado -->
+    <mat-card class="page-card sisrh-elevated header">
+      <mat-card-header>
+        <mat-card-title>Resumen de planilla — {{ periodo() }}</mat-card-title>
+        <mat-card-subtitle>
+          @if (persona() !== null) {
+            {{ persona()!.nombreCompleto }} — DNI {{ persona()!.dni }}
+          } @else {
+            Empleado #{{ empleadoId() }}
+          }
+        </mat-card-subtitle>
+      </mat-card-header>
+    </mat-card>
+
+    @if (resumen() === null) {
+      <p class="empty" role="status">
+        No hay resumen disponible para este empleado en este periodo.
+      </p>
+    } @else {
+      <!-- 3 MatCard con KPIs grandes -->
+      <div class="grid-resumen">
+        <mat-card class="page-card sisrh-elevated kpi kpi--ingresos">
+          <mat-card-content>
+            <div class="kpi__icon">
+              <mat-icon fontIcon="trending_up" aria-hidden="true" />
+            </div>
+            <span class="kpi__label">Total ingresos</span>
+            <span class="kpi__value">S/ {{ fmtMonto(resumen()!.totalIngresos) }}</span>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card class="page-card sisrh-elevated kpi kpi--descuentos">
+          <mat-card-content>
+            <div class="kpi__icon">
+              <mat-icon fontIcon="trending_down" aria-hidden="true" />
+            </div>
+            <span class="kpi__label">Total descuentos</span>
+            <span class="kpi__value">S/ {{ fmtMonto(resumen()!.totalDescuentos) }}</span>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card class="page-card sisrh-elevated kpi kpi--neto">
+          <mat-card-content>
+            <div class="kpi__icon">
+              <mat-icon fontIcon="payments" aria-hidden="true" />
+            </div>
+            <span class="kpi__label">Neto a pagar</span>
+            <span class="kpi__value">S/ {{ fmtMonto(resumen()!.netoPagar) }}</span>
+          </mat-card-content>
+        </mat-card>
+      </div>
+
+      <!-- Acciones secundarias -->
+      <div class="actions">
+        <a
+          mat-stroked-button
+          color="primary"
+          [routerLink]="['/planilla/detalle', empleadoId(), periodo()]"
+        >
+          <mat-icon fontIcon="receipt_long" aria-hidden="true" />
+          Ver detalle por concepto
+        </a>
+        <a
+          mat-stroked-button
+          color="primary"
+          [routerLink]="['/reportes/boleta', empleadoId(), periodo()]"
+        >
+          <mat-icon fontIcon="print" aria-hidden="true" />
+          Imprimir boleta de pago
+        </a>
+      </div>
+    }
+  }
+</div>

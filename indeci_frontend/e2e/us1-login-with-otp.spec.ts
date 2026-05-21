@@ -76,7 +76,7 @@ test.describe('US1 — Login normal con OTP', () => {
     await mockOtpConfirmSuccess(page);
 
     await page.goto('/auth/login');
-    await expect(page.getByRole('heading', { name: 'Inicia sesión' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Inicie sesión' })).toBeVisible();
 
     await page.getByLabel('Usuario').fill('jdoe');
     await page.getByLabel('Contraseña', { exact: true }).fill('Test123!');

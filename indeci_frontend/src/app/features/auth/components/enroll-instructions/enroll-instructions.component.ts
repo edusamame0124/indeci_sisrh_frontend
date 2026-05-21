@@ -19,7 +19,7 @@ import { MatIconModule } from '@angular/material/icon';
           <span class="step__num" aria-hidden="true">1</span>
           <div class="step__body">
             <p class="step__text">
-              Instala una aplicación autenticadora en tu equipo móvil.
+              Instale una aplicación autenticadora en su dispositivo móvil.
             </p>
             <ul class="app-pills" aria-label="Aplicaciones compatibles recomendadas">
               <li class="app-pill">
@@ -42,7 +42,7 @@ import { MatIconModule } from '@angular/material/icon';
           <span class="step__num" aria-hidden="true">2</span>
           <div class="step__body">
             <p class="step__text">
-              En la app, elige <strong>Agregar cuenta</strong> o el botón <strong>+</strong>.
+              En la aplicación, elija <strong>Agregar cuenta</strong> o el botón <strong>+</strong>.
             </p>
           </div>
         </li>
@@ -51,7 +51,7 @@ import { MatIconModule } from '@angular/material/icon';
           <span class="step__num" aria-hidden="true">3</span>
           <div class="step__body">
             <p class="step__text">
-              Escanea el <strong>código QR</strong> de esta pantalla con la cámara de la aplicación.
+              Escanee el <strong>código QR</strong> de esta pantalla con la cámara de la aplicación.
             </p>
           </div>
         </li>
@@ -60,8 +60,8 @@ import { MatIconModule } from '@angular/material/icon';
           <span class="step__num" aria-hidden="true">4</span>
           <div class="step__body">
             <p class="step__text">
-              La app mostrará un código de <strong>6 dígitos</strong> que se renueva aproximadamente
-              cada <strong>30 segundos</strong>.
+              La aplicación mostrará un código de <strong>6 dígitos</strong> que se renueva
+              aproximadamente cada <strong>30 segundos</strong>.
             </p>
           </div>
         </li>
@@ -70,7 +70,7 @@ import { MatIconModule } from '@angular/material/icon';
           <span class="step__num" aria-hidden="true">5</span>
           <div class="step__body">
             <p class="step__text">
-              Escribe el código actual en el campo de confirmación más abajo.
+              Escriba el código actual en el campo de confirmación más abajo.
             </p>
           </div>
         </li>

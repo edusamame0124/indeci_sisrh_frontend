@@ -25,7 +25,7 @@ test.describe('US4 — Refresh failure + returnUrl preservation', () => {
     await page.goto('/auth/login?returnUrl=%2Frrhh%2Fpersona');
 
     // El form de login debe estar presente
-    await expect(page.getByRole('heading', { name: 'Inicia sesión' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Inicie sesión' })).toBeVisible();
 
     // Validar que el queryParam returnUrl existe y se preserva
     expect(page.url()).toContain('returnUrl=%2Frrhh%2Fpersona');

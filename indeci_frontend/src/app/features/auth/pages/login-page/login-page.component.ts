@@ -31,15 +31,15 @@ import { LoginRequest } from '../../models/login.model';
   template: `
     <mat-card class="login-card" appearance="outlined">
       <header class="login-head">
-        <h1 class="login-head__title">Inicia sesión</h1>
-        <p class="login-head__sub">Ingresa tus credenciales institucionales</p>
+        <h1 class="login-head__title">Inicie sesión</h1>
+        <p class="login-head__sub">Ingrese sus credenciales institucionales</p>
       </header>
 
       <mat-card-content class="login-body">
         @switch (state().kind) {
           @case ('rate-limited') {
             <p role="alert" class="msg msg--info">
-              Demasiados intentos. Espera
+              Demasiados intentos. Espere
               <app-countdown
                 [seconds]="rateLimitSeconds()"
                 (complete)="onRateLimitExpired()"
@@ -87,12 +87,13 @@ import { LoginRequest } from '../../models/login.model';
         border-radius: 12px;
         overflow: hidden;
         background: #fff;
-        border-color: #e2e8f0 !important;
+        border-color: var(--sisrh-color-border, #e2e8f0) !important;
         box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
       }
       .login-head {
-        padding: 1.25rem 1.5rem 1rem;
-        border-bottom: 1px solid #e2e8f0;
+        padding: var(--sisrh-spacing-lg, 1.25rem) var(--sisrh-spacing-xl, 1.5rem)
+          var(--sisrh-spacing-md, 0.875rem);
+        border-bottom: 1px solid var(--sisrh-color-border, #e2e8f0);
         border-top: 3px solid var(--mat-sys-primary, #0d47a1);
         background: #fafbfc;
       }
@@ -100,21 +101,25 @@ import { LoginRequest } from '../../models/login.model';
         margin: 0;
         font-size: 1.125rem;
         font-weight: 600;
-        color: #0f172a;
+        color: var(--sisrh-color-primary, #0f172a);
         letter-spacing: -0.01em;
       }
       .login-head__sub {
         margin: 0.35rem 0 0;
         font-size: 0.875rem;
-        color: #64748b;
+        color: var(--sisrh-color-muted, #64748b);
         line-height: 1.45;
       }
       .login-body.mat-mdc-card-content {
-        padding: 1.375rem 1.5rem 1.5rem !important;
+        display: flex;
+        flex-direction: column;
+        gap: var(--sisrh-spacing-lg, 1.25rem);
+        padding: var(--sisrh-spacing-lg, 1.25rem) var(--sisrh-spacing-xl, 1.5rem)
+          var(--sisrh-spacing-xl, 1.5rem) !important;
       }
       .msg {
-        margin: 0 0 1rem;
-        padding: 0.75rem 0.875rem;
+        margin: 0;
+        padding: var(--sisrh-spacing-md, 0.875rem) var(--sisrh-spacing-md, 0.875rem);
         border-radius: 8px;
         font-size: 0.875rem;
         line-height: 1.45;
@@ -136,7 +141,7 @@ import { LoginRequest } from '../../models/login.model';
         justify-content: center;
         gap: 0.625rem;
         margin-top: 1rem;
-        color: #64748b;
+        color: var(--sisrh-color-muted, #64748b);
         font-size: 0.875rem;
       }
     `,
@@ -181,7 +186,7 @@ export class LoginPageComponent implements OnInit {
     if (errFlag === 'otp-limit-exceeded') {
       this.flow.setState({
         kind: 'error',
-        mensaje: 'Superaste los intentos permitidos. Inicia sesión nuevamente.',
+        mensaje: 'Superó los intentos permitidos. Inicie sesión nuevamente.',
       });
     }
   }
@@ -205,7 +210,7 @@ export class LoginPageComponent implements OnInit {
     if (err.status === 0) {
       this.flow.setState({
         kind: 'error',
-        mensaje: 'Sin conexión. Verifica tu red e intenta nuevamente.',
+        mensaje: 'Sin conexión. Verifique su red e intente nuevamente.',
       });
       return;
     }

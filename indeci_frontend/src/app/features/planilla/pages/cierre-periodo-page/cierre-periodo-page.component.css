@@ -1,0 +1,167 @@
+:host {
+  display: block;
+  font-family: var(--sisrh-font-sans, sans-serif);
+}
+
+.crumbs__sep {
+  color: var(--sisrh-text-soft);
+}
+
+.crumbs__here {
+  color: var(--sisrh-color-secondary);
+  font-weight: 600;
+}
+
+.page-card.sisrh-elevated {
+  margin-bottom: 1rem;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.grid-resumen {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+}
+
+@media (max-width: 720px) {
+  .grid-resumen {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.kpi {
+  display: flex;
+  flex-direction: column;
+  padding: 0.75rem 1rem;
+  background: var(--sisrh-surface-muted);
+  border-radius: var(--sisrh-radius-md);
+  border: 1px solid var(--sisrh-border);
+}
+
+.kpi__label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  color: var(--sisrh-text-muted);
+  letter-spacing: 0.04em;
+  margin-bottom: 0.25rem;
+}
+
+.kpi__value {
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: var(--sisrh-color-primary);
+}
+
+.kpi--neto {
+  background: var(--sisrh-badge-success-bg);
+  border-color: color-mix(in srgb, var(--sisrh-badge-success-fg) 35%, transparent);
+}
+
+.kpi--neto .kpi__value {
+  color: var(--sisrh-badge-success-fg);
+}
+
+.bloqueo {
+  border: 1px solid color-mix(in srgb, var(--sisrh-badge-danger-fg) 35%, transparent);
+  background: var(--sisrh-badge-danger-bg);
+}
+
+.bloqueo__title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--sisrh-badge-danger-fg);
+}
+
+.bloqueo__cta {
+  margin-top: 1rem;
+}
+
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.hitos {
+  margin: 0;
+  padding-left: 1.1rem;
+  color: var(--sisrh-color-secondary);
+  font-size: 0.875rem;
+}
+
+.gate {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--sisrh-surface-muted);
+}
+
+.gate:last-child {
+  border-bottom: 0;
+}
+
+.gate--ok mat-icon {
+  color: var(--sisrh-badge-success-fg);
+}
+
+.gate--fail mat-icon {
+  color: var(--sisrh-badge-danger-fg);
+}
+
+.gate__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.gate__title {
+  font-weight: 600;
+  color: var(--sisrh-color-secondary);
+}
+
+.gate__detail {
+  font-size: 0.85rem;
+  color: var(--sisrh-text-muted);
+}
+
+.gate__field {
+  width: 260px;
+  max-width: 100%;
+}
+
+.aviso mat-card-content,
+.cta-presup mat-card-content {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  color: var(--sisrh-color-secondary);
+}
+
+.aviso mat-icon {
+  color: var(--sisrh-badge-warning-fg);
+}
+
+.cta-presup mat-icon {
+  color: var(--sisrh-color-cta);
+}
+
+.cta-presup a {
+  margin-left: auto;
+}
+
+.ref-nota {
+  margin: 1rem 0 0;
+  font-size: 0.75rem;
+  color: var(--sisrh-text-soft);
+}

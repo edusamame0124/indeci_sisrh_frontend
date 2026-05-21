@@ -1,6 +1,7 @@
 // =====================================================
 // SISRH-INDECI — Estilos globales
 // Material 21 theming + paleta institucional INDECI
+// Tipografías (Lexend + Source Sans 3): ver index.html
 // =====================================================
 
 @use '@angular/material' as mat;
@@ -28,24 +29,61 @@ html {
       medium-weight: 600,
       bold-weight: 700,
     ),
-    density: 0,
+    density: -1,
   ));
 }
 
 // ----- Tokens de diseño base -----
 :root {
+  /* design-system/sisrh-indeci/MASTER.md — tipografía y color institucional */
   --sisrh-font-sans: 'Source Sans 3', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --sisrh-font-heading: 'Lexend', 'Source Sans 3', system-ui, sans-serif;
+  --sisrh-color-primary: #0f172a;
+  --sisrh-color-secondary: #334155;
+  --sisrh-color-cta: #0369a1;
+  --sisrh-color-background: #f8fafc;
+  --sisrh-color-text: #020617;
+  --sisrh-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --sisrh-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.08);
+  --sisrh-shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.08);
   --sisrh-color-success: #2e7d32;
   --sisrh-color-warning: #ef6c00;
   --sisrh-color-error: #c62828;
   --sisrh-spacing-xs: 0.25rem;
-  --sisrh-spacing-sm: 0.5rem;
-  --sisrh-spacing-md: 1rem;
-  --sisrh-spacing-lg: 1.5rem;
-  --sisrh-spacing-xl: 2rem;
+  --sisrh-spacing-sm: 0.4375rem;
+  --sisrh-spacing-md: 0.875rem;
+  --sisrh-spacing-lg: 1.25rem;
+  --sisrh-spacing-xl: 1.5rem;
+  --sisrh-density-page-x: 0.75rem;
+  --sisrh-density-page-y: 0.75rem;
   --sisrh-radius-sm: 4px;
   --sisrh-radius-md: 8px;
   --sisrh-radius-lg: 16px;
+
+  /* Texto secundario, bordes y shell (WCAG AA sobre fondos claros) */
+  --sisrh-color-muted: #64748b;
+  --sisrh-color-border: #e2e8f0;
+  --sisrh-color-border-strong: #cbd5e1;
+  --sisrh-toolbar-bg: #e2e8f0;
+  --sisrh-toolbar-fg: #0f172a;
+  --sisrh-toolbar-border: #cbd5e1;
+
+  /* Badges semánticos (skill §10.3) */
+  --sisrh-badge-success-bg: #e7f5ee;
+  --sisrh-badge-success-fg: #157347;
+  --sisrh-badge-warning-bg: #fff4db;
+  --sisrh-badge-warning-fg: #b7791f;
+  --sisrh-badge-danger-bg: #fdecec;
+  --sisrh-badge-danger-fg: #b42318;
+  --sisrh-badge-info-bg: #eaf2fb;
+  --sisrh-badge-info-fg: #2563a6;
+
+  /* Superficies operativas (Fase 4 — planilla / reportes / asistencia) */
+  --sisrh-surface: #ffffff;
+  --sisrh-surface-muted: #f8fafc;
+  --sisrh-border: var(--sisrh-color-border);
+  --sisrh-text-muted: var(--sisrh-color-muted);
+  --sisrh-text-soft: #94a3b8;
 }
 
 // ----- Reset mínimo -----
@@ -53,7 +91,327 @@ html, body {
   height: 100%;
   margin: 0;
   font-family: var(--sisrh-font-sans);
+  font-size: 14px;
+  line-height: 1.4;
   // WCAG 2.1 AA: contraste mínimo 4.5:1 — Material light theme cumple por defecto
+}
+
+/** Cifras alineadas (DNI, códigos) sin ocultar datos. */
+.sisrh-tabular {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+// ----- Accesibilidad: skip link (P0 — shell y futuras páginas full-viewport) -----
+.sisrh-skip-link {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1100;
+  padding: 0.75rem 1rem;
+  background: var(--sisrh-color-primary);
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: 0 0 var(--sisrh-radius-md) 0;
+  transform: translateY(-120%);
+  transition: transform 0.15s ease;
+}
+.sisrh-skip-link:focus {
+  transform: translateY(0);
+  outline: 3px solid var(--sisrh-color-cta);
+  outline-offset: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .sisrh-skip-link {
+    transition: none;
+  }
+}
+
+// ----- Page shell global (Fase 0 — migración gradual desde .page / .crumbs locales) -----
+.sisrh-page {
+  display: block;
+  max-width: 100%;
+}
+
+.sisrh-page-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sisrh-spacing-md);
+  margin-bottom: var(--sisrh-spacing-lg);
+
+  h1 {
+    margin: 0;
+    font-family: var(--sisrh-font-heading);
+    font-size: clamp(1.25rem, 2.5vw, 1.5rem);
+    font-weight: 700;
+    color: var(--sisrh-color-primary);
+    letter-spacing: -0.02em;
+    line-height: 1.25;
+  }
+
+  p {
+    margin: 0.25rem 0 0;
+    color: var(--sisrh-color-secondary);
+    font-size: 0.9375rem;
+    line-height: 1.4;
+  }
+}
+
+.sisrh-crumbs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.875rem;
+
+  &__sep {
+    color: #94a3b8;
+  }
+
+  &__group {
+    color: var(--sisrh-color-muted);
+  }
+
+  &__here {
+    font-weight: 600;
+    color: var(--sisrh-color-secondary);
+  }
+}
+
+.sisrh-empty {
+  margin: 0;
+  padding: 0.5rem 0;
+  color: var(--sisrh-color-muted);
+  font-size: 0.9375rem;
+  line-height: 1.45;
+
+  &--error {
+    color: var(--sisrh-color-error);
+  }
+}
+
+// ----- Page shell listado (Fase 2 — admin / catálogos CRUD) -----
+.page {
+  display: block;
+  padding: var(--sisrh-density-page-padding, 1rem);
+  font-family: var(--sisrh-font-sans, sans-serif);
+  max-width: 100%;
+}
+
+.crumbs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.875rem;
+
+  &__sep {
+    color: var(--sisrh-text-soft, #94a3b8);
+  }
+
+  &__group {
+    color: var(--sisrh-color-muted);
+  }
+
+  &__here {
+    font-weight: 600;
+    color: var(--sisrh-color-secondary);
+  }
+}
+
+.page-hint {
+  margin: 0 0 1rem;
+  font-size: 0.875rem;
+  color: var(--sisrh-color-secondary);
+  line-height: 1.45;
+}
+
+.sisrh-toolbar,
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.toolbar__search,
+.toolbar .filter {
+  flex: 1 1 240px;
+  max-width: 360px;
+  min-width: 200px;
+}
+
+.toolbar__count {
+  font-size: 0.85rem;
+  color: var(--sisrh-color-muted);
+  margin-left: auto;
+}
+
+.toolbar__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.page-loading,
+.loading {
+  display: flex;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.tbl {
+  width: 100%;
+}
+
+.empty.error {
+  color: var(--sisrh-color-error);
+}
+
+.sisrh-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 2rem 1rem;
+  gap: 0.35rem;
+}
+
+.sisrh-empty-state__icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  background: var(--sisrh-surface-muted, #f8fafc);
+  margin-bottom: 0.35rem;
+}
+
+.sisrh-empty-state__icon {
+  font-size: 1.75rem !important;
+  width: 1.75rem !important;
+  height: 1.75rem !important;
+  color: var(--sisrh-color-muted);
+}
+
+.sisrh-empty-state__title {
+  margin: 0;
+  font-family: var(--sisrh-font-heading);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--sisrh-color-secondary);
+  line-height: 1.35;
+}
+
+.sisrh-empty-state__desc {
+  margin: 0;
+  max-width: 28rem;
+  font-size: 0.9375rem;
+  color: var(--sisrh-color-muted);
+  line-height: 1.45;
+}
+
+.sisrh-empty-state__actions {
+  margin-top: 0.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+.sisrh-empty-state--error {
+  .sisrh-empty-state__icon-wrap {
+    background: var(--sisrh-badge-danger-bg, #fdecec);
+  }
+
+  .sisrh-empty-state__icon {
+    color: var(--sisrh-color-error);
+  }
+
+  .sisrh-empty-state__title {
+    color: var(--sisrh-color-error);
+  }
+}
+
+.form-section {
+  padding: 0.25rem 0 1rem;
+  border-bottom: 1px solid var(--sisrh-border, #e2e8f0);
+
+  &:last-of-type {
+    border-bottom: none;
+  }
+
+  h3 {
+    margin: 0 0 0.75rem;
+    font-family: var(--sisrh-font-heading);
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--sisrh-color-primary);
+  }
+}
+
+.card-footer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--sisrh-border, #e2e8f0);
+}
+
+.sisrh-badge--neutral {
+  background: var(--sisrh-surface-muted, #f1f5f9);
+  color: var(--sisrh-color-secondary);
+}
+
+.page-card.sisrh-elevated,
+.sisrh-card.sisrh-elevated {
+  box-shadow:
+    0 1px 2px rgb(15 23 42 / 6%),
+    0 6px 20px rgb(15 23 42 / 8%);
+  border-radius: 12px;
+}
+
+.sisrh-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.sisrh-badge--success {
+  background: var(--sisrh-badge-success-bg);
+  color: var(--sisrh-badge-success-fg);
+}
+
+.sisrh-badge--warning {
+  background: var(--sisrh-badge-warning-bg);
+  color: var(--sisrh-badge-warning-fg);
+}
+
+.sisrh-badge--danger {
+  background: var(--sisrh-badge-danger-bg);
+  color: var(--sisrh-badge-danger-fg);
+}
+
+.sisrh-badge--info {
+  background: var(--sisrh-badge-info-bg);
+  color: var(--sisrh-badge-info-fg);
 }
 
 // Material Symbols Outlined: variación compacta (opsz 20); ligaduras para fontIcon
@@ -119,7 +477,348 @@ mat-icon.material-symbols-outlined {
   overflow-x: auto;
   max-width: 100%;
   -webkit-overflow-scrolling: touch;
-  margin-bottom: 0.5rem;
+  margin-bottom: var(--sisrh-spacing-sm, 0.4375rem);
+
+  .mat-mdc-header-row {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: var(--sisrh-surface-muted);
+  }
+
+  .mat-mdc-row:nth-child(even) {
+    background: color-mix(in srgb, var(--sisrh-color-primary) 3%, #fff);
+  }
+
+  .mat-mdc-row:hover {
+    background: color-mix(in srgb, var(--sisrh-color-cta) 6%, #fff);
+  }
+}
+
+.sisrh-num,
+.num {
+  text-align: end;
+}
+
+/* Totales horizontales sobre tablas monetarias (Fase 4) */
+.sisrh-totales-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 1.5rem;
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  background: var(--sisrh-surface-muted);
+  border: 1px solid var(--sisrh-border);
+  border-radius: var(--sisrh-radius-md);
+}
+
+.sisrh-totales-bar__item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 6.5rem;
+}
+
+.sisrh-totales-bar__label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--sisrh-text-muted);
+}
+
+.sisrh-totales-bar__value {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--sisrh-color-primary);
+}
+
+/* Chips semáforo compartidos (planilla / reportes) */
+.sisrh-sem-chip,
+.sem-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border: 1px solid transparent;
+  line-height: 1.25;
+
+  mat-icon {
+    font-size: 1.1rem;
+    width: 1.1rem;
+    height: 1.1rem;
+  }
+}
+
+.sem-chip--ok,
+.sisrh-sem-chip--ok {
+  background: var(--sisrh-badge-success-bg);
+  border-color: color-mix(in srgb, var(--sisrh-badge-success-fg) 35%, transparent);
+  color: var(--sisrh-badge-success-fg);
+}
+
+.sem-chip--amar,
+.sisrh-sem-chip--warn {
+  background: var(--sisrh-badge-warning-bg);
+  border-color: color-mix(in srgb, var(--sisrh-badge-warning-fg) 35%, transparent);
+  color: var(--sisrh-badge-warning-fg);
+}
+
+.sem-chip--rojo,
+.sisrh-sem-chip--danger {
+  background: var(--sisrh-badge-danger-bg);
+  border-color: color-mix(in srgb, var(--sisrh-badge-danger-fg) 35%, transparent);
+  color: var(--sisrh-badge-danger-fg);
+}
+
+.sem-chip--neutro,
+.sisrh-sem-chip--neutral {
+  background: var(--sisrh-surface-muted);
+  border-color: var(--sisrh-color-border-strong);
+  color: var(--sisrh-color-secondary);
+}
+
+/* Banners de estado con texto + color (semáforo neto / presupuesto) */
+.sisrh-status-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.65rem 0.9rem;
+  margin-bottom: 1rem;
+  border-radius: var(--sisrh-radius-md);
+  border: 1px solid transparent;
+  font-size: 0.9rem;
+  line-height: 1.35;
+
+  mat-icon {
+    flex-shrink: 0;
+  }
+}
+
+.sisrh-status-banner--success,
+.semaforo--ok,
+.global:not(.global--rojo) {
+  background: var(--sisrh-badge-success-bg);
+  border-color: color-mix(in srgb, var(--sisrh-badge-success-fg) 35%, transparent);
+  color: var(--sisrh-badge-success-fg);
+}
+
+.sisrh-status-banner--danger,
+.semaforo--rojo,
+.global--rojo {
+  background: var(--sisrh-badge-danger-bg);
+  border-color: color-mix(in srgb, var(--sisrh-badge-danger-fg) 35%, transparent);
+  color: var(--sisrh-badge-danger-fg);
+}
+
+.sisrh-status-banner--neutral,
+.semaforo--neutro {
+  background: var(--sisrh-surface-muted);
+  border-color: var(--sisrh-color-border-strong);
+  color: var(--sisrh-color-secondary);
+}
+
+/* Zona de carga de archivo (asistencia CSV) */
+.sisrh-dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 1.25rem 1rem;
+  margin-bottom: 1rem;
+  border: 2px dashed var(--sisrh-border);
+  border-radius: var(--sisrh-radius-md);
+  background: var(--sisrh-surface-muted);
+  color: var(--sisrh-text-muted);
+  text-align: center;
+  transition: border-color 0.15s ease-out, background 0.15s ease-out;
+}
+
+.sisrh-dropzone--active {
+  border-color: var(--sisrh-color-cta);
+  background: color-mix(in srgb, var(--sisrh-color-cta) 8%, #fff);
+}
+
+.sisrh-dropzone__title {
+  margin: 0;
+  font-weight: 600;
+  color: var(--sisrh-color-secondary);
+}
+
+.sisrh-dropzone__hint {
+  margin: 0;
+  font-size: 0.8125rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sisrh-dropzone {
+    transition: none;
+  }
+}
+
+/* Skeleton tabular (delay visual en listados pesados) */
+.sisrh-skeleton-table {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.sisrh-skeleton-table__row {
+  height: 2.5rem;
+  border-radius: var(--sisrh-radius-sm);
+  background: linear-gradient(
+    90deg,
+    var(--sisrh-surface-muted) 0%,
+    color-mix(in srgb, var(--sisrh-color-border) 60%, #fff) 50%,
+    var(--sisrh-surface-muted) 100%
+  );
+  background-size: 200% 100%;
+  animation: sisrh-skeleton-shimmer 1.2s ease-in-out infinite;
+}
+
+@keyframes sisrh-skeleton-shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sisrh-skeleton-table__row {
+    animation: none;
+    background: var(--sisrh-surface-muted);
+  }
+}
+
+// ----- Modales institucionales (backdrop + panel; design-system MASTER) -----
+.cdk-overlay-backdrop.sisrh-modal-backdrop {
+  background-color: rgba(15, 23, 42, 0.55);
+}
+@media (prefers-reduced-motion: reduce) {
+  .cdk-overlay-backdrop.sisrh-modal-backdrop {
+    transition: opacity 1ms !important;
+  }
+}
+
+// Shell global: panelClass sisrh-dialog-shell (+ variantes --confirm | --form | --large)
+.sisrh-dialog-shell .mat-mdc-dialog-surface,
+.sisrh-persona-dialog-shell .mat-mdc-dialog-surface {
+  border-radius: var(--sisrh-radius-lg, 16px);
+  border: 1px solid var(--sisrh-color-border, #e2e8f0);
+  box-shadow: var(--sisrh-shadow-lg, 0 10px 15px rgba(0, 0, 0, 0.08));
+  overflow: hidden;
+  padding: 0;
+  background: #fff;
+}
+
+.sisrh-dialog-shell .mat-mdc-dialog-title,
+.sisrh-persona-dialog-shell .mat-mdc-dialog-title {
+  font-family: var(--sisrh-font-heading, 'Lexend', sans-serif);
+  font-size: 1.125rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--sisrh-color-text, #020617);
+  margin: 0;
+  padding: var(--mat-dialog-headline-padding, 16px 20px 12px);
+  background: var(--sisrh-toolbar-bg, #e2e8f0);
+  border-bottom: 1px solid var(--sisrh-color-border, #e2e8f0);
+}
+
+.sisrh-dialog-shell .mat-mdc-dialog-content,
+.sisrh-persona-dialog-shell .mat-mdc-dialog-content {
+  max-height: min(60vh, 520px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  line-height: 1.5;
+  color: var(--sisrh-color-text, #020617);
+}
+
+.sisrh-dialog-shell--large .mat-mdc-dialog-content,
+.sisrh-persona-dialog-shell .mat-mdc-dialog-content {
+  max-height: min(72vh, 640px);
+}
+
+// Formulario persona en modal: cabecera propia (no barra gris global de mat-dialog-title)
+.sisrh-dialog-shell--large .persona-dlg-header__title.mat-mdc-dialog-title {
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  border-bottom: none;
+}
+
+.sisrh-dialog-shell .mat-mdc-dialog-actions,
+.sisrh-persona-dialog-shell .mat-mdc-dialog-actions {
+  border-top: 1px solid var(--sisrh-color-border, #e2e8f0);
+  min-height: 52px;
+  padding: var(--mat-dialog-actions-padding, 12px 20px);
+  gap: 8px;
+}
+
+.sisrh-dialog-shell--confirm .mat-mdc-dialog-content {
+  max-height: none;
+  color: var(--sisrh-color-muted, #64748b);
+}
+
+// Confirm: cabecera con icono (componente interno)
+.sisrh-dialog-shell--confirm .sisrh-confirm-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px 20px 12px;
+  background: var(--sisrh-toolbar-bg, #e2e8f0);
+  border-bottom: 1px solid var(--sisrh-color-border, #e2e8f0);
+}
+
+.sisrh-dialog-shell--confirm .sisrh-confirm-header .mat-mdc-dialog-title,
+.sisrh-dialog-shell--confirm .mat-mdc-dialog-title.sisrh-confirm-title {
+  flex: 1;
+  padding: 0;
+  background: transparent;
+  border-bottom: none;
+  margin: 0;
+}
+
+.sisrh-dialog-shell--confirm .sisrh-confirm-close {
+  flex-shrink: 0;
+  margin: -4px -8px 0 0;
+}
+
+// Mobile bottom-sheet (modales form md y large)
+@media (max-width: 600px) {
+  .sisrh-dialog-shell--mobile-sheet.cdk-overlay-pane {
+    max-width: 100vw !important;
+    width: 100vw !important;
+  }
+
+  .sisrh-dialog-shell--mobile-sheet .mat-mdc-dialog-container {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .sisrh-dialog-shell--mobile-sheet .mat-mdc-dialog-surface {
+    width: 100vw;
+    max-width: 100vw;
+    max-height: 92vh;
+    border-radius: 16px 16px 0 0;
+    margin: 0;
+  }
+
+  .sisrh-dialog-shell--mobile-sheet .mat-mdc-dialog-content,
+  .sisrh-dialog-shell--large .mat-mdc-dialog-content,
+  .sisrh-persona-dialog-shell .mat-mdc-dialog-content {
+    max-height: calc(92vh - 140px);
+  }
+
+  .sisrh-dialog-shell .mat-mdc-dialog-actions .mat-mdc-button,
+  .sisrh-dialog-shell .mat-mdc-dialog-actions .mat-mdc-unelevated-button {
+    min-height: 44px;
+  }
 }
 
 // ----- Snackbar de éxito (FR-017, T072) -----
@@ -127,4 +826,66 @@ mat-icon.material-symbols-outlined {
   --mdc-snackbar-container-color: var(--sisrh-color-success);
   --mat-snack-bar-button-color: #fff;
   --mdc-snackbar-supporting-text-color: #fff;
+}
+
+// =====================================================
+// Density overrides Material 21 — escala 90%
+// Punto único de control: bajar paddings y heights de
+// componentes Material sin tocar cada componente.
+// (Material density: -1 ya aplicado en mat.theme arriba.)
+// =====================================================
+:root {
+  // Tablas: filas y cabecera 40px (vs ~48px default density -1)
+  --mat-table-row-item-container-height: 40px;
+  --mat-table-header-container-height: 40px;
+
+  // Botones: 34px (texto, outline, flat)
+  --mdc-text-button-container-height: 34px;
+  --mdc-outlined-button-container-height: 34px;
+  --mdc-filled-button-container-height: 34px;
+
+  // Icon buttons: 34px (con cursor 40px de touch target via padding interno)
+  --mdc-icon-button-state-layer-size: 34px;
+
+  // Form fields: alto interno 36px + vertical padding compacto
+  --mat-form-field-container-height: 40px;
+  --mat-form-field-container-vertical-padding: 8px;
+
+  // Listas (sidebar y otros mat-list)
+  --mat-list-list-item-one-line-container-height: 40px;
+  --mat-list-list-item-two-line-container-height: 56px;
+  --mat-list-list-item-leading-icon-size: 18px;
+  --mat-list-list-item-label-text-size: 13px;
+
+  // Dialogs (modales): padding 20px en lugar de 24px
+  --mat-dialog-content-padding: 20px;
+  --mat-dialog-with-actions-content-padding: 20px 20px 0 20px;
+  --mat-dialog-actions-padding: 12px 20px;
+  --mat-dialog-headline-padding: 16px 20px 12px;
+
+  // Cards: padding interno reducido
+  --mat-card-subtitle-text-size: 12.5px;
+
+  // Paginator: altura compacta
+  --mat-paginator-container-size: 44px;
+}
+
+// Tablas: tipografía compacta en filas (texto del cuerpo)
+.mat-mdc-table {
+  font-size: 13px;
+}
+.mat-mdc-header-row .mat-mdc-header-cell {
+  font-size: 12px;
+  letter-spacing: 0.03em;
+  font-weight: 600;
+}
+.mat-mdc-row .mat-mdc-cell,
+.mat-mdc-footer-row .mat-mdc-footer-cell {
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+
+// Formularios dentro de dialogs: layout compacto
+.mat-mdc-dialog-content {
+  font-size: 13.5px;
 }

@@ -1,0 +1,98 @@
+:host {
+  display: block;
+  padding: 1rem;
+  font-family: var(--sisrh-font-sans, sans-serif);
+}
+
+.page-card.sisrh-elevated {
+  box-shadow:
+    0 1px 2px rgb(15 23 42 / 6%),
+    0 6px 20px rgb(15 23 42 / 8%);
+  border-radius: 12px;
+}
+
+.crumbs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.875rem;
+}
+
+.crumbs__sep {
+  color: #94a3b8;
+}
+
+.crumbs__here {
+  color: #475569;
+  font-weight: 600;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.empty {
+  color: #64748b;
+  padding: 0.75rem 0;
+}
+
+.sel-empleado {
+  min-width: 280px;
+}
+
+.acciones-row {
+  margin-bottom: 0.75rem;
+}
+
+/* ——— Formulario ——— */
+.form-alta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: flex-start;
+  padding: 0.9rem;
+  margin-bottom: 1rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+}
+
+.f-num {
+  width: 140px;
+}
+
+.f-obs {
+  flex: 1;
+  min-width: 200px;
+}
+
+.form-alta__acciones {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  padding-top: 0.3rem;
+}
+
+/* ——— Tabla ——— */
+.sisrh-table-scroll {
+  overflow-x: auto;
+}
+
+.tbl {
+  width: 100%;
+}
+
+.num {
+  text-align: right;
+}
+
+/* ——— Nota de referencia ——— */
+.ref-nota {
+  margin: 1rem 0 0;
+  font-size: 0.75rem;
+  color: #94a3b8;
+}

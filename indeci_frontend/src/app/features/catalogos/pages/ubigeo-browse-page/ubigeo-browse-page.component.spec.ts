@@ -1,5 +1,6 @@
 import { describe, expect, it, beforeEach, afterEach } from 'vitest';
 import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -13,6 +14,7 @@ describe('UbigeoBrowsePageComponent', () => {
     TestBed.configureTestingModule({
       imports: [UbigeoBrowsePageComponent],
       providers: [
+        provideRouter([]),
         provideAnimationsAsync('noop'),
         provideHttpClient(),
         provideHttpClientTesting(),
@@ -25,7 +27,10 @@ describe('UbigeoBrowsePageComponent', () => {
     httpMock = TestBed.inject(HttpTestingController);
   });
 
-  afterEach(() => httpMock.verify());
+  afterEach(() => {
+    httpMock?.verify();
+    TestBed.resetTestingModule();
+  });
 
   function ubigeoRowsManyDistritos(): ReadonlyArray<{
     id: string;
@@ -82,7 +87,7 @@ describe('UbigeoBrowsePageComponent', () => {
       (b) => b.textContent?.trim() === 'LIMA',
     );
     expect(deptoBtn).toBeTruthy();
-    deptoBtn!.click();
+    (deptoBtn as HTMLElement).click();
     fixture.detectChanges();
 
     const provSection = host.querySelector('section[aria-labelledby="ubigeo-prov-title"]');
@@ -90,7 +95,7 @@ describe('UbigeoBrowsePageComponent', () => {
       (b) => b.textContent?.trim() === 'LIMA',
     );
     expect(provBtn).toBeTruthy();
-    provBtn!.click();
+    (provBtn as HTMLElement).click();
     fixture.detectChanges();
 
     expect(host.querySelector('.sisrh-table-scroll table.tbl')).toBeTruthy();

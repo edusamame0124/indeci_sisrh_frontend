@@ -70,4 +70,15 @@ describe('AdminUsersPageComponent — UI tabla', () => {
     expect(icon?.classList.contains('material-symbols-outlined')).toBe(true);
     expect(icon?.getAttribute('aria-hidden')).toBe('true');
   });
+
+  it('muestra empty-state de error cuando falla la carga', () => {
+    const fixture = TestBed.createComponent(AdminUsersPageComponent);
+    fixture.detectChanges();
+    const req = httpMock.expectOne((r) => r.url === '/api/admin/users');
+    req.flush({ estado: 'ERROR', mensaje: 'Fallo' }, { status: 500, statusText: 'Error' });
+    fixture.detectChanges();
+    const host = fixture.nativeElement as HTMLElement;
+    expect(host.querySelector('.sisrh-empty-state--error[role="alert"]')).toBeTruthy();
+    expect(host.textContent).toContain('Reintentar');
+  });
 });

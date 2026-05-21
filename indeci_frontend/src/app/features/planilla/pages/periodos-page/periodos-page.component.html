@@ -1,0 +1,90 @@
+<div class="page">
+  <nav class="crumbs" aria-label="Ubicación">
+    <a mat-button routerLink="/">Inicio</a>
+    <span class="crumbs__sep" aria-hidden="true">/</span>
+    <span class="crumbs__here">Periodos de planilla</span>
+  </nav>
+
+  <div class="actions">
+    <button mat-flat-button color="primary" type="button" (click)="abrirAlta()" aria-label="Nuevo periodo">
+      Nuevo periodo
+    </button>
+  </div>
+
+  <mat-card class="page-card sisrh-elevated">
+    <mat-card-header>
+      <mat-card-title>Periodos de planilla</mat-card-title>
+      <mat-card-subtitle>Apertura, cierre y eliminación de periodos contables</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      @if (loading()) {
+        <div class="loading" aria-busy="true">
+          <mat-progress-spinner mode="indeterminate" diameter="48" aria-label="Cargando periodos" />
+        </div>
+      } @else if (rows().length === 0) {
+        <p class="empty" role="status">Aún no hay periodos registrados. Crea el primero con el botón "Nuevo periodo".</p>
+      } @else {
+        <div class="sisrh-table-scroll">
+          <table mat-table [dataSource]="pagedRows()" class="tbl">
+            <ng-container matColumnDef="periodo">
+              <th mat-header-cell *matHeaderCellDef scope="col">Periodo</th>
+              <td mat-cell *matCellDef="let row" class="sisrh-tabular">{{ row.periodo }}</td>
+            </ng-container>
+            <ng-container matColumnDef="fechaInicio">
+              <th mat-header-cell *matHeaderCellDef scope="col">Inicio</th>
+              <td mat-cell *matCellDef="let row" class="sisrh-tabular">{{ row.fechaInicio || '—' }}</td>
+            </ng-container>
+            <ng-container matColumnDef="fechaFin">
+              <th mat-header-cell *matHeaderCellDef scope="col">Fin</th>
+              <td mat-cell *matCellDef="let row" class="sisrh-tabular">{{ row.fechaFin || '—' }}</td>
+            </ng-container>
+            <ng-container matColumnDef="estado">
+              <th mat-header-cell *matHeaderCellDef scope="col">Estado</th>
+              <td mat-cell *matCellDef="let row">
+                <app-periodo-estado-badge [estado]="row.estado" />
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="observacion">
+              <th mat-header-cell *matHeaderCellDef scope="col">Observación</th>
+              <td mat-cell *matCellDef="let row">{{ row.observacion || '—' }}</td>
+            </ng-container>
+            <ng-container matColumnDef="acciones">
+              <th mat-header-cell *matHeaderCellDef scope="col">Acciones</th>
+              <td mat-cell *matCellDef="let row">
+                <button
+                  mat-icon-button
+                  type="button"
+                  aria-label="Gestionar periodo"
+                  matTooltip="Gestionar ciclo de vida (revisión / aprobación / cierre)"
+                  (click)="gestionar(row)"
+                >
+                  <mat-icon fontIcon="manage_history" aria-hidden="true" />
+                </button>
+                <button
+                  mat-icon-button
+                  type="button"
+                  aria-label="Eliminar periodo"
+                  matTooltip="Eliminar"
+                  (click)="confirmEliminar(row)"
+                >
+                  <mat-icon fontIcon="delete_outline" aria-hidden="true" />
+                </button>
+              </td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="columns"></tr>
+            <tr mat-row *matRowDef="let row; columns: columns"></tr>
+          </table>
+        </div>
+        <mat-paginator
+          [length]="rows().length"
+          [pageIndex]="pageIndex()"
+          [pageSize]="pageSize()"
+          [pageSizeOptions]="pageSizeOptions"
+          (page)="onPage($event)"
+          showFirstLastButtons
+          aria-label="Paginador de periodos"
+        />
+      }
+    </mat-card-content>
+  </mat-card>
+</div>

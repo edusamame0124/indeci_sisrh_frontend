@@ -13,7 +13,6 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 
@@ -22,6 +21,7 @@ import { ErrorMessageService } from '../../../../core/services/error-message.ser
 import { ClientTelemetryService } from '../../../../core/services/client-telemetry.service';
 import type { AdminUserSummary } from '../../models/admin.models';
 import { isErrorResponse } from '../../../../core/models/error-response.model';
+import { EmptyStateComponent } from '../../../../shared/components/empty-state/empty-state.component';
 
 @Component({
   selector: 'app-admin-users-page',
@@ -37,124 +37,141 @@ import { isErrorResponse } from '../../../../core/models/error-response.model';
     MatFormFieldModule,
     MatInputModule,
     MatTooltipModule,
+    EmptyStateComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <mat-card class="card">
-      <mat-card-header>
-        <mat-card-title>Usuarios</mat-card-title>
-        <mat-card-subtitle>
-          Gestión institucional de cuentas (requiere servidor en ruta /api/admin)
-        </mat-card-subtitle>
-      </mat-card-header>
-      <mat-card-content>
-        <div class="toolbar">
-          <mat-form-field appearance="outline" class="q">
-            <mat-label>Búscar por usuario</mat-label>
-            <input
-              matInput
-              type="search"
-              [value]="filterQ()"
-              (input)="onQ($event)"
-              aria-label="Filtro búsqueda usuario"
+    <div class="page sisrh-page">
+      <nav class="crumbs sisrh-crumbs" aria-label="Ubicación">
+        <a mat-button routerLink="/">Inicio</a>
+        <span class="crumbs__sep" aria-hidden="true">/</span>
+        <span class="crumbs__group">Administración</span>
+        <span class="crumbs__sep" aria-hidden="true">/</span>
+        <span class="crumbs__here">Usuarios</span>
+      </nav>
+
+      <mat-card class="page-card sisrh-elevated">
+        <mat-card-header>
+          <mat-card-title>Usuarios</mat-card-title>
+          <mat-card-subtitle>
+            Gestión institucional de cuentas (requiere servidor en ruta /api/admin)
+          </mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="toolbar sisrh-toolbar">
+            <mat-form-field appearance="outline" class="toolbar__search">
+              <mat-label>Buscar por usuario</mat-label>
+              <input
+                matInput
+                type="search"
+                [value]="filterQ()"
+                (input)="onQ($event)"
+                aria-label="Filtro búsqueda usuario"
+              />
+              <mat-icon matSuffix fontIcon="search" aria-hidden="true" />
+            </mat-form-field>
+            <span class="toolbar__count" role="status" aria-live="polite">
+              {{ total() }} registro{{ total() === 1 ? '' : 's' }}
+            </span>
+            <div class="toolbar__actions">
+              <button mat-flat-button color="primary" type="button" routerLink="/admin/usuarios/nueva">
+                <mat-icon fontIcon="person_add" aria-hidden="true" />
+                Nuevo usuario
+              </button>
+            </div>
+          </div>
+
+          @if (loading()) {
+            <div class="page-loading" aria-busy="true">
+              <mat-progress-spinner mode="indeterminate" diameter="48" aria-label="Cargando usuarios" />
+            </div>
+          } @else if (loadError()) {
+            <app-empty-state
+              variant="error"
+              icon="error_outline"
+              title="No se pudo cargar la información"
+              [description]="loadError()!"
+            >
+              <button mat-stroked-button type="button" (click)="reload()">Reintentar</button>
+            </app-empty-state>
+          } @else if (total() === 0 && !filterQ().trim()) {
+            <app-empty-state
+              icon="group"
+              title="Sin usuarios registrados"
+              description="Aún no hay cuentas institucionales. Registre el primer usuario para comenzar."
+            >
+              <button mat-flat-button color="primary" type="button" routerLink="/admin/usuarios/nueva">
+                <mat-icon fontIcon="person_add" aria-hidden="true" />
+                Nuevo usuario
+              </button>
+            </app-empty-state>
+          } @else if (rows().length === 0) {
+            <app-empty-state
+              icon="search_off"
+              title="Sin coincidencias"
+              [description]="'No se encontraron usuarios para: ' + filterQ() + '. Revise el filtro e intente de nuevo.'"
             />
-          </mat-form-field>
-          <button mat-flat-button color="primary" type="button" routerLink="/admin/usuarios/nueva">
-            <mat-icon fontIcon="person_add" aria-hidden="true" />
-            Nuevo usuario
-          </button>
-        </div>
+          } @else {
+            <div class="sisrh-table-scroll">
+              <table mat-table class="tbl" [dataSource]="rows()">
+                <ng-container matColumnDef="username">
+                  <th mat-header-cell *matHeaderCellDef scope="col">Usuario</th>
+                  <td mat-cell *matCellDef="let row">{{ row.username }}</td>
+                </ng-container>
+                <ng-container matColumnDef="status">
+                  <th mat-header-cell *matHeaderCellDef scope="col">Estado</th>
+                  <td mat-cell *matCellDef="let row">
+                    @if (row.status?.toUpperCase() === 'ACTIVE') {
+                      <span class="sisrh-badge sisrh-badge--success">Activo</span>
+                    } @else if (row.status?.toUpperCase() === 'INACTIVE') {
+                      <span class="sisrh-badge sisrh-badge--neutral">Inactivo</span>
+                    } @else {
+                      {{ row.status }}
+                    }
+                  </td>
+                </ng-container>
+                <ng-container matColumnDef="acciones">
+                  <th mat-header-cell *matHeaderCellDef scope="col">Acciones</th>
+                  <td mat-cell *matCellDef="let row">
+                    <a
+                      mat-icon-button
+                      [routerLink]="['/admin/usuarios', row.id]"
+                      [attr.aria-label]="'Abrir ficha del usuario ' + row.username"
+                      [matTooltip]="'Ver y editar ' + row.username"
+                    >
+                      <mat-icon fontIcon="manage_accounts" aria-hidden="true" />
+                    </a>
+                  </td>
+                </ng-container>
+                <tr mat-header-row *matHeaderRowDef="columns"></tr>
+                <tr mat-row *matRowDef="let row; columns: columns"></tr>
+              </table>
+            </div>
 
-        @if (loading()) {
-          <div class="loading" aria-busy="true">
-            <mat-progress-spinner mode="indeterminate" diameter="48" aria-label="Cargando usuarios" />
-          </div>
-        } @else {
-          <div class="sisrh-table-scroll">
-            <table mat-table class="tbl" [dataSource]="rows()">
-            <ng-container matColumnDef="username">
-              <th mat-header-cell *matHeaderCellDef scope="col">Usuario</th>
-              <td mat-cell *matCellDef="let row">{{ row.username }}</td>
-            </ng-container>
-            <ng-container matColumnDef="status">
-              <th mat-header-cell *matHeaderCellDef scope="col">Estado</th>
-              <td mat-cell *matCellDef="let row">{{ row.status }}</td>
-            </ng-container>
-            <ng-container matColumnDef="acciones">
-              <th mat-header-cell *matHeaderCellDef scope="col">Acciones</th>
-              <td mat-cell *matCellDef="let row">
-                <a
-                  mat-icon-button
-                  [routerLink]="['/admin/usuarios', row.id]"
-                  [attr.aria-label]="'Abrir ficha del usuario ' + row.username"
-                  [matTooltip]="'Ver y editar ' + row.username"
-                >
-                  <mat-icon fontIcon="manage_accounts" aria-hidden="true" />
-                </a>
-              </td>
-            </ng-container>
-            <tr mat-header-row *matHeaderRowDef="columns"></tr>
-            <tr mat-row *matRowDef="let row; columns: columns"></tr>
-            </table>
-          </div>
-
-          @if (rows().length === 0) {
-            <p role="status" class="empty-hint">Sin resultados para la página seleccionada.</p>
+            <mat-paginator
+              [length]="total()"
+              [pageIndex]="pageIndex()"
+              [pageSize]="pageSize()"
+              [pageSizeOptions]="[10, 20, 50]"
+              (page)="onPage($event)"
+              showFirstLastButtons
+              aria-label="Paginador de usuarios"
+            />
           }
-
-          <mat-paginator
-            [length]="total()"
-            [pageIndex]="pageIndex()"
-            [pageSize]="pageSize()"
-            [pageSizeOptions]="[10, 20, 50]"
-            (page)="onPage($event)"
-            showFirstLastButtons
-            aria-label="Paginador de usuarios"
-          />
-        }
-      </mat-card-content>
-    </mat-card>
+        </mat-card-content>
+      </mat-card>
+    </div>
   `,
-  styles: [
-    `
-      .card {
-        margin: 1rem;
-      }
-      .toolbar {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 1rem;
-        align-items: center;
-        margin-bottom: 1rem;
-      }
-      .q {
-        flex: 1 1 220px;
-        min-width: 200px;
-      }
-      .tbl {
-        width: 100%;
-      }
-      .loading {
-        display: flex;
-        justify-content: center;
-        padding: 2rem;
-      }
-      .empty-hint {
-        margin: 1rem 0;
-        color: #64748b;
-      }
-    `,
-  ],
 })
 export class AdminUsersPageComponent {
   private readonly api = inject(AdminApiService);
   private readonly errors = inject(ErrorMessageService);
-  private readonly snack = inject(MatSnackBar);
   private readonly telemetry = inject(ClientTelemetryService);
 
   readonly columns = ['username', 'status', 'acciones'] as const;
   readonly rows = signal<readonly AdminUserSummary[]>([]);
   readonly loading = signal(true);
+  readonly loadError = signal<string | null>(null);
   readonly total = signal(0);
   readonly pageIndex = signal(0);
   readonly pageSize = signal(20);
@@ -185,6 +202,7 @@ export class AdminUsersPageComponent {
 
   reload(): void {
     this.loading.set(true);
+    this.loadError.set(null);
     this.telemetry.track('ADMIN_MODULE_UI', { extra: { action: 'USERS_PAGE_LOAD' } });
     const qRaw = this.filterQ().trim();
     this.api.listUsersPaged(this.pageIndex(), this.pageSize(), qRaw || undefined).subscribe({
@@ -199,11 +217,13 @@ export class AdminUsersPageComponent {
 
   private fail(err: HttpErrorResponse): void {
     this.loading.set(false);
+    this.rows.set([]);
+    this.total.set(0);
     this.telemetry.track('ADMIN_MODULE_UI', {
       extra: { action: 'USERS_PAGE_LOAD_FAIL', status: err.status },
       status: err.status,
     });
     const raw = isErrorResponse(err.error) ? err.error.mensaje : null;
-    this.snack.open(this.errors.translateAdminApi(raw));
+    this.loadError.set(this.errors.translateAdminApi(raw));
   }
 }

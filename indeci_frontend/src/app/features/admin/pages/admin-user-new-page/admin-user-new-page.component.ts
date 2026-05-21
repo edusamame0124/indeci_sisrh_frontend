@@ -26,55 +26,63 @@ import { isErrorResponse } from '../../../../core/models/error-response.model';
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <mat-card class="card">
-      <mat-card-header>
-        <mat-card-title>Nuevo usuario</mat-card-title>
-        <mat-card-subtitle>Alta inicial (credenciales según servidor y NEW_CLAVE)</mat-card-subtitle>
-      </mat-card-header>
-      <mat-card-content>
-        <form [formGroup]="form" class="frm" (ngSubmit)="guardar()" novalidate>
-          <mat-form-field appearance="outline" class="full">
-            <mat-label>Nombre de usuario institucional</mat-label>
-            <input matInput formControlName="username" maxlength="120" autocomplete="username" />
-            @if (form.controls.username.touched && form.controls.username.invalid) {
-              <mat-error>Usuario requerido (3–120 caracteres alfanuméricos institucional).</mat-error>
+    <div class="page sisrh-page">
+      <nav class="crumbs sisrh-crumbs" aria-label="Ubicación">
+        <a mat-button routerLink="/">Inicio</a>
+        <span class="crumbs__sep" aria-hidden="true">/</span>
+        <span class="crumbs__group">Administración</span>
+        <span class="crumbs__sep" aria-hidden="true">/</span>
+        <a mat-button routerLink="/admin/usuarios">Usuarios</a>
+        <span class="crumbs__sep" aria-hidden="true">/</span>
+        <span class="crumbs__here">Nuevo usuario</span>
+      </nav>
+
+      <mat-card class="page-card sisrh-elevated user-form-card">
+        <mat-card-header>
+          <mat-card-title>Nuevo usuario</mat-card-title>
+          <mat-card-subtitle>Alta inicial (credenciales según servidor y NEW_CLAVE)</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <form [formGroup]="form" class="frm" (ngSubmit)="guardar()" novalidate>
+            <section class="form-section" aria-labelledby="sec-datos-acceso">
+              <h3 id="sec-datos-acceso">Datos de acceso</h3>
+              <mat-form-field appearance="outline" class="full">
+                <mat-label>Nombre de usuario institucional</mat-label>
+                <input matInput formControlName="username" maxlength="120" autocomplete="username" />
+                @if (form.controls.username.touched && form.controls.username.invalid) {
+                  <mat-error>Usuario requerido (3–120 caracteres alfanuméricos institucional).</mat-error>
+                }
+              </mat-form-field>
+            </section>
+
+            @if (saving()) {
+              <p role="status" class="page-hint">Guardando…</p>
             }
-          </mat-form-field>
 
-          @if (saving()) {
-            <p role="status">Guardando…</p>
-          }
-
-          <div class="acts">
-            <a mat-button routerLink="/admin/usuarios" type="button">Cancelar</a>
-            <button mat-flat-button color="primary" type="submit" [disabled]="form.invalid || saving()">
-              Registrar
-            </button>
-          </div>
-        </form>
-      </mat-card-content>
-    </mat-card>
+            <div class="card-footer-actions">
+              <a mat-button routerLink="/admin/usuarios" type="button">Cancelar</a>
+              <button mat-flat-button color="primary" type="submit" [disabled]="form.invalid || saving()">
+                Registrar
+              </button>
+            </div>
+          </form>
+        </mat-card-content>
+      </mat-card>
+    </div>
   `,
   styles: [
     `
-      .card {
-        margin: 1rem;
+      .user-form-card {
         max-width: 520px;
       }
       .frm {
         display: flex;
         flex-direction: column;
-        gap: 1rem;
-        margin-top: 0.75rem;
+        gap: 0.5rem;
+        margin-top: 0.25rem;
       }
       .full {
         width: 100%;
-      }
-      .acts {
-        display: flex;
-        justify-content: flex-end;
-        gap: 0.75rem;
-        flex-wrap: wrap;
       }
     `,
   ],

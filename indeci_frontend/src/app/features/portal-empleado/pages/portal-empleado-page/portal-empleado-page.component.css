@@ -1,0 +1,111 @@
+:host {
+  display: block;
+  padding: 1rem;
+  font-family: var(--sisrh-font-sans, sans-serif);
+}
+
+.crumbs__sep {
+  color: var(--sisrh-text-soft);
+}
+
+.crumbs__here {
+  color: var(--sisrh-color-secondary);
+  font-weight: 600;
+}
+
+.sel-empleado {
+  min-width: 280px;
+}
+
+.portal-tabs-card {
+  margin-top: 1rem;
+}
+
+.portal-tabs {
+  margin-top: 0.25rem;
+}
+
+.boleta-actual {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  align-items: flex-start;
+  padding-top: 0.5rem;
+}
+
+.boleta-actual__neto {
+  display: flex;
+  flex-direction: column;
+}
+
+.boleta-actual__label {
+  font-size: 0.8rem;
+  color: var(--sisrh-text-muted);
+}
+
+.boleta-actual__valor {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--sisrh-color-primary);
+}
+
+.comparativo {
+  margin: 0;
+  color: var(--sisrh-color-secondary);
+}
+
+.delta-pos {
+  color: var(--sisrh-badge-success-fg);
+}
+
+.delta-neg {
+  color: var(--sisrh-badge-danger-fg);
+}
+
+.saldo-destacado {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin: 0.75rem 0 1rem;
+}
+
+.saldo-destacado__valor {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--sisrh-color-primary);
+}
+
+.saldo-destacado__label {
+  font-size: 0.85rem;
+  color: var(--sisrh-text-muted);
+}
+
+.contacto {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 1rem;
+  padding-top: 0.5rem;
+}
+
+.contacto__field {
+  min-width: 240px;
+}
+
+.contacto__nota {
+  margin: 0.25rem 0 0;
+  font-size: 0.8rem;
+  color: var(--sisrh-text-muted);
+}
+
+.ref-nota {
+  margin: 1rem 0 0;
+  font-size: 0.75rem;
+  color: var(--sisrh-text-soft);
+}
+
+@media (max-width: 600px) {
+  .portal-tabs ::ng-deep .mat-mdc-tab-labels {
+    flex-wrap: wrap;
+  }
+}

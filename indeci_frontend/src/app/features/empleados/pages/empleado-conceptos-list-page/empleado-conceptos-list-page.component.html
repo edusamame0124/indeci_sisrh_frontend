@@ -1,0 +1,126 @@
+<div class="page sisrh-page">
+  <nav class="crumbs sisrh-crumbs" aria-label="Ubicación">
+    <a mat-button routerLink="/">Inicio</a>
+    <span class="crumbs__sep" aria-hidden="true">/</span>
+    <a mat-button routerLink="/empleados/conceptos">Conceptos asignados</a>
+    <span class="crumbs__sep" aria-hidden="true">/</span>
+    <span class="crumbs__here">{{ persona()?.nombreCompleto ?? '…' }}</span>
+  </nav>
+
+  <div class="actions">
+    <a mat-button routerLink="/empleados/conceptos">Volver</a>
+    @if (empleadoId()) {
+      <button type="button" mat-flat-button color="primary" (click)="abrirAlta()" aria-label="Asignar concepto">
+        Asignar concepto
+      </button>
+    }
+  </div>
+
+  @if (empleadoId() && personaId() > 0 && !pageLoading()) {
+    <app-empleado-flow-warning-banner
+      [empleadoId]="empleadoId()!"
+      [personaId]="personaId()"
+      [currentStep]="5"
+    />
+  }
+
+  @if (pageLoading()) {
+    <div class="loading" aria-busy="true">
+      <mat-progress-spinner mode="indeterminate" diameter="48" aria-label="Cargando" />
+    </div>
+  } @else if (!empleadoId()) {
+    <mat-card class="page-card sisrh-elevated" role="alert">
+      <mat-card-content>
+        <p>
+          No hay registro de empleado vinculado a esta persona. No se pueden gestionar conceptos
+          asignados.
+        </p>
+      </mat-card-content>
+    </mat-card>
+  } @else {
+    <mat-card class="page-card sisrh-elevated">
+      <mat-card-header>
+        <mat-card-title>Conceptos asignados</mat-card-title>
+        <mat-card-subtitle>
+          {{ persona()?.nombreCompleto }} — DNI {{ persona()?.dni }}
+        </mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        @if (tableLoading()) {
+          <div class="loading" aria-busy="true">
+            <mat-progress-spinner
+              mode="indeterminate"
+              diameter="40"
+              aria-label="Cargando datos"
+            />
+          </div>
+        } @else if (rows().length === 0) {
+          <app-empty-state
+            icon="list_alt"
+            title="Sin conceptos asignados"
+            description="Este colaborador no tiene conceptos de planilla asignados."
+          />
+        } @else {
+          <div class="sisrh-table-scroll">
+            <table mat-table [dataSource]="pagedRows()" class="tbl">
+              <ng-container matColumnDef="concepto">
+                <th mat-header-cell *matHeaderCellDef scope="col">Concepto</th>
+                <td mat-cell *matCellDef="let row">{{ row.concepto }}</td>
+              </ng-container>
+              <ng-container matColumnDef="monto">
+                <th mat-header-cell *matHeaderCellDef scope="col">Monto</th>
+                <td mat-cell *matCellDef="let row" class="sisrh-tabular">{{ fmtMonto(row.monto) }}</td>
+              </ng-container>
+              <ng-container matColumnDef="porcentaje">
+                <th mat-header-cell *matHeaderCellDef scope="col">Porcentaje</th>
+                <td mat-cell *matCellDef="let row" class="sisrh-tabular">{{ fmtPct(row.porcentaje) }}</td>
+              </ng-container>
+              <ng-container matColumnDef="formula">
+                <th mat-header-cell *matHeaderCellDef scope="col">Fórmula</th>
+                <td mat-cell *matCellDef="let row">{{ fmtFormula(row.formula) }}</td>
+              </ng-container>
+              <ng-container matColumnDef="activo">
+                <th mat-header-cell *matHeaderCellDef scope="col">Activo</th>
+                <td mat-cell *matCellDef="let row">{{ fmtActivo(row.activo) }}</td>
+              </ng-container>
+              <ng-container matColumnDef="acciones">
+                <th mat-header-cell *matHeaderCellDef scope="col">Acciones</th>
+                <td mat-cell *matCellDef="let row">
+                  <button
+                    mat-icon-button
+                    type="button"
+                    aria-label="Editar concepto asignado"
+                    matTooltip="Editar"
+                    (click)="abrirEditar(row)"
+                  >
+                    <mat-icon fontIcon="edit" aria-hidden="true" />
+                  </button>
+                  <button
+                    mat-icon-button
+                    type="button"
+                    aria-label="Eliminar concepto asignado"
+                    matTooltip="Eliminar"
+                    (click)="confirmEliminar(row)"
+                  >
+                    <mat-icon fontIcon="delete_outline" aria-hidden="true" />
+                  </button>
+                </td>
+              </ng-container>
+              <tr mat-header-row *matHeaderRowDef="columns"></tr>
+              <tr mat-row *matRowDef="let row; columns: columns"></tr>
+            </table>
+          </div>
+          <mat-paginator
+            [length]="rows().length"
+            [pageIndex]="pageIndex()"
+            [pageSize]="pageSize()"
+            [pageSizeOptions]="pageSizeOptions"
+            (page)="onPage($event)"
+            showFirstLastButtons
+            aria-label="Paginador de conceptos asignados"
+          />
+        }
+      </mat-card-content>
+    </mat-card>
+  }
+</div>

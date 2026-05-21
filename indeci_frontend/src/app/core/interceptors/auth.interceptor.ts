@@ -16,7 +16,6 @@ import { TokenStorageService } from '../services/token-storage.service';
 
 interface RefreshResponseBody {
   token: string;
-  refreshToken: string;
   roles?: string[];
   permisos?: string[];
 }
@@ -26,6 +25,10 @@ interface RefreshResponseBody {
  *  (a) Inyecta `Authorization: Bearer <accessToken>` en peticiones que apuntan al backend.
  *  (b) Maneja 401 disparando refresh transparente con cola (FR-023, FR-024).
  *  (c) Si el refresh falla, ejecuta logout y redirige a /auth/login con returnUrl (FR-025, FR-026).
+ *
+ * Spec 013 / C4 — el refresh token vive en una cookie HttpOnly: la llamada a
+ * `/api/auth/refresh` va sin cuerpo y con `withCredentials`, el navegador
+ * adjunta la cookie automáticamente.
  *
  * Excluye explícitamente endpoints públicos: /api/auth/login y /api/auth/refresh.
  */
@@ -65,7 +68,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
       }
 
       // Primer 401: disparar refresh
-      return triggerRefresh(authedReq, auth, storage, queue, router, telemetry, http, next);
+      return triggerRefresh(authedReq, auth, queue, router, telemetry, http, next);
     }),
   );
 };
@@ -77,7 +80,6 @@ function retryWithToken(originalReq: HttpRequest<unknown>, token: string): HttpR
 function triggerRefresh(
   originalReq: HttpRequest<unknown>,
   auth: AuthService,
-  storage: TokenStorageService,
   queue: RefreshQueueService,
   router: Router,
   telemetry: ClientTelemetryService,
@@ -87,31 +89,27 @@ function triggerRefresh(
   queue.startRefresh();
   telemetry.track('REFRESH_TRIGGERED', { url: originalReq.url });
 
-  const refreshToken = storage.getRefresh();
-  if (!refreshToken) {
-    return logoutAndRedirect(originalReq, auth, queue, router, telemetry);
-  }
-
-  // Llamada manual al endpoint refresh usando HttpClient directo (NO pasa por interceptor)
-  // Nota: HttpClient.post es interceptado, pero el interceptor lo trata como public endpoint
-  // por estar en /api/auth/refresh, así que NO entrará en loop.
+  // Llamada manual al endpoint refresh usando HttpClient directo (NO pasa por
+  // el manejo de 401: el interceptor lo trata como endpoint público).
+  // El refresh token va en la cookie HttpOnly → cuerpo vacío + withCredentials.
   const refreshUrl = `${environment.apiUrl}/auth/refresh`;
-  return http.post<RefreshResponseBody>(refreshUrl, { refreshToken }).pipe(
-    switchMap((body) => {
-      if (!body || !body.token || !body.refreshToken) {
-        return logoutAndRedirect(originalReq, auth, queue, router, telemetry);
-      }
-      auth.setSession({
-        token: body.token,
-        refreshToken: body.refreshToken,
-        roles: body.roles ?? [],
-        permisos: body.permisos ?? [],
-      });
-      queue.completeRefresh(body.token);
-      return next(retryWithToken(originalReq, body.token));
-    }),
-    catchError(() => logoutAndRedirect(originalReq, auth, queue, router, telemetry)),
-  );
+  return http
+    .post<RefreshResponseBody>(refreshUrl, {}, { withCredentials: true })
+    .pipe(
+      switchMap((body) => {
+        if (!body || !body.token) {
+          return logoutAndRedirect(originalReq, auth, queue, router, telemetry);
+        }
+        auth.setSession({
+          token: body.token,
+          roles: body.roles ?? [],
+          permisos: body.permisos ?? [],
+        });
+        queue.completeRefresh(body.token);
+        return next(retryWithToken(originalReq, body.token));
+      }),
+      catchError(() => logoutAndRedirect(originalReq, auth, queue, router, telemetry)),
+    );
 }
 
 function logoutAndRedirect(

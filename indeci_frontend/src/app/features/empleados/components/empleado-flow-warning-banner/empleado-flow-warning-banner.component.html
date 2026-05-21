@@ -1,0 +1,22 @@
+@if (visible()) {
+  <aside class="banner" role="status" aria-live="polite">
+    <span class="banner__icon" aria-hidden="true">
+      <mat-icon fontIcon="info" />
+    </span>
+    <div class="banner__body">
+      <p class="banner__title">Este empleado aún no tiene {{ pendingStepLabel() }} registrado.</p>
+      <p class="banner__hint">
+        Complete el paso "{{ pendingStepLabel() }}" antes de continuar con esta acción.
+      </p>
+    </div>
+    <a
+      mat-stroked-button
+      color="primary"
+      [routerLink]="pendingStepRouterLink()"
+      class="banner__cta"
+      [attr.aria-label]="'Ir al paso ' + pendingStepLabel()"
+    >
+      Ir a {{ pendingStepLabel() }}
+    </a>
+  </aside>
+}

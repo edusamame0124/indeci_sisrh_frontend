@@ -1,0 +1,205 @@
+<div class="page">
+  <!-- Barra navegación (oculta en print) -->
+  <nav class="crumbs no-print" aria-label="Ubicación">
+    <a mat-button routerLink="/">Inicio</a>
+    <span class="crumbs__sep" aria-hidden="true">/</span>
+    <a mat-button routerLink="/planilla/movimientos">Movimientos</a>
+    <span class="crumbs__sep" aria-hidden="true">/</span>
+    <span class="crumbs__here">Boleta</span>
+  </nav>
+
+  <div class="actions no-print">
+    <a mat-button routerLink="/planilla/movimientos">Volver</a>
+    <button
+      mat-stroked-button
+      type="button"
+      (click)="imprimir()"
+      [disabled]="loading() || movimiento() === null"
+    >
+      <mat-icon fontIcon="print" aria-hidden="true" />
+      Imprimir
+    </button>
+    <button
+      mat-flat-button
+      color="primary"
+      type="button"
+      (click)="descargarPdf()"
+      [disabled]="loading() || movimiento() === null || descargando()"
+    >
+      <mat-icon fontIcon="picture_as_pdf" aria-hidden="true" />
+      {{ descargando() ? 'Generando…' : 'Descargar PDF' }}
+    </button>
+  </div>
+
+  @if (loading()) {
+    <div class="loading no-print" aria-busy="true">
+      <mat-progress-spinner mode="indeterminate" diameter="48" aria-label="Cargando boleta" />
+    </div>
+  } @else if (movimiento() === null) {
+    <p class="empty no-print" role="status">
+      No encontramos la planilla solicitada para este empleado y periodo.
+    </p>
+  } @else {
+    <!-- Hoja A4 imprimible -->
+    <article class="sheet" aria-label="Boleta de pago">
+      <!-- Encabezado institucional INDECI -->
+      <header class="sheet__header">
+        <div class="sheet__brand">
+          <h1 class="sheet__title">INSTITUTO NACIONAL DE DEFENSA CIVIL</h1>
+          <p class="sheet__subtitle">SISRH — Sistema Integrado de Recursos Humanos</p>
+        </div>
+        <div class="sheet__meta">
+          <p><strong>Boleta de Pago</strong></p>
+          <p>Periodo: <strong>{{ periodo() }}</strong></p>
+          <p>Emisión: {{ fmtFechaCorta(hoy) }}</p>
+        </div>
+      </header>
+
+      <!-- Datos del empleado (compacto) -->
+      <section class="sheet__section sheet__section--datos">
+        <div class="sheet__grid">
+          <div class="sheet__field">
+            <span class="sheet__label">Nombre completo</span>
+            <span class="sheet__value">{{ persona()?.nombreCompleto ?? '—' }}</span>
+          </div>
+          <div class="sheet__field">
+            <span class="sheet__label">DNI</span>
+            <span class="sheet__value">{{ persona()?.dni ?? '—' }}</span>
+          </div>
+          <div class="sheet__field">
+            <span class="sheet__label">Código interno</span>
+            <span class="sheet__value">{{ persona()?.codigoInterno || '—' }}</span>
+          </div>
+          <div class="sheet__field">
+            <span class="sheet__label">Estado</span>
+            <span class="sheet__value">{{ persona()?.estado ?? '—' }}</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Conceptos (ingresos | descuentos en paralelo) -->
+      <section class="sheet__section">
+        <div class="sheet__cols">
+          <!-- Columna ingresos -->
+          <div class="sheet__col">
+            <h3 class="sheet__col-title sheet__col-title--ingresos">Ingresos</h3>
+            @if (ingresos().length === 0) {
+              <p class="sheet__empty">Sin ingresos registrados.</p>
+            } @else {
+              <table class="sheet__table" aria-label="Ingresos">
+                <thead>
+                  <tr>
+                    <th scope="col">Concepto</th>
+                    <th scope="col" class="num">Monto</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (r of ingresos(); track r.id) {
+                    <tr>
+                      <td>{{ r.concepto }}</td>
+                      <td class="num">S/ {{ fmtMonto(r.monto) }}</td>
+                    </tr>
+                  }
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <td><strong>Total ingresos</strong></td>
+                    <td class="num"><strong>S/ {{ fmtMonto(movimiento()!.totalIngresos) }}</strong></td>
+                  </tr>
+                </tfoot>
+              </table>
+            }
+          </div>
+          <!-- Columna descuentos -->
+          <div class="sheet__col">
+            <h3 class="sheet__col-title sheet__col-title--descuentos">Descuentos</h3>
+            @if (descuentos().length === 0) {
+              <p class="sheet__empty">Sin descuentos registrados.</p>
+            } @else {
+              <table class="sheet__table" aria-label="Descuentos">
+                <thead>
+                  <tr>
+                    <th scope="col">Concepto</th>
+                    <th scope="col" class="num">Monto</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (r of descuentos(); track r.id) {
+                    <tr>
+                      <td>{{ r.concepto }}</td>
+                      <td class="num">S/ {{ fmtMonto(r.monto) }}</td>
+                    </tr>
+                  }
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <td><strong>Total descuentos</strong></td>
+                    <td class="num"><strong>S/ {{ fmtMonto(movimiento()!.totalDescuentos) }}</strong></td>
+                  </tr>
+                </tfoot>
+              </table>
+            }
+          </div>
+        </div>
+      </section>
+
+      <!-- Aportes empleador (ESSALUD / CUC — informativo, no descuenta al trabajador) -->
+      <section class="sheet__section sheet__section--aportes">
+        <h2 class="sheet__section-title sheet__section-title--aportes">
+          Aportes empleador (informativo)
+        </h2>
+        <p class="sheet__aportes-nota" role="note">
+          No descuenta al trabajador — costo para la entidad (ESSALUD / CUC).
+        </p>
+        @if (aportesEmpleador().length === 0) {
+          <p class="sheet__empty" role="status">Sin aportes empleador registrados en este periodo.</p>
+        } @else {
+          <table class="sheet__table sheet__table--aportes" aria-label="Aportes empleador">
+            <thead>
+              <tr>
+                <th scope="col">Concepto</th>
+                <th scope="col" class="num">Monto</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (r of aportesEmpleador(); track r.id) {
+                <tr>
+                  <td>{{ r.concepto }}</td>
+                  <td class="num">S/ {{ fmtMonto(r.monto) }}</td>
+                </tr>
+              }
+            </tbody>
+            <tfoot>
+              <tr>
+                <td><strong>Subtotal ESSALUD</strong></td>
+                <td class="num"><strong>S/ {{ fmtMonto(subtotalEssalud()) }}</strong></td>
+              </tr>
+            </tfoot>
+          </table>
+        }
+        <div class="sheet__cuc">
+          <span class="sheet__cuc-label">CUC estimado (neto + ESSALUD)</span>
+          <span class="sheet__cuc-value">S/ {{ fmtMonto(cucTotal()) }}</span>
+        </div>
+      </section>
+
+      <!-- Neto a pagar -->
+      <section class="sheet__neto">
+        <span class="sheet__neto-label">NETO A PAGAR</span>
+        <span class="sheet__neto-value">S/ {{ fmtMonto(movimiento()!.netoPagar) }}</span>
+      </section>
+
+      <!-- Pie con firma -->
+      <footer class="sheet__footer">
+        <div class="sheet__firma">
+          <div class="sheet__firma-linea"></div>
+          <p class="sheet__firma-texto">Firma del trabajador</p>
+        </div>
+        <div class="sheet__firma">
+          <div class="sheet__firma-linea"></div>
+          <p class="sheet__firma-texto">Visto bueno RRHH</p>
+        </div>
+      </footer>
+    </article>
+  }
+</div>

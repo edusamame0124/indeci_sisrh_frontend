@@ -325,7 +325,7 @@ export class OtpEnrollPageComponent implements OnInit {
     this.api.confirmOtp({ codigo }).subscribe({
       next: (response) => {
         this.confirmInProgress.set(false);
-        if (response.token && response.refreshToken) {
+        if (response.token) {
           this.auth.setSession(response);
           // FR-017: confirmar visualmente activación antes de navegar
           this.snackBar.open('Segundo factor activado correctamente', 'Cerrar', {

@@ -1,0 +1,270 @@
+<div class="page">
+  <nav class="crumbs" aria-label="Ubicación">
+    <a mat-button routerLink="/">Inicio</a>
+    <span class="crumbs__sep" aria-hidden="true">/</span>
+    <span class="crumbs__here">Carga de asistencia</span>
+  </nav>
+
+  <mat-card class="page-card sisrh-elevated">
+    <mat-card-header>
+      <mat-card-title>Carga de asistencia</mat-card-title>
+      <mat-card-subtitle>
+        Calendario mensual por empleado: tipo de día y minutos de tardanza.
+      </mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      @if (loading()) {
+        <div class="loading" aria-busy="true">
+          <mat-progress-spinner mode="indeterminate" diameter="48" aria-label="Cargando periodos" />
+        </div>
+      } @else if (periodos().length === 0) {
+        <p class="empty" role="status">
+          Aún no hay periodos registrados. Crea uno desde
+          <a mat-button routerLink="/planilla/periodos">Periodos</a>.
+        </p>
+      } @else {
+        <!-- Selectores período + empleado -->
+        <div class="selectores">
+          <mat-form-field appearance="outline" class="sel-periodo">
+            <mat-label>Periodo</mat-label>
+            <mat-select
+              [value]="periodoSeleccionado()"
+              (selectionChange)="onPeriodoChange($event.value)"
+              aria-label="Seleccionar periodo"
+            >
+              @for (p of periodos(); track p.id) {
+                <mat-option [value]="p.periodo">{{ p.periodo }} — {{ p.estado }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="sel-empleado">
+            <mat-label>Empleado</mat-label>
+            <mat-select
+              [value]="empleadoSeleccionado()"
+              (selectionChange)="onEmpleadoChange($event.value)"
+              [disabled]="cargandoEmpleados() || empleados().length === 0"
+              aria-label="Seleccionar empleado"
+            >
+              @for (e of empleados(); track e.empleadoId) {
+                <mat-option [value]="e.empleadoId">{{ e.nombre }} — DNI {{ e.dni }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        @if (!cargandoEmpleados() && empleados().length === 0) {
+          <p class="empty" role="status">
+            No hay empleados registrados. Regístralos desde
+            <a mat-button routerLink="/empleados/personas">Datos personales</a>.
+          </p>
+        }
+
+        @if (cargandoCalendario()) {
+          <div class="loading" aria-busy="true">
+            <mat-progress-spinner mode="indeterminate" diameter="40" aria-label="Cargando calendario" />
+          </div>
+        } @else if (calendarioListo()) {
+          <!-- Controles: remuneración base + import CSV -->
+          <div class="controles">
+            <mat-form-field appearance="outline" class="ctrl-remun">
+              <mat-label>Remuneración base (S/)</mat-label>
+              <input
+                matInput
+                type="number"
+                min="0"
+                step="0.01"
+                [ngModel]="remuneracionBase()"
+                (ngModelChange)="remuneracionBase.set($event)"
+                aria-label="Remuneración mensual base del descuento"
+              />
+              <mat-hint>Base del descuento — D.Leg. 276 Art. 24.</mat-hint>
+            </mat-form-field>
+          </div>
+
+          <div
+            class="sisrh-dropzone"
+            [class.sisrh-dropzone--active]="arrastrando()"
+            (dragover)="onDragOver($event)"
+            (dragleave)="onDragLeave($event)"
+            (drop)="onDrop($event)"
+            role="region"
+            aria-label="Zona de importación CSV"
+          >
+            <mat-icon fontIcon="upload_file" aria-hidden="true" />
+            <p class="sisrh-dropzone__title">Importar asistencia desde CSV</p>
+            <p class="sisrh-dropzone__hint">Arrastre un archivo o selecciónelo — formato: fecha,tipo,minutos</p>
+            <button
+              mat-stroked-button
+              type="button"
+              (click)="abrirSelectorCsv(csvInput)"
+              matTooltip="Importar fechas desde un CSV: fecha,tipo,minutos"
+            >
+              Seleccionar archivo
+            </button>
+            <input
+              #csvInput
+              type="file"
+              accept=".csv,text/csv"
+              hidden
+              (change)="onArchivoCsv($event)"
+            />
+          </div>
+
+          @if (resultadoImport(); as resultado) {
+            <div class="import-result" role="status">
+              <p class="import-result__resumen">
+                <strong>{{ resultado.aplicados }}</strong> día(s) actualizado(s).
+                @if (resultado.omitidos.length > 0) {
+                  <span>{{ resultado.omitidos.length }} fila(s) omitida(s).</span>
+                }
+              </p>
+              @if (resultado.omitidos.length > 0) {
+                <mat-expansion-panel class="import-result__panel">
+                  <mat-expansion-panel-header>
+                    <mat-panel-title>Ver filas omitidas</mat-panel-title>
+                    <mat-panel-description>{{ resultado.omitidos.length }} error(es)</mat-panel-description>
+                  </mat-expansion-panel-header>
+                  <ul class="import-result__lista">
+                    @for (fila of resultado.omitidos; track fila.linea) {
+                      <li>
+                        <span class="import-result__linea">Línea {{ fila.linea }}</span>
+                        — {{ fila.motivo }}
+                        <code class="import-result__codigo">{{ fila.contenido }}</code>
+                      </li>
+                    }
+                  </ul>
+                </mat-expansion-panel>
+              }
+            </div>
+          }
+
+          <!-- Resumen en tiempo real -->
+          <div class="resumen" role="status">
+            <div class="resumen-item">
+              <span class="resumen-item__valor">{{ resumen().diasLaborados }}</span>
+              <span class="resumen-item__label">Días laborados</span>
+            </div>
+            <div class="resumen-item">
+              <span class="resumen-item__valor">{{ resumen().diasFalta }}</span>
+              <span class="resumen-item__label">Faltas</span>
+            </div>
+            <div class="resumen-item">
+              <span class="resumen-item__valor">{{ resumen().totalMinTardanza }}</span>
+              <span class="resumen-item__label">Min. tardanza</span>
+            </div>
+            <div class="resumen-item resumen-item--desc">
+              <span class="resumen-item__valor sisrh-tabular">S/ {{ fmtMonto(resumen().descuentoTardanza) }}</span>
+              <span class="resumen-item__label">Descuento tardanza</span>
+            </div>
+            <div class="resumen-item resumen-item--desc">
+              <span class="resumen-item__valor sisrh-tabular">S/ {{ fmtMonto(resumen().descuentoFalta) }}</span>
+              <span class="resumen-item__label">Descuento falta</span>
+            </div>
+            <div class="resumen-item resumen-item--total">
+              <span class="resumen-item__valor sisrh-tabular">S/ {{ fmtMonto(resumen().totalDescuento) }}</span>
+              <span class="resumen-item__label">Descuento total</span>
+            </div>
+          </div>
+
+          <!-- Leyenda de colores -->
+          <div class="leyenda">
+            @for (t of tiposDia; track t) {
+              <span class="leyenda-item">
+                <span class="leyenda-dot {{ claseDia(t) }}" aria-hidden="true"></span>
+                {{ t }}
+              </span>
+            }
+          </div>
+
+          <!-- Calendario mensual -->
+          <div class="calendario">
+            <div class="cal-encabezado">
+              @for (d of diasSemana; track d) {
+                <span class="cal-encabezado__dia">{{ d }}</span>
+              }
+            </div>
+            @for (semana of semanas(); track $index) {
+              <div class="cal-semana">
+                @for (dia of semana; track $index) {
+                  @if (dia === null) {
+                    <span class="cal-celda cal-celda--vacia" aria-hidden="true"></span>
+                  } @else {
+                    <div class="cal-celda {{ claseDia(dia.tipoDia) }}">
+                      <button
+                        type="button"
+                        class="cal-celda__btn"
+                        (click)="cycleTipo(dia)"
+                        [matTooltip]="dia.dia + ' — ' + dia.tipoDia + ' (clic para cambiar)'"
+                        [attr.aria-label]="'Día ' + numeroDia(dia) + ', tipo ' + dia.tipoDia"
+                      >
+                        <span class="cal-celda__num">{{ numeroDia(dia) }}</span>
+                        <span class="cal-celda__tipo">{{ dia.tipoDia }}</span>
+                      </button>
+                      @if (dia.tipoDia === 'TARDANZA') {
+                        <input
+                          class="cal-celda__min"
+                          type="number"
+                          min="0"
+                          step="5"
+                          [value]="dia.minutosTardanza"
+                          (input)="onMinutos(dia, $any($event.target).value)"
+                          [attr.aria-label]="'Minutos de tardanza día ' + numeroDia(dia)"
+                          placeholder="min"
+                        />
+                      }
+                    </div>
+                  }
+                }
+              </div>
+            }
+          </div>
+
+          <!-- Observación + estado + guardar -->
+          <div class="acciones">
+            <mat-form-field appearance="outline" class="acc-obs">
+              <mat-label>Observación</mat-label>
+              <input
+                matInput
+                [ngModel]="observacion()"
+                (ngModelChange)="observacion.set($event)"
+                maxlength="500"
+                aria-label="Observación de la asistencia"
+              />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="acc-estado">
+              <mat-label>Estado</mat-label>
+              <mat-select
+                [value]="estadoAsistencia()"
+                (selectionChange)="estadoAsistencia.set($event.value)"
+                aria-label="Estado de la asistencia"
+              >
+                <mat-option value="BORRADOR">Borrador</mat-option>
+                <mat-option value="VALIDADA">Validada</mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <button
+              mat-flat-button
+              color="primary"
+              type="button"
+              [disabled]="guardando()"
+              (click)="guardar()"
+            >
+              <mat-icon fontIcon="save" aria-hidden="true" />
+              Guardar asistencia
+            </button>
+          </div>
+        }
+
+        <p class="ref-nota">
+          Base: SPEC §12.2 PANTALLA-02 — Carga de Asistencia · descuento por
+          tardanzas y faltas según D.Leg. 276 Art. 24 (REGLA 276-02:
+          descuento = (remuneración / 30 / 8 / 60) × minutos). El consumo de la
+          asistencia validada por el motor M05 se habilitará con el PASO 7.
+        </p>
+      }
+    </mat-card-content>
+  </mat-card>
+</div>

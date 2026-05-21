@@ -1,0 +1,136 @@
+<div class="page sisrh-page">
+  <nav class="crumbs sisrh-crumbs" aria-label="Ubicación">
+    <a mat-button routerLink="/">Inicio</a>
+    <span class="crumbs__sep" aria-hidden="true">/</span>
+    <a mat-button routerLink="/empleados/pension">Pensión</a>
+    <span class="crumbs__sep" aria-hidden="true">/</span>
+    <span class="crumbs__here">{{ persona()?.nombreCompleto ?? '…' }}</span>
+  </nav>
+
+  <div class="actions">
+    <a mat-button routerLink="/empleados/pension">Volver</a>
+    @if (canRegistrar()) {
+      <a
+        mat-flat-button
+        color="primary"
+        [routerLink]="['/empleados/pension/personas', personaId(), 'nueva']"
+      >
+        Registrar pensión
+      </a>
+    }
+  </div>
+
+  @if (pageLoading()) {
+    <div class="loading" aria-busy="true">
+      <mat-progress-spinner mode="indeterminate" diameter="48" aria-label="Cargando" />
+    </div>
+  } @else if (!empleadoId()) {
+    <mat-card class="page-card sisrh-elevated" role="alert">
+      <mat-card-content>
+        <p>
+          No hay registro de empleado vinculado a esta persona. No se puede gestionar pensión.
+        </p>
+      </mat-card-content>
+    </mat-card>
+  } @else {
+    <mat-card class="page-card sisrh-elevated">
+      <mat-card-header>
+        <mat-card-title>Pensión</mat-card-title>
+        <mat-card-subtitle>
+          {{ persona()?.nombreCompleto }} — DNI {{ persona()?.dni }}
+        </mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        @if (rows().length > 0) {
+          <p class="hint">
+            Este colaborador ya tiene una pensión activa (el sistema permite una a la vez). Para
+            reemplazarla, usa Editar.
+          </p>
+        }
+
+        @if (tableLoading()) {
+          <div class="loading" aria-busy="true">
+            <mat-progress-spinner
+              mode="indeterminate"
+              diameter="40"
+              aria-label="Cargando datos"
+            />
+          </div>
+        } @else if (tableLoadError()) {
+          <app-empty-state
+            variant="error"
+            icon="error_outline"
+            title="No se pudo cargar la información"
+            [description]="tableLoadError()!"
+          >
+            <button mat-stroked-button type="button" (click)="reloadTable()">Reintentar</button>
+          </app-empty-state>
+        } @else if (rows().length === 0) {
+          <app-empty-state
+            icon="savings"
+            title="Sin pensión registrada"
+            description="Este colaborador no tiene una pensión activa."
+          />
+        } @else {
+          <div class="sisrh-table-scroll">
+            <table mat-table [dataSource]="pagedRows()" class="tbl">
+              <ng-container matColumnDef="tipoRegimen">
+                <th mat-header-cell *matHeaderCellDef scope="col">Tipo</th>
+                <td mat-cell *matCellDef="let row">{{ row.tipoRegimen || '—' }}</td>
+              </ng-container>
+              <ng-container matColumnDef="regimen">
+                <th mat-header-cell *matHeaderCellDef scope="col">Régimen pensionario</th>
+                <td mat-cell *matCellDef="let row">{{ row.regimenPensionario || '—' }}</td>
+              </ng-container>
+              <ng-container matColumnDef="cuspp">
+                <th mat-header-cell *matHeaderCellDef scope="col">CUSPP</th>
+                <td mat-cell *matCellDef="let row" class="sisrh-tabular">{{ row.cuspp || '—' }}</td>
+              </ng-container>
+              <ng-container matColumnDef="comision">
+                <th mat-header-cell *matHeaderCellDef scope="col">Tipo comisión AFP</th>
+                <td mat-cell *matCellDef="let row">{{ row.tipoComisionAfp || '—' }}</td>
+              </ng-container>
+              <ng-container matColumnDef="aporte">
+                <th mat-header-cell *matHeaderCellDef scope="col">% Aporte</th>
+                <td mat-cell *matCellDef="let row" class="sisrh-tabular">{{ fmtPct(row.porcentajeAporte) }}</td>
+              </ng-container>
+              <ng-container matColumnDef="acciones">
+                <th mat-header-cell *matHeaderCellDef scope="col">Acciones</th>
+                <td mat-cell *matCellDef="let row">
+                  <a
+                    mat-icon-button
+                    [routerLink]="['/empleados/pension/personas', personaId(), 'editar', row.id]"
+                    aria-label="Editar pensión"
+                    matTooltip="Editar"
+                  >
+                    <mat-icon fontIcon="edit" aria-hidden="true" />
+                  </a>
+                  <button
+                    mat-icon-button
+                    type="button"
+                    aria-label="Desactivar pensión"
+                    matTooltip="Desactivar"
+                    (click)="confirmEliminar(row)"
+                  >
+                    <mat-icon fontIcon="delete_outline" aria-hidden="true" />
+                  </button>
+                </td>
+              </ng-container>
+              <tr mat-header-row *matHeaderRowDef="columns"></tr>
+              <tr mat-row *matRowDef="let row; columns: columns"></tr>
+            </table>
+          </div>
+          <mat-paginator
+            [length]="rows().length"
+            [pageIndex]="pageIndex()"
+            [pageSize]="pageSize()"
+            [pageSizeOptions]="pageSizeOptions"
+            (page)="onPage($event)"
+            showFirstLastButtons
+            aria-label="Paginador de pensiones"
+          />
+        }
+      </mat-card-content>
+    </mat-card>
+  }
+</div>

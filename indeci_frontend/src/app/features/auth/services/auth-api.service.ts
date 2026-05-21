@@ -4,13 +4,15 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { ChangePasswordRequest } from '../models/change-password.model';
 import { LoginRequest, LoginResponse } from '../models/login.model';
-import { LogoutRequest } from '../models/logout.model';
 import { OtpEnrollResponse, OtpRequest } from '../models/otp.model';
-import { RefreshRequest } from '../models/refresh.model';
 
 /**
  * Cliente HTTP de `/api/auth/*` del backend SISRH (incluye logout Spec 008).
  * Ver `specs/001-frontend-auth/contracts/auth-api.contract.md` para el contrato base.
+ *
+ * Spec 013 / C4 — el refresh token viaja en una cookie HttpOnly: las llamadas
+ * que la emiten o consumen (confirmOtp, refresh, logout) usan `withCredentials`
+ * y NO envían/reciben el token en el cuerpo JSON.
  */
 @Injectable({ providedIn: 'root' })
 export class AuthApiService {
@@ -27,9 +29,12 @@ export class AuthApiService {
     return this.http.post<OtpEnrollResponse>(`${this.base}/otp/enroll`, {});
   }
 
-  /** E3: Confirmar OTP. Sirve para enroll (primer código) y validación normal. */
+  /** E3: Confirmar OTP. Sirve para enroll (primer código) y validación normal.
+   * En éxito el backend emite la cookie HttpOnly del refresh token. */
   confirmOtp(req: OtpRequest): Observable<LoginResponse> {
-    return this.http.post<LoginResponse>(`${this.base}/otp/confirm`, req);
+    return this.http.post<LoginResponse>(`${this.base}/otp/confirm`, req, {
+      withCredentials: true,
+    });
   }
 
   /** E4: Cambiar clave forzado. Requiere Authorization Bearer cambio-clave. */
@@ -37,13 +42,16 @@ export class AuthApiService {
     return this.http.post<LoginResponse>(`${this.base}/cambiar-clave`, req);
   }
 
-  /** E5: Renovación de tokens con rotación. NO requiere Authorization (refresh va en body). */
-  refresh(req: RefreshRequest): Observable<LoginResponse> {
-    return this.http.post<LoginResponse>(`${this.base}/refresh`, req);
+  /** E5: Renovación de tokens con rotación. El refresh token va en la cookie
+   * HttpOnly (cuerpo vacío + withCredentials). No requiere Authorization. */
+  refresh(): Observable<LoginResponse> {
+    return this.http.post<LoginResponse>(`${this.base}/refresh`, {}, {
+      withCredentials: true,
+    });
   }
 
-  /** Revoca refresh token en servidor (Spec 008). No requiere Authorization. */
-  logout(req: LogoutRequest): Observable<void> {
-    return this.http.post<void>(`${this.base}/logout`, req);
+  /** Revoca el refresh token en el servidor y borra la cookie (Spec 008). */
+  logout(): Observable<void> {
+    return this.http.post<void>(`${this.base}/logout`, {}, { withCredentials: true });
   }
 }

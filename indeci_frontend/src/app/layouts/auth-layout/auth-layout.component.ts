@@ -13,7 +13,7 @@ import { RouterOutlet } from '@angular/router';
   template: `
     <main class="auth-layout">
       <header class="auth-layout__header">
-        <h1 class="auth-layout__brand">SISRH-INDECI</h1>
+        <p class="auth-layout__brand" aria-label="SISRH-INDECI">SISRH-INDECI</p>
         <p class="auth-layout__subtitle">Sistema Integrado de Recursos Humanos</p>
       </header>
       <section class="auth-layout__content">
@@ -45,10 +45,12 @@ import { RouterOutlet } from '@angular/router';
       }
       .auth-layout__brand {
         margin: 0;
-        color: #0f172a;
+        color: var(--sisrh-color-primary, #0f172a);
+        font-family: var(--sisrh-font-heading, 'Lexend', sans-serif);
         font-size: clamp(1.5rem, 4vw, 1.875rem);
         font-weight: 700;
         letter-spacing: -0.02em;
+        line-height: 1.2;
       }
       .auth-layout__brand::after {
         content: '';
@@ -61,7 +63,7 @@ import { RouterOutlet } from '@angular/router';
       }
       .auth-layout__subtitle {
         margin: 0.75rem 0 0;
-        color: #64748b;
+        color: var(--sisrh-color-muted, #64748b);
         font-size: 0.9375rem;
         font-weight: 400;
       }

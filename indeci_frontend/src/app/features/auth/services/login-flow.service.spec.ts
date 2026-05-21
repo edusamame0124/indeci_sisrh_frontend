@@ -91,7 +91,6 @@ describe('LoginFlowService', () => {
     });
     service.classifyAndRoute({
       token,
-      refreshToken: 'r',
       newPass: 'N',
       requiereOtp: false,
       requiereEnroll: false,
@@ -102,11 +101,11 @@ describe('LoginFlowService', () => {
     expect(service.state().kind).toBe('success');
   });
 
-  it('classifyAndRoute: respuesta inesperada → telemetría + error', () => {
+  it('classifyAndRoute: respuesta inesperada (sin token ni flags) → telemetría + error', () => {
     const telemetry = TestBed.inject(ClientTelemetryService);
     vi.spyOn(telemetry, 'track').mockImplementation(() => undefined);
     service.classifyAndRoute({
-      token: 't',
+      token: '',
       newPass: 'N',
       requiereOtp: false,
       requiereEnroll: false,

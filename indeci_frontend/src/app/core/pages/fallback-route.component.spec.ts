@@ -14,7 +14,7 @@ describe('FallbackRouteComponent', () => {
 
   it('navega a login con returnUrl cuando no está autenticado', async () => {
     const router = TestBed.inject(Router);
-    vi.spyOn(router, 'url', 'get').mockReturnValue('/rrhh/expedientes');
+    vi.spyOn(router, 'url', 'get').mockReturnValue('/empleados/expedientes');
     const navigateSpy = vi.spyOn(router, 'navigate').mockResolvedValue(true);
     const auth = TestBed.inject(AuthService);
     vi.spyOn(auth, 'isAuthenticated').mockReturnValue(false);
@@ -24,7 +24,7 @@ describe('FallbackRouteComponent', () => {
     await fixture.whenStable();
 
     expect(navigateSpy).toHaveBeenCalledWith(['/auth/login'], {
-      queryParams: { returnUrl: '/rrhh/expedientes' },
+      queryParams: { returnUrl: '/empleados/expedientes' },
     });
   });
 

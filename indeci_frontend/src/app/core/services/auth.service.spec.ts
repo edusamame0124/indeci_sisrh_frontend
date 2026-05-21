@@ -45,7 +45,6 @@ describe('AuthService (signals)', () => {
     });
     service.setSession({
       token,
-      refreshToken: 'r1',
       roles: [],
       permisos: [],
       requiereOtp: false,
@@ -69,7 +68,6 @@ describe('AuthService (signals)', () => {
     });
     service.setSession({
       token,
-      refreshToken: 'r',
       roles: [],
       permisos: [],
       requiereOtp: false,
@@ -104,7 +102,6 @@ describe('AuthService (signals)', () => {
     const token = makeJwt({ sub: 'x', otpValidado: true, newPassOk: true, exp: futureExp });
     service.setSession({
       token,
-      refreshToken: 'r',
       roles: [],
       permisos: [],
       requiereOtp: false,
@@ -112,7 +109,6 @@ describe('AuthService (signals)', () => {
     });
     service.clearSession();
     expect(service.accessToken()).toBeNull();
-    expect(service.refreshToken()).toBeNull();
     expect(service.isAuthenticated()).toBe(false);
   });
 
@@ -132,7 +128,6 @@ describe('AuthService (signals)', () => {
     });
     service.setSession({
       token,
-      refreshToken: 'r-tabs',
       roles: [],
       permisos: [],
       requiereOtp: false,
@@ -140,7 +135,6 @@ describe('AuthService (signals)', () => {
     });
 
     localStorage.removeItem(environment.tokenKey);
-    localStorage.removeItem(environment.refreshKey);
 
     window.dispatchEvent(
       new StorageEvent('storage', {
@@ -177,7 +171,6 @@ describe('AuthService (signals)', () => {
     });
     service.setSession({
       token,
-      refreshToken: 'r-keep',
       roles: [],
       permisos: [],
       requiereOtp: false,

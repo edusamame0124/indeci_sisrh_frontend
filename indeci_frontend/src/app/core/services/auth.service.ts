@@ -16,10 +16,9 @@ import { environment } from '../../../environments/environment';
  * Estado global de sesión expuesto vía signals.
  * Único punto de verdad sobre "está el usuario autenticado y con qué rol/permiso".
  *
- * CONSTITUTION-EXCEPTION: refreshToken en localStorage hasta migración a HttpOnly cookie.
- *   Justificación: Decisión MVP B aprobada en /speckit-clarify (sesión 2026-05-05).
- *   Migración planificada en spec posterior cuando backend exponga SetCookie.
- *   Revisión: Q3-2026.
+ * Spec 013 / C4 — el refresh token vive en una cookie HttpOnly gestionada por
+ * el backend; el cliente nunca lo ve ni lo almacena. Solo el access token se
+ * mantiene en localStorage (vía {@link TokenStorageService}).
  */
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -31,11 +30,9 @@ export class AuthService {
 
   // ============== Estado primitivo ==============
   private readonly _accessToken = signal<string | null>(null);
-  private readonly _refreshToken = signal<string | null>(null);
 
   // ============== Estado expuesto ==============
   readonly accessToken = this._accessToken.asReadonly();
-  readonly refreshToken = this._refreshToken.asReadonly();
 
   // ============== Estado derivado ==============
   readonly claims = computed<DecodedJwtClaims | null>(() => {
@@ -53,6 +50,12 @@ export class AuthService {
   readonly permisos = computed<ReadonlyArray<string>>(() => {
     const c = this.claims();
     return c && 'permisos' in c ? (c.permisos as ReadonlyArray<string>) : [];
+  });
+
+  /** Spec 011 / B2 — empleado vinculado a la cuenta (null si no tiene). */
+  readonly empleadoId = computed<number | null>(() => {
+    const c = this.claims();
+    return c && 'empleadoId' in c ? ((c.empleadoId as number | null) ?? null) : null;
   });
 
   readonly isExpired = computed<boolean>(() => {
@@ -80,31 +83,29 @@ export class AuthService {
     this.registerMultiTabStorageListener();
   }
 
-  /** Otra pestaña eliminó tokens: cerrar sesión local y navegar al login (F7 Phase 7). */
+  /** Otra pestaña eliminó el access token: cerrar sesión local y navegar al login (F7 Phase 7). */
   private registerMultiTabStorageListener(): void {
     if (!isPlatformBrowser(this.platformId)) return;
 
     const accessKey = environment.tokenKey;
-    const refreshKey = environment.refreshKey;
 
     window.addEventListener('storage', (ev: StorageEvent) => {
       if (ev.storageArea !== localStorage) return;
-      if (ev.key !== accessKey && ev.key !== refreshKey) return;
+      if (ev.key !== accessKey) return;
       if (ev.newValue !== null && ev.newValue !== '') return;
-      queueMicrotask(() => this.onPossibleRemoteStorageClear(accessKey, refreshKey));
+      queueMicrotask(() => this.onPossibleRemoteStorageClear(accessKey));
     });
   }
 
-  private onPossibleRemoteStorageClear(accessKey: string, refreshKey: string): void {
+  private onPossibleRemoteStorageClear(accessKey: string): void {
     let hasAny = false;
     try {
-      hasAny =
-        localStorage.getItem(accessKey) !== null || localStorage.getItem(refreshKey) !== null;
+      hasAny = localStorage.getItem(accessKey) !== null;
     } catch {
       return;
     }
     if (hasAny) return;
-    if (this._accessToken() === null && this._refreshToken() === null) return;
+    if (this._accessToken() === null) return;
 
     this.clearSession();
     this.telemetry.track('MULTI_TAB_LOGOUT', {
@@ -117,38 +118,25 @@ export class AuthService {
 
   /** Llamar al boot de la app para reconstruir signals desde localStorage. */
   hydrateFromStorage(): void {
-    const access = this.storage.getAccess();
-    const refresh = this.storage.getRefresh();
-    this._accessToken.set(access);
-    this._refreshToken.set(refresh);
+    this._accessToken.set(this.storage.getAccess());
   }
 
-  /** Sesión completa (tras OTP exitoso o refresh exitoso). */
+  /** Sesión completa (tras OTP exitoso o refresh exitoso). El refresh token
+   * lo gestiona el backend en su cookie HttpOnly — aquí solo el access token. */
   setSession(login: LoginResponse): void {
     this._accessToken.set(login.token);
     this.storage.setAccess(login.token);
-    if (login.refreshToken) {
-      this._refreshToken.set(login.refreshToken);
-      this.storage.setRefresh(login.refreshToken);
-    }
   }
 
-  /** Solo access token (token temporal o cambio-clave; sin refresh). */
+  /** Solo access token (token temporal o cambio-clave). */
   setTemporalToken(token: string): void {
     this._accessToken.set(token);
     this.storage.setAccess(token);
   }
 
-  /** Solo refresh token (caso raro: rotación sin cambiar access). */
-  setRefreshToken(token: string): void {
-    this._refreshToken.set(token);
-    this.storage.setRefresh(token);
-  }
-
-  /** Limpia toda la sesión local. NO llama backend (logout backend en spec posterior). */
+  /** Limpia la sesión local. La cookie de refresh la revoca el backend en `/logout`. */
   clearSession(): void {
     this._accessToken.set(null);
-    this._refreshToken.set(null);
     this.storage.clearAll();
   }
 

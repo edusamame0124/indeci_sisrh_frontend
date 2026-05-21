@@ -20,6 +20,7 @@ import { AdminApiService, type PermisoDeniedRow } from '../../services/admin-api
 import { ErrorMessageService } from '../../../../core/services/error-message.service';
 import { ClientTelemetryService } from '../../../../core/services/client-telemetry.service';
 import { isErrorResponse } from '../../../../core/models/error-response.model';
+import { sisrhConfirmDialogConfig } from '../../../../core/config/sisrh-dialog.config';
 import { ConfirmDialogComponent, type ConfirmDialogData } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
 import type { AdminPermisoRow, AdminRolRow } from '../../models/admin.models';
 
@@ -38,22 +39,35 @@ import type { AdminPermisoRow, AdminRolRow } from '../../models/admin.models';
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    @if (!userIdOk()) {
-      <mat-card class="card">
-        <mat-card-content><p role="alert">Identificador de usuario inválido.</p></mat-card-content>
-      </mat-card>
-    } @else if (loading()) {
-      <div class="spin" aria-busy="true">
-        <mat-progress-spinner mode="indeterminate" diameter="56" aria-label="Cargando usuario" />
-      </div>
-    } @else {
-      <mat-card class="card">
-        <mat-card-header>
-          <mat-card-title>Usuario {{ headline() }}</mat-card-title>
-          <mat-card-subtitle>Gestionar estado, roles, denegaciones y reinicio de clave institucional</mat-card-subtitle>
-        </mat-card-header>
-        <mat-card-content class="stack">
-          <section aria-labelledby="st-estado">
+    <div class="page sisrh-page">
+      @if (!userIdOk()) {
+        <mat-card class="page-card sisrh-elevated">
+          <mat-card-content>
+            <p class="empty error" role="alert">Identificador de usuario inválido.</p>
+          </mat-card-content>
+        </mat-card>
+      } @else if (loading()) {
+        <div class="page-loading" aria-busy="true">
+          <mat-progress-spinner mode="indeterminate" diameter="56" aria-label="Cargando usuario" />
+        </div>
+      } @else {
+        <nav class="crumbs sisrh-crumbs" aria-label="Ubicación">
+          <a mat-button routerLink="/">Inicio</a>
+          <span class="crumbs__sep" aria-hidden="true">/</span>
+          <span class="crumbs__group">Administración</span>
+          <span class="crumbs__sep" aria-hidden="true">/</span>
+          <a mat-button routerLink="/admin/usuarios">Usuarios</a>
+          <span class="crumbs__sep" aria-hidden="true">/</span>
+          <span class="crumbs__here">{{ headline() }}</span>
+        </nav>
+
+        <mat-card class="page-card sisrh-elevated">
+          <mat-card-header>
+            <mat-card-title>Usuario {{ headline() }}</mat-card-title>
+            <mat-card-subtitle>Gestionar estado, roles, denegaciones y reinicio de clave institucional</mat-card-subtitle>
+          </mat-card-header>
+          <mat-card-content class="stack">
+          <section class="form-section" aria-labelledby="st-estado">
             <h3 id="st-estado">Estado de cuenta</h3>
             <form [formGroup]="statusForm" class="inline" (ngSubmit)="guardarEstado()" novalidate>
               <mat-form-field appearance="outline">
@@ -69,8 +83,8 @@ import type { AdminPermisoRow, AdminRolRow } from '../../models/admin.models';
             </form>
           </section>
 
-          <section aria-labelledby="st-roles">
-            <h3 id="st-roles">Roles asignados</h3>
+          <section class="form-section" aria-labelledby="st-roles">
+            <h3 id="st-roles">Asignación de roles</h3>
             <form [formGroup]="rolesForm" class="stack" (ngSubmit)="guardarRoles()" novalidate>
               <mat-form-field appearance="outline">
                 <mat-label>Roles</mat-label>
@@ -88,9 +102,9 @@ import type { AdminPermisoRow, AdminRolRow } from '../../models/admin.models';
             </form>
           </section>
 
-          <section aria-labelledby="st-deny">
+          <section class="form-section" aria-labelledby="st-deny">
             <h3 id="st-deny">Denegaciones explícitas de permiso</h3>
-            <p class="hint">
+            <p class="page-hint">
               Lista anulaciones directas sobre el modelo UsuarioPermisoDeny según servidor.
             </p>
             <form [formGroup]="deniesForm" class="stack" (ngSubmit)="guardarDenegaciones()" novalidate>
@@ -110,9 +124,9 @@ import type { AdminPermisoRow, AdminRolRow } from '../../models/admin.models';
             </form>
           </section>
 
-          <section aria-labelledby="st-reset">
+          <section class="form-section" aria-labelledby="st-reset">
             <h3 id="st-reset">Reinicio institucional de clave</h3>
-            <p class="hint">
+            <p class="page-hint">
               No se muestra contraseña. Solo marca en servidor la obligación del usuario de definir nueva clave.
             </p>
             <button mat-stroked-button type="button" color="warn" (click)="abrirConfirmReset()" [disabled]="resetting()">
@@ -120,22 +134,20 @@ import type { AdminPermisoRow, AdminRolRow } from '../../models/admin.models';
             </button>
           </section>
 
-          <div class="footer-act">
+          <div class="card-footer-actions">
             <a mat-button routerLink="/admin/usuarios" type="button">Volver al listado</a>
           </div>
         </mat-card-content>
-      </mat-card>
-    }
+        </mat-card>
+      }
+    </div>
   `,
   styles: [
     `
-      .card {
-        margin: 1rem;
-      }
       .stack {
         display: flex;
         flex-direction: column;
-        gap: 1.25rem;
+        gap: 0.25rem;
         margin-top: 0.5rem;
       }
       .inline {
@@ -144,23 +156,9 @@ import type { AdminPermisoRow, AdminRolRow } from '../../models/admin.models';
         gap: 1rem;
         align-items: center;
       }
-      .hint {
-        color: #64748b;
-        font-size: 0.875rem;
-      }
       .acts {
         display: flex;
         justify-content: flex-start;
-      }
-      .footer-act {
-        margin-top: 1rem;
-        border-top: 1px solid #e2e8f0;
-        padding-top: 1rem;
-      }
-      .spin {
-        display: flex;
-        justify-content: center;
-        padding: 3rem;
       }
     `,
   ],
@@ -303,15 +301,17 @@ export class AdminUserEditPageComponent {
 
   abrirConfirmReset(): void {
     if (!this.userIdOk()) return;
-    const ref = this.dialogs.open(ConfirmDialogComponent, {
-      data: {
+    const ref = this.dialogs.open(
+      ConfirmDialogComponent,
+      sisrhConfirmDialogConfig({
         title: 'Reinicio de clave institucional',
         message:
           'Se marcará al usuario para cambiar contraseña al próximo acceso institucional. No se muestra ni copia ninguna contraseña en pantalla.',
         cancelLabel: 'Cancelar',
         confirmLabel: 'Confirmar marca',
-      } satisfies ConfirmDialogData,
-    });
+        severity: 'warning',
+      } satisfies ConfirmDialogData),
+    );
     ref.afterClosed().subscribe((ok) => {
       if (!ok || !this.userIdOk()) return;
       this.resetting.set(true);

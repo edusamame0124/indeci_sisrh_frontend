@@ -1,0 +1,18 @@
+.placeholder-card {
+  max-width: 640px;
+  margin: 2rem auto;
+  text-align: center;
+}
+
+.placeholder-card mat-icon {
+  font-size: 3rem;
+  width: 3rem;
+  height: 3rem;
+  color: var(--mat-sys-primary, #3f51b5);
+}
+
+.placeholder-card .ref {
+  margin-top: 1rem;
+  font-size: 0.75rem;
+  color: rgba(0, 0, 0, 0.6);
+}

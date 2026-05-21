@@ -1,0 +1,180 @@
+<div class="page">
+  <nav class="crumbs" aria-label="Ubicación">
+    <a mat-button routerLink="/">Inicio</a>
+    <span class="crumbs__sep" aria-hidden="true">/</span>
+    <span class="crumbs__here">Préstamos</span>
+  </nav>
+
+  <mat-card class="page-card sisrh-elevated">
+    <mat-card-header>
+      <mat-card-title>Préstamos del empleado</mat-card-title>
+      <mat-card-subtitle>
+        Registro de préstamos y de los pagos de cuotas.
+      </mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      @if (loading()) {
+        <div class="loading" aria-busy="true">
+          <mat-progress-spinner mode="indeterminate" diameter="48" aria-label="Cargando" />
+        </div>
+      } @else if (empleados().length === 0) {
+        <p class="empty" role="status">
+          No hay empleados registrados. Regístralos desde
+          <a mat-button routerLink="/empleados/personas">Datos personales</a>.
+        </p>
+      } @else {
+        <mat-form-field appearance="outline" class="sel-empleado">
+          <mat-label>Empleado</mat-label>
+          <mat-select
+            [value]="empleadoSeleccionado()"
+            (selectionChange)="onEmpleadoChange($event.value)"
+            aria-label="Seleccionar empleado"
+          >
+            @for (e of empleados(); track e.empleadoId) {
+              <mat-option [value]="e.empleadoId">{{ e.nombreCompleto }} — DNI {{ e.dni }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        @if (empleadoSeleccionado() !== null) {
+          @if (datosLoading()) {
+            <div class="loading" aria-busy="true">
+              <mat-progress-spinner mode="indeterminate" diameter="40" aria-label="Cargando préstamos" />
+            </div>
+          } @else {
+            <div class="acciones-row">
+              @if (!mostrarForm()) {
+                <button mat-flat-button color="primary" type="button" (click)="abrirForm()">
+                  <mat-icon fontIcon="add" aria-hidden="true" />
+                  Nuevo préstamo
+                </button>
+              }
+            </div>
+
+            @if (mostrarForm()) {
+              <div class="form-alta">
+                <mat-form-field appearance="outline" class="f-desc">
+                  <mat-label>Descripción</mat-label>
+                  <input
+                    matInput
+                    [ngModel]="fDescripcion()"
+                    (ngModelChange)="fDescripcion.set($event)"
+                    maxlength="200"
+                  />
+                </mat-form-field>
+                <mat-form-field appearance="outline" class="f-num">
+                  <mat-label>Monto total (S/)</mat-label>
+                  <input
+                    matInput
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    [ngModel]="fMontoTotal()"
+                    (ngModelChange)="fMontoTotal.set($event)"
+                  />
+                </mat-form-field>
+                <mat-form-field appearance="outline" class="f-num">
+                  <mat-label>N° de cuotas</mat-label>
+                  <input
+                    matInput
+                    type="number"
+                    min="1"
+                    [ngModel]="fNumeroCuotas()"
+                    (ngModelChange)="fNumeroCuotas.set($event)"
+                  />
+                </mat-form-field>
+                <mat-form-field appearance="outline" class="f-num">
+                  <mat-label>Cuota mensual (S/)</mat-label>
+                  <input
+                    matInput
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    [ngModel]="fCuotaMensual()"
+                    (ngModelChange)="fCuotaMensual.set($event)"
+                  />
+                </mat-form-field>
+                <div class="form-alta__acciones">
+                  <button mat-button type="button" (click)="cancelarForm()">Cancelar</button>
+                  <button
+                    mat-flat-button
+                    color="primary"
+                    type="button"
+                    [disabled]="guardando()"
+                    (click)="registrar()"
+                  >
+                    Guardar préstamo
+                  </button>
+                </div>
+              </div>
+            }
+
+            @if (prestamos().length === 0) {
+              <p class="empty" role="status">El empleado no tiene préstamos registrados.</p>
+            } @else {
+              <div class="sisrh-table-scroll">
+                <table mat-table [dataSource]="prestamos()" class="tbl">
+                  <ng-container matColumnDef="descripcion">
+                    <th mat-header-cell *matHeaderCellDef scope="col">Préstamo</th>
+                    <td mat-cell *matCellDef="let row">{{ row.descripcion }}</td>
+                  </ng-container>
+                  <ng-container matColumnDef="cuotas">
+                    <th mat-header-cell *matHeaderCellDef scope="col" class="num">Cuotas</th>
+                    <td mat-cell *matCellDef="let row" class="num sisrh-tabular">
+                      {{ row.cuotasPagadas }} / {{ row.numeroCuotas }}
+                    </td>
+                  </ng-container>
+                  <ng-container matColumnDef="cuotaMensual">
+                    <th mat-header-cell *matHeaderCellDef scope="col" class="num">Cuota</th>
+                    <td mat-cell *matCellDef="let row" class="num sisrh-tabular">
+                      S/ {{ fmtMonto(row.cuotaMensual) }}
+                    </td>
+                  </ng-container>
+                  <ng-container matColumnDef="saldo">
+                    <th mat-header-cell *matHeaderCellDef scope="col" class="num">Saldo</th>
+                    <td mat-cell *matCellDef="let row" class="num sisrh-tabular">
+                      <strong>S/ {{ fmtMonto(row.saldoPendiente) }}</strong>
+                    </td>
+                  </ng-container>
+                  <ng-container matColumnDef="estado">
+                    <th mat-header-cell *matHeaderCellDef scope="col">Estado</th>
+                    <td mat-cell *matCellDef="let row">
+                      <span class="estado estado--{{ row.estado === 'CANCELADO' ? 'ok' : 'act' }}">
+                        {{ row.estado }}
+                      </span>
+                    </td>
+                  </ng-container>
+                  <ng-container matColumnDef="acciones">
+                    <th mat-header-cell *matHeaderCellDef scope="col">Acciones</th>
+                    <td mat-cell *matCellDef="let row">
+                      @if (row.estado === 'ACTIVO') {
+                        <button
+                          mat-stroked-button
+                          type="button"
+                          (click)="registrarPago(row)"
+                          matTooltip="Registrar pago de una cuota"
+                        >
+                          Registrar pago
+                        </button>
+                      } @else {
+                        <span class="ok-text">Cancelado</span>
+                      }
+                    </td>
+                  </ng-container>
+                  <tr mat-header-row *matHeaderRowDef="columns"></tr>
+                  <tr mat-row *matRowDef="let row; columns: columns"></tr>
+                </table>
+              </div>
+            }
+          }
+        }
+
+        <p class="ref-nota">
+          Base: Spec 011 / B5 — mantenimiento de préstamos del empleado. El saldo
+          pendiente se deriva del monto total y las cuotas pagadas; al pagar la
+          última cuota el préstamo pasa a CANCELADO.
+        </p>
+      }
+    </mat-card-content>
+  </mat-card>
+</div>

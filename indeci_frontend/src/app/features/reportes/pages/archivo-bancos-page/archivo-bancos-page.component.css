@@ -1,0 +1,183 @@
+:host {
+  display: block;
+  padding: 1rem;
+  font-family: var(--sisrh-font-sans, sans-serif);
+}
+
+.page-card.sisrh-elevated {
+  box-shadow:
+    0 1px 2px rgb(15 23 42 / 6%),
+    0 6px 20px rgb(15 23 42 / 8%);
+  border-radius: 12px;
+}
+
+.crumbs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.875rem;
+}
+
+.crumbs__sep {
+  color: #94a3b8;
+}
+
+.crumbs__here {
+  color: #475569;
+  font-weight: 600;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.empty {
+  color: #64748b;
+  padding: 1rem 0;
+}
+
+/* ——— Toolbar ——— */
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.periodo-select {
+  min-width: 200px;
+}
+
+.toolbar__spacer {
+  flex: 1;
+}
+
+.resumen-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.chip--pend {
+  background: #fffbeb;
+  color: #b45309;
+}
+
+.chip--total {
+  background: #ecfdf5;
+  color: #065f46;
+}
+
+/* ——— Panel por banco ——— */
+.banco-panel {
+  margin-bottom: 0.5rem;
+}
+
+.banco-panel mat-panel-title {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 600;
+}
+
+.banco-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.masivo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.masivo__field {
+  width: 200px;
+}
+
+/* ——— Tabla de abonos ——— */
+.sisrh-table-scroll {
+  overflow-x: auto;
+}
+
+.detalle-tbl {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.detalle-tbl th,
+.detalle-tbl td {
+  padding: 0.4rem 0.6rem;
+  border-bottom: 1px solid #e2e8f0;
+  text-align: left;
+}
+
+.detalle-tbl th {
+  color: #64748b;
+  font-weight: 600;
+}
+
+.detalle-tbl th.num,
+.detalle-tbl td.num {
+  text-align: right;
+}
+
+.estado {
+  display: inline-block;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.estado--ok {
+  background: #ecfdf5;
+  color: #065f46;
+}
+
+.estado--pend {
+  background: #fffbeb;
+  color: #b45309;
+}
+
+.ticket-input {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.ticket-field {
+  width: 130px;
+  font: inherit;
+  font-size: 0.8rem;
+  padding: 0.2rem 0.4rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+}
+
+/* ——— Nota de referencia normativa ——— */
+.ref-nota {
+  margin: 1rem 0 0;
+  font-size: 0.75rem;
+  color: #94a3b8;
+}

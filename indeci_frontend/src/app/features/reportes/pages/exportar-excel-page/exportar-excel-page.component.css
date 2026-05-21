@@ -1,0 +1,77 @@
+:host {
+  display: block;
+  padding: 1rem;
+  font-family: var(--sisrh-font-sans, sans-serif);
+}
+
+.page-card.sisrh-elevated {
+  box-shadow:
+    0 1px 2px rgb(15 23 42 / 6%),
+    0 6px 20px rgb(15 23 42 / 8%);
+  border-radius: 12px;
+}
+
+.crumbs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.875rem;
+}
+
+.crumbs__sep {
+  color: #94a3b8;
+}
+
+.crumbs__here {
+  color: #475569;
+  font-weight: 600;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.empty {
+  color: #64748b;
+  padding: 0.75rem 0;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.periodo-select {
+  min-width: 220px;
+}
+
+.conteo {
+  margin: 0 0 0.5rem;
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+.sisrh-table-scroll {
+  overflow-x: auto;
+}
+
+.tbl {
+  width: 100%;
+}
+
+.num {
+  text-align: right;
+}
+
+.ref-nota {
+  margin: 1rem 0 0;
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
