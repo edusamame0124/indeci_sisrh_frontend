@@ -1,0 +1,34 @@
+:host {
+  display: block;
+  font-family: var(--sisrh-font-sans, sans-serif);
+}
+
+.crumbs__sep {
+  color: var(--sisrh-text-soft);
+}
+
+.crumbs__here {
+  color: var(--sisrh-color-secondary);
+  font-weight: 600;
+}
+
+.neg {
+  color: var(--sisrh-badge-danger-fg);
+  font-weight: 600;
+}
+
+.f-monto {
+  width: 130px;
+}
+
+.totales {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.ref-nota {
+  margin: 1rem 0 0;
+  font-size: 0.75rem;
+  color: var(--sisrh-text-soft);
+}

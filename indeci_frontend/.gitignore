@@ -1,0 +1,91 @@
+# See https://docs.github.com/get-started/getting-started-with-git/ignoring-files for more about ignoring files.
+
+# Compiled output
+/dist
+/tmp
+/out-tsc
+/bazel-out
+
+# Node
+/node_modules
+npm-debug.log
+yarn-error.log
+
+# IDEs and editors
+.idea/
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# Visual Studio Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/mcp.json
+.history/*
+
+# Miscellaneous
+/.angular/cache
+.sass-cache/
+/connect.lock
+/coverage
+/libpeerconnection.log
+testem.log
+/typings
+__screenshots__/
+
+# System files
+.DS_Store
+Thumbs.db
+
+# --- Extensiones de IA y Editores Modernos ---
+.claude/
+.cursorrules
+.specify/
+CLAUDE.md
+AGENTS.md
+RESUME.md
+specs/
+docs/
+
+
+# Entornos de desarrollo, IA y editores
+.cursor/
+.specify/
+.vscode/
+
+# Documentación de IA y archivos de planificación locales
+AGENTS.md
+CLAUDE.md
+CLAUDEx.md
+MANUAL_USUARIO_SISRH.md
+RESUME.md
+ROADMAP_ETAPA3.md
+SPEC_SISTEMA_PLANILLAS.md
+
+# Directorios de diseño y documentación interna
+design-system/
+docs/
+specs/
+
+# Datos temporales y archivos locales
+csv/
+plametxt/
+
+# Dependencias de Node
+node_modules/
+
+# --- Archivos de Sistema y Logs adicionales ---
+*.log
+.env
+.env.*
+!.env.example
+
+# --- Carpetas de otros proyectos (Evitar nidos) ---
+indeci_backend/
+backend/

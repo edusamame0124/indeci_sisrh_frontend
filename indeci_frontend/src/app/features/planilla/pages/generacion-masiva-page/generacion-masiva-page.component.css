@@ -1,0 +1,139 @@
+:host {
+  display: block;
+  padding: 1rem;
+  font-family: var(--sisrh-font-sans, sans-serif);
+}
+
+.page-card.sisrh-elevated {
+  box-shadow:
+    0 1px 2px rgb(15 23 42 / 6%),
+    0 6px 20px rgb(15 23 42 / 8%);
+  border-radius: 12px;
+}
+
+.crumbs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.875rem;
+}
+
+.crumbs__sep {
+  color: #94a3b8;
+}
+
+.crumbs__here {
+  color: #475569;
+  font-weight: 600;
+}
+
+.control-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.periodo-select {
+  min-width: 240px;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.empty {
+  color: #64748b;
+  padding: 1rem 0;
+}
+
+.progress {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: #eff6ff;
+  border-radius: 8px;
+  border: 1px solid #93c5fd;
+}
+
+.progress p {
+  margin: 0 0 0.75rem;
+  color: #1e40af;
+  font-weight: 500;
+}
+
+.resultado {
+  margin-top: 1.5rem;
+}
+
+.resultado__title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 0.5rem;
+  font-size: 1.1rem;
+  color: #065f46;
+}
+
+.resultado__resumen {
+  margin: 0 0 1rem;
+  color: #475569;
+}
+
+.tbl {
+  width: 100%;
+}
+
+.sisrh-table-scroll {
+  overflow-x: auto;
+}
+
+/* ——— Conteo exitosos / fallidos (Spec 011 / C2) ——— */
+.conteo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.conteo-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.3rem 0.8rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border: 1px solid transparent;
+}
+
+.conteo-chip--ok {
+  background: #ecfdf5;
+  border-color: #6ee7b7;
+  color: #065f46;
+}
+
+.conteo-chip--fail {
+  background: #fef2f2;
+  border-color: #fca5a5;
+  color: #991b1b;
+}
+
+.conteo-chip--cero {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #475569;
+}
+
+.conteo-chip--total {
+  background: #eff6ff;
+  border-color: #93c5fd;
+  color: #1e40af;
+}
+
+.tbl--fallidos {
+  margin-bottom: 1rem;
+}

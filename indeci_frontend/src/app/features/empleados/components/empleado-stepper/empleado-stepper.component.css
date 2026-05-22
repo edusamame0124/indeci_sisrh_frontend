@@ -1,0 +1,40 @@
+.empleado-stepper {
+  background: transparent;
+}
+
+:host ::ng-deep .empleado-stepper .mat-step-header[aria-selected='true'] .mat-step-icon-selected,
+:host ::ng-deep .empleado-stepper .mat-step-header[aria-selected='true'] .mat-step-icon-state-edit {
+  background-color: var(--sisrh-color-cta, #0369a1);
+  color: #fff;
+}
+
+:host ::ng-deep .empleado-stepper .mat-step-header[aria-selected='true'] .mat-step-label {
+  color: var(--sisrh-color-primary, #0f172a);
+  font-weight: 600;
+}
+
+.empleado-stepper__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.empleado-stepper__icon {
+  font-size: 1.125rem;
+  width: 1.125rem;
+  height: 1.125rem;
+  flex-shrink: 0;
+}
+
+/* Contenido por paso es solo contexto para lectores de pantalla */
+.empleado-stepper__sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

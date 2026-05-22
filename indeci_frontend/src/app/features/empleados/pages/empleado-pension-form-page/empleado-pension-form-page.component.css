@@ -1,0 +1,124 @@
+:host {
+  display: block;
+  padding: 1rem;
+  font-family: var(--sisrh-font-sans, sans-serif);
+}
+
+.page-card.sisrh-elevated {
+  box-shadow:
+    0 1px 2px rgb(15 23 42 / 6%),
+    0 6px 20px rgb(15 23 42 / 8%);
+  border-radius: 12px;
+  margin-top: 0.75rem;
+}
+
+.crumbs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.875rem;
+}
+
+.crumbs__sep {
+  color: #94a3b8;
+}
+
+.crumbs__here {
+  font-weight: 600;
+  color: #475569;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+@media (max-width: 720px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.full {
+  grid-column: 1 / -1;
+}
+
+.actions {
+  margin-top: 1rem;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  padding: 2rem;
+}
+
+/* Spec 013 / C1 — chip informativo para ONP. */
+.onp-info {
+  grid-column: 1 / -1;
+  padding: 0.625rem 0.75rem;
+  border-left: 3px solid #2563eb;
+  background: #eff6ff;
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+}
+
+.onp-info strong {
+  color: #1e3a8a;
+}
+
+/* Bloque "Tasas vigentes" — autocompletado del catálogo (AFP). */
+.tasas-block {
+  padding: 0.75rem 0.875rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.tasas-block__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.tasas-block__title {
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #334155;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.tasas-block .hint {
+  margin: 0 0 0.5rem;
+  font-size: 0.8125rem;
+  color: #64748b;
+}
+
+.tasas-block .warn {
+  margin: 0 0 0.5rem;
+  font-size: 0.8125rem;
+  color: #b45309;
+  background: #fffbeb;
+  border-left: 3px solid #f59e0b;
+  padding: 0.5rem 0.625rem;
+  border-radius: 4px;
+}
+
+.tasas-block .grid {
+  gap: 0.5rem 0.75rem;
+}
+
+/* CUSPP: visualmente en mayúsculas y monoespacio para que el operador note al
+   teclear que solo se aceptan A-Z y 0-9 (el component sanea en cada input). */
+.cuspp-input {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-family: var(--sisrh-font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+}

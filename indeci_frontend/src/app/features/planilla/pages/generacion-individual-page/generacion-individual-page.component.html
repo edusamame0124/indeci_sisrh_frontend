@@ -1,0 +1,139 @@
+<div class="page">
+  <nav class="crumbs" aria-label="Ubicación">
+    <a mat-button routerLink="/">Inicio</a>
+    <span class="crumbs__sep" aria-hidden="true">/</span>
+    <span class="crumbs__here">Generación individual</span>
+  </nav>
+
+  <mat-card class="page-card sisrh-elevated">
+    <mat-card-header>
+      <mat-card-title>Generación individual de planilla</mat-card-title>
+      <mat-card-subtitle>
+        Calcula la planilla de un empleado específico para un periodo abierto.
+      </mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      @if (loading()) {
+        <div class="loading" aria-busy="true">
+          <mat-progress-spinner mode="indeterminate" diameter="48" aria-label="Cargando datos" />
+        </div>
+      } @else if (periodosAbiertos().length === 0) {
+        <p class="empty" role="status">
+          No hay periodos ABIERTOS para generar. Abre o reabre un periodo desde
+          <a mat-button routerLink="/planilla/periodos">Periodos</a>.
+        </p>
+      } @else {
+        <div class="form-row">
+          <!-- Selector empleado (autocomplete) -->
+          <mat-form-field appearance="outline" class="empleado">
+            <mat-label>Empleado</mat-label>
+            <input
+              type="text"
+              matInput
+              [formControl]="empleadoSearchCtrl"
+              [matAutocomplete]="autoEmp"
+              placeholder="Buscar por nombre, DNI o código…"
+              aria-label="Buscar empleado"
+              [disabled]="fase() === 'generando'"
+            />
+            <mat-autocomplete
+              #autoEmp="matAutocomplete"
+              [displayWith]="displayPersona"
+              (optionSelected)="onEmpleadoSelected($event)"
+            >
+              @for (p of personasFiltradas(); track p.id) {
+                <mat-option [value]="p" [disabled]="!(p.empleadoId != null && p.empleadoId > 0)">
+                  {{ p.nombreCompleto }} — DNI {{ p.dni }}
+                  @if (!(p.empleadoId != null && p.empleadoId > 0)) {
+                    <span class="opt-warn">(sin empleado vinculado)</span>
+                  }
+                </mat-option>
+              }
+              @if (personasFiltradas().length === 0) {
+                <mat-option [value]="null" disabled>Sin resultados</mat-option>
+              }
+            </mat-autocomplete>
+          </mat-form-field>
+
+          <!-- Selector periodo -->
+          <mat-form-field appearance="outline" class="periodo">
+            <mat-label>Periodo (ABIERTO)</mat-label>
+            <mat-select
+              [value]="periodoSeleccionado()"
+              (selectionChange)="onPeriodoChange($event.value)"
+              [disabled]="fase() === 'generando'"
+              aria-label="Seleccionar periodo"
+            >
+              @for (p of periodosAbiertos(); track p.id) {
+                <mat-option [value]="p.periodo">{{ p.periodo }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        <!-- Estado seleccionado + botón -->
+        @if (empleadoSeleccionado() !== null) {
+          <div class="seleccion">
+            <mat-icon fontIcon="person" aria-hidden="true" />
+            <span class="seleccion__txt">
+              <strong>{{ empleadoSeleccionado()!.nombreCompleto }}</strong>
+              — DNI {{ empleadoSeleccionado()!.dni }}
+            </span>
+          </div>
+        }
+
+        <div class="actions">
+          <button
+            mat-flat-button
+            color="primary"
+            type="button"
+            [disabled]="!canGenerar()"
+            (click)="confirmarGeneracion()"
+          >
+            <mat-icon [fontIcon]="yaExistia() ? 'autorenew' : 'person_add'" aria-hidden="true" />
+            {{ yaExistia() ? 'Regenerar planilla' : 'Generar planilla' }}
+          </button>
+          @if (yaExistia() && fase() !== 'generando') {
+            <p class="ya-existe" role="status">
+              <mat-icon fontIcon="info" aria-hidden="true" />
+              Ya existe una planilla para este empleado y periodo. Al regenerar se
+              recalcula con los datos actuales y se reemplaza la anterior.
+            </p>
+          }
+        </div>
+
+        <!-- Progress -->
+        @if (fase() === 'generando') {
+          <div class="progress" role="status" aria-live="polite">
+            <p>Generando planilla para {{ empleadoSeleccionado()?.nombreCompleto }}…</p>
+            <mat-progress-bar mode="indeterminate" aria-label="Generación en curso" />
+          </div>
+        }
+
+        <!-- Card de resumen -->
+        @if (fase() === 'completado' && resumen() !== null) {
+          <div class="resumen">
+            <h3 class="resumen__title">
+              <mat-icon fontIcon="check_circle" aria-hidden="true" />
+              Planilla generada — {{ resumen()!.periodo }}
+            </h3>
+            <div class="resumen__grid">
+              <div class="kpi">
+                <span class="kpi__label">Total ingresos</span>
+                <span class="kpi__value">S/ {{ fmtMonto(resumen()!.totalIngresos) }}</span>
+              </div>
+              <div class="kpi">
+                <span class="kpi__label">Total descuentos</span>
+                <span class="kpi__value">S/ {{ fmtMonto(resumen()!.totalDescuentos) }}</span>
+              </div>
+              <div class="kpi kpi--neto">
+                <span class="kpi__label">Neto a pagar</span>
+                <span class="kpi__value">S/ {{ fmtMonto(resumen()!.netoPagar) }}</span>
+              </div>
+            </div>
+          </div>
+        }
+      }
+    </mat-card-content>
+  </mat-card>
+</div>

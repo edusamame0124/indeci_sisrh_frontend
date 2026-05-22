@@ -1,0 +1,292 @@
+<div class="page">
+  <nav class="crumbs" aria-label="Ubicación">
+    <a mat-button routerLink="/">Inicio</a>
+    <span class="crumbs__sep" aria-hidden="true">/</span>
+    <span class="crumbs__here">Portal del empleado</span>
+  </nav>
+
+  <mat-card class="page-card sisrh-elevated">
+    <mat-card-header>
+      <mat-card-title>Portal del empleado</mat-card-title>
+      <mat-card-subtitle>
+        Boleta, historial, saldos de vacaciones y préstamos, y datos de contacto.
+      </mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      @if (loading()) {
+        <div class="loading" aria-busy="true">
+          <mat-progress-spinner mode="indeterminate" diameter="48" aria-label="Cargando" />
+        </div>
+      } @else {
+        <mat-form-field appearance="outline" class="sel-empleado">
+          <mat-label>Empleado</mat-label>
+          <mat-select
+            [value]="empleadoSeleccionado()"
+            (selectionChange)="onEmpleadoChange($event.value)"
+            [disabled]="empleados().length === 0"
+            aria-label="Seleccionar empleado"
+          >
+            @for (e of empleados(); track e.empleadoId) {
+              <mat-option [value]="e.empleadoId">{{ e.nombreCompleto }} — DNI {{ e.dni }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        @if (empleados().length === 0) {
+          <app-empty-state
+            icon="person_off"
+            title="No hay empleados registrados"
+            description="Registre trabajadores desde Datos personales para habilitar el portal."
+          >
+            <a mat-stroked-button routerLink="/empleados/personas">Ir a Datos personales</a>
+          </app-empty-state>
+        }
+      }
+    </mat-card-content>
+  </mat-card>
+
+  @if (datosLoading()) {
+    <div class="loading" aria-busy="true">
+      <mat-progress-spinner mode="indeterminate" diameter="40" aria-label="Cargando datos" />
+    </div>
+  } @else if (datosListos()) {
+    <mat-card class="page-card sisrh-elevated portal-tabs-card">
+      <mat-card-content>
+        <mat-tab-group class="portal-tabs" animationDuration="150ms" dynamicHeight>
+          <mat-tab label="Mi boleta">
+            @if (ultimoMovimiento(); as ult) {
+              <div class="boleta-actual">
+                <div class="boleta-actual__neto">
+                  <span class="boleta-actual__label">Neto del período {{ ult.periodo }}</span>
+                  <span class="boleta-actual__valor sisrh-tabular">S/ {{ fmtMonto(ult.netoPagar) }}</span>
+                </div>
+                @if (deltaNeto(); as delta) {
+                  <p class="comparativo" role="status">
+                    @if (delta > 0) {
+                      Su neto subió <strong class="delta-pos sisrh-tabular">S/ {{ fmtMonto(delta) }}</strong>
+                      respecto al período anterior.
+                    } @else if (delta < 0) {
+                      Su neto bajó <strong class="delta-neg sisrh-tabular">S/ {{ fmtMonto(-delta) }}</strong>
+                      respecto al período anterior.
+                    } @else {
+                      Su neto se mantiene igual al período anterior.
+                    }
+                  </p>
+                }
+                <a
+                  mat-flat-button
+                  color="primary"
+                  [routerLink]="['/reportes/boleta', empleadoSeleccionado(), ult.periodo]"
+                >
+                  <mat-icon fontIcon="picture_as_pdf" aria-hidden="true" />
+                  Ver / descargar boleta
+                </a>
+              </div>
+            } @else {
+              <app-empty-state
+                icon="receipt_long"
+                title="Aún no tiene boletas generadas"
+                description="Cuando se procese su planilla, podrá consultar y descargar la boleta aquí."
+              />
+            }
+          </mat-tab>
+
+          <mat-tab label="Historial">
+            @if (historial().length === 0) {
+              <app-empty-state
+                icon="history"
+                title="Sin movimientos de planilla"
+                description="No registramos boletas anteriores para este empleado."
+              />
+            } @else {
+              <div class="sisrh-table-scroll">
+                <table mat-table [dataSource]="historial()" class="tbl">
+                  <ng-container matColumnDef="periodo">
+                    <th mat-header-cell *matHeaderCellDef scope="col">Periodo</th>
+                    <td mat-cell *matCellDef="let row">{{ row.periodo }}</td>
+                  </ng-container>
+                  <ng-container matColumnDef="ingresos">
+                    <th mat-header-cell *matHeaderCellDef scope="col" class="num">Ingresos</th>
+                    <td mat-cell *matCellDef="let row" class="num sisrh-tabular">
+                      S/ {{ fmtMonto(row.totalIngresos) }}
+                    </td>
+                  </ng-container>
+                  <ng-container matColumnDef="descuentos">
+                    <th mat-header-cell *matHeaderCellDef scope="col" class="num">Descuentos</th>
+                    <td mat-cell *matCellDef="let row" class="num sisrh-tabular">
+                      S/ {{ fmtMonto(row.totalDescuentos) }}
+                    </td>
+                  </ng-container>
+                  <ng-container matColumnDef="neto">
+                    <th mat-header-cell *matHeaderCellDef scope="col" class="num">Neto</th>
+                    <td mat-cell *matCellDef="let row" class="num sisrh-tabular">
+                      <strong>S/ {{ fmtMonto(row.netoPagar) }}</strong>
+                    </td>
+                  </ng-container>
+                  <ng-container matColumnDef="boleta">
+                    <th mat-header-cell *matHeaderCellDef scope="col">Boleta</th>
+                    <td mat-cell *matCellDef="let row">
+                      <a
+                        mat-icon-button
+                        [routerLink]="['/reportes/boleta', empleadoSeleccionado(), row.periodo]"
+                        aria-label="Ver boleta del período"
+                        matTooltip="Ver boleta"
+                      >
+                        <mat-icon fontIcon="open_in_new" aria-hidden="true" />
+                      </a>
+                    </td>
+                  </ng-container>
+                  <tr mat-header-row *matHeaderRowDef="columnasHistorial"></tr>
+                  <tr mat-row *matRowDef="let row; columns: columnasHistorial"></tr>
+                </table>
+              </div>
+            }
+          </mat-tab>
+
+          <mat-tab label="Vacaciones">
+            @if (saldoVacacionVigente(); as vac) {
+              <div class="saldo-destacado">
+                <span class="saldo-destacado__valor sisrh-tabular">{{ fmtMonto(vac.diasSaldo) }}</span>
+                <span class="saldo-destacado__label">días disponibles ({{ vac.anio }})</span>
+              </div>
+              <div class="sisrh-table-scroll">
+                <table mat-table [dataSource]="vacaciones()" class="tbl">
+                  <ng-container matColumnDef="anio">
+                    <th mat-header-cell *matHeaderCellDef scope="col">Año</th>
+                    <td mat-cell *matCellDef="let row">{{ row.anio }}</td>
+                  </ng-container>
+                  <ng-container matColumnDef="ganados">
+                    <th mat-header-cell *matHeaderCellDef scope="col" class="num">Ganados</th>
+                    <td mat-cell *matCellDef="let row" class="num sisrh-tabular">
+                      {{ fmtMonto(row.diasGanados) }}
+                    </td>
+                  </ng-container>
+                  <ng-container matColumnDef="gozados">
+                    <th mat-header-cell *matHeaderCellDef scope="col" class="num">Gozados</th>
+                    <td mat-cell *matCellDef="let row" class="num sisrh-tabular">
+                      {{ fmtMonto(row.diasGozados) }}
+                    </td>
+                  </ng-container>
+                  <ng-container matColumnDef="saldo">
+                    <th mat-header-cell *matHeaderCellDef scope="col" class="num">Saldo</th>
+                    <td mat-cell *matCellDef="let row" class="num sisrh-tabular">
+                      <strong>{{ fmtMonto(row.diasSaldo) }}</strong>
+                    </td>
+                  </ng-container>
+                  <tr mat-header-row *matHeaderRowDef="columnasVacaciones"></tr>
+                  <tr mat-row *matRowDef="let row; columns: columnasVacaciones"></tr>
+                </table>
+              </div>
+            } @else {
+              <app-empty-state
+                icon="beach_access"
+                title="Sin saldo de vacaciones registrado"
+                description="Los días ganados y gozados aparecerán aquí cuando estén registrados."
+              />
+            }
+          </mat-tab>
+
+          <mat-tab label="Préstamos">
+            @if (prestamos().length === 0) {
+              <app-empty-state
+                icon="payments"
+                title="Sin préstamos registrados"
+                description="No hay préstamos activos ni cancelados asociados a este empleado."
+              />
+            } @else {
+              <div class="saldo-destacado">
+                <span class="saldo-destacado__valor sisrh-tabular">S/ {{ fmtMonto(saldoPrestamos()) }}</span>
+                <span class="saldo-destacado__label">saldo pendiente total</span>
+              </div>
+              <div class="sisrh-table-scroll">
+                <table mat-table [dataSource]="prestamos()" class="tbl">
+                  <ng-container matColumnDef="descripcion">
+                    <th mat-header-cell *matHeaderCellDef scope="col">Préstamo</th>
+                    <td mat-cell *matCellDef="let row">{{ row.descripcion }}</td>
+                  </ng-container>
+                  <ng-container matColumnDef="cuotas">
+                    <th mat-header-cell *matHeaderCellDef scope="col" class="num">Cuotas</th>
+                    <td mat-cell *matCellDef="let row" class="num sisrh-tabular">
+                      {{ row.cuotasPagadas }} / {{ row.numeroCuotas }}
+                    </td>
+                  </ng-container>
+                  <ng-container matColumnDef="cuotaMensual">
+                    <th mat-header-cell *matHeaderCellDef scope="col" class="num">Cuota</th>
+                    <td mat-cell *matCellDef="let row" class="num sisrh-tabular">
+                      S/ {{ fmtMonto(row.cuotaMensual) }}
+                    </td>
+                  </ng-container>
+                  <ng-container matColumnDef="saldo">
+                    <th mat-header-cell *matHeaderCellDef scope="col" class="num">Saldo</th>
+                    <td mat-cell *matCellDef="let row" class="num sisrh-tabular">
+                      <strong>S/ {{ fmtMonto(row.saldoPendiente) }}</strong>
+                    </td>
+                  </ng-container>
+                  <ng-container matColumnDef="estado">
+                    <th mat-header-cell *matHeaderCellDef scope="col">Estado</th>
+                    <td mat-cell *matCellDef="let row">
+                      <span
+                        class="sisrh-badge"
+                        [class.sisrh-badge--success]="row.estado === 'CANCELADO'"
+                        [class.sisrh-badge--warning]="row.estado !== 'CANCELADO'"
+                      >
+                        {{ row.estado }}
+                      </span>
+                    </td>
+                  </ng-container>
+                  <tr mat-header-row *matHeaderRowDef="columnasPrestamos"></tr>
+                  <tr mat-row *matRowDef="let row; columns: columnasPrestamos"></tr>
+                </table>
+              </div>
+            }
+          </mat-tab>
+
+          <mat-tab label="Contacto">
+            <div class="contacto">
+              <mat-form-field appearance="outline" class="contacto__field">
+                <mat-label>Correo electrónico</mat-label>
+                <input
+                  matInput
+                  type="email"
+                  [ngModel]="emailEdit()"
+                  (ngModelChange)="emailEdit.set($event)"
+                  aria-label="Correo electrónico"
+                />
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="contacto__field">
+                <mat-label>Teléfono</mat-label>
+                <input
+                  matInput
+                  [ngModel]="telefonoEdit()"
+                  (ngModelChange)="telefonoEdit.set($event)"
+                  aria-label="Teléfono"
+                />
+              </mat-form-field>
+              <button
+                mat-flat-button
+                color="primary"
+                type="button"
+                [disabled]="guardandoContacto()"
+                (click)="guardarContacto()"
+              >
+                <mat-icon fontIcon="save" aria-hidden="true" />
+                Guardar contacto
+              </button>
+            </div>
+            <p class="contacto__nota">
+              La cuenta bancaria se gestiona desde
+              <a mat-button routerLink="/empleados/cuentas-bancarias">Cuenta bancaria</a>.
+            </p>
+          </mat-tab>
+        </mat-tab-group>
+      </mat-card-content>
+    </mat-card>
+
+    <p class="ref-nota">
+      Base: SPEC §12.2 PANTALLA-08 — Portal del Empleado. El comparativo del
+      neto sigue §12.2; los saldos de vacaciones y préstamos provienen de M04+.
+      El acceso self-service por login se habilitará cuando exista el vínculo
+      usuario↔empleado.
+    </p>
+  }
+</div>

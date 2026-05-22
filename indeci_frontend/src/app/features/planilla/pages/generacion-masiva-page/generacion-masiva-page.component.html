@@ -1,0 +1,143 @@
+<div class="page">
+  <nav class="crumbs" aria-label="Ubicación">
+    <a mat-button routerLink="/">Inicio</a>
+    <span class="crumbs__sep" aria-hidden="true">/</span>
+    <span class="crumbs__here">Generación masiva</span>
+  </nav>
+
+  <mat-card class="page-card sisrh-elevated">
+    <mat-card-header>
+      <mat-card-title>Generación masiva de planilla</mat-card-title>
+      <mat-card-subtitle>
+        Calcula la planilla para todos los empleados activos del periodo seleccionado.
+      </mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      @if (loading()) {
+        <div class="loading" aria-busy="true">
+          <mat-progress-spinner mode="indeterminate" diameter="48" aria-label="Cargando periodos" />
+        </div>
+      } @else if (periodosAbiertos().length === 0) {
+        <p class="empty" role="status">
+          No hay periodos ABIERTOS para generar. Abre o reabre un periodo desde
+          <a mat-button routerLink="/planilla/periodos">Periodos</a>.
+        </p>
+      } @else {
+        <!-- Selector + acción -->
+        <div class="control-row">
+          <mat-form-field appearance="outline" class="periodo-select">
+            <mat-label>Periodo (solo ABIERTOS)</mat-label>
+            <mat-select
+              [value]="periodoSeleccionado()"
+              (selectionChange)="onPeriodoChange($event.value)"
+              [disabled]="fase() === 'generando'"
+              aria-label="Seleccionar periodo abierto"
+            >
+              @for (p of periodosAbiertos(); track p.id) {
+                <mat-option [value]="p.periodo">{{ p.periodo }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          <button
+            mat-flat-button
+            color="primary"
+            type="button"
+            [disabled]="!canGenerar()"
+            (click)="confirmarGeneracion()"
+          >
+            <mat-icon fontIcon="group_work" aria-hidden="true" />
+            Generar planilla
+          </button>
+        </div>
+
+        <!-- Progress + aria-live -->
+        @if (fase() === 'generando') {
+          <div class="progress" role="status" aria-live="polite">
+            <p>Generando planilla para el periodo {{ periodoSeleccionado() }}…</p>
+            <mat-progress-bar mode="indeterminate" aria-label="Generación en curso" />
+          </div>
+        }
+
+        <!-- Resultados post-ejecución -->
+        @if (fase() === 'completado' && resultado() !== null) {
+          <div class="resultado">
+            <h3 class="resultado__title">
+              <mat-icon fontIcon="check_circle" aria-hidden="true" />
+              Generación completada — periodo {{ periodoSeleccionado() }}
+            </h3>
+
+            <!-- Conteo exitosos / fallidos (Spec 011 / C2) -->
+            <div class="conteo">
+              <span class="conteo-chip conteo-chip--ok">
+                {{ resultado()!.exitosos }} exitoso(s)
+              </span>
+              <span
+                class="conteo-chip"
+                [class.conteo-chip--fail]="resultado()!.fallidos.length > 0"
+                [class.conteo-chip--cero]="resultado()!.fallidos.length === 0"
+              >
+                {{ resultado()!.fallidos.length }} con error
+              </span>
+              <span class="conteo-chip conteo-chip--total">
+                {{ resultado()!.total }} empleado(s) en total
+              </span>
+            </div>
+
+            <!-- Tabla de fallidos -->
+            @if (resultado()!.fallidos.length > 0) {
+              <div class="sisrh-table-scroll">
+                <table mat-table [dataSource]="resultado()!.fallidos" class="tbl tbl--fallidos">
+                  <ng-container matColumnDef="empleadoId">
+                    <th mat-header-cell *matHeaderCellDef scope="col">Empleado</th>
+                    <td mat-cell *matCellDef="let row" class="sisrh-tabular">#{{ row.empleadoId }}</td>
+                  </ng-container>
+                  <ng-container matColumnDef="razon">
+                    <th mat-header-cell *matHeaderCellDef scope="col">Motivo del error</th>
+                    <td mat-cell *matCellDef="let row">{{ row.razon }}</td>
+                  </ng-container>
+                  <tr mat-header-row *matHeaderRowDef="columnsFallidos"></tr>
+                  <tr mat-row *matRowDef="let row; columns: columnsFallidos"></tr>
+                </table>
+              </div>
+            }
+
+            <p class="resultado__resumen">
+              Movimientos en el periodo: <strong>{{ movimientosPost().length }}</strong>.
+            </p>
+
+            @if (movimientosPost().length > 0) {
+              <div class="sisrh-table-scroll">
+                <table mat-table [dataSource]="movimientosPost()" class="tbl">
+                  <ng-container matColumnDef="empleadoId">
+                    <th mat-header-cell *matHeaderCellDef scope="col">Empleado</th>
+                    <td mat-cell *matCellDef="let row" class="sisrh-tabular">#{{ row.empleadoId }}</td>
+                  </ng-container>
+                  <ng-container matColumnDef="totalIngresos">
+                    <th mat-header-cell *matHeaderCellDef scope="col">Ingresos</th>
+                    <td mat-cell *matCellDef="let row" class="sisrh-tabular">S/ {{ fmtMonto(row.totalIngresos) }}</td>
+                  </ng-container>
+                  <ng-container matColumnDef="totalDescuentos">
+                    <th mat-header-cell *matHeaderCellDef scope="col">Descuentos</th>
+                    <td mat-cell *matCellDef="let row" class="sisrh-tabular">S/ {{ fmtMonto(row.totalDescuentos) }}</td>
+                  </ng-container>
+                  <ng-container matColumnDef="netoPagar">
+                    <th mat-header-cell *matHeaderCellDef scope="col">Neto</th>
+                    <td mat-cell *matCellDef="let row" class="sisrh-tabular">S/ {{ fmtMonto(row.netoPagar) }}</td>
+                  </ng-container>
+                  <ng-container matColumnDef="estado">
+                    <th mat-header-cell *matHeaderCellDef scope="col">Estado</th>
+                    <td mat-cell *matCellDef="let row">{{ row.estado }}</td>
+                  </ng-container>
+                  <tr mat-header-row *matHeaderRowDef="columns"></tr>
+                  <tr mat-row *matRowDef="let row; columns: columns"></tr>
+                </table>
+              </div>
+            } @else {
+              <p class="empty">No se generaron movimientos. Verifica que existan empleados activos con configuración completa.</p>
+            }
+          </div>
+        }
+      }
+    </mat-card-content>
+  </mat-card>
+</div>

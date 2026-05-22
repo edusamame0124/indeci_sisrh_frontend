@@ -1,0 +1,106 @@
+<div class="page">
+  <nav class="crumbs" aria-label="Ubicación">
+    <a mat-button routerLink="/">Inicio</a>
+    <span class="crumbs__sep" aria-hidden="true">/</span>
+    <span class="crumbs__here">Historial de empleado</span>
+  </nav>
+
+  <mat-card class="page-card sisrh-elevated">
+    <mat-card-header>
+      <mat-card-title>Historial de empleado</mat-card-title>
+      <mat-card-subtitle>
+        Movimientos de planilla del empleado en todos los períodos.
+      </mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      @if (loading()) {
+        <div class="loading" aria-busy="true">
+          <mat-progress-spinner mode="indeterminate" diameter="48" aria-label="Cargando" />
+        </div>
+      } @else if (empleados().length === 0) {
+        <p class="empty" role="status">
+          No hay empleados registrados. Regístralos desde
+          <a mat-button routerLink="/empleados/personas">Datos personales</a>.
+        </p>
+      } @else {
+        <mat-form-field appearance="outline" class="sel-empleado">
+          <mat-label>Empleado</mat-label>
+          <mat-select
+            [value]="empleadoSeleccionado()"
+            (selectionChange)="onEmpleadoChange($event.value)"
+            aria-label="Seleccionar empleado"
+          >
+            @for (e of empleados(); track e.empleadoId) {
+              <mat-option [value]="e.empleadoId">{{ e.nombreCompleto }} — DNI {{ e.dni }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        @if (empleadoSeleccionado() !== null) {
+          @if (datosLoading()) {
+            <div class="loading" aria-busy="true">
+              <mat-progress-spinner mode="indeterminate" diameter="40" aria-label="Cargando historial" />
+            </div>
+          } @else if (historial().length === 0) {
+            <p class="empty" role="status">El empleado no tiene movimientos de planilla.</p>
+          } @else {
+            <div class="sisrh-table-scroll">
+              <table mat-table [dataSource]="historial()" class="tbl">
+                <ng-container matColumnDef="periodo">
+                  <th mat-header-cell *matHeaderCellDef scope="col">Periodo</th>
+                  <td mat-cell *matCellDef="let row">{{ row.periodo }}</td>
+                  <td mat-footer-cell *matFooterCellDef>TOTAL</td>
+                </ng-container>
+                <ng-container matColumnDef="ingresos">
+                  <th mat-header-cell *matHeaderCellDef scope="col" class="num">Ingresos</th>
+                  <td mat-cell *matCellDef="let row" class="num sisrh-tabular">
+                    S/ {{ fmtMonto(row.totalIngresos) }}
+                  </td>
+                  <td mat-footer-cell *matFooterCellDef></td>
+                </ng-container>
+                <ng-container matColumnDef="descuentos">
+                  <th mat-header-cell *matHeaderCellDef scope="col" class="num">Descuentos</th>
+                  <td mat-cell *matCellDef="let row" class="num sisrh-tabular">
+                    S/ {{ fmtMonto(row.totalDescuentos) }}
+                  </td>
+                  <td mat-footer-cell *matFooterCellDef></td>
+                </ng-container>
+                <ng-container matColumnDef="neto">
+                  <th mat-header-cell *matHeaderCellDef scope="col" class="num">Neto</th>
+                  <td mat-cell *matCellDef="let row" class="num sisrh-tabular">
+                    <strong>S/ {{ fmtMonto(row.netoPagar) }}</strong>
+                  </td>
+                  <td mat-footer-cell *matFooterCellDef class="num sisrh-tabular">
+                    <strong>S/ {{ fmtMonto(totalNeto()) }}</strong>
+                  </td>
+                </ng-container>
+                <ng-container matColumnDef="boleta">
+                  <th mat-header-cell *matHeaderCellDef scope="col">Boleta</th>
+                  <td mat-cell *matCellDef="let row">
+                    <a
+                      mat-icon-button
+                      [routerLink]="['/reportes/boleta', empleadoSeleccionado(), row.periodo]"
+                      aria-label="Ver boleta del período"
+                      matTooltip="Ver boleta"
+                    >
+                      <mat-icon fontIcon="open_in_new" aria-hidden="true" />
+                    </a>
+                  </td>
+                  <td mat-footer-cell *matFooterCellDef></td>
+                </ng-container>
+                <tr mat-header-row *matHeaderRowDef="columns"></tr>
+                <tr mat-row *matRowDef="let row; columns: columns"></tr>
+                <tr mat-footer-row *matFooterRowDef="columns" class="fila-total"></tr>
+              </table>
+            </div>
+          }
+        }
+
+        <p class="ref-nota">
+          Base: Spec 011 / B6 — Historial de empleado. Reúne los movimientos de
+          planilla del empleado en todos los períodos generados.
+        </p>
+      }
+    </mat-card-content>
+  </mat-card>
+</div>

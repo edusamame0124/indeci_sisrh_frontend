@@ -1,0 +1,90 @@
+<div class="portal">
+  <header class="portal__header">
+    <div class="portal__brand">
+      <mat-icon fontIcon="fact_check" aria-hidden="true" />
+      <div>
+        <h1 class="portal__title">Portal de Transparencia</h1>
+        <p class="portal__subtitle">Remuneraciones del personal — INDECI</p>
+      </div>
+    </div>
+  </header>
+
+  <main class="portal__body">
+    <mat-card class="page-card sisrh-elevated">
+      <mat-card-content>
+        @if (loading()) {
+          <div class="loading" aria-busy="true">
+            <mat-progress-spinner mode="indeterminate" diameter="48" aria-label="Cargando" />
+          </div>
+        } @else if (error() !== null) {
+          <p class="error" role="alert">{{ error() }}</p>
+        } @else if (periodos().length === 0) {
+          <p class="empty" role="status">
+            Aún no hay períodos de planilla publicados.
+          </p>
+        } @else {
+          <div class="toolbar">
+            <mat-form-field appearance="outline" class="periodo-select">
+              <mat-label>Período</mat-label>
+              <mat-select
+                [value]="periodoSeleccionado()"
+                (selectionChange)="onPeriodoChange($event.value)"
+                aria-label="Seleccionar período"
+              >
+                @for (p of periodos(); track p.periodo) {
+                  <mat-option [value]="p.periodo">{{ p.periodo }} — {{ p.estado }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          @if (tableLoading()) {
+            <div class="loading" aria-busy="true">
+              <mat-progress-spinner mode="indeterminate" diameter="40" aria-label="Cargando remuneraciones" />
+            </div>
+          } @else if (remuneraciones().length === 0) {
+            <p class="empty" role="status">
+              No hay remuneraciones publicadas para este período.
+            </p>
+          } @else {
+            <div class="sisrh-table-scroll">
+              <table mat-table [dataSource]="remuneraciones()" class="tbl">
+                <ng-container matColumnDef="empleado">
+                  <th mat-header-cell *matHeaderCellDef scope="col">Servidor / funcionario</th>
+                  <td mat-cell *matCellDef="let row">{{ row.empleado }}</td>
+                  <td mat-footer-cell *matFooterCellDef>TOTAL</td>
+                </ng-container>
+                <ng-container matColumnDef="regimen">
+                  <th mat-header-cell *matHeaderCellDef scope="col">Régimen laboral</th>
+                  <td mat-cell *matCellDef="let row">{{ row.regimen }}</td>
+                  <td mat-footer-cell *matFooterCellDef></td>
+                </ng-container>
+                <ng-container matColumnDef="remuneracionBruta">
+                  <th mat-header-cell *matHeaderCellDef scope="col" class="num">
+                    Remuneración bruta
+                  </th>
+                  <td mat-cell *matCellDef="let row" class="num sisrh-tabular">
+                    S/ {{ fmtMonto(row.remuneracionBruta) }}
+                  </td>
+                  <td mat-footer-cell *matFooterCellDef class="num sisrh-tabular">
+                    <strong>S/ {{ fmtMonto(totalBruto()) }}</strong>
+                  </td>
+                </ng-container>
+                <tr mat-header-row *matHeaderRowDef="columns"></tr>
+                <tr mat-row *matRowDef="let row; columns: columns"></tr>
+                <tr mat-footer-row *matFooterRowDef="columns" class="fila-total"></tr>
+              </table>
+            </div>
+          }
+        }
+
+        <p class="ref-nota">
+          Base: Ley 27806 — Ley de Transparencia y Acceso a la Información
+          Pública. Las remuneraciones del personal del Estado son información
+          pública. Solo se publican los períodos de planilla finalizados
+          (aprobados o cerrados).
+        </p>
+      </mat-card-content>
+    </mat-card>
+  </main>
+</div>

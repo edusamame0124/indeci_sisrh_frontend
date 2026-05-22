@@ -1,0 +1,180 @@
+<div class="page">
+  <nav class="crumbs" aria-label="Ubicación">
+    <a mat-button routerLink="/">Inicio</a>
+    <span class="crumbs__sep" aria-hidden="true">/</span>
+    <span class="crumbs__here">Archivo de bancos</span>
+  </nav>
+
+  <mat-card class="page-card sisrh-elevated">
+    <mat-card-header>
+      <mat-card-title>Archivo de bancos</mat-card-title>
+      <mat-card-subtitle>
+        Abonos del período agrupados por banco, archivo de carga bancaria y
+        registro del ticket MCPP.
+      </mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      @if (loading()) {
+        <div class="loading" aria-busy="true">
+          <mat-progress-spinner mode="indeterminate" diameter="48" aria-label="Cargando datos" />
+        </div>
+      } @else if (periodos().length === 0) {
+        <p class="empty" role="status">
+          Aún no hay periodos registrados. Crea uno desde
+          <a mat-button routerLink="/planilla/periodos">Periodos</a>.
+        </p>
+      } @else {
+        <div class="toolbar">
+          <mat-form-field appearance="outline" class="periodo-select">
+            <mat-label>Periodo</mat-label>
+            <mat-select
+              [value]="periodoSeleccionado()"
+              (selectionChange)="onPeriodoChange($event.value)"
+              aria-label="Seleccionar periodo"
+            >
+              @for (p of periodos(); track p.id) {
+                <mat-option [value]="p.periodo">{{ p.periodo }} — {{ p.estado }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <button
+            mat-flat-button
+            color="primary"
+            type="button"
+            [disabled]="generando()"
+            (click)="generarAbonos()"
+            matTooltip="Crea o actualiza los abonos a partir de los movimientos del período"
+          >
+            <mat-icon fontIcon="sync" aria-hidden="true" />
+            Generar abonos
+          </button>
+
+          <button
+            mat-stroked-button
+            type="button"
+            [disabled]="descargando() || bancos().length === 0"
+            (click)="descargarArchivoBancario()"
+            matTooltip="Descarga el ZIP con un .txt por banco (layout oficial de carga bancaria)"
+          >
+            <mat-icon fontIcon="download" aria-hidden="true" />
+            Archivo bancario (ZIP)
+          </button>
+
+          <span class="toolbar__spacer"></span>
+
+          @if (bancos().length > 0) {
+            <div class="resumen-chips">
+              <span class="chip">{{ totales().abonos }} abonos</span>
+              <span class="chip chip--pend">{{ totales().pendientes }} pendientes</span>
+              <span class="chip chip--total">Total S/ {{ fmtMonto(totales().monto) }}</span>
+            </div>
+          }
+        </div>
+
+        @if (tableLoading()) {
+          <div class="loading" aria-busy="true">
+            <mat-progress-spinner mode="indeterminate" diameter="40" aria-label="Cargando abonos" />
+          </div>
+        } @else if (bancos().length === 0) {
+          <p class="empty" role="status">
+            No hay abonos en este periodo. Usa <strong>Generar abonos</strong>
+            para crearlos desde los movimientos de planilla.
+          </p>
+        } @else {
+          @for (banco of bancos(); track banco.banco) {
+            <mat-expansion-panel class="banco-panel">
+              <mat-expansion-panel-header>
+                <mat-panel-title>
+                  <mat-icon fontIcon="account_balance" aria-hidden="true" />
+                  {{ banco.banco }}
+                </mat-panel-title>
+                <mat-panel-description>
+                  {{ banco.cantidad }} abono(s) · S/ {{ fmtMonto(banco.totalNeto) }}
+                </mat-panel-description>
+              </mat-expansion-panel-header>
+
+              <div class="banco-acciones">
+                <span class="masivo">
+                  <mat-form-field appearance="outline" subscriptSizing="dynamic" class="masivo__field">
+                    <mat-label>Ticket MCPP masivo</mat-label>
+                    <input matInput #tm aria-label="Ticket MCPP para todos los pendientes" />
+                  </mat-form-field>
+                  <button
+                    mat-stroked-button
+                    type="button"
+                    (click)="registrarTicketMasivo(banco, tm.value); tm.value = ''"
+                    matTooltip="Aplica el ticket a todos los abonos PENDIENTE del banco"
+                  >
+                    Aplicar a pendientes
+                  </button>
+                </span>
+              </div>
+
+              <div class="sisrh-table-scroll">
+                <table class="detalle-tbl">
+                  <thead>
+                    <tr>
+                      <th scope="col">Empleado</th>
+                      <th scope="col">DNI</th>
+                      <th scope="col">CCI</th>
+                      <th scope="col" class="num">Neto</th>
+                      <th scope="col">Estado</th>
+                      <th scope="col">Ticket MCPP</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (a of banco.abonos; track a.id) {
+                      <tr>
+                        <td>{{ nombreEmpleado(a.empleadoId) }}</td>
+                        <td>{{ dniEmpleado(a.empleadoId) }}</td>
+                        <td>{{ a.cci || '—' }}</td>
+                        <td class="num sisrh-tabular">S/ {{ fmtMonto(a.montoNeto) }}</td>
+                        <td>
+                          <span class="estado estado--{{ a.estado === 'PROCESADO' ? 'ok' : 'pend' }}">
+                            {{ a.estado }}
+                          </span>
+                        </td>
+                        <td>
+                          @if (a.estado === 'PENDIENTE') {
+                            <span class="ticket-input">
+                              <input
+                                #t
+                                class="ticket-field"
+                                [attr.aria-label]="'Ticket MCPP de ' + nombreEmpleado(a.empleadoId)"
+                                placeholder="MCPP-…"
+                              />
+                              <button
+                                mat-icon-button
+                                type="button"
+                                (click)="registrarTicket(a, t.value)"
+                                aria-label="Registrar ticket MCPP"
+                                matTooltip="Registrar ticket"
+                              >
+                                <mat-icon fontIcon="check" aria-hidden="true" />
+                              </button>
+                            </span>
+                          } @else {
+                            {{ a.nroTicketMcpp || '—' }}
+                          }
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </mat-expansion-panel>
+          }
+        }
+
+        <p class="ref-nota">
+          Base: SPEC §12.2 PANTALLA-07 — Archivo Bancos (M14) · Spec 013 / C1
+          P-07. El abono pasa a PROCESADO al registrar su ticket MCPP. «Archivo
+          bancario (ZIP)» descarga un .txt por banco con el layout oficial de
+          carga bancaria: 10 campos tabulados (orden, banco, cuenta, CCI, DNI,
+          apellidos y nombres, meta, registro AIRHSP, neto, ticket MCPP).
+        </p>
+      }
+    </mat-card-content>
+  </mat-card>
+</div>

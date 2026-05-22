@@ -1,0 +1,160 @@
+<div class="page">
+  <nav class="crumbs" aria-label="Ubicación">
+    <a mat-button routerLink="/">Inicio</a>
+    <span class="crumbs__sep" aria-hidden="true">/</span>
+    <a mat-button routerLink="/planilla/periodos">Periodos</a>
+    <span class="crumbs__sep" aria-hidden="true">/</span>
+    <a mat-button [routerLink]="['/planilla/cierre', periodoId()]">Ciclo de planilla</a>
+    <span class="crumbs__sep" aria-hidden="true">/</span>
+    <span class="crumbs__here">Semáforo presupuestal</span>
+  </nav>
+
+  @if (loading()) {
+    <div class="loading" aria-busy="true">
+      <mat-progress-spinner mode="indeterminate" diameter="48" aria-label="Cargando semáforo" />
+    </div>
+  } @else if (semaforo() !== null) {
+    <mat-card class="page-card sisrh-elevated">
+      <mat-card-header>
+        <mat-card-title>Semáforo presupuestal — {{ semaforo()!.periodo }}</mat-card-title>
+        <mat-card-subtitle>
+          Techo certificado vs. monto comprometido por meta presupuestal.
+        </mat-card-subtitle>
+      </mat-card-header>
+
+      <mat-card-content>
+        <!-- Estado global -->
+        <div
+          class="global sisrh-status-banner"
+          [class.global--rojo]="semaforo()!.estadoGlobal === 'ROJO'"
+          [class.sisrh-status-banner--danger]="semaforo()!.estadoGlobal === 'ROJO'"
+          [class.sisrh-status-banner--success]="semaforo()!.estadoGlobal !== 'ROJO'"
+          role="status"
+        >
+          <mat-icon
+            [fontIcon]="semaforo()!.estadoGlobal === 'ROJO' ? 'error' : 'check_circle'"
+            aria-hidden="true"
+          />
+          <span>
+            @if (semaforo()!.estadoGlobal === 'ROJO') {
+              Al menos una meta supera su techo certificado.
+            } @else {
+              Todas las metas están dentro del techo certificado.
+            }
+          </span>
+        </div>
+
+        <!-- Tabla por meta -->
+        <div class="sisrh-table-scroll">
+          <table mat-table [dataSource]="filas()" class="tbl">
+            <ng-container matColumnDef="meta">
+              <th mat-header-cell *matHeaderCellDef>Meta</th>
+              <td mat-cell *matCellDef="let m">{{ m.meta }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="centroCosto">
+              <th mat-header-cell *matHeaderCellDef>Centro de costo</th>
+              <td mat-cell *matCellDef="let m">{{ m.centroCosto || '—' }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="fuenteFinanc">
+              <th mat-header-cell *matHeaderCellDef>Fuente</th>
+              <td mat-cell *matCellDef="let m">{{ m.fuenteFinanc || '—' }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="pea">
+              <th mat-header-cell *matHeaderCellDef class="num">PEA</th>
+              <td mat-cell *matCellDef="let m" class="num">{{ m.pea }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="certificado">
+              <th mat-header-cell *matHeaderCellDef class="num">Certificado (S/)</th>
+              <td mat-cell *matCellDef="let m" class="num">
+                @if (esCertificable(m.meta)) {
+                  <mat-form-field appearance="outline" class="f-monto" subscriptSizing="dynamic">
+                    <input
+                      matInput
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      [ngModel]="montoEditado(m.meta)"
+                      (ngModelChange)="onMontoChange(m.meta, $event)"
+                      [attr.aria-label]="'Monto certificado de la meta ' + m.meta"
+                    />
+                  </mat-form-field>
+                } @else {
+                  —
+                }
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="comprometido">
+              <th mat-header-cell *matHeaderCellDef class="num">Comprometido (S/)</th>
+              <td mat-cell *matCellDef="let m" class="num sisrh-tabular">{{ fmtMonto(m.montoComprometido) }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="saldo">
+              <th mat-header-cell *matHeaderCellDef class="num">Saldo (S/)</th>
+              <td mat-cell *matCellDef="let m" class="num sisrh-tabular" [class.neg]="m.saldo < 0">
+                {{ fmtMonto(m.saldo) }}
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="estado">
+              <th mat-header-cell *matHeaderCellDef>Estado</th>
+              <td mat-cell *matCellDef="let m">
+                <span
+                  class="sisrh-badge"
+                  [class.sisrh-badge--success]="m.estado === 'VERDE'"
+                  [class.sisrh-badge--danger]="m.estado === 'ROJO'"
+                >
+                  {{ m.estado === 'VERDE' ? 'Dentro del techo' : 'Supera techo' }}
+                </span>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+            <tr mat-row *matRowDef="let row; columns: columnas"></tr>
+          </table>
+        </div>
+
+        @if (filas().length === 0) {
+          <p class="empty">El período no tiene movimientos ni metas certificadas.</p>
+        }
+
+        <!-- Totales -->
+        <div class="totales sisrh-totales-bar">
+          <div class="sisrh-totales-bar__item">
+            <span class="sisrh-totales-bar__label">Total certificado</span>
+            <span class="sisrh-totales-bar__value sisrh-tabular">S/ {{ fmtMonto(semaforo()!.totalCertificado) }}</span>
+          </div>
+          <div class="sisrh-totales-bar__item">
+            <span class="sisrh-totales-bar__label">Total comprometido</span>
+            <span class="sisrh-totales-bar__value sisrh-tabular">S/ {{ fmtMonto(semaforo()!.totalComprometido) }}</span>
+          </div>
+        </div>
+      </mat-card-content>
+
+      <mat-card-actions align="end">
+        <a mat-button [routerLink]="['/planilla/cierre', periodoId()]">Volver al ciclo</a>
+        <button
+          mat-flat-button
+          color="primary"
+          type="button"
+          [disabled]="guardando() || filas().length === 0"
+          (click)="guardar()"
+        >
+          <mat-icon fontIcon="save" aria-hidden="true" />
+          Guardar certificación
+        </button>
+      </mat-card-actions>
+    </mat-card>
+
+    <p class="ref-nota">
+      Base: Spec 012 / C1 · P-05 — Semáforo presupuestal. El monto certificado es
+      el techo de la certificación presupuestal física (Ley 28411 / LEY-05) que
+      transcribe Tesorería; el comprometido se deriva de los netos de la planilla.
+      Es información de control: no modifica el flujo de aprobación del período.
+    </p>
+  }
+</div>

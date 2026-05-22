@@ -1,0 +1,214 @@
+<div class="page">
+  <nav class="crumbs" aria-label="Ubicación">
+    <a mat-button routerLink="/">Inicio</a>
+    <span class="crumbs__sep" aria-hidden="true">/</span>
+    <a mat-button routerLink="/planilla/periodos">Periodos</a>
+    <span class="crumbs__sep" aria-hidden="true">/</span>
+    <span class="crumbs__here">{{ periodo()?.periodo ?? '…' }}</span>
+  </nav>
+
+  @if (loading()) {
+    <div class="loading" aria-busy="true">
+      <mat-progress-spinner mode="indeterminate" diameter="48" aria-label="Cargando periodo" />
+    </div>
+  } @else if (periodo() !== null) {
+    <!-- Header: periodo + estado + datos del ciclo -->
+    <mat-card class="page-card sisrh-elevated">
+      <mat-card-header>
+        <mat-card-title>Ciclo de planilla — {{ periodo()!.periodo }}</mat-card-title>
+        <mat-card-subtitle>
+          {{ periodo()!.fechaInicio || '—' }} a {{ periodo()!.fechaFin || '—' }}
+          <app-periodo-estado-badge [estado]="periodo()!.estado" />
+        </mat-card-subtitle>
+      </mat-card-header>
+      @if (periodo()!.nroCertPresup || periodo()!.fechaCierre) {
+        <mat-card-content>
+          <ul class="hitos">
+            @if (periodo()!.nroCertPresup) {
+              <li><strong>Certificación presupuestal:</strong> {{ periodo()!.nroCertPresup }}</li>
+            }
+            @if (periodo()!.fechaCierre) {
+              <li><strong>Cerrado:</strong> {{ periodo()!.fechaCierre }}</li>
+            }
+          </ul>
+        </mat-card-content>
+      }
+    </mat-card>
+
+    <!-- Resumen agregado del periodo -->
+    <mat-card class="page-card sisrh-elevated resumen">
+      <mat-card-header>
+        <mat-card-title>Resumen del periodo</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="grid-resumen">
+          <div class="kpi">
+            <span class="kpi__label">Empleados con planilla</span>
+            <span class="kpi__value">{{ totalEmpleados() }}</span>
+          </div>
+          <div class="kpi">
+            <span class="kpi__label">Total ingresos</span>
+            <span class="kpi__value">S/ {{ fmtMonto(totalIngresos()) }}</span>
+          </div>
+          <div class="kpi">
+            <span class="kpi__label">Total descuentos</span>
+            <span class="kpi__value">S/ {{ fmtMonto(totalDescuentos()) }}</span>
+          </div>
+          <div class="kpi kpi--neto">
+            <span class="kpi__label">Neto a pagar</span>
+            <span class="kpi__value">S/ {{ fmtMonto(totalNeto()) }}</span>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Gates de aprobación (LEY-05) -->
+    <mat-card class="page-card sisrh-elevated gates">
+      <mat-card-header>
+        <mat-card-title>Requisitos de aprobación</mat-card-title>
+        <mat-card-subtitle>
+          Los tres deben cumplirse para aprobar el período (LEY-05 / Ley 28411).
+        </mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <!-- Gate 1 — certificación presupuestal -->
+        <div class="gate" [class.gate--ok]="gates().cert" [class.gate--fail]="!gates().cert">
+          <mat-icon [fontIcon]="gates().cert ? 'check_circle' : 'cancel'" aria-hidden="true" />
+          <div class="gate__body">
+            <span class="gate__title">Certificación presupuestal (Ley 28411)</span>
+            @if (periodo()!.estado === 'ABIERTO' || periodo()!.estado === 'EN_REVISION') {
+              <mat-form-field appearance="outline" class="gate__field" subscriptSizing="dynamic">
+                <mat-label>N° de certificación</mat-label>
+                <input
+                  matInput
+                  [ngModel]="nroCertPresup()"
+                  (ngModelChange)="nroCertPresup.set($event)"
+                  [disabled]="periodo()!.estado !== 'EN_REVISION'"
+                  aria-label="Número de certificación presupuestal"
+                />
+              </mat-form-field>
+            } @else {
+              <span class="gate__detail">{{ periodo()!.nroCertPresup || '—' }}</span>
+            }
+          </div>
+        </div>
+
+        <!-- Gate 2 — conciliación AIRHSP -->
+        <div class="gate" [class.gate--ok]="gates().conciliacion" [class.gate--fail]="!gates().conciliacion">
+          <mat-icon [fontIcon]="gates().conciliacion ? 'check_circle' : 'cancel'" aria-hidden="true" />
+          <div class="gate__body">
+            <span class="gate__title">Conciliación AIRHSP</span>
+            <span class="gate__detail">
+              @if (gates().conciliacion) {
+                Sin discrepancias sin resolver.
+              } @else {
+                {{ conciliacionesRojas() }} conciliación(es) en ROJO —
+                <a routerLink="/reportes/conciliacion">resolver</a>.
+              }
+            </span>
+          </div>
+        </div>
+
+        <!-- Gate 3 — neto 50% -->
+        <div class="gate" [class.gate--ok]="gates().neto" [class.gate--fail]="!gates().neto">
+          <mat-icon [fontIcon]="gates().neto ? 'check_circle' : 'cancel'" aria-hidden="true" />
+          <div class="gate__body">
+            <span class="gate__title">Validación de neto (REGLA SERVIR-07)</span>
+            <span class="gate__detail">
+              @if (gates().neto) {
+                Ningún movimiento en NETO_NO_VA.
+              } @else {
+                {{ netoNoVa() }} movimiento(s) en NETO_NO_VA —
+                <a routerLink="/planilla/movimientos">revisar</a>.
+              }
+            </span>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Semáforo presupuestal por meta (Spec 012 / C1 · P-05) -->
+    <mat-card class="page-card sisrh-elevated cta-presup" role="note">
+      <mat-card-content>
+        <mat-icon fontIcon="donut_small" aria-hidden="true" />
+        <span>Revisa el techo certificado contra lo comprometido por meta presupuestal.</span>
+        <a mat-stroked-button [routerLink]="['/planilla/presupuesto', periodoId()]">
+          Semáforo presupuestal
+        </a>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Pendientes (informativo) -->
+    @if (pendientes().length > 0) {
+      <mat-card class="page-card sisrh-elevated aviso" role="status">
+        <mat-card-content>
+          <mat-icon fontIcon="info" aria-hidden="true" />
+          {{ pendientes().length }} movimiento(s) en estado PENDIENTE. Procésalos
+          desde <a routerLink="/planilla/movimientos">Movimientos</a> antes de aprobar.
+        </mat-card-content>
+      </mat-card>
+    }
+
+    <!-- Acciones del ciclo de vida -->
+    <div class="footer">
+      <a mat-button routerLink="/planilla/periodos">Volver</a>
+
+      @switch (periodo()!.estado) {
+        @case ('ABIERTO') {
+          <button
+            mat-flat-button color="primary" type="button"
+            [disabled]="operando()" (click)="enviarRevision()"
+          >
+            <mat-icon fontIcon="rate_review" aria-hidden="true" />
+            Enviar a revisión
+          </button>
+        }
+        @case ('EN_REVISION') {
+          <button
+            mat-stroked-button type="button"
+            [disabled]="operando()" (click)="retroceder()"
+          >
+            Devolver a abierto
+          </button>
+          <button
+            mat-flat-button color="primary" type="button"
+            [disabled]="!canAprobar()" (click)="aprobar()"
+          >
+            <mat-icon fontIcon="verified" aria-hidden="true" />
+            Aprobar período
+          </button>
+        }
+        @case ('APROBADO') {
+          <button
+            mat-stroked-button type="button"
+            [disabled]="operando()" (click)="retroceder()"
+          >
+            Devolver a revisión
+          </button>
+          <button
+            mat-flat-button color="primary" type="button"
+            [disabled]="operando()" (click)="cerrar()"
+          >
+            <mat-icon fontIcon="lock" aria-hidden="true" />
+            Cerrar período
+          </button>
+        }
+        @case ('CERRADO') {
+          <button
+            mat-stroked-button type="button"
+            [disabled]="operando()" (click)="retroceder()"
+          >
+            <mat-icon fontIcon="lock_open" aria-hidden="true" />
+            Reabrir período
+          </button>
+        }
+      }
+    </div>
+
+    <p class="ref-nota">
+      Base: Spec 011 / B7 — Flujo de aprobación de planilla. El paso a APROBADO
+      exige certificación presupuestal (LEY-05 / Ley 28411), conciliación AIRHSP
+      sin discrepancias y ningún movimiento en NETO_NO_VA (REGLA SERVIR-07 / §5.4).
+    </p>
+  }
+</div>

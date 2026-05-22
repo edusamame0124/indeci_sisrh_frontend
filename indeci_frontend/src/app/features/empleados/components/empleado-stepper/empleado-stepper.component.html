@@ -1,0 +1,23 @@
+<mat-vertical-stepper
+  class="empleado-stepper"
+  [linear]="false"
+  [selectedIndex]="currentStep()"
+  animationDuration="0ms"
+  aria-label="Pasos del flujo de empleado"
+>
+  @for (step of steps; track step.index) {
+    <mat-step [completed]="completedFlags()[step.index]" [editable]="false">
+      <ng-template matStepLabel>
+        <span class="empleado-stepper__label">
+          <mat-icon class="empleado-stepper__icon" [fontIcon]="step.icon" aria-hidden="true" />
+          {{ step.label }}
+        </span>
+      </ng-template>
+      <ng-template matStepContent>
+        <span class="empleado-stepper__sr-only">
+          Paso {{ step.index + 1 }} de {{ steps.length }}. {{ step.label }}.
+        </span>
+      </ng-template>
+    </mat-step>
+  }
+</mat-vertical-stepper>

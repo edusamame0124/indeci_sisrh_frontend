@@ -1,0 +1,60 @@
+:host {
+  display: block;
+  font-family: var(--sisrh-font-sans, sans-serif);
+}
+
+.crumbs__sep {
+  color: var(--sisrh-text-soft);
+}
+
+.crumbs__here {
+  color: var(--sisrh-color-secondary);
+  font-weight: 600;
+}
+
+.periodo-select {
+  min-width: 220px;
+}
+
+.meta-row--abierta {
+  background: color-mix(in srgb, var(--sisrh-badge-info-bg) 65%, #fff);
+}
+
+.fila-totales {
+  background: var(--sisrh-surface-muted);
+  font-weight: 700;
+}
+
+.detalle-row td {
+  padding: 0;
+  border-bottom: 0;
+}
+
+.detalle {
+  padding: 0.75rem 1rem 1rem;
+  background: var(--sisrh-surface-muted);
+}
+
+.detalle-tbl {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.detalle-tbl th,
+.detalle-tbl td {
+  padding: 0.35rem 0.6rem;
+  border-bottom: 1px solid var(--sisrh-border);
+}
+
+.detalle-tbl th {
+  text-align: left;
+  color: var(--sisrh-text-muted);
+  font-weight: 600;
+}
+
+.ref-nota {
+  margin: 1rem 0 0;
+  font-size: 0.75rem;
+  color: var(--sisrh-text-soft);
+}

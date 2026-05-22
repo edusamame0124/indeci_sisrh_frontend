@@ -1,0 +1,79 @@
+:host {
+  display: block;
+  font-family: var(--sisrh-font-sans, sans-serif);
+}
+
+.crumbs__sep {
+  color: var(--sisrh-text-soft);
+}
+
+.crumbs__here {
+  color: var(--sisrh-color-secondary);
+  font-weight: 600;
+}
+
+.periodo-select {
+  min-width: 220px;
+}
+
+.toolbar__cmp {
+  font-size: 0.875rem;
+  color: var(--sisrh-text-muted);
+}
+
+.toolbar__spacer {
+  flex: 1;
+}
+
+.sort-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 600;
+  color: var(--sisrh-color-secondary);
+  padding: 0;
+}
+
+.sort-ic {
+  font-size: 1rem;
+  width: 1rem;
+  height: 1rem;
+}
+
+.fila-totales {
+  background: var(--sisrh-surface-muted);
+  font-weight: 700;
+}
+
+.delta {
+  font-weight: 600;
+}
+
+.delta--pos {
+  color: var(--sisrh-badge-success-fg);
+}
+
+.delta--neg {
+  color: var(--sisrh-badge-danger-fg);
+}
+
+.delta--nuevo {
+  color: var(--sisrh-badge-info-fg);
+  font-size: 0.8rem;
+}
+
+.delta__pct {
+  font-weight: 400;
+  font-size: 0.78rem;
+  color: var(--sisrh-text-muted);
+}
+
+.ref-nota {
+  margin: 1rem 0 0;
+  font-size: 0.75rem;
+  color: var(--sisrh-text-soft);
+}

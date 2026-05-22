@@ -1,0 +1,60 @@
+<h2 mat-dialog-title id="concepto-planilla-dialog-title">{{ data.title }}</h2>
+<form [formGroup]="form" (ngSubmit)="onSubmit()">
+  <mat-dialog-content tabindex="0" class="content">
+    <mat-form-field appearance="outline" class="full">
+      <mat-label>Código</mat-label>
+      <input
+        matInput
+        formControlName="codigo"
+        autocomplete="off"
+        maxlength="40"
+        [attr.aria-labelledby]="'concepto-planilla-dialog-title'"
+      />
+      @if (form.controls.codigo.hasError('required') && form.controls.codigo.touched) {
+        <mat-error>El código es obligatorio</mat-error>
+      }
+      @if (form.controls.codigo.hasError('maxlength')) {
+        <mat-error>Máximo 40 caracteres</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full">
+      <mat-label>Nombre</mat-label>
+      <input matInput formControlName="nombre" autocomplete="off" maxlength="200" />
+      @if (form.controls.nombre.hasError('required') && form.controls.nombre.touched) {
+        <mat-error>El nombre es obligatorio</mat-error>
+      }
+      @if (form.controls.nombre.hasError('maxlength')) {
+        <mat-error>Máximo 200 caracteres</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full">
+      <mat-label>Tipo</mat-label>
+      <mat-select formControlName="tipo" aria-label="Tipo de concepto">
+        @for (t of tipos; track t) {
+          <mat-option [value]="t">{{ t === 'INGRESO' ? 'Ingreso' : 'Descuento' }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full">
+      <mat-label>Naturaleza</mat-label>
+      <input matInput formControlName="naturaleza" autocomplete="off" maxlength="120" />
+      @if (form.controls.naturaleza.hasError('required') && form.controls.naturaleza.touched) {
+        <mat-error>La naturaleza es obligatoria</mat-error>
+      }
+      @if (form.controls.naturaleza.hasError('maxlength')) {
+        <mat-error>Máximo 120 caracteres</mat-error>
+      }
+    </mat-form-field>
+  </mat-dialog-content>
+  <mat-dialog-actions align="end">
+    <button type="button" mat-button (click)="dialogRef.close()" [attr.aria-label]="'Cancelar'">
+      Cancelar
+    </button>
+    <button type="submit" mat-flat-button color="primary" [attr.aria-label]="data.submitLabel">
+      {{ data.submitLabel }}
+    </button>
+  </mat-dialog-actions>
+</form>
