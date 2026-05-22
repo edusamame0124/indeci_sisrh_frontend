@@ -13,7 +13,7 @@ import { RouterOutlet } from '@angular/router';
   template: `
     <main class="auth-layout">
       <header class="auth-layout__header">
-        <h1 class="auth-layout__brand">SISRH-INDECI</h1>
+        <h1 class="auth-layout__brand">SISRH</h1>
         <p class="auth-layout__subtitle">Sistema Integrado de Recursos Humanos</p>
       </header>
       <section class="auth-layout__content">

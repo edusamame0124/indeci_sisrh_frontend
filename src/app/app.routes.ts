@@ -18,7 +18,7 @@ export const routes: Routes = [
           import('./features/dashboard/pages/dashboard-home-page/dashboard-home-page.component').then(
             (m) => m.DashboardHomePageComponent,
           ),
-        title: 'Inicio — SISRH-INDECI',
+        title: 'Inicio — SISRH',
       },
       {
         path: 'rrhh',

@@ -8,7 +8,7 @@
  */
 export const environment = {
   production: true,
-  apiUrl: 'https://app.indeci.gob.pe/api',
+  apiUrl: '/api',
   appName: 'SISRH-INDECI',
   tokenKey: 'sisrh_access_token',
   refreshKey: 'sisrh_refresh_token',
