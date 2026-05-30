@@ -172,4 +172,195 @@ describe('LoginFlowService', () => {
     service.setReturnUrl('');
     expect(service.returnUrl()).toBe('/');
   });
+
+  // ─── Fase 3 SSO — completeSession ────────────────────────────────────────
+
+  it('completeSession con solo SISRH → navegación directa a returnUrl', () => {
+    service.setReturnUrl('/dashboard');
+    const exp = Math.floor(Date.now() / 1000) + 600;
+    const token = makeJwt({
+      sub: 'admin',
+      otpValidado: true,
+      newPassOk: true,
+      roles: ['SUPER_ADMIN'],
+      permisos: [],
+      sistemas: { sisrh: ['SUPER_ADMIN'] },
+      exp,
+    });
+
+    service.completeSession({
+      token,
+      newPass: 'N',
+      requiereOtp: false,
+      requiereEnroll: false,
+      roles: [],
+      permisos: [],
+    });
+
+    expect(router.navigateByUrl).toHaveBeenCalledWith('/dashboard');
+    expect(router.navigate).not.toHaveBeenCalledWith(['/auth/seleccionar-sistema']);
+    expect(service.returnUrl()).toBe('/'); // clearReturnUrl post-navegación
+    expect(service.state().kind).toBe('success');
+  });
+
+  it('completeSession con ≥2 sistemas accesibles → /auth/seleccionar-sistema', () => {
+    service.setReturnUrl('/dashboard');
+    const exp = Math.floor(Date.now() / 1000) + 600;
+    const token = makeJwt({
+      sub: 'admin',
+      otpValidado: true,
+      newPassOk: true,
+      roles: ['SUPER_ADMIN'],
+      permisos: [],
+      sistemas: {
+        sisrh: ['SUPER_ADMIN'],
+        convocatoria: ['ROLE_ADMIN'],
+      },
+      exp,
+    });
+
+    service.completeSession({
+      token,
+      newPass: 'N',
+      requiereOtp: false,
+      requiereEnroll: false,
+      roles: [],
+      permisos: [],
+    });
+
+    expect(router.navigate).toHaveBeenCalledWith(['/auth/seleccionar-sistema']);
+    expect(router.navigateByUrl).not.toHaveBeenCalled();
+    // returnUrl SE PRESERVA cuando vamos al selector — el usuario aún no decidió SISRH.
+    expect(service.returnUrl()).toBe('/dashboard');
+    expect(service.state().kind).toBe('success');
+  });
+
+  // ─── Fase 3 SSO — establishSession / routeAfterOtpSuccess (split enroll) ──────
+
+  it('establishSession deja la sesión activa y estado success SIN navegar', () => {
+    // Motivación del split: en otp-enroll la sesión se asegura de inmediato
+    // (no se pierde si el usuario cierra la pestaña durante el delay del snackbar),
+    // pero la navegación se difiere. Aquí verificamos exactamente "sesión sí, ruta no".
+    service.setReturnUrl('/dashboard');
+    const exp = Math.floor(Date.now() / 1000) + 600;
+    const token = makeJwt({
+      sub: 'admin',
+      otpValidado: true,
+      newPassOk: true,
+      roles: ['SUPER_ADMIN'],
+      permisos: [],
+      sistemas: { sisrh: ['SUPER_ADMIN'] },
+      exp,
+    });
+
+    service.establishSession({
+      token,
+      newPass: 'N',
+      requiereOtp: false,
+      requiereEnroll: false,
+      roles: [],
+      permisos: [],
+    });
+
+    expect(auth.isAuthenticated()).toBe(true);
+    expect(auth.accessToken()).toBe(token);
+    expect(service.state().kind).toBe('success');
+    // Lo crítico: NO navegó todavía — el caller decide cuándo.
+    expect(router.navigate).not.toHaveBeenCalled();
+    expect(router.navigateByUrl).not.toHaveBeenCalled();
+    // returnUrl intacta hasta que se enrute.
+    expect(service.returnUrl()).toBe('/dashboard');
+  });
+
+  it('routeAfterOtpSuccess (aislado, solo SISRH) → navigateByUrl(returnUrl) + clearReturnUrl', () => {
+    service.setReturnUrl('/dashboard');
+    const exp = Math.floor(Date.now() / 1000) + 600;
+    const token = makeJwt({
+      sub: 'admin',
+      otpValidado: true,
+      newPassOk: true,
+      roles: ['SUPER_ADMIN'],
+      permisos: [],
+      sistemas: { sisrh: ['SUPER_ADMIN'] },
+      exp,
+    });
+    // El selector lee los sistemas del JWT activo → establecer sesión primero.
+    service.establishSession({
+      token,
+      newPass: 'N',
+      requiereOtp: false,
+      requiereEnroll: false,
+      roles: [],
+      permisos: [],
+    });
+
+    service.routeAfterOtpSuccess();
+
+    expect(router.navigateByUrl).toHaveBeenCalledWith('/dashboard');
+    expect(router.navigate).not.toHaveBeenCalledWith(['/auth/seleccionar-sistema']);
+    expect(service.returnUrl()).toBe('/'); // clearReturnUrl tras navegar a SISRH
+  });
+
+  it('routeAfterOtpSuccess (aislado, ≥2 sistemas) → selector + returnUrl preservado', () => {
+    service.setReturnUrl('/dashboard');
+    const exp = Math.floor(Date.now() / 1000) + 600;
+    const token = makeJwt({
+      sub: 'admin',
+      otpValidado: true,
+      newPassOk: true,
+      roles: ['SUPER_ADMIN'],
+      permisos: [],
+      sistemas: {
+        sisrh: ['SUPER_ADMIN'],
+        convocatoria: ['ROLE_ADMIN'],
+      },
+      exp,
+    });
+    service.establishSession({
+      token,
+      newPass: 'N',
+      requiereOtp: false,
+      requiereEnroll: false,
+      roles: [],
+      permisos: [],
+    });
+
+    service.routeAfterOtpSuccess();
+
+    expect(router.navigate).toHaveBeenCalledWith(['/auth/seleccionar-sistema']);
+    expect(router.navigateByUrl).not.toHaveBeenCalled();
+    expect(service.returnUrl()).toBe('/dashboard'); // preservado hasta elegir SISRH
+  });
+
+  it('flujo diferido (otp-enroll): establishSession ahora, routeAfterOtpSuccess después', () => {
+    // Reproduce el patrón de OtpEnrollPageComponent: sesión inmediata + ruta diferida.
+    service.setReturnUrl('/dashboard');
+    const exp = Math.floor(Date.now() / 1000) + 600;
+    const token = makeJwt({
+      sub: 'admin',
+      otpValidado: true,
+      newPassOk: true,
+      roles: ['SUPER_ADMIN'],
+      permisos: [],
+      sistemas: { sisrh: ['SUPER_ADMIN'] },
+      exp,
+    });
+    const response = {
+      token,
+      newPass: 'N' as const,
+      requiereOtp: false,
+      requiereEnroll: false,
+      roles: [],
+      permisos: [],
+    };
+
+    // 1) Inmediato: sesión asegurada, sin navegar.
+    service.establishSession(response);
+    expect(auth.isAuthenticated()).toBe(true);
+    expect(router.navigateByUrl).not.toHaveBeenCalled();
+
+    // 2) Diferido (tras el snackbar): recién aquí navega.
+    service.routeAfterOtpSuccess();
+    expect(router.navigateByUrl).toHaveBeenCalledWith('/dashboard');
+  });
 });

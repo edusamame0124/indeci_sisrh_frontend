@@ -2,6 +2,7 @@ import type { MainNavItem, MainNavChildItem } from '../models/main-nav-item.mode
 import { flattenNavLeaves } from '../models/main-nav-item.model';
 import { ADMIN_MODULE_ACCESS_ROLES } from '../guards/admin-access.guard';
 import { CATALOGOS_ACCESS_ROLES } from '../guards/catalogos-access.guard';
+import { REPORTES_ACCESS_ROLES } from '../guards/reportes-access.guard';
 import { EMPLEADOS_ACCESS_ROLES } from './empleados-access-roles';
 
 /**
@@ -83,6 +84,18 @@ export const MAIN_NAV_ITEMS: readonly MainNavItem[] = [
   },
 
   {
+    label: 'Gestiones del personal',
+    route: '',
+    icon: 'manage_accounts',
+    requiredAnyRole: [...EMPLEADOS_ACCESS_ROLES],
+    children: [
+      { label: 'Gestión del empleado', route: '/gestiones-personal/empleado', icon: 'badge' },
+      { label: 'Gestión del jefe inmediato', route: '/gestiones-personal/jefe-inmediato', icon: 'supervisor_account' },
+      { label: 'Gestión de RRHH', route: '/gestiones-personal/rrhh', icon: 'diversity_3' },
+    ],
+  },
+
+  {
     label: 'Planilla',
     route: '',
     icon: 'calculate',
@@ -107,7 +120,7 @@ export const MAIN_NAV_ITEMS: readonly MainNavItem[] = [
     label: 'Reportes',
     route: '',
     icon: 'assessment',
-    requiredAnyRole: [...ADMIN_MODULE_ACCESS_ROLES],
+    requiredAnyRole: [...REPORTES_ACCESS_ROLES],
     children: [
       { label: 'Resumen general', route: '/reportes/resumen-mensual', icon: 'bar_chart' },
       { label: 'Resumen por meta', route: '/reportes/resumen-meta', icon: 'donut_small' },

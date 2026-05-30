@@ -9,11 +9,14 @@ describe('hasAdminModuleAccess', () => {
   it('permite SUPER_ADMIN', () => {
     expect(hasAdminModuleAccess(['SUPER_ADMIN'])).toBe(true);
   });
-  it('permite ADMIN', () => {
+  it('permite ADMIN y ADMIN_TI', () => {
     expect(hasAdminModuleAccess(['ADMIN'])).toBe(true);
+    expect(hasAdminModuleAccess(['ADMIN_TI'])).toBe(true);
   });
-  it('deniega RRHH_ADMIN', () => {
+  it('deniega RRHH_ADMIN y roles RRHH operativos', () => {
     expect(hasAdminModuleAccess(['RRHH_ADMIN'])).toBe(false);
+    expect(hasAdminModuleAccess(['PLANILLA_ANALISTA'])).toBe(false);
+    expect(hasAdminModuleAccess(['RRHH_JEFE'])).toBe(false);
   });
   it('SUPER_ADMIN tiene prioridad ante otros', () => {
     expect(hasAdminModuleAccess(['RRHH_ADMIN', 'SUPER_ADMIN'])).toBe(true);

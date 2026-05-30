@@ -1,11 +1,24 @@
 import { describe, expect, it } from 'vitest';
 import { FormControl, FormGroup } from '@angular/forms';
 import {
+  evaluatePasswordComplexity,
   evaluatePasswordStrength,
   passwordComplexityValidator,
   passwordsMatchValidator,
   PasswordComplexityResult,
 } from './password-policy.model';
+
+describe('evaluatePasswordComplexity', () => {
+  it('marks each rule independently for partial passwords', () => {
+    const r = evaluatePasswordComplexity('Sape545787*-');
+    expect(r.minLength).toBe(true);
+    expect(r.hasUppercase).toBe(true);
+    expect(r.hasLowercase).toBe(true);
+    expect(r.hasDigit).toBe(true);
+    expect(r.hasSpecialChar).toBe(true);
+    expect(evaluatePasswordStrength(r)).toBe('strong');
+  });
+});
 
 describe('passwordComplexityValidator', () => {
   const validate = (v: string) => passwordComplexityValidator()(new FormControl(v));

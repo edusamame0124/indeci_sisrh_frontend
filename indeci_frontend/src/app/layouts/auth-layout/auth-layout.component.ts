@@ -12,10 +12,10 @@ import { RouterOutlet } from '@angular/router';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <main class="auth-layout">
-<header class="auth-layout__header">
-  <p class="auth-layout__brand">Sistema RRHH</p>
-  <p class="auth-layout__subtitle">Plataforma Integrada de Gestión</p>
-</header>
+      <header class="auth-layout__header">
+        <p class="auth-layout__brand" aria-label="SISRH-INDECI">SISRH-INDECI</p>
+        <p class="auth-layout__subtitle">Sistema Integrado de Recursos Humanos</p>
+      </header>
       <section class="auth-layout__content">
         <router-outlet />
       </section>

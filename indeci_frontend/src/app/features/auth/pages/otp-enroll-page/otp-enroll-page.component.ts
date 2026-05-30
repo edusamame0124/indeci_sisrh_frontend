@@ -42,13 +42,16 @@ import { isErrorResponse } from '../../../../core/models/error-response.model';
   template: `
     <mat-card class="enroll-card" appearance="outlined">
       <header class="enroll-head">
-        <div class="enroll-head__text">
-          <h1 class="enroll-head__title">Activar segundo factor</h1>
-          @if (username()) {
-            <p class="enroll-head__sub" aria-live="polite">
-              Usuario: <strong>{{ username() }}</strong>
-            </p>
-          }
+        <div class="enroll-head__brand">
+          <mat-icon class="enroll-head__icon" aria-hidden="true">qr_code_2</mat-icon>
+          <div class="enroll-head__text">
+            <h1 class="enroll-head__title">Activar segundo factor</h1>
+            @if (username()) {
+              <p class="enroll-head__sub" aria-live="polite">
+                Hola, <strong>{{ username() }}</strong>
+              </p>
+            }
+          </div>
         </div>
       </header>
 
@@ -91,7 +94,7 @@ import { isErrorResponse } from '../../../../core/models/error-response.model';
 
             @if (confirmError()) {
               <p role="alert" class="error-msg">
-                <mat-icon fontIcon="error" aria-hidden="true" />
+                <mat-icon fontIcon="error_outline" aria-hidden="true" />
                 {{ confirmError() }}
               </p>
             }
@@ -137,6 +140,19 @@ import { isErrorResponse } from '../../../../core/models/error-response.model';
         border-bottom: 1px solid #e2e8f0;
         border-top: 3px solid var(--mat-sys-primary, #0d47a1);
         background: #fafbfc;
+      }
+      .enroll-head__brand {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.75rem;
+      }
+      .enroll-head__icon {
+        flex-shrink: 0;
+        color: var(--mat-sys-primary, #0d47a1);
+        font-size: 1.5rem;
+        width: 1.5rem;
+        height: 1.5rem;
+        margin-top: 0.125rem;
       }
       .enroll-head__title {
         margin: 0;
@@ -326,17 +342,15 @@ export class OtpEnrollPageComponent implements OnInit {
       next: (response) => {
         this.confirmInProgress.set(false);
         if (response.token) {
-          this.auth.setSession(response);
+          // Fase 3 SSO: sesión inmediata (no se pierde si el usuario cierra
+          // la pestaña durante el snackbar); routing diferido tras el delay.
+          this.flow.establishSession(response);
           // FR-017: confirmar visualmente activación antes de navegar
           this.snackBar.open('Segundo factor activado correctamente', 'Cerrar', {
             duration: 2000,
             panelClass: 'success-snackbar',
           });
-          // T088 + FR-026: usar returnUrl preservado por el flow
-          const returnUrl = this.flow.returnUrl();
-          this.flow.clearReturnUrl();
-          // Pequeño delay para que el usuario vea el snackbar
-          setTimeout(() => void this.router.navigateByUrl(returnUrl), 800);
+          setTimeout(() => this.flow.routeAfterOtpSuccess(), 800);
         } else {
           this.confirmError.set(this.errorMessages.translate(null));
         }

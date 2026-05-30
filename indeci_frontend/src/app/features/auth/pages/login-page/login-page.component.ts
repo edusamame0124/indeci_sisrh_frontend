@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } 
 import { ActivatedRoute, Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { MatCardModule } from '@angular/material/card';
+import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { LoginFormComponent } from '../../components/login-form/login-form.component';
 import { CountdownComponent } from '../../../../shared/components/countdown/countdown.component';
@@ -26,13 +27,24 @@ import { LoginRequest } from '../../models/login.model';
 @Component({
   selector: 'app-login-page',
   standalone: true,
-  imports: [LoginFormComponent, CountdownComponent, MatCardModule, MatProgressSpinnerModule],
+  imports: [
+    LoginFormComponent,
+    CountdownComponent,
+    MatCardModule,
+    MatIconModule,
+    MatProgressSpinnerModule,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <mat-card class="login-card" appearance="outlined">
       <header class="login-head">
-        <h1 class="login-head__title">Inicie sesión</h1>
-        <p class="login-head__sub">Ingrese sus credenciales institucionales</p>
+        <div class="login-head__brand">
+          <mat-icon class="login-head__icon" aria-hidden="true">lock_outline</mat-icon>
+          <div>
+            <h1 class="login-head__title">Inicie sesión</h1>
+            <p class="login-head__sub">Ingrese sus credenciales institucionales</p>
+          </div>
+        </div>
       </header>
 
       <mat-card-content class="login-body">
@@ -48,7 +60,10 @@ import { LoginRequest } from '../../models/login.model';
             </p>
           }
           @case ('error') {
-            <p role="alert" class="msg msg--error">{{ errorMessage() }}</p>
+            <p role="alert" class="msg msg--error">
+              <mat-icon aria-hidden="true">error_outline</mat-icon>
+              <span>{{ errorMessage() }}</span>
+            </p>
           }
           @case ('awaiting-captcha') {
             <p role="status" class="msg msg--info">{{ captchaPreviousMessage() }}</p>
@@ -97,6 +112,19 @@ import { LoginRequest } from '../../models/login.model';
         border-top: 3px solid var(--mat-sys-primary, #0d47a1);
         background: #fafbfc;
       }
+      .login-head__brand {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.75rem;
+      }
+      .login-head__icon {
+        flex-shrink: 0;
+        color: var(--mat-sys-primary, #0d47a1);
+        font-size: 1.5rem;
+        width: 1.5rem;
+        height: 1.5rem;
+        margin-top: 0.125rem;
+      }
       .login-head__title {
         margin: 0;
         font-size: 1.125rem;
@@ -118,11 +146,21 @@ import { LoginRequest } from '../../models/login.model';
           var(--sisrh-spacing-xl, 1.5rem) !important;
       }
       .msg {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.5rem;
         margin: 0;
         padding: var(--sisrh-spacing-md, 0.875rem) var(--sisrh-spacing-md, 0.875rem);
         border-radius: 8px;
         font-size: 0.875rem;
         line-height: 1.45;
+      }
+      .msg mat-icon {
+        flex-shrink: 0;
+        font-size: 1.125rem;
+        width: 1.125rem;
+        height: 1.125rem;
+        margin-top: 0.125rem;
       }
       .msg--info {
         color: #92400e;

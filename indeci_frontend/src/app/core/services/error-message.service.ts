@@ -146,6 +146,11 @@ export class ErrorMessageService {
     return 'Denegaciones institucionales del usuario actualizadas.';
   }
 
+  /** Tras alta de usuario con clave temporal definida por TI. */
+  adminUsuarioCreadoClaveTemporalOk(): string {
+    return 'Usuario registrado. Comunique la clave temporal al titular por un canal seguro; deberá cambiarla en el primer ingreso.';
+  }
+
   /**
    * Caso: sesión activa con bundle JS antiguo envía payload de pensión que ya no existe.
    * Backend devuelve 400 sin mensaje específico → UI sugiere recarga.

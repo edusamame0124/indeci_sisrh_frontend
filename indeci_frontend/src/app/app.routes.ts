@@ -26,12 +26,19 @@ export const routes: Routes = [
           import('./features/dashboard/pages/dashboard-home-page/dashboard-home-page.component').then(
             (m) => m.DashboardHomePageComponent,
           ),
-        title: 'Inicio — SISRH',
+        title: 'Inicio — SISRH-INDECI',
       },
       {
         path: 'empleados',
         loadChildren: () =>
           import('./features/empleados/empleados.routes').then((m) => m.EMPLEADOS_ROUTES),
+      },
+      {
+        path: 'gestiones-personal',
+        loadChildren: () =>
+          import('./features/gestiones-personal/gestiones-personal.routes').then(
+            (m) => m.GESTIONES_PERSONAL_ROUTES,
+          ),
       },
       {
         path: 'catalogos',

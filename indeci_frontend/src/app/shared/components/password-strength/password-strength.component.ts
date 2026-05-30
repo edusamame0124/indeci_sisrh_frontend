@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { MatIconModule } from '@angular/material/icon';
 import {
   PasswordComplexityResult,
   PasswordStrength,
@@ -11,40 +12,122 @@ import {
 @Component({
   selector: 'app-password-strength',
   standalone: true,
+  imports: [MatIconModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="password-strength">
-      <div
-        class="bar bar--{{ strength() }}"
-        [attr.aria-label]="'Fortaleza de la clave: ' + strengthLabel()"
-        role="progressbar"
-        [attr.aria-valuenow]="strengthScore()"
-        aria-valuemin="0"
-        aria-valuemax="3"
-      ></div>
-      <p class="strength-label">Fortaleza: <strong>{{ strengthLabel() }}</strong></p>
+    <div class="password-strength" aria-live="polite">
+      <div class="bar-track" aria-hidden="true">
+        <div
+          class="bar-fill bar-fill--{{ strength() }}"
+          [style.width.%]="strengthPercent()"
+        ></div>
+      </div>
+      <p class="strength-label">
+        Fortaleza:
+        <strong class="strength-label__value strength-label__value--{{ strength() }}">
+          {{ strengthLabel() }}
+        </strong>
+      </p>
       <ul class="requirements" aria-label="Requisitos de la clave">
-        <li [class.met]="result().minLength">Al menos 8 caracteres</li>
-        <li [class.met]="result().hasUppercase">Al menos una mayúscula</li>
-        <li [class.met]="result().hasLowercase">Al menos una minúscula</li>
-        <li [class.met]="result().hasDigit">Al menos un dígito</li>
-        <li [class.met]="result().hasSpecialChar">Al menos un carácter especial</li>
+        @for (rule of rules(); track rule.key) {
+          <li class="requirement" [class.requirement--met]="rule.met">
+            <mat-icon
+              class="requirement__icon"
+              [fontIcon]="rule.met ? 'check_circle' : 'cancel'"
+              [attr.aria-hidden]="true"
+            />
+            <span>{{ rule.label }}</span>
+          </li>
+        }
       </ul>
     </div>
   `,
   styles: [
     `
-      .password-strength { font-size: 0.875rem; }
-      .bar { height: 6px; border-radius: 3px; background: #e0e0e0; transition: background 200ms ease; }
-      .bar--weak { background: var(--sisrh-color-error); width: 33%; }
-      .bar--medium { background: var(--sisrh-color-warning); width: 66%; }
-      .bar--strong { background: var(--sisrh-color-success); width: 100%; }
-      .strength-label { margin: 0.25rem 0; }
-      .requirements { list-style: none; padding-left: 0; margin: 0; }
-      .requirements li { color: var(--sisrh-color-error); padding: 0.125rem 0; }
-      .requirements li.met { color: var(--sisrh-color-success); }
-      .requirements li::before { content: '✗ '; }
-      .requirements li.met::before { content: '✓ '; }
+      .password-strength {
+        font-size: 0.875rem;
+        margin: 0.25rem 0 0.5rem;
+      }
+
+      .bar-track {
+        height: 6px;
+        border-radius: 3px;
+        background: #e8eaed;
+        overflow: hidden;
+      }
+
+      .bar-fill {
+        height: 100%;
+        border-radius: 3px;
+        transition:
+          width 220ms ease,
+          background-color 220ms ease;
+      }
+
+      .bar-fill--weak {
+        background: var(--sisrh-color-error, #c62828);
+      }
+
+      .bar-fill--medium {
+        background: var(--sisrh-color-warning, #ed6c02);
+      }
+
+      .bar-fill--strong {
+        background: var(--sisrh-color-success, #2e7d32);
+      }
+
+      .strength-label {
+        margin: 0.35rem 0 0.5rem;
+        color: var(--sisrh-color-secondary, #475569);
+      }
+
+      .strength-label__value--weak {
+        color: var(--sisrh-color-error, #c62828);
+      }
+
+      .strength-label__value--medium {
+        color: var(--sisrh-color-warning, #ed6c02);
+      }
+
+      .strength-label__value--strong {
+        color: var(--sisrh-color-success, #2e7d32);
+      }
+
+      .requirements {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.2rem;
+      }
+
+      .requirement {
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        color: var(--sisrh-color-error, #c62828);
+        transition: color 180ms ease;
+      }
+
+      .requirement--met {
+        color: var(--sisrh-color-success, #2e7d32);
+      }
+
+      .requirement__icon {
+        width: 1.125rem;
+        height: 1.125rem;
+        font-size: 1.125rem;
+        flex-shrink: 0;
+      }
+
+      .requirement:not(.requirement--met) .requirement__icon {
+        color: var(--sisrh-color-error, #c62828);
+      }
+
+      .requirement--met .requirement__icon {
+        color: var(--sisrh-color-success, #2e7d32);
+      }
     `,
   ],
 })
@@ -62,8 +145,19 @@ export class PasswordStrengthComponent {
     return map[this.strength()];
   });
 
-  readonly strengthScore = computed(() => {
-    const map: Record<PasswordStrength, number> = { weak: 1, medium: 2, strong: 3 };
-    return map[this.strength()];
+  readonly strengthPercent = computed(() => {
+    const met = Object.values(this.result()).filter(Boolean).length;
+    return Math.max(8, (met / 5) * 100);
+  });
+
+  readonly rules = computed(() => {
+    const r = this.result();
+    return [
+      { key: 'minLength', met: r.minLength, label: 'Al menos 8 caracteres' },
+      { key: 'hasUppercase', met: r.hasUppercase, label: 'Al menos una mayúscula' },
+      { key: 'hasLowercase', met: r.hasLowercase, label: 'Al menos una minúscula' },
+      { key: 'hasDigit', met: r.hasDigit, label: 'Al menos un dígito' },
+      { key: 'hasSpecialChar', met: r.hasSpecialChar, label: 'Al menos un carácter especial' },
+    ] as const;
   });
 }

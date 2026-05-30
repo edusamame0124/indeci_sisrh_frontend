@@ -6,6 +6,7 @@ import { ErrorMessageService } from '../../../core/services/error-message.servic
 import { ErrorResponse } from '../../../core/models/error-response.model';
 import { LoginResponse } from '../models/login.model';
 import { LoginFlowState } from '../models/login-flow-state.model';
+import { SistemaSelectorService } from './sistema-selector.service';
 
 /**
  * Orquesta los 4 flujos de autenticación: enruta tras cada respuesta del backend
@@ -17,6 +18,7 @@ export class LoginFlowService {
   private readonly router = inject(Router);
   private readonly errorMessages = inject(ErrorMessageService);
   private readonly telemetry = inject(ClientTelemetryService);
+  private readonly selector = inject(SistemaSelectorService);
 
   /** Máximo intentos OTP por sesión temporal antes de invalidar (FR-033). */
   static readonly MAX_OTP_ATTEMPTS = 5;
@@ -84,6 +86,47 @@ export class LoginFlowService {
       kind: 'error',
       mensaje: 'Ocurrió un problema. Inténtalo de nuevo más tarde.',
     });
+  }
+
+  /**
+   * Fase 3 SSO — Establece la sesión local inmediatamente (signal, localStorage
+   * y estado del flow). Separado del routing para que el caller decida CUÁNDO
+   * navegar: en otp-page es síncrono; en otp-enroll-page se difiere para que
+   * el snackbar de "segundo factor activado" sea visible antes del cambio de
+   * pantalla, pero la sesión queda asegurada inmediatamente para no perderla
+   * si el usuario cierra la pestaña durante el delay.
+   */
+  establishSession(response: LoginResponse): void {
+    this.auth.setSession(response);
+    this._state.set({ kind: 'success' });
+  }
+
+  /**
+   * Fase 3 SSO — Decide la navegación post-OTP exitoso:
+   *   - >=2 sistemas accesibles → /auth/seleccionar-sistema (returnUrl preservado).
+   *   - Solo SISRH → navega directo a returnUrl (comportamiento Fase 1/2).
+   *
+   * Asume que {@link establishSession} ya corrió (signals están reactivos al
+   * claim "sistemas"). Si no, el cálculo de sistemas usa el JWT previo (NO
+   * pasa: el caller siempre llama establish antes).
+   */
+  routeAfterOtpSuccess(): void {
+    if (this.selector.hasMultipleSystems()) {
+      void this.router.navigate(['/auth/seleccionar-sistema']);
+      return;
+    }
+    const returnUrl = this._returnUrl();
+    this.clearReturnUrl();
+    void this.router.navigateByUrl(returnUrl);
+  }
+
+  /**
+   * Conveniencia para callers sin delay intermedio (otp-page). Equivale a
+   * {@link establishSession} + {@link routeAfterOtpSuccess} en cascada.
+   */
+  completeSession(response: LoginResponse): void {
+    this.establishSession(response);
+    this.routeAfterOtpSuccess();
   }
 
   /** Maneja errores del backend al hacer login. */

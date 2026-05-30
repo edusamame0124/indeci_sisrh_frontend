@@ -22,7 +22,7 @@ describe('PasswordStrengthComponent', () => {
     });
     expect(fixture.componentInstance.strength()).toBe('weak');
     expect(fixture.componentInstance.strengthLabel()).toBe('Débil');
-    expect(fixture.nativeElement.querySelector('.bar--weak')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('.bar-fill--weak')).toBeTruthy();
   });
 
   it('shows "Media" when 3-4 rules met', () => {
@@ -35,7 +35,7 @@ describe('PasswordStrengthComponent', () => {
     });
     expect(fixture.componentInstance.strength()).toBe('medium');
     expect(fixture.componentInstance.strengthLabel()).toBe('Media');
-    expect(fixture.nativeElement.querySelector('.bar--medium')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('.bar-fill--medium')).toBeTruthy();
   });
 
   it('shows "Fuerte" when all 5 rules met', () => {
@@ -48,10 +48,10 @@ describe('PasswordStrengthComponent', () => {
     });
     expect(fixture.componentInstance.strength()).toBe('strong');
     expect(fixture.componentInstance.strengthLabel()).toBe('Fuerte');
-    expect(fixture.nativeElement.querySelector('.bar--strong')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('.bar-fill--strong')).toBeTruthy();
   });
 
-  it('renders all 5 requirements with correct met/unmet state', () => {
+  it('renders met rules with check icon and unmet with cancel', () => {
     const fixture = setup({
       minLength: true,
       hasUppercase: false,
@@ -59,16 +59,15 @@ describe('PasswordStrengthComponent', () => {
       hasDigit: false,
       hasSpecialChar: true,
     });
-    const items = fixture.nativeElement.querySelectorAll('.requirements li');
+    const items = fixture.nativeElement.querySelectorAll('.requirement');
     expect(items.length).toBe(5);
-    expect((items[0] as HTMLElement).classList.contains('met')).toBe(true);  // minLength
-    expect((items[1] as HTMLElement).classList.contains('met')).toBe(false); // hasUppercase
-    expect((items[2] as HTMLElement).classList.contains('met')).toBe(true);  // hasLowercase
-    expect((items[3] as HTMLElement).classList.contains('met')).toBe(false); // hasDigit
-    expect((items[4] as HTMLElement).classList.contains('met')).toBe(true);  // hasSpecialChar
+    expect((items[0] as HTMLElement).classList.contains('requirement--met')).toBe(true);
+    expect((items[1] as HTMLElement).classList.contains('requirement--met')).toBe(false);
+    expect((items[0] as HTMLElement).querySelector('[fontIcon="check_circle"]')).toBeTruthy();
+    expect((items[1] as HTMLElement).querySelector('[fontIcon="cancel"]')).toBeTruthy();
   });
 
-  it('progressbar has proper aria attributes', () => {
+  it('bar width reflects number of rules met', () => {
     const fixture = setup({
       minLength: true,
       hasUppercase: true,
@@ -76,11 +75,7 @@ describe('PasswordStrengthComponent', () => {
       hasDigit: true,
       hasSpecialChar: true,
     });
-    const bar = fixture.nativeElement.querySelector('[role="progressbar"]') as HTMLElement;
-    expect(bar).toBeTruthy();
-    expect(bar.getAttribute('aria-valuenow')).toBe('3');
-    expect(bar.getAttribute('aria-valuemin')).toBe('0');
-    expect(bar.getAttribute('aria-valuemax')).toBe('3');
-    expect(bar.getAttribute('aria-label')).toContain('Fuerte');
+    const fill = fixture.nativeElement.querySelector('.bar-fill') as HTMLElement;
+    expect(fill.style.width).toBe('100%');
   });
 });

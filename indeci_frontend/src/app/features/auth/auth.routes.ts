@@ -52,6 +52,18 @@ export const AUTH_ROUTES: Routes = [
         title: 'Cuenta inactiva — SISRH-INDECI',
       },
       {
+        // Fase 3 SSO — Portal Selector entre SISRH/SISCONV/GDR. Aparece tras
+        // OTP exitoso si el usuario tiene acceso a ≥2 sistemas (decidido por
+        // LoginFlowService.completeSession). No tiene guard: el componente
+        // ya consume el access token via AuthService y se autoprotege.
+        path: 'seleccionar-sistema',
+        loadComponent: () =>
+          import('./pages/sistema-selector-page/sistema-selector-page.component').then(
+            (m) => m.SistemaSelectorPageComponent,
+          ),
+        title: 'Portal INDECI — Seleccionar sistema',
+      },
+      {
         path: 'storage-error',
         loadComponent: () =>
           import('./pages/storage-error-page/storage-error-page.component').then(

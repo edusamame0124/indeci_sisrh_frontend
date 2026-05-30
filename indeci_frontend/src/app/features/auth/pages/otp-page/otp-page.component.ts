@@ -3,6 +3,7 @@ import { Router, RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { OtpInputComponent } from '../../components/otp-input/otp-input.component';
 import { AuthApiService } from '../../services/auth-api.service';
@@ -26,6 +27,7 @@ import { isErrorResponse } from '../../../../core/models/error-response.model';
     OtpInputComponent,
     MatCardModule,
     MatButtonModule,
+    MatIconModule,
     MatProgressSpinnerModule,
     RouterLink,
   ],
@@ -33,14 +35,19 @@ import { isErrorResponse } from '../../../../core/models/error-response.model';
   template: `
     <mat-card class="auth-card" appearance="outlined">
       <header class="auth-head">
-        <h1 class="auth-head__title">Verificación en dos pasos</h1>
-        @if (username()) {
-          <p class="auth-head__sub" aria-live="polite">
-            Sesión para <strong>{{ username() }}</strong>
-          </p>
-        } @else {
-          <p class="auth-head__sub">Ingrese el código de su aplicación autenticadora</p>
-        }
+        <div class="auth-head__brand">
+          <mat-icon class="auth-head__icon" aria-hidden="true">verified_user</mat-icon>
+          <div>
+            <h1 class="auth-head__title">Verificación en dos pasos</h1>
+            @if (username()) {
+              <p class="auth-head__sub" aria-live="polite">
+                Hola, <strong>{{ username() }}</strong>
+              </p>
+            } @else {
+              <p class="auth-head__sub">Ingrese el código de su aplicación autenticadora</p>
+            }
+          </div>
+        </div>
       </header>
 
       <mat-card-content class="auth-body">
@@ -63,7 +70,10 @@ import { isErrorResponse } from '../../../../core/models/error-response.model';
         />
 
         @if (errorMessage()) {
-          <p role="alert" class="msg msg--error">{{ errorMessage() }}</p>
+          <p role="alert" class="msg msg--error">
+            <mat-icon aria-hidden="true">error_outline</mat-icon>
+            <span>{{ errorMessage() }}</span>
+          </p>
         }
 
         @if (showHourHint()) {
@@ -81,7 +91,8 @@ import { isErrorResponse } from '../../../../core/models/error-response.model';
         }
 
         <div class="actions">
-          <a mat-button routerLink="/auth/logout" class="abort-link">
+          <a mat-stroked-button routerLink="/auth/logout" class="abort-link">
+            <mat-icon>arrow_back</mat-icon>
             Volver al inicio de sesión
           </a>
         </div>
@@ -112,6 +123,19 @@ import { isErrorResponse } from '../../../../core/models/error-response.model';
         border-top: 3px solid var(--mat-sys-primary, #0d47a1);
         background: #fafbfc;
       }
+      .auth-head__brand {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.75rem;
+      }
+      .auth-head__icon {
+        flex-shrink: 0;
+        color: var(--mat-sys-primary, #0d47a1);
+        font-size: 1.5rem;
+        width: 1.5rem;
+        height: 1.5rem;
+        margin-top: 0.125rem;
+      }
       .auth-head__title {
         margin: 0;
         font-size: 1.125rem;
@@ -141,11 +165,21 @@ import { isErrorResponse } from '../../../../core/models/error-response.model';
         line-height: 1.45;
       }
       .msg {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.5rem;
         margin: 1rem 0 0;
         padding: 0.75rem 0.875rem;
         border-radius: 8px;
         font-size: 0.875rem;
         line-height: 1.45;
+      }
+      .msg mat-icon {
+        flex-shrink: 0;
+        font-size: 1.125rem;
+        width: 1.125rem;
+        height: 1.125rem;
+        margin-top: 0.125rem;
       }
       .msg--error {
         color: var(--sisrh-color-error);
@@ -210,10 +244,9 @@ export class OtpPageComponent {
       next: (response) => {
         this.isSubmitting.set(false);
         if (response.token) {
-          this.auth.setSession(response);
-          const returnUrl = this.flow.returnUrl();
-          this.flow.clearReturnUrl();
-          void this.router.navigateByUrl(returnUrl);
+          // Fase 3 SSO: completeSession decide si ir a selector o a returnUrl
+          // según el claim "sistemas" del JWT recién emitido.
+          this.flow.completeSession(response);
         } else {
           this.errorMessage.set(this.errorMessages.translate(null));
         }

@@ -14,6 +14,18 @@ export interface PasswordComplexityResult {
 
 export type PasswordStrength = 'weak' | 'medium' | 'strong';
 
+/** Evalúa cada regla de complejidad sobre el texto actual (UI en tiempo real). */
+export function evaluatePasswordComplexity(password: string): PasswordComplexityResult {
+  const v = password ?? '';
+  return {
+    minLength: v.length >= 8,
+    hasUppercase: /[A-Z]/.test(v),
+    hasLowercase: /[a-z]/.test(v),
+    hasDigit: /[0-9]/.test(v),
+    hasSpecialChar: /[^A-Za-z0-9]/.test(v),
+  };
+}
+
 export function evaluatePasswordStrength(r: PasswordComplexityResult): PasswordStrength {
   const score = Object.values(r).filter(Boolean).length;
   if (score <= 2) return 'weak';
@@ -24,14 +36,7 @@ export function evaluatePasswordStrength(r: PasswordComplexityResult): PasswordS
 /** Validador de Reactive Forms: retorna `{ passwordComplexity: PasswordComplexityResult }` cuando NO cumple. */
 export function passwordComplexityValidator(): ValidatorFn {
   return (control: AbstractControl): ValidationErrors | null => {
-    const v = (control.value as string) ?? '';
-    const result: PasswordComplexityResult = {
-      minLength: v.length >= 8,
-      hasUppercase: /[A-Z]/.test(v),
-      hasLowercase: /[a-z]/.test(v),
-      hasDigit: /[0-9]/.test(v),
-      hasSpecialChar: /[^A-Za-z0-9]/.test(v),
-    };
+    const result = evaluatePasswordComplexity((control.value as string) ?? '');
     const allPass = Object.values(result).every(Boolean);
     return allPass ? null : { passwordComplexity: result };
   };

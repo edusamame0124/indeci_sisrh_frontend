@@ -1,7 +1,8 @@
-/**
- * Roles JWT con acceso a módulos Empleados y Planilla (specs/009 y MVP RRHH).
- * Patrón alineado a `ADMIN_MODULE_ACCESS_ROLES` en admin-access.guard.
- */
-export const EMPLEADOS_ACCESS_ROLES = ['ADMIN', 'RRHH_ADMIN', 'SUPER_ADMIN'] as const;
+import { EMPLEADOS_ACCESS_ROLES as _EMPLEADOS_ACCESS_ROLES } from './sisrh-roles.config';
 
+/**
+ * Roles con acceso a módulos Empleados y Planilla.
+ * Reexporta desde sisrh-roles.config (Fase 1 — TI / RRHH segregados).
+ */
+export const EMPLEADOS_ACCESS_ROLES = _EMPLEADOS_ACCESS_ROLES;
 export type EmpleadosAccessRole = (typeof EMPLEADOS_ACCESS_ROLES)[number];

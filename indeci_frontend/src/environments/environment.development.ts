@@ -16,4 +16,12 @@ export const environment = {
     enabled: false,
     endpoint: '/api/telemetry/client',
   },
+  /**
+   * Fase 3 SSO — URLs de los sistemas hermanos en dev (puertos coincidentes
+   * con los del backend según V010_34: SISCONV 4201, GDR 4202).
+   */
+  sistemasExternos: {
+    convocatoria: 'http://localhost:4201',
+    rendimiento: 'http://localhost:4202',
+  } as Readonly<Record<string, string>>,
 };

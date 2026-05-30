@@ -58,6 +58,19 @@ export class AuthService {
     return c && 'empleadoId' in c ? ((c.empleadoId as number | null) ?? null) : null;
   });
 
+  /**
+   * Fase 3 SSO — mapa código de sistema → roles del usuario en ese sistema.
+   * Devuelve {} si el claim está ausente (token Fase 1/2 legacy). El selector
+   * de Portal usa este signal para decidir cuántas cards pintar.
+   */
+  readonly sistemas = computed<Readonly<Record<string, ReadonlyArray<string>>>>(() => {
+    const c = this.claims();
+    if (c && 'sistemas' in c && c.sistemas) {
+      return c.sistemas;
+    }
+    return {};
+  });
+
   readonly isExpired = computed<boolean>(() => {
     const t = this._accessToken();
     return t === null || this.jwt.isExpired(t);

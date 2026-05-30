@@ -14,12 +14,13 @@ describe('filterVisibleNavItems (Spec 009 — 5 módulos + Inicio)', () => {
     expect(r.map((i) => i.route)).toEqual(['/']);
   });
 
-  it('ADMIN ve todos los módulos (Inicio + Catálogos + Empleados + Planilla + Portal + Reportes + Administración)', () => {
+  it('ADMIN ve todos los módulos (Inicio + Catálogos + Empleados + Gestiones del personal + Planilla + Portal + Reportes + Administración)', () => {
     const r = filterVisibleNavItems(MAIN_NAV_ITEMS, [], ['ADMIN']);
     expect(r.map((i) => i.label)).toEqual([
       'Inicio',
       'Catálogos',
       'Empleados',
+      'Gestiones del personal',
       'Planilla',
       'Portal del empleado',
       'Reportes',
@@ -36,14 +37,49 @@ describe('filterVisibleNavItems (Spec 009 — 5 módulos + Inicio)', () => {
     expect(r.find((i) => i.label === 'Administración')).toBeTruthy();
   });
 
-  it('RRHH_ADMIN ve Inicio + Catálogos (lectura) + Empleados + Planilla + Portal, NO Reportes ni Administración', () => {
+  it('RRHH_ADMIN (legacy) ve Inicio + Catálogos + Empleados + Planilla + Portal, NO Reportes ni Administración', () => {
     const r = filterVisibleNavItems(MAIN_NAV_ITEMS, [], ['RRHH_ADMIN']);
     expect(r.map((i) => i.label)).toEqual([
       'Inicio',
       'Catálogos',
       'Empleados',
+      'Gestiones del personal',
       'Planilla',
       'Portal del empleado',
+    ]);
+  });
+
+  it('ADMIN_TI ve todos los módulos (soporte TI, sin operación RRHH formal)', () => {
+    const r = filterVisibleNavItems(MAIN_NAV_ITEMS, [], ['ADMIN_TI']);
+    expect(r.map((i) => i.label)).toEqual([
+      'Inicio',
+      'Catálogos',
+      'Empleados',
+      'Gestiones del personal',
+      'Planilla',
+      'Portal del empleado',
+      'Reportes',
+      'Administración',
+    ]);
+  });
+
+  it('PLANILLA_ANALISTA ve Planilla + Reportes, NO Administración', () => {
+    const r = filterVisibleNavItems(MAIN_NAV_ITEMS, [], ['PLANILLA_ANALISTA']);
+    expect(r.map((i) => i.label)).toContain('Planilla');
+    expect(r.map((i) => i.label)).toContain('Reportes');
+    expect(r.find((i) => i.label === 'Administración')).toBeUndefined();
+  });
+
+  it('RRHH_CONSULTA ve Empleados + Planilla + Reportes (lectura), NO Administración', () => {
+    const r = filterVisibleNavItems(MAIN_NAV_ITEMS, [], ['RRHH_CONSULTA']);
+    expect(r.map((i) => i.label)).toEqual([
+      'Inicio',
+      'Catálogos',
+      'Empleados',
+      'Gestiones del personal',
+      'Planilla',
+      'Portal del empleado',
+      'Reportes',
     ]);
   });
 
@@ -84,6 +120,24 @@ describe('filterVisibleNavItems (Spec 009 — 5 módulos + Inicio)', () => {
       'Conceptos asignados',
       'Préstamos',
       'Vacaciones',
+    ]);
+  });
+
+  it('Gestiones del personal expone 3 sub-items navegables bajo /gestiones-personal/', () => {
+    const r = filterVisibleNavItems(MAIN_NAV_ITEMS, [], ['ADMIN']);
+    const gp = r.find((i) => i.label === 'Gestiones del personal');
+    expect(gp?.children?.length).toBe(3);
+    expect(gp?.children?.every((c) => !c.comingSoon)).toBe(true);
+    expect(gp?.children?.map((c) => c.label)).toEqual([
+      'Gestión del empleado',
+      'Gestión del jefe inmediato',
+      'Gestión de RRHH',
+    ]);
+    const routes = gp?.children?.map((c) => c.route).filter((p): p is string => Boolean(p)) ?? [];
+    expect(routes).toEqual([
+      '/gestiones-personal/empleado',
+      '/gestiones-personal/jefe-inmediato',
+      '/gestiones-personal/rrhh',
     ]);
   });
 

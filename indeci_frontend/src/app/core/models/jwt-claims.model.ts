@@ -37,6 +37,14 @@ export interface AccessTokenClaims extends JwtBaseClaims {
   readonly permisos: ReadonlyArray<string>;
   /** Spec 011 / B2 — empleado vinculado a la cuenta (null si no tiene). */
   readonly empleadoId?: number | null;
+  /**
+   * Fase 3 SSO — mapa código de sistema → roles del usuario en ese sistema.
+   * Siempre contiene "sisrh" cuando el SSO está activo; puede contener
+   * "convocatoria", "rendimiento", etc. Ausente para tokens Fase 1/2 legacy
+   * (emitidos antes de V010_34/35) — el frontend trata `undefined` como
+   * "solo SISRH" y salta el selector.
+   */
+  readonly sistemas?: Readonly<Record<string, ReadonlyArray<string>>>;
 }
 
 /** Refresh token (24h) emitido junto con access definitivo */

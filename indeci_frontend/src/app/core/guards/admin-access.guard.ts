@@ -1,17 +1,13 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router, UrlTree } from '@angular/router';
+import { ADMIN_MODULE_ACCESS_ROLES, hasAnyRole } from '../config/sisrh-roles.config';
 import { AuthService } from '../services/auth.service';
 
-/**
- * SUPER_ADMIN tiene prioridad; si el JWT institucional aún no lo emite se permite ADMIN
- * (rol administrativo disponible ver clarify Spec 007).
- */
-export const ADMIN_MODULE_ACCESS_ROLES = ['SUPER_ADMIN', 'ADMIN'] as const;
+/** Reexport para main-navigation y tests. */
+export { ADMIN_MODULE_ACCESS_ROLES };
 
 export function hasAdminModuleAccess(roles: ReadonlyArray<string>): boolean {
-  const rSet = new Set(roles);
-  if (rSet.has('SUPER_ADMIN')) return true;
-  return rSet.has('ADMIN');
+  return hasAnyRole(roles, ADMIN_MODULE_ACCESS_ROLES);
 }
 
 export const adminAccessGuard: CanActivateFn = (_route, state): boolean | UrlTree => {

@@ -9,21 +9,31 @@ import {
 import { AuthService } from '../services/auth.service';
 
 describe('hasReportesAccess', () => {
-  it('permite ADMIN', () => {
+  it('permite roles TI', () => {
     expect(hasReportesAccess(['ADMIN'])).toBe(true);
-  });
-  it('permite SUPER_ADMIN', () => {
+    expect(hasReportesAccess(['ADMIN_TI'])).toBe(true);
     expect(hasReportesAccess(['SUPER_ADMIN'])).toBe(true);
   });
-  it('rechaza RRHH_ADMIN (decisión clarify: Reportes solo ADMIN/SUPER_ADMIN)', () => {
+  it('permite RRHH_JEFE y RRHH_CONSULTA', () => {
+    expect(hasReportesAccess(['RRHH_JEFE'])).toBe(true);
+    expect(hasReportesAccess(['RRHH_CONSULTA'])).toBe(true);
+  });
+  it('permite analistas de planilla (archivo bancos / AIRHSP)', () => {
+    expect(hasReportesAccess(['PLANILLA_ANALISTA'])).toBe(true);
+    expect(hasReportesAccess(['PLANILLA_APROBADOR'])).toBe(true);
+  });
+  it('rechaza RRHH_ADMIN legacy sin ampliación', () => {
     expect(hasReportesAccess(['RRHH_ADMIN'])).toBe(false);
   });
-  it('rechaza otros roles', () => {
+  it('rechaza roles desconocidos', () => {
     expect(hasReportesAccess(['SOLICITANTE'])).toBe(false);
     expect(hasReportesAccess([])).toBe(false);
   });
-  it('expone solo 2 roles en REPORTES_ACCESS_ROLES', () => {
-    expect([...REPORTES_ACCESS_ROLES]).toEqual(['ADMIN', 'SUPER_ADMIN']);
+  it('incluye roles TI y RRHH de reportes en REPORTES_ACCESS_ROLES', () => {
+    expect(REPORTES_ACCESS_ROLES).toContain('SUPER_ADMIN');
+    expect(REPORTES_ACCESS_ROLES).toContain('ADMIN_TI');
+    expect(REPORTES_ACCESS_ROLES).toContain('PLANILLA_ANALISTA');
+    expect(REPORTES_ACCESS_ROLES).toContain('RRHH_CONSULTA');
   });
 });
 
@@ -53,10 +63,10 @@ describe('reportesAccessGuard', () => {
     expect(String(result as UrlTree)).toContain('/auth/login');
   });
 
-  it('redirige a / si autenticado pero sin rol ADMIN/SUPER_ADMIN (RRHH_ADMIN no entra)', () => {
+  it('redirige a / si autenticado sin rol de reportes', () => {
     const auth = TestBed.inject(AuthService);
     vi.spyOn(auth, 'isAuthenticated').mockReturnValue(true);
-    vi.spyOn(auth, 'roles').mockReturnValue(['RRHH_ADMIN']);
+    vi.spyOn(auth, 'roles').mockReturnValue(['RRHH_ANALISTA']);
     const result = TestBed.runInInjectionContext(() =>
       reportesAccessGuard({} as never, { url: '/reportes/boleta/42/2026-05' } as never),
     );

@@ -13,6 +13,7 @@ export interface AdminUserDetail extends AdminUserSummary {
 
 export interface AdminUserCreateRequest {
   readonly username: string;
+  readonly password: string;
 }
 
 export interface AdminUserStatusPatch {

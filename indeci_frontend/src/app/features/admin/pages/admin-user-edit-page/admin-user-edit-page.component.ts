@@ -21,6 +21,10 @@ import { ErrorMessageService } from '../../../../core/services/error-message.ser
 import { ClientTelemetryService } from '../../../../core/services/client-telemetry.service';
 import { isErrorResponse } from '../../../../core/models/error-response.model';
 import { sisrhConfirmDialogConfig } from '../../../../core/config/sisrh-dialog.config';
+import {
+  SISRH_SNACK_DURATION_MS,
+  type SisrhSnackDurationMs,
+} from '../../../../core/config/sisrh-snack.config';
 import { ConfirmDialogComponent, type ConfirmDialogData } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
 import type { AdminPermisoRow, AdminRolRow } from '../../models/admin.models';
 
@@ -239,10 +243,17 @@ export class AdminUserEditPageComponent {
       },
       error: (err: HttpErrorResponse) => {
         const raw = isErrorResponse(err.error) ? err.error.mensaje : null;
-        this.snack.open(this.errors.translateAdminApi(raw));
+        this.notify(this.errors.translateAdminApi(raw), SISRH_SNACK_DURATION_MS.long);
         this.loading.set(false);
       },
     });
+  }
+
+  private notify(
+    message: string,
+    duration: SisrhSnackDurationMs = SISRH_SNACK_DURATION_MS.short,
+  ): void {
+    this.snack.open(message, 'Cerrar', { duration });
   }
 
   guardarEstado(): void {
@@ -252,13 +263,13 @@ export class AdminUserEditPageComponent {
     this.api.patchUserStatus(this.parsedId, { status }).subscribe({
       next: () => {
         this.savingEstado.set(false);
-        this.snack.open(this.errors.adminUsuarioEstadoActualizadoLista());
+        this.notify(this.errors.adminUsuarioEstadoActualizadoLista());
         this.telemetry.track('ADMIN_MODULE_UI', { extra: { action: 'USER_STATUS_SAVE' } });
       },
       error: (err: HttpErrorResponse) => {
         this.savingEstado.set(false);
         const raw = isErrorResponse(err.error) ? err.error.mensaje : null;
-        this.snack.open(this.errors.translateAdminApi(raw));
+        this.notify(this.errors.translateAdminApi(raw), SISRH_SNACK_DURATION_MS.long);
       },
     });
   }
@@ -270,13 +281,13 @@ export class AdminUserEditPageComponent {
     this.api.putUserRoles(this.parsedId, { roleIds }).subscribe({
       next: () => {
         this.savingRoles.set(false);
-        this.snack.open(this.errors.adminUsuarioRolesActualizadosLista());
+        this.notify(this.errors.adminUsuarioRolesActualizadosLista());
         this.telemetry.track('ADMIN_MODULE_UI', { extra: { action: 'USER_ROLES_SAVE' } });
       },
       error: (err: HttpErrorResponse) => {
         this.savingRoles.set(false);
         const raw = isErrorResponse(err.error) ? err.error.mensaje : null;
-        this.snack.open(this.errors.translateAdminApi(raw));
+        this.notify(this.errors.translateAdminApi(raw), SISRH_SNACK_DURATION_MS.long);
       },
     });
   }
@@ -288,13 +299,13 @@ export class AdminUserEditPageComponent {
     this.api.putUserDeniedPermissions(this.parsedId, { permisoIds }).subscribe({
       next: () => {
         this.savingDenies.set(false);
-        this.snack.open(this.errors.adminUsuarioDenegacionesLista());
+        this.notify(this.errors.adminUsuarioDenegacionesLista());
         this.telemetry.track('ADMIN_MODULE_UI', { extra: { action: 'USER_DENIES_SAVE' } });
       },
       error: (err: HttpErrorResponse) => {
         this.savingDenies.set(false);
         const raw = isErrorResponse(err.error) ? err.error.mensaje : null;
-        this.snack.open(this.errors.translateAdminApi(raw));
+        this.notify(this.errors.translateAdminApi(raw), SISRH_SNACK_DURATION_MS.long);
       },
     });
   }
@@ -318,7 +329,7 @@ export class AdminUserEditPageComponent {
       this.api.resetUserPassword(this.parsedId).subscribe({
         next: () => {
           this.resetting.set(false);
-          this.snack.open(this.errors.adminResetClaveMarcadoOk());
+          this.notify(this.errors.adminResetClaveMarcadoOk());
           this.telemetry.track('ADMIN_MODULE_UI', {
             extra: { action: 'USER_RESET_MARKED' },
           });
@@ -326,7 +337,7 @@ export class AdminUserEditPageComponent {
         error: (err: HttpErrorResponse) => {
           this.resetting.set(false);
           const raw = isErrorResponse(err.error) ? err.error.mensaje : null;
-          this.snack.open(this.errors.translateAdminApi(raw));
+          this.notify(this.errors.translateAdminApi(raw), SISRH_SNACK_DURATION_MS.long);
         },
       });
     });

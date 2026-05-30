@@ -29,6 +29,10 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Client,
   },
   {
+    path: 'gestiones-personal/**',
+    renderMode: RenderMode.Client,
+  },
+  {
     path: 'catalogos/**',
     renderMode: RenderMode.Client,
   },

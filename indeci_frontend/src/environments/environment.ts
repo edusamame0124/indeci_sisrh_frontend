@@ -8,7 +8,7 @@
  */
 export const environment = {
   production: true,
-  apiUrl: '/api',
+  apiUrl: 'https://app.indeci.gob.pe/api',
   appName: 'SISRH-INDECI',
   tokenKey: 'sisrh_access_token',
   /**
@@ -20,4 +20,14 @@ export const environment = {
     enabled: false, // toggle ON cuando exista endpoint backend (FR-040)
     endpoint: '/api/telemetry/client',
   },
+  /**
+   * Fase 3 SSO — URLs de los sistemas hermanos para el Portal Selector.
+   * El selector lee el claim `sistemas` del JWT y, si el usuario elige uno
+   * externo, redirige a `<urlBase>?token=<accessToken>`. AJUSTAR en deploy
+   * productivo según el dominio real de cada sistema.
+   */
+  sistemasExternos: {
+    convocatoria: 'https://app.indeci.gob.pe/convocatoria',
+    rendimiento: 'https://app.indeci.gob.pe/rendimiento',
+  } as Readonly<Record<string, string>>,
 };

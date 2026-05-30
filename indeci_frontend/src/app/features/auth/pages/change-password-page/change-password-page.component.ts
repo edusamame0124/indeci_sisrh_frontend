@@ -16,6 +16,7 @@ import { ErrorMessageService } from '../../../../core/services/error-message.ser
 import { isErrorResponse } from '../../../../core/models/error-response.model';
 import {
   PasswordComplexityResult,
+  evaluatePasswordComplexity,
   passwordComplexityValidator,
   passwordsMatchValidator,
 } from '../../models/password-policy.model';
@@ -49,14 +50,19 @@ import {
   template: `
     <mat-card class="auth-card" appearance="outlined">
       <header class="auth-head">
-        <h1 class="auth-head__title">Cambiar contraseña</h1>
-        @if (username()) {
-          <p class="auth-head__sub" aria-live="polite">
-            Cuenta: <strong>{{ username() }}</strong>
-          </p>
-        } @else {
-          <p class="auth-head__sub">Actualice su clave temporal para continuar</p>
-        }
+        <div class="auth-head__brand">
+          <mat-icon class="auth-head__icon" aria-hidden="true">password</mat-icon>
+          <div>
+            <h1 class="auth-head__title">Cambiar contraseña</h1>
+            @if (username()) {
+              <p class="auth-head__sub" aria-live="polite">
+                Hola, <strong>{{ username() }}</strong>
+              </p>
+            } @else {
+              <p class="auth-head__sub">Actualice su clave temporal para continuar</p>
+            }
+          </div>
+        </div>
       </header>
 
       <mat-card-content class="auth-body">
@@ -118,7 +124,10 @@ import {
           </mat-form-field>
 
           @if (errorMessage()) {
-            <p role="alert" class="error-msg">{{ errorMessage() }}</p>
+            <p role="alert" class="error-msg">
+              <mat-icon aria-hidden="true">error_outline</mat-icon>
+              <span>{{ errorMessage() }}</span>
+            </p>
           }
 
           <button
@@ -140,7 +149,8 @@ import {
         </form>
 
         <div class="actions">
-          <a mat-button routerLink="/auth/logout" class="abort-link">
+          <a mat-stroked-button routerLink="/auth/logout" class="abort-link">
+            <mat-icon>arrow_back</mat-icon>
             Cancelar y cerrar sesión
           </a>
         </div>
@@ -169,6 +179,19 @@ import {
         border-bottom: 1px solid var(--sisrh-color-border, #e2e8f0);
         border-top: 3px solid var(--mat-sys-primary, #0d47a1);
         background: #fafbfc;
+      }
+      .auth-head__brand {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.75rem;
+      }
+      .auth-head__icon {
+        flex-shrink: 0;
+        color: var(--mat-sys-primary, #0d47a1);
+        font-size: 1.5rem;
+        width: 1.5rem;
+        height: 1.5rem;
+        margin-top: 0.125rem;
       }
       .auth-head__title {
         margin: 0;
@@ -212,7 +235,23 @@ import {
         color: var(--mat-sys-primary, #0d47a1);
       }
       .submit-btn { margin-top: 1rem; padding: 0.75rem; font-size: 1rem; font-family: var(--sisrh-font-sans); font-weight: 600; letter-spacing: 0.02em; }
-      .error-msg { color: var(--sisrh-color-error); margin-top: 1rem; font-weight: 500; text-align: center; }
+      .error-msg {
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+        gap: 0.5rem;
+        color: var(--sisrh-color-error);
+        margin-top: 1rem;
+        font-weight: 500;
+        text-align: left;
+      }
+      .error-msg mat-icon {
+        flex-shrink: 0;
+        font-size: 1.125rem;
+        width: 1.125rem;
+        height: 1.125rem;
+        margin-top: 0.125rem;
+      }
       .spinner-wrap {
         display: flex;
         align-items: center;
@@ -275,22 +314,12 @@ export class ChangePasswordPageComponent {
   constructor() {
     // Suscripción a valueChanges para actualizar la signal de complexityResult
     this.form.controls['nuevaClave'].valueChanges.subscribe(() => {
-      const errors = this.form.controls['nuevaClave'].errors;
-      const result = errors?.['passwordComplexity'] as PasswordComplexityResult | undefined;
-      if (result) {
-        this.complexityResult.set(result);
-      } else if (this.form.controls['nuevaClave'].value) {
-        // Sin errores y con valor → todas las reglas pasan
-        this.complexityResult.set({
-          minLength: true,
-          hasUppercase: true,
-          hasLowercase: true,
-          hasDigit: true,
-          hasSpecialChar: true,
-        });
-      } else {
+      const value = (this.form.controls['nuevaClave'].value as string) ?? '';
+      if (!value) {
         this.complexityResult.set(null);
+        return;
       }
+      this.complexityResult.set(evaluatePasswordComplexity(value));
     });
   }
 
