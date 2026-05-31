@@ -1,0 +1,56 @@
+<h2 mat-dialog-title>Aprobar papeleta por RRHH</h2>
+
+<mat-dialog-content class="dialog-body">
+  <section class="info">
+    <strong>Solicitud:</strong> #{{ solicitud.id }} <br />
+    <strong>Empleado:</strong> {{ solicitud.empleado }} <br />
+    <strong>Tipo:</strong> {{ solicitud.tipoSolicitud }} <br />
+    <strong>Estado actual:</strong> {{ solicitud.estadoSolicitud }}
+  </section>
+
+  <section class="step">
+    <h3>1. Descargar papeleta firmada</h3>
+    <p>
+      Descargue el último documento firmado, revise su contenido y fírmelo
+      digitalmente como RRHH antes de aprobar.
+    </p>
+
+    <button mat-stroked-button type="button" (click)="descargarPapeleta()" [disabled]="procesando()">
+      <mat-icon>download</mat-icon>
+      Descargar papeleta
+    </button>
+  </section>
+
+  <section class="step">
+    <h3>2. Adjuntar papeleta firmada por RRHH</h3>
+
+    <label class="field">
+      <span>Archivo PDF firmado</span>
+      <input type="file" accept="application/pdf" (change)="seleccionarArchivo($event)" />
+    </label>
+
+    <label class="field">
+      <span>Observación</span>
+      <textarea
+        rows="4"
+        [(ngModel)]="observacion"
+        placeholder="Ingrese una observación para la aprobación final"
+      ></textarea>
+    </label>
+  </section>
+
+  <div *ngIf="error()" class="error">
+    {{ error() }}
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-stroked-button type="button" (click)="cerrar()" [disabled]="procesando()">
+    Cancelar
+  </button>
+
+  <button mat-flat-button color="primary" type="button" (click)="aprobar()" [disabled]="procesando()">
+    <mat-icon>verified_user</mat-icon>
+    {{ procesando() ? 'Aprobando...' : 'Aprobar por RRHH' }}
+  </button>
+</mat-dialog-actions>

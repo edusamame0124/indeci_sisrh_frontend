@@ -17,6 +17,8 @@ import {
 
 import { AprobarJefePapeletaDialogComponent } from '../../../../modules/gestiones-personal/dialogs/aprobar-jefe-papeleta-dialog/aprobar-jefe-papeleta-dialog';
 
+import { TrazabilidadPapeletaDialogComponent } from '../../../../modules/gestiones-personal/dialogs/trazabilidad-papeleta-dialog/trazabilidad-papeleta-dialog';
+
 @Component({
   selector: 'app-gestion-jefe-page',
   standalone: true,
@@ -99,6 +101,16 @@ export class GestionJefePageComponent implements OnInit {
       },
     });
   }
+
+  abrirTrazabilidad(item: SolicitudRrhh): void {
+  this.dialog.open(TrazabilidadPapeletaDialogComponent, {
+    width: '960px',
+    maxWidth: '96vw',
+    data: item,
+  });
+}
+  
+
 
   limpiarFiltros(): void {
     this.filtroTexto.set('');
