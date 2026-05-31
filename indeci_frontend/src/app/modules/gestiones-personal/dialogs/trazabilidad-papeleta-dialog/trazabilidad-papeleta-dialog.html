@@ -1,0 +1,61 @@
+<h2 mat-dialog-title>Trazabilidad documental</h2>
+
+<mat-dialog-content class="dialog-body">
+  <section class="summary">
+    <strong>Solicitud:</strong> #{{ solicitud.id }} |
+    <strong>Tipo:</strong> {{ solicitud.tipoSolicitud }} |
+    <strong>Estado:</strong> {{ solicitud.estadoSolicitud }}
+  </section>
+
+  <div *ngIf="cargando()" class="loading">
+    Cargando documentos...
+  </div>
+
+  <div *ngIf="error()" class="error">
+    {{ error() }}
+  </div>
+
+  <div class="table-wrap" *ngIf="!cargando() && !error()">
+    <table>
+      <thead>
+        <tr>
+          <th>Versión</th>
+          <th>Etapa</th>
+          <th>Archivo</th>
+          <th>Observación</th>
+          <th>Usuario</th>
+          <th>Fecha</th>
+          <th>Descargar</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <tr *ngFor="let doc of documentos()">
+          <td>{{ doc.versionDoc }}</td>
+          <td>{{ doc.etapa }}</td>
+          <td>{{ doc.nombreArchivo }}</td>
+          <td>{{ doc.observacion || 'Sin observación' }}</td>
+          <td>{{ doc.usuarioUpload }}</td>
+          <td>{{ doc.createdAt | date: 'dd/MM/yyyy HH:mm' }}</td>
+          <td class="center">
+            <button mat-icon-button type="button" (click)="descargar(doc)">
+              <mat-icon>download</mat-icon>
+            </button>
+          </td>
+        </tr>
+
+        <tr *ngIf="documentos().length === 0">
+          <td colspan="7" class="empty">
+            No existen documentos asociados a esta solicitud.
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-stroked-button type="button" (click)="cerrar()">
+    Cerrar
+  </button>
+</mat-dialog-actions>

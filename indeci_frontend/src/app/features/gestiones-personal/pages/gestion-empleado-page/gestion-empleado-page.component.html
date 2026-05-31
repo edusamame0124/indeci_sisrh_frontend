@@ -1,30 +1,137 @@
 <div class="page">
   <nav class="crumbs" aria-label="Ubicación">
     <a mat-button routerLink="/">Inicio</a>
-    <span class="crumbs__sep" aria-hidden="true">/</span>
+    <span class="crumbs__sep">/</span>
     <span class="crumbs__group">Gestiones del personal</span>
-    <span class="crumbs__sep" aria-hidden="true">/</span>
-    <span class="crumbs__here">Gestión del empleado</span>
+    <span class="crumbs__sep">/</span>
+    <span class="crumbs__here">Mis papeletas</span>
   </nav>
 
   <mat-card class="page-card sisrh-elevated">
     <mat-card-header>
-      <div mat-card-avatar class="page-card__avatar" aria-hidden="true">
-        <mat-icon>badge</mat-icon>
+      <div mat-card-avatar class="page-card__avatar">
+        <mat-icon>assignment</mat-icon>
       </div>
-      <mat-card-title>Gestión del empleado</mat-card-title>
+
+      <mat-card-title>Mis papeletas</mat-card-title>
       <mat-card-subtitle>
-        Trámites y solicitudes iniciados por el propio servidor.
+        Solicitudes registradas por el empleado: {{ getNombreEmpleado() }}
       </mat-card-subtitle>
     </mat-card-header>
 
     <mat-card-content>
-      <section class="placeholder" aria-label="Contenido en preparación">
-        <mat-icon class="placeholder__icon" aria-hidden="true">badge</mat-icon>
-        <p class="placeholder__text">
-          Esta sección está lista para incorporar las gestiones del empleado.
-        </p>
+      <section class="toolbar">
+        <div class="toolbar__filters">
+          <input
+            type="text"
+            placeholder="Buscar por tipo, estado, motivo u observación"
+            [ngModel]="filtroTexto()"
+            (ngModelChange)="filtroTexto.set($event)"
+          />
+
+          <select [ngModel]="filtroTipo()" (ngModelChange)="filtroTipo.set($event)">
+            <option value="">Todos los tipos</option>
+            <option *ngFor="let tipo of tipos()" [value]="tipo">{{ tipo }}</option>
+          </select>
+
+          <select [ngModel]="filtroEstado()" (ngModelChange)="filtroEstado.set($event)">
+            <option value="">Todos los estados</option>
+            <option *ngFor="let estado of estados()" [value]="estado">{{ estado }}</option>
+          </select>
+
+          <button mat-stroked-button type="button" (click)="limpiarFiltros()">
+            <mat-icon>cleaning_services</mat-icon>
+            Limpiar
+          </button>
+        </div>
+
+        <div class="toolbar__actions">
+          <button mat-flat-button color="primary" type="button" (click)="abrirNuevaPapeleta()">
+            <mat-icon>add</mat-icon>
+            Nueva papeleta
+          </button>
+
+          <button mat-stroked-button routerLink="/">
+            <mat-icon>arrow_back</mat-icon>
+            Regresar
+          </button>
+        </div>
       </section>
+
+      <div *ngIf="cargando()" class="loading">
+        <mat-spinner diameter="36"></mat-spinner>
+        <span>Cargando solicitudes...</span>
+      </div>
+
+      <div *ngIf="error()" class="alert">
+        {{ error() }}
+      </div>
+
+      <div class="table-wrap" *ngIf="!cargando() && !error()">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Tipo</th>
+              <th>Estado</th>
+              <th>Fecha inicio</th>
+              <th>Fecha fin</th>
+              <th>Días/Horas</th>
+              <th>Motivo</th>
+              <th>Observación</th>
+              <th class="acciones">Acciones</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr *ngFor="let item of solicitudesFiltradas()">
+              <td>{{ item.id }}</td>
+              <td>{{ item.tipoSolicitud }}</td>
+              <td>
+                <span [ngClass]="claseEstado(item.estadoSolicitud)">
+                  {{ item.estadoSolicitud }}
+                </span>
+              </td>
+              <td>{{ item.fechaInicio | date: 'dd/MM/yyyy' }}</td>
+              <td>{{ item.fechaFin | date: 'dd/MM/yyyy' }}</td>
+              <td>
+                <ng-container *ngIf="item.cantidadDias !== null">
+                  {{ item.cantidadDias }} día(s)
+                </ng-container>
+
+                <ng-container *ngIf="item.cantidadHoras !== null">
+                  {{ item.cantidadHoras }} hora(s)
+                </ng-container>
+              </td>
+              <td>{{ item.motivo }}</td>
+              <td>{{ item.observacion }}</td>
+              <td class="acciones">
+                <button
+                  mat-icon-button
+                  title="Descargar papeleta"
+                  (click)="descargarFormato(item)"
+                >
+                  <mat-icon>picture_as_pdf</mat-icon>
+                </button>
+
+                <button mat-icon-button title="Enviar papeleta firmada" (click)="abrirEnvio(item)">
+                  <mat-icon>upload_file</mat-icon>
+                </button>
+
+                <button mat-icon-button title="Trazabilidad documental" (click)="abrirTrazabilidad(item)">
+                  <mat-icon>history</mat-icon>
+                </button>
+              </td>
+            </tr>
+
+            <tr *ngIf="solicitudesFiltradas().length === 0">
+              <td colspan="9" class="empty">
+                No se encontraron solicitudes con los filtros aplicados.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </mat-card-content>
   </mat-card>
 </div>

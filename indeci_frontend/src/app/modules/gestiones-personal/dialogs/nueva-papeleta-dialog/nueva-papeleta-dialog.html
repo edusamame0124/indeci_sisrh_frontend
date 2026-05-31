@@ -1,0 +1,76 @@
+<h2 mat-dialog-title>Nueva papeleta</h2>
+
+<mat-dialog-content class="dialog-body">
+  <div *ngIf="cargandoTipos()" class="loading">
+    Cargando tipos de solicitud...
+  </div>
+
+  <div class="grid">
+    <label class="field">
+      <span>Tipo de papeleta</span>
+      <select [(ngModel)]="tipoSolicitudId">
+        <option [ngValue]="null">Seleccione</option>
+        <option *ngFor="let tipo of tipos()" [ngValue]="tipo.id">
+          {{ tipo.nombre }}
+        </option>
+      </select>
+    </label>
+
+    <label class="field">
+    <span>Fecha inicio</span>
+    <input type="date" [(ngModel)]="fechaInicio" (change)="calcularDias()" />
+    </label>
+
+    <label class="field">
+    <span>Fecha fin</span>
+    <input type="date" [(ngModel)]="fechaFin" (change)="calcularDias()" />
+    </label>
+
+    <ng-container *ngIf="!mostrarHoras()">
+      <label class="field">
+        <span>Cantidad de días</span>
+        <input type="number" [ngModel]="cantidadDias" disabled />
+        </label>
+    </ng-container>
+
+        <label class="field">
+        <span>Hora inicio</span>
+        <input type="time" [(ngModel)]="horaInicio" (change)="calcularHoras()" />
+        </label>
+
+        <label class="field">
+        <span>Hora fin</span>
+        <input type="time" [(ngModel)]="horaFin" (change)="calcularHoras()" />
+        </label>
+
+        <label class="field">
+        <span>Cantidad de horas</span>
+        <input type="text" [value]="cantidadHorasTexto" disabled />
+        </label>
+
+    <label class="field field--full">
+      <span>Motivo</span>
+      <textarea rows="3" [(ngModel)]="motivo"></textarea>
+    </label>
+
+    <label class="field field--full">
+      <span>Observación</span>
+      <textarea rows="3" [(ngModel)]="observacion"></textarea>
+    </label>
+  </div>
+
+  <div *ngIf="error()" class="error">
+    {{ error() }}
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-stroked-button type="button" (click)="cerrar()" [disabled]="guardando()">
+    Cancelar
+  </button>
+
+  <button mat-flat-button color="primary" type="button" (click)="guardar()" [disabled]="guardando()">
+    <mat-icon>save</mat-icon>
+    {{ guardando() ? 'Guardando...' : 'Guardar borrador' }}
+  </button>
+</mat-dialog-actions>

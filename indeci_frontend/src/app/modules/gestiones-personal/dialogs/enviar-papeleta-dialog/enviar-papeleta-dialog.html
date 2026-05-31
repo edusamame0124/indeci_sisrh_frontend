@@ -1,0 +1,38 @@
+<h2 mat-dialog-title>Enviar papeleta firmada</h2>
+
+<mat-dialog-content class="dialog-body">
+  <div class="info">
+    <strong>Solicitud:</strong> #{{ solicitud.id }} <br />
+    <strong>Tipo:</strong> {{ solicitud.tipoSolicitud }} <br />
+    <strong>Estado actual:</strong> {{ solicitud.estadoSolicitud }}
+  </div>
+
+  <label class="field">
+    <span>Archivo PDF firmado</span>
+    <input type="file" accept="application/pdf" (change)="seleccionarArchivo($event)" />
+  </label>
+
+  <label class="field">
+    <span>Observación</span>
+    <textarea
+      rows="4"
+      [(ngModel)]="observacion"
+      placeholder="Ingrese una observación para el envío"
+    ></textarea>
+  </label>
+
+  <div *ngIf="error()" class="error">
+    {{ error() }}
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-stroked-button type="button" (click)="cerrar()" [disabled]="enviando()">
+    Cancelar
+  </button>
+
+  <button mat-flat-button color="primary" type="button" (click)="enviar()" [disabled]="enviando()">
+    <mat-icon>send</mat-icon>
+    {{ enviando() ? 'Enviando...' : 'Enviar al jefe' }}
+  </button>
+</mat-dialog-actions>
