@@ -6,7 +6,6 @@ import { ErrorMessageService } from '../../../core/services/error-message.servic
 import { ErrorResponse } from '../../../core/models/error-response.model';
 import { LoginResponse } from '../models/login.model';
 import { LoginFlowState } from '../models/login-flow-state.model';
-import { SistemaSelectorService } from './sistema-selector.service';
 
 /**
  * Orquesta los 4 flujos de autenticación: enruta tras cada respuesta del backend
@@ -18,7 +17,6 @@ export class LoginFlowService {
   private readonly router = inject(Router);
   private readonly errorMessages = inject(ErrorMessageService);
   private readonly telemetry = inject(ClientTelemetryService);
-  private readonly selector = inject(SistemaSelectorService);
 
   /** Máximo intentos OTP por sesión temporal antes de invalidar (FR-033). */
   static readonly MAX_OTP_ATTEMPTS = 5;
@@ -102,22 +100,16 @@ export class LoginFlowService {
   }
 
   /**
-   * Fase 3 SSO — Decide la navegación post-OTP exitoso:
-   *   - >=2 sistemas accesibles → /auth/seleccionar-sistema (returnUrl preservado).
-   *   - Solo SISRH → navega directo a returnUrl (comportamiento Fase 1/2).
+   * Fase 3 SSO — Post-OTP exitoso: SIEMPRE va al Portal Selector. El usuario
+   * elige el sistema (incluido SISRH); las cards sin roles salen bloqueadas con
+   * el aviso de "contacte al administrador". El `returnUrl` se preserva y lo
+   * consume el selector al pulsar la card de SISRH.
    *
-   * Asume que {@link establishSession} ya corrió (signals están reactivos al
-   * claim "sistemas"). Si no, el cálculo de sistemas usa el JWT previo (NO
-   * pasa: el caller siempre llama establish antes).
+   * Asume que {@link establishSession} ya corrió (signals reactivos al claim
+   * "sistemas"); el caller siempre llama establish antes.
    */
   routeAfterOtpSuccess(): void {
-    if (this.selector.hasMultipleSystems()) {
-      void this.router.navigate(['/auth/seleccionar-sistema']);
-      return;
-    }
-    const returnUrl = this._returnUrl();
-    this.clearReturnUrl();
-    void this.router.navigateByUrl(returnUrl);
+    void this.router.navigate(['/auth/seleccionar-sistema']);
   }
 
   /**

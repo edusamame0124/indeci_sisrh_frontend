@@ -34,7 +34,7 @@ describe('OtpPageComponent (US1 integration)', () => {
     vi.spyOn(router, 'navigate').mockResolvedValue(true);
   });
 
-  it('valid code → setSession + navigate to /', () => {
+  it('valid code → setSession + navigate al Portal Selector', () => {
     const fixture = TestBed.createComponent(OtpPageComponent);
     fixture.detectChanges();
 
@@ -53,7 +53,8 @@ describe('OtpPageComponent (US1 integration)', () => {
     });
 
     expect(auth.accessToken()).toBe('access-final');
-    expect(router.navigateByUrl).toHaveBeenCalled();
+    // Fase 3 SSO: post-OTP SIEMPRE va al Portal Selector.
+    expect(router.navigate).toHaveBeenCalledWith(['/auth/seleccionar-sistema']);
   });
 
   it('invalid code → increments failedAttempts and shows error', () => {

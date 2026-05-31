@@ -13,12 +13,14 @@ import { SistemaCard } from '../../models/sistema.model';
 /**
  * Fase 3 SSO — Portal Selector.
  *
- * Aparece post-OTP cuando el usuario tiene acceso a ≥2 sistemas. Si solo tiene
- * SISRH, {@link LoginFlowService.completeSession} salta esta pantalla.
+ * Aparece SIEMPRE post-OTP (el backend manda todos los sistemas activos en el
+ * claim "sistemas"). El usuario elige el sistema; las cards sin roles salen
+ * bloqueadas con el aviso "contacte al administrador".
  *
  * Diseño institucional sobrio (sisrh-design-system): header con saludo, cards
  * por sistema con chips de roles, footer con info de sesión + logout. Cards
- * bloqueadas (rol vacío) muestran candado y no son clickables.
+ * bloqueadas (rol vacío) muestran candado y no son clickables; si TODAS están
+ * bloqueadas se muestra un aviso superior.
  *
  * Base: V010_34/V010_35 (INDECI_SISTEMA + INDECI_USUARIO_SISTEMA).
  */
@@ -54,6 +56,15 @@ import { SistemaCard } from '../../models/sistema.model';
           <p class="selector-greeting__sub">Selecciona el sistema al que deseas acceder</p>
         </section>
 
+        @if (allBlocked()) {
+          <div class="selector-alert" role="alert">
+            <mat-icon class="selector-alert__icon" aria-hidden="true">info</mat-icon>
+            <span class="selector-alert__txt">
+              No tiene roles asignados en ningún sistema. Contacte con el Administrador.
+            </span>
+          </div>
+        }
+
         <section class="selector-grid" role="list">
           @for (card of cards(); track card.codigo) {
             <button
@@ -64,7 +75,7 @@ import { SistemaCard } from '../../models/sistema.model';
               [disabled]="card.bloqueada"
               [attr.aria-label]="
                 card.bloqueada
-                  ? card.nombre + ' (sin acceso)'
+                  ? card.nombre + ' — sin roles asignados, contacte al administrador'
                   : 'Ingresar a ' + card.nombre
               "
               (click)="onCardClick(card)"
@@ -85,7 +96,9 @@ import { SistemaCard } from '../../models/sistema.model';
                     }
                   </mat-chip-set>
                 } @else if (card.bloqueada) {
-                  <p class="sys-card__nochip">Sin acceso asignado</p>
+                  <p class="sys-card__nochip">
+                    No tiene roles asignados. Contacte con el Administrador.
+                  </p>
                 }
               </div>
             </button>
@@ -169,6 +182,31 @@ import { SistemaCard } from '../../models/sistema.model';
         font-size: 0.9375rem;
         color: var(--sisrh-color-muted, #64748b);
         line-height: 1.45;
+      }
+      .selector-alert {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.5rem;
+        margin: 0 1.5rem 0.5rem;
+        padding: 0.75rem 0.875rem;
+        border: 1px solid var(--sisrh-color-border, #e2e8f0);
+        border-left: 3px solid #d97706;
+        border-radius: 8px;
+        background: #fffbeb;
+        color: #92400e;
+        font-size: 0.875rem;
+        line-height: 1.45;
+      }
+      .selector-alert__icon {
+        color: #d97706;
+        font-size: 1.125rem;
+        width: 1.125rem;
+        height: 1.125rem;
+        flex-shrink: 0;
+        margin-top: 0.05rem;
+      }
+      .selector-alert__txt {
+        margin: 0;
       }
       .selector-grid {
         display: grid;
@@ -311,6 +349,12 @@ export class SistemaSelectorPageComponent {
   readonly username = this.auth.username;
   readonly cards = this.selector.cards;
   readonly loggingOut = signal(false);
+
+  /** True si el usuario no tiene roles en NINGÚN sistema (todas las cards bloqueadas). */
+  readonly allBlocked = computed(() => {
+    const list = this.cards();
+    return list.length > 0 && list.every((c) => c.bloqueada);
+  });
 
   readonly saludo = computed(() => {
     const hora = new Date().getHours();

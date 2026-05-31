@@ -175,7 +175,7 @@ describe('LoginFlowService', () => {
 
   // ─── Fase 3 SSO — completeSession ────────────────────────────────────────
 
-  it('completeSession con solo SISRH → navegación directa a returnUrl', () => {
+  it('completeSession con solo SISRH → SIEMPRE va al Portal Selector (returnUrl preservado)', () => {
     service.setReturnUrl('/dashboard');
     const exp = Math.floor(Date.now() / 1000) + 600;
     const token = makeJwt({
@@ -197,9 +197,9 @@ describe('LoginFlowService', () => {
       permisos: [],
     });
 
-    expect(router.navigateByUrl).toHaveBeenCalledWith('/dashboard');
-    expect(router.navigate).not.toHaveBeenCalledWith(['/auth/seleccionar-sistema']);
-    expect(service.returnUrl()).toBe('/'); // clearReturnUrl post-navegación
+    expect(router.navigate).toHaveBeenCalledWith(['/auth/seleccionar-sistema']);
+    expect(router.navigateByUrl).not.toHaveBeenCalled();
+    expect(service.returnUrl()).toBe('/dashboard'); // preservado hasta elegir SISRH
     expect(service.state().kind).toBe('success');
   });
 
@@ -272,7 +272,7 @@ describe('LoginFlowService', () => {
     expect(service.returnUrl()).toBe('/dashboard');
   });
 
-  it('routeAfterOtpSuccess (aislado, solo SISRH) → navigateByUrl(returnUrl) + clearReturnUrl', () => {
+  it('routeAfterOtpSuccess (aislado, solo SISRH) → SIEMPRE va al selector (returnUrl preservado)', () => {
     service.setReturnUrl('/dashboard');
     const exp = Math.floor(Date.now() / 1000) + 600;
     const token = makeJwt({
@@ -296,9 +296,9 @@ describe('LoginFlowService', () => {
 
     service.routeAfterOtpSuccess();
 
-    expect(router.navigateByUrl).toHaveBeenCalledWith('/dashboard');
-    expect(router.navigate).not.toHaveBeenCalledWith(['/auth/seleccionar-sistema']);
-    expect(service.returnUrl()).toBe('/'); // clearReturnUrl tras navegar a SISRH
+    expect(router.navigate).toHaveBeenCalledWith(['/auth/seleccionar-sistema']);
+    expect(router.navigateByUrl).not.toHaveBeenCalled();
+    expect(service.returnUrl()).toBe('/dashboard'); // preservado hasta elegir SISRH
   });
 
   it('routeAfterOtpSuccess (aislado, ≥2 sistemas) → selector + returnUrl preservado', () => {
@@ -359,8 +359,8 @@ describe('LoginFlowService', () => {
     expect(auth.isAuthenticated()).toBe(true);
     expect(router.navigateByUrl).not.toHaveBeenCalled();
 
-    // 2) Diferido (tras el snackbar): recién aquí navega.
+    // 2) Diferido (tras el snackbar): recién aquí navega al Portal Selector.
     service.routeAfterOtpSuccess();
-    expect(router.navigateByUrl).toHaveBeenCalledWith('/dashboard');
+    expect(router.navigate).toHaveBeenCalledWith(['/auth/seleccionar-sistema']);
   });
 });

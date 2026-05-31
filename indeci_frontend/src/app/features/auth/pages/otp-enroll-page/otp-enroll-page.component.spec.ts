@@ -83,9 +83,9 @@ describe('OtpEnrollPageComponent (US2 integration)', () => {
 
     expect(auth.accessToken()).toBe('access-final');
 
-    // Navega después del setTimeout (800ms)
+    // Navega después del setTimeout (800ms) — Fase 3 SSO: al Portal Selector.
     vi.advanceTimersByTime(900);
-    expect(router.navigateByUrl).toHaveBeenCalled();
+    expect(router.navigate).toHaveBeenCalledWith(['/auth/seleccionar-sistema']);
   });
 
   it('on confirm error shows error message and does NOT setSession', () => {
