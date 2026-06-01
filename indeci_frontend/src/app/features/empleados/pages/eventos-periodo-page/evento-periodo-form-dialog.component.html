@@ -1,0 +1,151 @@
+<h2 mat-dialog-title>{{ titulo() }}</h2>
+
+<form
+  [formGroup]="form"
+  (ngSubmit)="guardar()"
+  class="evento-form"
+  novalidate
+>
+  <mat-dialog-content class="evento-form__content">
+    <!-- Tipo de evento -->
+    <mat-form-field appearance="outline" class="evento-form__field">
+      <mat-label>Tipo de evento</mat-label>
+      <mat-select formControlName="tipoEventoId" required>
+        <mat-option *ngFor="let t of data.tipos" [value]="t.id">
+          {{ t.nombre }}
+        </mat-option>
+      </mat-select>
+      <mat-icon matSuffix>event_note</mat-icon>
+      <mat-hint *ngIf="tipoMetadata()" align="start">
+        {{ tipoMetadata() }}
+      </mat-hint>
+      <mat-error *ngIf="form.controls.tipoEventoId.hasError('required')">
+        Seleccione un tipo de evento.
+      </mat-error>
+    </mat-form-field>
+
+    <!-- Fechas -->
+    <div class="evento-form__row">
+      <mat-form-field appearance="outline" class="evento-form__field">
+        <mat-label>Fecha de inicio</mat-label>
+        <input
+          matInput
+          [matDatepicker]="dpInicio"
+          formControlName="fechaInicio"
+          required
+        />
+        <mat-datepicker-toggle matIconSuffix [for]="dpInicio"></mat-datepicker-toggle>
+        <mat-datepicker #dpInicio></mat-datepicker>
+        <mat-error *ngIf="form.controls.fechaInicio.hasError('required')">
+          La fecha de inicio es obligatoria.
+        </mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="evento-form__field">
+        <mat-label>Fecha de fin</mat-label>
+        <input
+          matInput
+          [matDatepicker]="dpFin"
+          formControlName="fechaFin"
+          required
+        />
+        <mat-datepicker-toggle matIconSuffix [for]="dpFin"></mat-datepicker-toggle>
+        <mat-datepicker #dpFin></mat-datepicker>
+        <mat-error *ngIf="form.controls.fechaFin.hasError('required')">
+          La fecha de fin es obligatoria.
+        </mat-error>
+      </mat-form-field>
+    </div>
+
+    <!-- Días afectos -->
+    <mat-form-field appearance="outline" class="evento-form__field">
+      <mat-label>Días afectos (opcional)</mat-label>
+      <input matInput type="number" min="0" max="31" formControlName="diasAfectos" />
+      <mat-hint align="start">
+        Si lo dejas vacío, el backend derivará de fecha fin − inicio + 1.
+      </mat-hint>
+    </mat-form-field>
+
+    <!-- Observación -->
+    <mat-form-field appearance="outline" class="evento-form__field">
+      <mat-label>Observación</mat-label>
+      <textarea
+        matInput
+        rows="2"
+        formControlName="observacion"
+        maxlength="500"
+      ></textarea>
+    </mat-form-field>
+
+    <!-- Adjunto -->
+    <div class="evento-form__adjunto">
+      <label class="evento-form__adjunto-label">
+        Sustento documental
+        <span
+          *ngIf="tipoSeleccionado()?.requiereAdjunto === 'S'"
+          class="evento-form__adjunto-req"
+          aria-label="Obligatorio"
+        >
+          (obligatorio)
+        </span>
+      </label>
+
+      <div *ngIf="!archivoSeleccionado(); else archivoCargado" class="evento-form__drop">
+        <button
+          type="button"
+          mat-stroked-button
+          (click)="fileInput.click()"
+        >
+          <mat-icon>upload_file</mat-icon>
+          Seleccionar archivo…
+        </button>
+        <input
+          #fileInput
+          type="file"
+          hidden
+          (change)="onArchivoSeleccionado($event)"
+          accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+        />
+        <span class="evento-form__drop-hint">
+          PDF, JPG, PNG o Word · máx. 20 MB
+        </span>
+      </div>
+
+      <ng-template #archivoCargado>
+        <div class="evento-form__file" aria-live="polite">
+          <mat-icon class="evento-form__file-icon">description</mat-icon>
+          <div class="evento-form__file-info">
+            <span class="evento-form__file-name">{{ archivoSeleccionado()?.name }}</span>
+            <small>{{ (archivoSeleccionado()?.size ?? 0) / 1024 | number: '1.0-0' }} KB</small>
+          </div>
+          <button
+            type="button"
+            mat-icon-button
+            (click)="limpiarArchivo()"
+            aria-label="Quitar archivo"
+            matTooltip="Quitar archivo"
+          >
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+      </ng-template>
+    </div>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-button type="button" (click)="cancelar()" [disabled]="submitting()">
+      Cancelar
+    </button>
+    <button
+      mat-flat-button
+      color="primary"
+      type="submit"
+      [disabled]="submitting() || form.invalid"
+    >
+      <mat-spinner *ngIf="submitting()" diameter="18"></mat-spinner>
+      <ng-container *ngIf="!submitting()">
+        {{ modoEdicion() ? 'Guardar cambios' : 'Registrar evento' }}
+      </ng-container>
+    </button>
+  </mat-dialog-actions>
+</form>

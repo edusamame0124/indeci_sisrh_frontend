@@ -1,0 +1,338 @@
+<section class="ficha-360-page" aria-labelledby="ficha-titulo">
+  <!-- ====================== HEADER ====================== -->
+  <header class="ficha-header">
+    <div class="ficha-header__nav">
+      <a
+        mat-icon-button
+        [routerLink]="['/planilla/movimientos']"
+        aria-label="Volver al listado de movimientos"
+        matTooltip="Volver"
+      >
+        <mat-icon>arrow_back</mat-icon>
+      </a>
+    </div>
+
+    <div class="ficha-header__identidad">
+      <h1 id="ficha-titulo" class="ficha-header__nombre">
+        {{ data()?.cabecera?.nombreCompleto ?? 'Cargando…' }}
+      </h1>
+      <p class="ficha-header__sub">
+        <span>DNI {{ data()?.cabecera?.dni ?? '—' }}</span>
+        <span class="ficha-header__sep">·</span>
+        <span>Período {{ periodo() }}</span>
+      </p>
+    </div>
+
+    <div class="ficha-header__chips" *ngIf="data()?.cabecera as cab">
+      <mat-chip-set>
+        <mat-chip *ngIf="cab.regimenLaboralCodigo" [matTooltip]="cab.regimenLaboralNombre ?? ''">
+          <mat-icon matChipAvatar>work</mat-icon>
+          {{ cab.regimenLaboralCodigo }}
+        </mat-chip>
+        <mat-chip *ngIf="cab.meta">
+          <mat-icon matChipAvatar>account_balance</mat-icon>
+          Meta {{ cab.meta }}
+        </mat-chip>
+        <mat-chip *ngIf="cab.banco">
+          <mat-icon matChipAvatar>account_balance_wallet</mat-icon>
+          {{ cab.banco }}
+        </mat-chip>
+      </mat-chip-set>
+    </div>
+  </header>
+
+  <!-- ====================== LOADING ====================== -->
+  <div *ngIf="loading()" class="ficha-loading" role="status" aria-live="polite">
+    <mat-spinner diameter="48"></mat-spinner>
+    <p>Cargando ficha del empleado…</p>
+  </div>
+
+  <!-- ====================== EMPTY (sin movimiento) ====================== -->
+  <div
+    *ngIf="!loading() && data() && !data()!.aplica"
+    class="ficha-empty"
+    role="status"
+  >
+    <mat-icon class="ficha-empty__icon">receipt_long</mat-icon>
+    <h2>Sin planilla generada</h2>
+    <p>
+      Este empleado no tiene movimiento generado para el período {{ periodo() }}.
+      Genera la planilla para visualizar el desglose completo.
+    </p>
+    <button
+      type="button"
+      mat-flat-button
+      color="primary"
+      (click)="irAGenerarPlanilla()"
+      class="ficha-empty__cta"
+    >
+      <mat-icon>play_circle</mat-icon>
+      Generar planilla del empleado
+    </button>
+  </div>
+
+  <!-- ====================== KPI CARDS ====================== -->
+  <div
+    *ngIf="!loading() && data()?.aplica && data()?.totales as t"
+    class="ficha-kpi-grid"
+    role="group"
+    aria-label="Totales del cálculo de planilla"
+  >
+    <mat-card class="kpi-card">
+      <mat-card-content>
+        <span class="kpi-card__label">Ingresos</span>
+        <strong class="kpi-card__value">S/ {{ fmt(t.totalIngresos) }}</strong>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card">
+      <mat-card-content>
+        <span class="kpi-card__label">Descuentos</span>
+        <strong class="kpi-card__value">S/ {{ fmt(t.totalDescuentos) }}</strong>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card">
+      <mat-card-content>
+        <span class="kpi-card__label">Aporte trabajador</span>
+        <strong class="kpi-card__value">S/ {{ fmt(t.aporteTrabajador) }}</strong>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card">
+      <mat-card-content>
+        <span class="kpi-card__label">Aporte empleador</span>
+        <strong class="kpi-card__value">S/ {{ fmt(t.aporteEmpleador) }}</strong>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card" [attr.data-severity]="netoSeverity()">
+      <mat-card-content>
+        <span class="kpi-card__label">Neto a pagar</span>
+        <strong class="kpi-card__value">S/ {{ fmt(t.netoPagar) }}</strong>
+        <span class="kpi-card__badge" [attr.data-severity]="netoSeverity()">
+          <mat-icon>{{ netoSeverity() === 'warning' ? 'warning_amber' : 'check_circle' }}</mat-icon>
+          {{ t.estadoNeto ?? '—' }}
+        </span>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi-card" [attr.data-severity]="airhspSeverity()">
+      <mat-card-content>
+        <span class="kpi-card__label">Dif. AIRHSP</span>
+        <strong class="kpi-card__value">
+          S/ {{ fmt(t.diferenciaAirhsp) }}
+        </strong>
+        <span class="kpi-card__badge" [attr.data-severity]="airhspSeverity()">
+          {{ t.estadoAirhsp ?? 'Sin conciliar' }}
+        </span>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <!-- ====================== TABS ====================== -->
+  <mat-tab-group
+    *ngIf="!loading() && data()?.aplica"
+    class="ficha-tabs"
+    mat-stretch-tabs="false"
+    animationDuration="0ms"
+  >
+    <!-- 1. Cálculo (principal F3.1) -->
+    <mat-tab>
+      <ng-template matTabLabel>
+        <mat-icon class="tab-icon">calculate</mat-icon> Cálculo
+      </ng-template>
+
+      <section class="ficha-calc">
+        <header class="ficha-calc__header">
+          <h2>Desglose del cálculo</h2>
+          <div class="ficha-calc__actions">
+            <button
+              type="button"
+              mat-stroked-button
+              (click)="explicarCalculo()"
+              matTooltip="Muestra resumen de ingresos, descuentos y neto"
+            >
+              <mat-icon>help_outline</mat-icon>
+              Explicar cálculo
+            </button>
+          </div>
+        </header>
+
+        <!-- INGRESOS -->
+        <div class="ficha-calc__bloque" *ngIf="lineasIngreso().length > 0">
+          <h3 class="ficha-calc__bloque-title">Ingresos</h3>
+          <table
+            mat-table
+            [dataSource]="lineasIngreso()"
+            class="ficha-calc__table"
+            aria-label="Ingresos del período"
+          >
+            <ng-container matColumnDef="signo">
+              <th mat-header-cell *matHeaderCellDef class="col-signo">+/−</th>
+              <td mat-cell *matCellDef="let l" class="col-signo">{{ signoDe(l) }}</td>
+            </ng-container>
+            <ng-container matColumnDef="descripcion">
+              <th mat-header-cell *matHeaderCellDef>Concepto</th>
+              <td mat-cell *matCellDef="let l">
+                <span class="linea-descripcion">{{ l.descripcion }}</span>
+                <small *ngIf="l.codigoMef" class="linea-mef">MEF {{ l.codigoMef }}</small>
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="detalle">
+              <th mat-header-cell *matHeaderCellDef>Detalle</th>
+              <td mat-cell *matCellDef="let l" class="col-detalle">
+                {{ l.detalle ?? l.observacion ?? '' }}
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="monto">
+              <th mat-header-cell *matHeaderCellDef class="col-monto">Monto S/</th>
+              <td mat-cell *matCellDef="let l" class="col-monto">{{ fmt(l.monto) }}</td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="columnasLineas"></tr>
+            <tr mat-row *matRowDef="let row; columns: columnasLineas"></tr>
+          </table>
+        </div>
+
+        <!-- DESCUENTOS + APORTE TRABAJADOR -->
+        <div class="ficha-calc__bloque" *ngIf="lineasDescuento().length > 0">
+          <h3 class="ficha-calc__bloque-title">Descuentos y aportes del trabajador</h3>
+          <table
+            mat-table
+            [dataSource]="lineasDescuento()"
+            class="ficha-calc__table"
+            aria-label="Descuentos y aportes del trabajador"
+          >
+            <ng-container matColumnDef="signo">
+              <th mat-header-cell *matHeaderCellDef class="col-signo">+/−</th>
+              <td mat-cell *matCellDef="let l" class="col-signo">{{ signoDe(l) }}</td>
+            </ng-container>
+            <ng-container matColumnDef="descripcion">
+              <th mat-header-cell *matHeaderCellDef>Concepto</th>
+              <td mat-cell *matCellDef="let l">
+                <span class="linea-descripcion">{{ l.descripcion }}</span>
+                <small *ngIf="l.codigoMef" class="linea-mef">MEF {{ l.codigoMef }}</small>
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="detalle">
+              <th mat-header-cell *matHeaderCellDef>Detalle</th>
+              <td mat-cell *matCellDef="let l" class="col-detalle">
+                {{ l.detalle ?? l.observacion ?? '' }}
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="monto">
+              <th mat-header-cell *matHeaderCellDef class="col-monto">Monto S/</th>
+              <td mat-cell *matCellDef="let l" class="col-monto">{{ fmt(l.monto) }}</td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="columnasLineas"></tr>
+            <tr mat-row *matRowDef="let row; columns: columnasLineas"></tr>
+          </table>
+        </div>
+
+        <!-- APORTE EMPLEADOR (informativo) -->
+        <div
+          class="ficha-calc__bloque ficha-calc__bloque--info"
+          *ngIf="lineasAporteEmpleador().length > 0"
+        >
+          <h3 class="ficha-calc__bloque-title">
+            Aportes del empleador
+            <small>(informativo, no descuenta al trabajador)</small>
+          </h3>
+          <table
+            mat-table
+            [dataSource]="lineasAporteEmpleador()"
+            class="ficha-calc__table"
+            aria-label="Aportes del empleador"
+          >
+            <ng-container matColumnDef="signo">
+              <th mat-header-cell *matHeaderCellDef class="col-signo">+/−</th>
+              <td mat-cell *matCellDef="let l" class="col-signo">{{ signoDe(l) }}</td>
+            </ng-container>
+            <ng-container matColumnDef="descripcion">
+              <th mat-header-cell *matHeaderCellDef>Concepto</th>
+              <td mat-cell *matCellDef="let l">
+                <span class="linea-descripcion">{{ l.descripcion }}</span>
+                <small *ngIf="l.codigoMef" class="linea-mef">MEF {{ l.codigoMef }}</small>
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="detalle">
+              <th mat-header-cell *matHeaderCellDef>Detalle</th>
+              <td mat-cell *matCellDef="let l" class="col-detalle">
+                {{ l.detalle ?? l.observacion ?? '' }}
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="monto">
+              <th mat-header-cell *matHeaderCellDef class="col-monto">Monto S/</th>
+              <td mat-cell *matCellDef="let l" class="col-monto">{{ fmt(l.monto) }}</td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="columnasLineas"></tr>
+            <tr mat-row *matRowDef="let row; columns: columnasLineas"></tr>
+          </table>
+        </div>
+      </section>
+    </mat-tab>
+
+    <!-- 2-9. Tabs placeholder — se completan en sub-fases posteriores -->
+    <mat-tab label="Datos">
+      <div class="ficha-placeholder">
+        <mat-icon>info_outline</mat-icon>
+        <p>Datos personales y laborales del empleado.</p>
+        <small>Pestaña en desarrollo — disponible en una próxima fase.</small>
+      </div>
+    </mat-tab>
+    <mat-tab label="Conceptos">
+      <div class="ficha-placeholder">
+        <mat-icon>list_alt</mat-icon>
+        <p>Conceptos asignados al empleado.</p>
+        <small>Pestaña en desarrollo.</small>
+      </div>
+    </mat-tab>
+    <mat-tab label="Asistencia">
+      <div class="ficha-placeholder">
+        <mat-icon>event_note</mat-icon>
+        <p>Asistencia validada del período + eventos.</p>
+        <small>Pestaña en desarrollo (se integrará con F3.6).</small>
+      </div>
+    </mat-tab>
+    <mat-tab label="Pensión">
+      <div class="ficha-placeholder">
+        <mat-icon>savings</mat-icon>
+        <p>Régimen pensionario, CUSPP y comisión.</p>
+        <small>Pestaña en desarrollo.</small>
+      </div>
+    </mat-tab>
+    <mat-tab label="Judiciales">
+      <div class="ficha-placeholder">
+        <mat-icon>gavel</mat-icon>
+        <p>Descuentos judiciales activos.</p>
+        <small>Pestaña en desarrollo.</small>
+      </div>
+    </mat-tab>
+    <mat-tab label="Banco">
+      <div class="ficha-placeholder">
+        <mat-icon>account_balance</mat-icon>
+        <p>Cuenta de planilla y CCI.</p>
+        <small>Pestaña en desarrollo.</small>
+      </div>
+    </mat-tab>
+    <mat-tab label="Boleta">
+      <div class="ficha-placeholder">
+        <mat-icon>receipt</mat-icon>
+        <p>Descarga de boleta PDF (B1).</p>
+        <small>Pestaña en desarrollo.</small>
+      </div>
+    </mat-tab>
+    <mat-tab label="Trazabilidad">
+      <div class="ficha-placeholder">
+        <mat-icon>history</mat-icon>
+        <p>Historial de cambios y auditoría.</p>
+        <small>Pestaña en desarrollo.</small>
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+
+  <p class="ficha-spec-note" *ngIf="data()?.aplica">
+    Spec F3.1 — Ficha 360 del Empleado. Cálculo basado en
+    <code>MovimientoPlanillaDetalle</code> grabado por el motor v3.
+  </p>
+</section>

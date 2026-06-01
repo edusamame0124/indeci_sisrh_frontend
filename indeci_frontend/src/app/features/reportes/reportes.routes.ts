@@ -33,6 +33,16 @@ export const REPORTES_ROUTES: Routes = [
         title: 'Resumen general — SISRH-INDECI',
       },
 
+      /* ——— Tablero Consolidado (F3.5) ——— */
+      {
+        path: 'consolidado',
+        loadComponent: () =>
+          import('./pages/reportes-consolidado-page/reportes-consolidado-page.component').then(
+            (m) => m.ReportesConsolidadoPageComponent,
+          ),
+        title: 'Tablero consolidado — SISRH-INDECI',
+      },
+
       /* ——— Resumen por meta presupuestal (PANTALLA-05) ——— */
       {
         path: 'resumen-meta',

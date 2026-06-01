@@ -302,7 +302,7 @@ export class EmpleadoConceptoFormDialogComponent implements OnInit {
             fechaInicio: isoDateAMes(registro.fechaInicio),
             fechaFin: isoDateAMes(registro.fechaFin),
           });
-          this.form.controls.conceptoPlanillaId.disable();
+          this.form.controls.conceptoPlanillaId.disable({ emitEvent: false });
         }
       },
       error: () => {

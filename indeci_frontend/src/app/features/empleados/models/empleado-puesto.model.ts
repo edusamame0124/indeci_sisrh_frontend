@@ -29,4 +29,8 @@ export interface EmpleadoPuestoRow {
   readonly dependencia?: string | null;
   readonly estructuraOrganica?: string | null;
   readonly jefe?: string | null;
+  /** F5.1 — fecha de inicio del puesto (ISO YYYY-MM-DD). */
+  readonly fechaInicio?: string | null;
+  /** F5.1 — fecha de fin; null cuando el puesto es el vigente. */
+  readonly fechaFin?: string | null;
 }

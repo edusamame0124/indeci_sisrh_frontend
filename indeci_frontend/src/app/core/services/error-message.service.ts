@@ -44,7 +44,7 @@ export class ErrorMessageService {
     'Tipo de cuenta no encontrado':
       'No encontramos el tipo de cuenta solicitado o ya fue dado de baja.',
     'No tiene permisos para esta operación':
-      'No tienes permisos para esta operación. Solicita rol ADMIN si corresponde.',
+      'No tienes permisos para esta operación. Solicita rol SUPER_ADMIN o el permiso correspondiente si aplica.',
     'El nombre es obligatorio': 'El nombre es obligatorio.',
     'El nombre no debe superar 200 caracteres':
       'El nombre no debe superar 200 caracteres.',

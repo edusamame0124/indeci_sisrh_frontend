@@ -237,6 +237,46 @@ export const EMPLEADOS_ROUTES: Routes = [
         ],
       },
 
+      /* ——— Ficha 360 del Empleado (F3.1) ——— */
+      {
+        path: 'ficha/:empleadoId/:periodo',
+        loadComponent: () =>
+          import('./pages/ficha-360-page/ficha-360-page.component').then(
+            (m) => m.Ficha360PageComponent,
+          ),
+        title: 'Ficha 360 del Empleado — SISRH-INDECI',
+      },
+
+      /* ——— Eventos del Período (F3.6) ——— */
+      {
+        path: 'eventos',
+        loadComponent: () =>
+          import('./pages/eventos-periodo-page/eventos-periodo-page.component').then(
+            (m) => m.EventosPeriodoPageComponent,
+          ),
+        title: 'Eventos del período — SISRH-INDECI',
+      },
+
+      /* ——— Cargo histórico timeline (F5.1) ——— */
+      {
+        path: 'cargo-historico',
+        loadComponent: () =>
+          import('./pages/cargo-historico-page/cargo-historico-page.component').then(
+            (m) => m.CargoHistoricoPageComponent,
+          ),
+        title: 'Cargo histórico — SISRH-INDECI',
+      },
+
+      /* ——— Encargaturas (F5.2) ——— */
+      {
+        path: 'encargatura',
+        loadComponent: () =>
+          import('./pages/encargatura-page/encargatura-page.component').then(
+            (m) => m.EncargaturaPageComponent,
+          ),
+        title: 'Encargaturas — SISRH-INDECI',
+      },
+
       /* ——— Préstamos (Spec 011 / B5) ——— */
       {
         path: 'prestamos',

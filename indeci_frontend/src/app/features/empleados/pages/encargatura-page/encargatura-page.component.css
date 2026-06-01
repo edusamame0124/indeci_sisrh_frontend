@@ -1,0 +1,220 @@
+/* ============================================================================
+ * F5.2 — Encargaturas: lista global con filtros + acciones.
+ * Paleta SISRH institucional.
+ * ============================================================================ */
+
+:host {
+  display: block;
+
+  --sisrh-primary: #1f3a5f;
+  --sisrh-primary-100: #e8eef6;
+  --sisrh-success: #157347;
+  --sisrh-success-100: #e7f5ee;
+  --sisrh-warning: #b7791f;
+  --sisrh-danger: #b42318;
+  --sisrh-danger-100: #fdecec;
+
+  --sisrh-bg: #f5f7fa;
+  --sisrh-surface: #ffffff;
+  --sisrh-border: #d9e1ea;
+  --sisrh-border-soft: #e7ecf2;
+  --sisrh-text: #1f2937;
+  --sisrh-text-muted: #64748b;
+}
+
+.enc-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 16px 24px 32px;
+  background: var(--sisrh-bg);
+  min-height: 100%;
+  color: var(--sisrh-text);
+}
+
+/* ============================ HEADER ============================ */
+
+.enc-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.enc-header h1 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--sisrh-primary);
+}
+
+.enc-header__sub {
+  margin: 4px 0 0;
+  color: var(--sisrh-text-muted);
+  font-size: 13px;
+  max-width: 640px;
+}
+
+/* ============================ TOOLBAR ============================ */
+
+.enc-toolbar mat-card-content {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 16px;
+  align-items: center;
+}
+
+.enc-toolbar__estado {
+  width: 200px;
+}
+
+.enc-toolbar__buscar {
+  flex: 1 1 280px;
+  min-width: 240px;
+}
+
+.enc-toolbar__count {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--sisrh-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ============================ LOADING / EMPTY ============================ */
+
+.enc-loading,
+.enc-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background: var(--sisrh-surface);
+  border: 1px solid var(--sisrh-border);
+  border-radius: 8px;
+  padding: 48px 24px;
+  gap: 12px;
+}
+
+.enc-empty--inline {
+  padding: 32px 16px;
+}
+
+.enc-empty__icon {
+  font-size: 48px;
+  width: 48px;
+  height: 48px;
+  color: var(--sisrh-primary);
+  opacity: 0.5;
+}
+
+.enc-empty h2 {
+  margin: 0;
+  font-size: 18px;
+  color: var(--sisrh-primary);
+}
+
+.enc-empty p,
+.enc-loading p {
+  margin: 0;
+  color: var(--sisrh-text-muted);
+  font-size: 14px;
+  max-width: 480px;
+}
+
+/* ============================ TABLA ============================ */
+
+.enc-table-card {
+  padding: 0;
+  overflow: hidden;
+}
+
+.enc-table {
+  width: 100%;
+}
+
+.enc-table .mat-mdc-header-cell {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--sisrh-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.enc-table .mat-mdc-row:hover {
+  background: var(--sisrh-bg);
+}
+
+.enc-dni {
+  display: block;
+  font-size: 11px;
+  color: var(--sisrh-text-muted);
+  font-variant-numeric: tabular-nums;
+  margin-top: 2px;
+}
+
+.enc-fecha {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.enc-indef {
+  font-style: italic;
+  color: var(--sisrh-text-muted);
+}
+
+.col-center { text-align: center; }
+.col-acciones {
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* ============================ PILL ============================ */
+
+.enc-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  background: var(--sisrh-border-soft);
+  color: var(--sisrh-text-muted);
+}
+
+.enc-pill[data-severity='success'] {
+  background: var(--sisrh-success-100);
+  color: var(--sisrh-success);
+}
+
+.enc-pill mat-icon {
+  font-size: 14px;
+  width: 14px;
+  height: 14px;
+}
+
+/* ============================ ACCIONES ============================ */
+
+.enc-action-cerrar { color: var(--sisrh-warning); }
+.enc-action-eliminar { color: var(--sisrh-danger); }
+
+/* ============================ SPEC NOTE ============================ */
+
+.enc-spec-note {
+  margin: 4px 0 0;
+  padding: 8px 12px;
+  font-size: 11px;
+  color: var(--sisrh-text-muted);
+  text-align: right;
+  font-style: italic;
+}
+
+.enc-spec-note code {
+  font-family: 'Fira Code', 'Consolas', monospace;
+  background: var(--sisrh-border-soft);
+  padding: 1px 4px;
+  border-radius: 3px;
+}

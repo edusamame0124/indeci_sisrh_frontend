@@ -1,0 +1,309 @@
+<section class="rw-page">
+  <!-- ============================ HEADER ============================ -->
+  <header class="rw-header">
+    <div>
+      <h1>Asistente de Recálculo</h1>
+      <p class="rw-header__sub">
+        Recalcula la planilla de un grupo acotado de empleados y revisa el delta
+        antes de sobrescribir movimientos previos.
+      </p>
+    </div>
+    @if (fase() === 'completado') {
+      <button mat-stroked-button type="button" (click)="reiniciar()">
+        <mat-icon>restart_alt</mat-icon>
+        <span>Nuevo recálculo</span>
+      </button>
+    }
+  </header>
+
+  <!-- ============================ STEPPER ============================ -->
+  <mat-stepper #stepper linear="false" class="rw-stepper">
+    <!-- =========== PASO 1 — ALCANCE =========== -->
+    <mat-step [editable]="fase() !== 'ejecutando'" [completed]="!!preview()" label="Alcance">
+      <mat-card class="rw-card">
+        <mat-card-content>
+          <form [formGroup]="paso1" class="rw-paso1">
+            <mat-form-field appearance="outline" class="rw-paso1__field">
+              <mat-label>Período</mat-label>
+              <input matInput type="month" formControlName="periodo" autocomplete="off" />
+              <mat-icon matSuffix>event</mat-icon>
+              <mat-error>Selecciona un período válido (YYYY-MM).</mat-error>
+            </mat-form-field>
+
+            <fieldset class="rw-paso1__criterio">
+              <legend>Criterio de selección</legend>
+              <mat-radio-group formControlName="tipo" class="rw-radio-group">
+                <mat-radio-button value="TODOS">
+                  {{ labelCriterio('TODOS') }}
+                </mat-radio-button>
+                <mat-radio-button value="REGIMEN_LABORAL">
+                  {{ labelCriterio('REGIMEN_LABORAL') }}
+                </mat-radio-button>
+                <mat-radio-button value="CON_PREFLIGHT_PENDIENTE">
+                  {{ labelCriterio('CON_PREFLIGHT_PENDIENTE') }}
+                </mat-radio-button>
+                <mat-radio-button value="EMPLEADOS_LISTA">
+                  {{ labelCriterio('EMPLEADOS_LISTA') }}
+                </mat-radio-button>
+              </mat-radio-group>
+            </fieldset>
+
+            @if (paso1.controls.tipo.value === 'REGIMEN_LABORAL') {
+              <mat-form-field appearance="outline" class="rw-paso1__field">
+                <mat-label>Régimen laboral</mat-label>
+                <mat-select formControlName="regimen">
+                  @for (r of regimenesDisponibles; track r) {
+                    <mat-option [value]="r">{{ r }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+            }
+
+            @if (paso1.controls.tipo.value === 'EMPLEADOS_LISTA') {
+              <mat-form-field appearance="outline" class="rw-paso1__textarea">
+                <mat-label>IDs de empleados (separados por coma o salto de línea)</mat-label>
+                <textarea
+                  matInput
+                  formControlName="listaIdsTexto"
+                  rows="3"
+                  placeholder="10, 11, 25"
+                ></textarea>
+              </mat-form-field>
+            }
+
+            @if (errorMsg(); as msg) {
+              <p class="rw-error" role="alert">
+                <mat-icon>error_outline</mat-icon>
+                {{ msg }}
+              </p>
+            }
+          </form>
+        </mat-card-content>
+
+        <mat-card-actions align="end">
+          <button
+            mat-flat-button
+            color="primary"
+            type="button"
+            [disabled]="!canIrPaso2() || fase() === 'cargando-preview'"
+            (click)="cargarPreview()"
+          >
+            @if (fase() === 'cargando-preview') {
+              <mat-spinner diameter="18" class="rw-btn-spinner"></mat-spinner>
+              <span>Calculando alcance…</span>
+            } @else {
+              <ng-container>
+                <span>Ver alcance</span>
+                <mat-icon iconPositionEnd>arrow_forward</mat-icon>
+              </ng-container>
+            }
+          </button>
+        </mat-card-actions>
+      </mat-card>
+    </mat-step>
+
+    <!-- =========== PASO 2 — PREVISIÓN =========== -->
+    <mat-step [editable]="fase() !== 'ejecutando'" [completed]="!!resultado()" label="Previsión">
+      @if (preview(); as pre) {
+        <mat-card class="rw-card">
+          <mat-card-content>
+            <div class="rw-kpi-row">
+              <div class="rw-kpi">
+                <span class="rw-kpi__label">Empleados afectados</span>
+                <span class="rw-kpi__value">{{ pre.total }}</span>
+              </div>
+              <div class="rw-kpi">
+                <span class="rw-kpi__label">Período</span>
+                <span class="rw-kpi__value rw-kpi__value--muted">{{ pre.periodo }}</span>
+              </div>
+              <div class="rw-kpi">
+                <span class="rw-kpi__label">Criterio</span>
+                <span class="rw-kpi__value rw-kpi__value--muted">
+                  {{ labelCriterio(pre.criterioTipo) }}
+                </span>
+              </div>
+            </div>
+
+            @if (pre.total === 0) {
+              <div class="rw-empty">
+                <mat-icon class="rw-empty__icon" aria-hidden="true">filter_alt_off</mat-icon>
+                <h2>No hay empleados que coincidan con el criterio</h2>
+                <p>Vuelve al paso anterior y ajusta los filtros.</p>
+              </div>
+            } @else {
+              <table mat-table [dataSource]="pre.items" class="rw-table" aria-label="Empleados afectados">
+                <ng-container matColumnDef="empleado">
+                  <th mat-header-cell *matHeaderCellDef scope="col">Empleado</th>
+                  <td mat-cell *matCellDef="let i">
+                    <strong>{{ i.nombreCompleto || ('ID ' + i.empleadoId) }}</strong>
+                  </td>
+                </ng-container>
+
+                <ng-container matColumnDef="regimen">
+                  <th mat-header-cell *matHeaderCellDef scope="col">Régimen</th>
+                  <td mat-cell *matCellDef="let i">{{ i.regimenLaboralCodigo || '—' }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="netoActual">
+                  <th mat-header-cell *matHeaderCellDef scope="col" class="col-right">Neto actual</th>
+                  <td mat-cell *matCellDef="let i" class="col-right rw-monto">
+                    S/ {{ fmtMonto(i.netoActual) }}
+                  </td>
+                </ng-container>
+
+                <ng-container matColumnDef="estado">
+                  <th mat-header-cell *matHeaderCellDef scope="col" class="col-center">Cálculo previo</th>
+                  <td mat-cell *matCellDef="let i" class="col-center">
+                    @if (i.tieneMovimientoPrevio) {
+                      <span class="rw-pill" data-severity="info">
+                        <mat-icon aria-hidden="true">check</mat-icon>
+                        Sí
+                      </span>
+                    } @else {
+                      <span class="rw-pill" data-severity="neutral">No</span>
+                    }
+                  </td>
+                </ng-container>
+
+                <tr mat-header-row *matHeaderRowDef="columnasPreview; sticky: true"></tr>
+                <tr mat-row *matRowDef="let row; columns: columnasPreview"></tr>
+              </table>
+            }
+          </mat-card-content>
+
+          <mat-card-actions align="end">
+            <button mat-stroked-button type="button" matStepperPrevious>
+              <mat-icon>arrow_back</mat-icon>
+              <span>Cambiar alcance</span>
+            </button>
+            <button
+              mat-flat-button
+              color="primary"
+              type="button"
+              [disabled]="pre.total === 0 || fase() === 'ejecutando'"
+              (click)="confirmarEjecutar()"
+            >
+              @if (fase() === 'ejecutando') {
+                <mat-spinner diameter="18" class="rw-btn-spinner"></mat-spinner>
+                <span>Recalculando…</span>
+              } @else {
+                <ng-container>
+                  <mat-icon>play_arrow</mat-icon>
+                  <span>Ejecutar recálculo</span>
+                </ng-container>
+              }
+            </button>
+          </mat-card-actions>
+        </mat-card>
+      }
+    </mat-step>
+
+    <!-- =========== PASO 3 — RESULTADO =========== -->
+    <mat-step label="Resultado">
+      @if (resultado(); as r) {
+        <mat-card class="rw-card">
+          <mat-card-content>
+            <div class="rw-kpi-row">
+              <div class="rw-kpi" data-severity="success">
+                <span class="rw-kpi__label">Exitosos</span>
+                <span class="rw-kpi__value">{{ r.exitosos }} / {{ r.total }}</span>
+              </div>
+              <div class="rw-kpi" [attr.data-severity]="r.fallidos > 0 ? 'danger' : 'neutral'">
+                <span class="rw-kpi__label">Con error</span>
+                <span class="rw-kpi__value">{{ r.fallidos }}</span>
+              </div>
+              <div
+                class="rw-kpi"
+                [attr.data-severity]="r.totalDelta > 0 ? 'success' : r.totalDelta < 0 ? 'danger' : 'neutral'"
+              >
+                <span class="rw-kpi__label">Δ neto total</span>
+                <span class="rw-kpi__value">{{ fmtDelta(r.totalDelta) }}</span>
+              </div>
+            </div>
+
+            <table mat-table [dataSource]="r.items" class="rw-table" aria-label="Resultado por empleado">
+              <ng-container matColumnDef="empleado">
+                <th mat-header-cell *matHeaderCellDef scope="col">Empleado</th>
+                <td mat-cell *matCellDef="let i">
+                  <strong>{{ i.nombreCompleto || ('ID ' + i.empleadoId) }}</strong>
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="status">
+                <th mat-header-cell *matHeaderCellDef scope="col" class="col-center">Estado</th>
+                <td mat-cell *matCellDef="let i" class="col-center">
+                  @if (i.status === 'OK') {
+                    <span class="rw-pill" data-severity="success">
+                      <mat-icon aria-hidden="true">check_circle</mat-icon>
+                      OK
+                    </span>
+                  } @else {
+                    <span class="rw-pill" data-severity="danger">
+                      <mat-icon aria-hidden="true">error</mat-icon>
+                      Error
+                    </span>
+                  }
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="netoAnterior">
+                <th mat-header-cell *matHeaderCellDef scope="col" class="col-right">Neto anterior</th>
+                <td mat-cell *matCellDef="let i" class="col-right rw-monto">
+                  S/ {{ fmtMonto(i.netoAnterior) }}
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="netoNuevo">
+                <th mat-header-cell *matHeaderCellDef scope="col" class="col-right">Neto nuevo</th>
+                <td mat-cell *matCellDef="let i" class="col-right rw-monto">
+                  @if (i.netoNuevo != null) {
+                    S/ {{ fmtMonto(i.netoNuevo) }}
+                  } @else {
+                    <span aria-label="No disponible">—</span>
+                  }
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="delta">
+                <th mat-header-cell *matHeaderCellDef scope="col" class="col-right">Δ</th>
+                <td mat-cell *matCellDef="let i" class="col-right rw-monto">
+                  <span
+                    class="rw-delta"
+                    [attr.data-severity]="
+                      i.delta == null ? 'neutral' : i.delta > 0 ? 'success' : i.delta < 0 ? 'danger' : 'neutral'
+                    "
+                  >
+                    {{ fmtDelta(i.delta) }}
+                  </span>
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="razon">
+                <th mat-header-cell *matHeaderCellDef scope="col">Razón</th>
+                <td mat-cell *matCellDef="let i" class="rw-razon">
+                  {{ i.razon || '' }}
+                </td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="columnasResultado; sticky: true"></tr>
+              <tr mat-row *matRowDef="let row; columns: columnasResultado"></tr>
+            </table>
+          </mat-card-content>
+
+          <mat-card-actions align="end">
+            <button mat-stroked-button type="button" (click)="reiniciar()">
+              <mat-icon>restart_alt</mat-icon>
+              <span>Nuevo recálculo</span>
+            </button>
+          </mat-card-actions>
+        </mat-card>
+      }
+    </mat-step>
+  </mat-stepper>
+
+  <p class="rw-spec-note">
+    F3.4 — Reusa motor v3 vía
+    <code>POST /api/rrhh/recalculo/&#123;preview|ejecutar&#125;</code> · SPEC §5.2 ·
+    requiere período ABIERTO
+  </p>
+</section>

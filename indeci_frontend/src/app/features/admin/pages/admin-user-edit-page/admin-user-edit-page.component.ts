@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   inject,
   signal,
 } from '@angular/core';
@@ -15,10 +16,12 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 
 import { AdminApiService, type PermisoDeniedRow } from '../../services/admin-api.service';
 import { ErrorMessageService } from '../../../../core/services/error-message.service';
 import { ClientTelemetryService } from '../../../../core/services/client-telemetry.service';
+import { AuthService } from '../../../../core/services/auth.service';
 import { isErrorResponse } from '../../../../core/models/error-response.model';
 import { sisrhConfirmDialogConfig } from '../../../../core/config/sisrh-dialog.config';
 import {
@@ -26,7 +29,13 @@ import {
   type SisrhSnackDurationMs,
 } from '../../../../core/config/sisrh-snack.config';
 import { ConfirmDialogComponent, type ConfirmDialogData } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
-import type { AdminPermisoRow, AdminRolRow } from '../../models/admin.models';
+import type {
+  AccesoSistema,
+  AdminPermisoRow,
+  AdminRolRow,
+  SistemaAdmin,
+  SistemaRol,
+} from '../../models/admin.models';
 
 @Component({
   selector: 'app-admin-user-edit-page',
@@ -40,6 +49,7 @@ import type { AdminPermisoRow, AdminRolRow } from '../../models/admin.models';
     MatSelectModule,
     MatDialogModule,
     MatProgressSpinnerModule,
+    MatSlideToggleModule,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -128,6 +138,54 @@ import type { AdminPermisoRow, AdminRolRow } from '../../models/admin.models';
             </form>
           </section>
 
+          @if (canManageAccesos()) {
+            <section class="form-section" aria-labelledby="st-accesos">
+              <h3 id="st-accesos">Accesos por sistema</h3>
+              <p class="page-hint">
+                Los cambios de acceso a Convocatoria y Rendimiento se aplican al siguiente ingreso del usuario.
+              </p>
+
+              <div class="access-stack">
+                @for (sistema of sistemasExternos(); track sistema.codigo) {
+                  <div class="access-row">
+                    <div class="access-row__head">
+                      <div>
+                        <strong>{{ sistema.nombre }}</strong>
+                        <p>{{ sistema.descripcion || 'Sistema externo integrado al SSO' }}</p>
+                      </div>
+                      <mat-slide-toggle
+                        [checked]="isAccesoActivo(sistema.codigo)"
+                        (change)="onToggleAcceso(sistema.codigo, $event.checked)"
+                      >
+                        Tiene acceso
+                      </mat-slide-toggle>
+                    </div>
+
+                    <mat-form-field appearance="outline">
+                      <mat-label>Roles en {{ sistema.nombre }}</mat-label>
+                      <mat-select
+                        multiple
+                        [value]="rolesSeleccionados(sistema.codigo)"
+                        [disabled]="!isAccesoActivo(sistema.codigo)"
+                        (selectionChange)="onRolesAcceso(sistema.codigo, $event.value)"
+                      >
+                        @for (rol of rolesDeSistema(sistema.codigo); track rol.codigo) {
+                          <mat-option [value]="rol.codigo">{{ rol.nombre }} — {{ rol.codigo }}</mat-option>
+                        }
+                      </mat-select>
+                    </mat-form-field>
+                  </div>
+                }
+              </div>
+
+              <div class="acts">
+                <button mat-flat-button color="primary" type="button" (click)="guardarAccesos()" [disabled]="savingAccesos()">
+                  Guardar accesos
+                </button>
+              </div>
+            </section>
+          }
+
           <section class="form-section" aria-labelledby="st-reset">
             <h3 id="st-reset">Reinicio institucional de clave</h3>
             <p class="page-hint">
@@ -164,6 +222,31 @@ import type { AdminPermisoRow, AdminRolRow } from '../../models/admin.models';
         display: flex;
         justify-content: flex-start;
       }
+      .access-stack {
+        display: grid;
+        gap: 1rem;
+      }
+      .access-row {
+        border: 1px solid var(--sisrh-color-border, #e2e8f0);
+        border-radius: 8px;
+        padding: 1rem;
+        background: #fff;
+      }
+      .access-row__head {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        align-items: flex-start;
+        margin-bottom: 0.75rem;
+      }
+      .access-row__head p {
+        margin: 0.25rem 0 0;
+        color: var(--sisrh-color-muted, #64748b);
+        font-size: 0.875rem;
+      }
+      .access-row mat-form-field {
+        width: 100%;
+      }
     `,
   ],
 })
@@ -175,6 +258,7 @@ export class AdminUserEditPageComponent {
   private readonly errors = inject(ErrorMessageService);
   private readonly dialogs = inject(MatDialog);
   private readonly telemetry = inject(ClientTelemetryService);
+  private readonly auth = inject(AuthService);
 
   private readonly parsedId = Number(this.route.snapshot.paramMap.get('id'));
   readonly userIdOk = signal(!Number.isNaN(this.parsedId) && this.parsedId > 0);
@@ -184,11 +268,19 @@ export class AdminUserEditPageComponent {
 
   readonly rolesCat = signal<readonly AdminRolRow[]>([]);
   readonly permisosCat = signal<readonly AdminPermisoRow[]>([]);
+  readonly sistemasCat = signal<readonly SistemaAdmin[]>([]);
+  readonly accesos = signal<readonly AccesoSistema[]>([]);
+  readonly rolesSistema = signal<Readonly<Record<string, readonly SistemaRol[]>>>({});
 
   readonly savingEstado = signal(false);
   readonly savingRoles = signal(false);
   readonly savingDenies = signal(false);
+  readonly savingAccesos = signal(false);
   readonly resetting = signal(false);
+  readonly canManageAccesos = computed(() => this.auth.roles().includes('SUPER_ADMIN'));
+  readonly sistemasExternos = computed(() =>
+    this.sistemasCat().filter((s) => s.codigo !== 'sisrh'),
+  );
 
   readonly statusForm = this.fb.group({
     status: this.fb.nonNullable.control<'ACTIVE' | 'INACTIVE'>('ACTIVE', {
@@ -219,17 +311,24 @@ export class AdminUserEditPageComponent {
       usuario: this.api.getUser(userId),
       roles: this.api.listRoles(),
       permisos: this.api.listPermisos(),
+      sistemas: this.canManageAccesos() ? this.api.listSistemas() : of<readonly SistemaAdmin[]>([]),
+      accesos: this.canManageAccesos()
+        ? this.api.getUserAccesos(userId).pipe(catchError(() => of<readonly AccesoSistema[]>([])))
+        : of<readonly AccesoSistema[]>([]),
       deniesExtra: this.api
         .listUserDeniedPermissions(userId)
         .pipe(catchError(() => of<readonly PermisoDeniedRow[]>([]))),
     }).subscribe({
-      next: ({ usuario, roles, permisos, deniesExtra }) => {
+      next: ({ usuario, roles, permisos, sistemas, accesos, deniesExtra }) => {
         this.headline.set(usuario.username);
         const estado = usuario.status?.toUpperCase() === 'INACTIVE' ? 'INACTIVE' : 'ACTIVE';
         this.statusForm.patchValue({ status: estado });
 
         this.rolesCat.set(roles);
         this.permisosCat.set(permisos);
+        this.sistemasCat.set(sistemas);
+        this.accesos.set(accesos.length > 0 ? accesos : (usuario.sistemas ?? []));
+        this.loadRolesExternos(sistemas);
 
         const fromDetail = usuario.deniedPermissionIds ?? [];
         const fromRows = deniesExtra.map((d) => d.permisoId);
@@ -310,6 +409,51 @@ export class AdminUserEditPageComponent {
     });
   }
 
+  guardarAccesos(): void {
+    if (!this.userIdOk()) return;
+    this.savingAccesos.set(true);
+    const accesos = this.sistemasExternos().map((sistema) => {
+      const current = this.findAcceso(sistema.codigo);
+      return {
+        codigo: sistema.codigo,
+        activo: current?.activo ?? false,
+        roles: current?.activo ? [...(current.roles ?? [])] : [],
+      };
+    });
+    this.api.putUserAccesos(this.parsedId, { accesos }).subscribe({
+      next: () => {
+        this.savingAccesos.set(false);
+        this.notify('Accesos por sistema actualizados.');
+        this.telemetry.track('ADMIN_MODULE_UI', { extra: { action: 'USER_ACCESOS_SAVE' } });
+      },
+      error: (err: HttpErrorResponse) => {
+        this.savingAccesos.set(false);
+        const raw = isErrorResponse(err.error) ? err.error.mensaje : null;
+        this.notify(this.errors.translateAdminApi(raw), SISRH_SNACK_DURATION_MS.long);
+      },
+    });
+  }
+
+  isAccesoActivo(codigo: string): boolean {
+    return this.findAcceso(codigo)?.activo ?? false;
+  }
+
+  rolesSeleccionados(codigo: string): readonly string[] {
+    return this.findAcceso(codigo)?.roles ?? [];
+  }
+
+  rolesDeSistema(codigo: string): readonly SistemaRol[] {
+    return this.rolesSistema()[codigo] ?? [];
+  }
+
+  onToggleAcceso(codigo: string, activo: boolean): void {
+    this.upsertAcceso(codigo, { activo, roles: activo ? this.rolesSeleccionados(codigo) : [] });
+  }
+
+  onRolesAcceso(codigo: string, roles: readonly string[]): void {
+    this.upsertAcceso(codigo, { activo: this.isAccesoActivo(codigo), roles: [...roles] });
+  }
+
   abrirConfirmReset(): void {
     if (!this.userIdOk()) return;
     const ref = this.dialogs.open(
@@ -341,5 +485,43 @@ export class AdminUserEditPageComponent {
         },
       });
     });
+  }
+
+  private findAcceso(codigo: string): AccesoSistema | undefined {
+    return this.accesos().find((a) => a.codigo === codigo);
+  }
+
+  private upsertAcceso(
+    codigo: string,
+    patch: Pick<AccesoSistema, 'activo' | 'roles'>,
+  ): void {
+    const sistema = this.sistemasCat().find((s) => s.codigo === codigo);
+    const current = this.findAcceso(codigo);
+    const next: AccesoSistema = {
+      codigo,
+      nombre: current?.nombre ?? sistema?.nombre ?? codigo,
+      activo: patch.activo,
+      roles: patch.roles,
+    };
+    const others = this.accesos().filter((a) => a.codigo !== codigo);
+    this.accesos.set([...others, next]);
+  }
+
+  private loadRolesExternos(sistemas: readonly SistemaAdmin[]): void {
+    const externos = sistemas.filter((s) => s.codigo !== 'sisrh');
+    for (const sistema of externos) {
+      this.api.listSistemaRoles(sistema.codigo).subscribe({
+        next: (roles) =>
+          this.rolesSistema.update((current) => ({
+            ...current,
+            [sistema.codigo]: roles,
+          })),
+        error: () =>
+          this.rolesSistema.update((current) => ({
+            ...current,
+            [sistema.codigo]: [],
+          })),
+      });
+    }
   }
 }

@@ -103,6 +103,26 @@ import { SistemaCard } from '../../models/sistema.model';
               </div>
             </button>
           }
+          @if (canShowUserManagement()) {
+            <button
+              type="button"
+              role="listitem"
+              class="sys-card sys-card--admin"
+              aria-label="Abrir GestiÃ³n de Usuarios"
+              (click)="onUserManagementClick()"
+            >
+              <div class="sys-card__icon-wrap">
+                <mat-icon class="sys-card__icon" aria-hidden="true">manage_accounts</mat-icon>
+              </div>
+              <div class="sys-card__body">
+                <h3 class="sys-card__name">Gestión de Usuarios</h3>
+                <p class="sys-card__desc">Administrar usuarios y accesos a los sistemas INDECI</p>
+                <mat-chip-set class="sys-card__roles" aria-label="Rol requerido">
+                  <mat-chip disableRipple class="sys-card__chip">Super Administrador</mat-chip>
+                </mat-chip-set>
+              </div>
+            </button>
+          }
         </section>
 
         <footer class="selector-foot">
@@ -234,6 +254,10 @@ import { SistemaCard } from '../../models/sistema.model';
         box-shadow: 0 4px 12px rgba(13, 71, 161, 0.08);
         transform: translateY(-1px);
       }
+      .sys-card--admin {
+        border-color: rgba(13, 71, 161, 0.35);
+        background: #f8fbff;
+      }
       .sys-card:focus-visible {
         outline: 2px solid var(--mat-sys-primary, #0d47a1);
         outline-offset: 2px;
@@ -349,6 +373,7 @@ export class SistemaSelectorPageComponent {
   readonly username = this.auth.username;
   readonly cards = this.selector.cards;
   readonly loggingOut = signal(false);
+  readonly canShowUserManagement = computed(() => this.auth.roles().includes('SUPER_ADMIN'));
 
   /** True si el usuario no tiene roles en NINGÚN sistema (todas las cards bloqueadas). */
   readonly allBlocked = computed(() => {
@@ -388,6 +413,10 @@ export class SistemaSelectorPageComponent {
     if (target) {
       window.location.href = target;
     }
+  }
+
+  onUserManagementClick(): void {
+    void this.router.navigate(['/admin/usuarios']);
   }
 
   onLogout(): void {

@@ -107,13 +107,15 @@ describe('filterVisibleNavItems (Spec 009 — 5 módulos + Inicio)', () => {
     expect(leaves.map((l) => l.label)).toEqual(['Bancos']);
   });
 
-  it('Empleados expone 8 sub-items con etiquetas del flujo (Spec 009 + B5)', () => {
+  it('Empleados expone 10 sub-items con etiquetas del flujo (Spec 009 + B5 + F5.1 Cargo histórico + F5.2 Encargaturas)', () => {
     const r = filterVisibleNavItems(MAIN_NAV_ITEMS, [], ['RRHH_ADMIN']);
     const emp = r.find((i) => i.label === 'Empleados');
-    expect(emp?.children?.length).toBe(8);
+    expect(emp?.children?.length).toBe(10);
     expect(emp?.children?.map((c) => c.label)).toEqual([
       'Datos personales',
       'Puesto laboral',
+      'Cargo histórico',
+      'Encargaturas',
       'Cuenta bancaria',
       'Configuración pensión',
       'Configuración planilla',
@@ -169,15 +171,17 @@ describe('filterVisibleNavItems (Spec 009 — 5 módulos + Inicio)', () => {
     expect(conceptos?.comingSoon).toBeFalsy();
   });
 
-  it('Planilla expone 5 sub-items navegables (Detalle/Resumen/Cierre se acceden desde Movimientos y Periodos, no desde sidebar)', () => {
+  it('Planilla expone 7 sub-items navegables (Detalle/Resumen/Cierre se acceden desde Movimientos y Periodos, no desde sidebar; F3.3 agrega Centro de Validaciones, F3.4 agrega Asistente de Recálculo)', () => {
     const r = filterVisibleNavItems(MAIN_NAV_ITEMS, [], ['ADMIN']);
     const pla = r.find((i) => i.label === 'Planilla');
-    expect(pla?.children?.length).toBe(5);
+    expect(pla?.children?.length).toBe(7);
     expect(pla?.children?.every((c) => !c.comingSoon)).toBe(true);
     expect(pla?.children?.map((c) => c.route).sort()).toEqual(
       [
         '/planilla/periodos',
         '/asistencia/carga',
+        '/planilla/validaciones',
+        '/planilla/recalculo',
         '/planilla/generacion-masiva',
         '/planilla/generacion-individual',
         '/planilla/movimientos',
@@ -185,14 +189,15 @@ describe('filterVisibleNavItems (Spec 009 — 5 módulos + Inicio)', () => {
     );
   });
 
-  it('Reportes expone 6 sub-items navegables (Boleta se accede desde CTA en /planilla/resumen, no desde sidebar)', () => {
+  it('Reportes expone 7 sub-items navegables (Boleta se accede desde CTA en /planilla/resumen, no desde sidebar; F3.5 agrega Tablero consolidado)', () => {
     const r = filterVisibleNavItems(MAIN_NAV_ITEMS, [], ['ADMIN']);
     const rep = r.find((i) => i.label === 'Reportes');
-    expect(rep?.children?.length).toBe(6);
+    expect(rep?.children?.length).toBe(7);
     expect(rep?.children?.every((c) => !c.comingSoon)).toBe(true);
     expect(rep?.children?.map((c) => c.route).sort()).toEqual(
       [
         '/reportes/resumen-mensual',
+        '/reportes/consolidado',
         '/reportes/resumen-meta',
         '/reportes/conciliacion',
         '/reportes/archivo-bancos',

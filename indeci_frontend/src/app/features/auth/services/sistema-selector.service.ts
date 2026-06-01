@@ -1,5 +1,6 @@
 import { Injectable, computed, inject } from '@angular/core';
 import { AuthService } from '../../../core/services/auth.service';
+import { ClientTelemetryService } from '../../../core/services/client-telemetry.service';
 import { environment } from '../../../../environments/environment';
 import {
   SISTEMAS_METADATA,
@@ -28,6 +29,7 @@ import {
 @Injectable({ providedIn: 'root' })
 export class SistemaSelectorService {
   private readonly auth = inject(AuthService);
+  private readonly telemetry = inject(ClientTelemetryService);
 
   /**
    * Cards listas para renderizar. Se recomputa cuando cambia `auth.sistemas()`.
@@ -62,10 +64,9 @@ export class SistemaSelectorService {
     // lo ignoramos pero lo registramos en consola para detectar drift.
     for (const codigo of Object.keys(sistemasClaim)) {
       if (!SISTEMAS_METADATA.some((m) => m.codigo === codigo)) {
-        console.warn(
-          `[SSO] Sistema "${codigo}" presente en el JWT pero ausente de SISTEMAS_METADATA. ` +
-            `Actualizar sistema.model.ts si es un sistema nuevo.`,
-        );
+        this.telemetry.track('ADMIN_MODULE_UI', {
+          extra: { action: 'SSO_SELECTOR_METADATA_DRIFT', sistema: codigo },
+        });
       }
     }
 

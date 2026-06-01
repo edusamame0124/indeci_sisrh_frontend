@@ -1,0 +1,176 @@
+<section class="enc-page">
+  <!-- ============================ HEADER ============================ -->
+  <header class="enc-header">
+    <div>
+      <h1>Encargaturas</h1>
+      <p class="enc-header__sub">
+        Gestión de relaciones titular ↔ encargado(a) para suplencias temporales.
+      </p>
+    </div>
+    <button mat-flat-button color="primary" type="button" (click)="abrirRegistrar()">
+      <mat-icon>add</mat-icon>
+      <span>Registrar encargatura</span>
+    </button>
+  </header>
+
+  <!-- ============================ TOOLBAR ============================ -->
+  <mat-card class="enc-toolbar">
+    <mat-card-content>
+      <mat-form-field appearance="outline" class="enc-toolbar__estado" subscriptSizing="dynamic">
+        <mat-label>Estado</mat-label>
+        <mat-select [formControl]="filtroEstado" (selectionChange)="onCambioFiltro()">
+          <mat-option value="TODOS">Todas</mat-option>
+          <mat-option value="ACTIVO">Activas</mat-option>
+          <mat-option value="CULMINADO">Culminadas</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="enc-toolbar__buscar" subscriptSizing="dynamic">
+        <mat-label>Buscar por titular o encargado</mat-label>
+        <input
+          matInput
+          type="search"
+          [value]="buscador()"
+          (input)="buscador.set($any($event.target).value)"
+          autocomplete="off"
+          aria-label="Buscar por nombre o DNI"
+        />
+        <mat-icon matSuffix>search</mat-icon>
+      </mat-form-field>
+
+      <span class="enc-toolbar__count" aria-live="polite">
+        {{ filtradas().length }} de {{ rows().length }}
+      </span>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- ============================ TABLA ============================ -->
+  @if (loading()) {
+    <div class="enc-loading" role="status" aria-live="polite">
+      <mat-spinner diameter="40"></mat-spinner>
+      <p>Cargando encargaturas…</p>
+    </div>
+  } @else if (rows().length === 0) {
+    <div class="enc-empty">
+      <mat-icon class="enc-empty__icon" aria-hidden="true">swap_horiz</mat-icon>
+      <h2>Aún no hay encargaturas registradas</h2>
+      <p>Registra la primera relación titular ↔ encargado(a) para empezar.</p>
+      <button mat-flat-button color="primary" type="button" (click)="abrirRegistrar()">
+        <mat-icon>add</mat-icon>
+        <span>Registrar encargatura</span>
+      </button>
+    </div>
+  } @else if (filtradas().length === 0) {
+    <div class="enc-empty enc-empty--inline">
+      <mat-icon class="enc-empty__icon" aria-hidden="true">filter_alt_off</mat-icon>
+      <h2>Sin coincidencias para los filtros</h2>
+      <button mat-stroked-button type="button" (click)="buscador.set('')">
+        Limpiar búsqueda
+      </button>
+    </div>
+  } @else {
+    <mat-card class="enc-table-card">
+      <table mat-table [dataSource]="filtradas()" class="enc-table" aria-label="Encargaturas">
+        <ng-container matColumnDef="titular">
+          <th mat-header-cell *matHeaderCellDef scope="col">Titular</th>
+          <td mat-cell *matCellDef="let r">
+            <strong>{{ r.titularNombre || 'Empleado ' + r.empleadoTitularId }}</strong>
+            @if (r.titularDni) {
+              <span class="enc-dni">DNI {{ r.titularDni }}</span>
+            }
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="encargado">
+          <th mat-header-cell *matHeaderCellDef scope="col">Encargado(a)</th>
+          <td mat-cell *matCellDef="let r">
+            <strong>{{ r.encargadoNombre || 'Empleado ' + r.empleadoEncargId }}</strong>
+            @if (r.encargadoDni) {
+              <span class="enc-dni">DNI {{ r.encargadoDni }}</span>
+            }
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="fechaInicio">
+          <th mat-header-cell *matHeaderCellDef scope="col">Inicio</th>
+          <td mat-cell *matCellDef="let r" class="enc-fecha">{{ fmtFecha(r.fechaInicio) }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="fechaFin">
+          <th mat-header-cell *matHeaderCellDef scope="col">Fin</th>
+          <td mat-cell *matCellDef="let r" class="enc-fecha">
+            @if (r.fechaFin) {
+              {{ fmtFecha(r.fechaFin) }}
+            } @else {
+              <span class="enc-indef">indefinida</span>
+            }
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="resolucion">
+          <th mat-header-cell *matHeaderCellDef scope="col">Resolución</th>
+          <td mat-cell *matCellDef="let r">{{ r.resolucion || '—' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="estado">
+          <th mat-header-cell *matHeaderCellDef scope="col" class="col-center">Estado</th>
+          <td mat-cell *matCellDef="let r" class="col-center">
+            @if (r.estado === 'ACTIVO') {
+              <span class="enc-pill" data-severity="success">
+                <mat-icon aria-hidden="true">check_circle</mat-icon>
+                Activo
+              </span>
+            } @else {
+              <span class="enc-pill" data-severity="neutral">Culminado</span>
+            }
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="acciones">
+          <th mat-header-cell *matHeaderCellDef scope="col" class="col-acciones">Acciones</th>
+          <td mat-cell *matCellDef="let r" class="col-acciones">
+            <button
+              mat-icon-button
+              type="button"
+              matTooltip="Editar"
+              [attr.aria-label]="'Editar encargatura de ' + (r.encargadoNombre || r.empleadoEncargId)"
+              (click)="abrirEditar(r)"
+            >
+              <mat-icon>edit</mat-icon>
+            </button>
+            @if (r.estado === 'ACTIVO') {
+              <button
+                mat-icon-button
+                type="button"
+                matTooltip="Cerrar encargatura"
+                class="enc-action-cerrar"
+                [attr.aria-label]="'Cerrar encargatura de ' + (r.encargadoNombre || r.empleadoEncargId)"
+                (click)="confirmarCerrar(r)"
+              >
+                <mat-icon>event_busy</mat-icon>
+              </button>
+            }
+            <button
+              mat-icon-button
+              type="button"
+              matTooltip="Eliminar"
+              class="enc-action-eliminar"
+              [attr.aria-label]="'Eliminar encargatura de ' + (r.encargadoNombre || r.empleadoEncargId)"
+              (click)="confirmarEliminar(r)"
+            >
+              <mat-icon>delete</mat-icon>
+            </button>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="columnas; sticky: true"></tr>
+        <tr mat-row *matRowDef="let row; columns: columnas"></tr>
+      </table>
+    </mat-card>
+
+    <p class="enc-spec-note">
+      F5.2 — <code>POST/PUT/DELETE /api/rrhh/encargatura</code> ·
+      Fuente: <code>INDECI_EMPLEADO_ENCARGATURA</code>.
+    </p>
+  }
+</section>

@@ -15,12 +15,16 @@ import type {
   AdminAuditoriaRow,
   AdminPermisoRow,
   AdminRolRow,
+  AccesoSistema,
+  AccesosPutRequest,
   AdminUserCreateRequest,
   AdminUserDetail,
   AdminUserPage,
   AdminUserPermisoDeniesPut,
   AdminUserRolesPut,
   AdminUserStatusPatch,
+  SistemaAdmin,
+  SistemaRol,
 } from '../models/admin.models';
 
 const BASE = '/api/admin';
@@ -54,10 +58,22 @@ function optionalParam(params: HttpParams, key: string, value?: string): HttpPar
 export class AdminApiService {
   private readonly http = inject(HttpClient);
 
-  listUsersPaged(page: number, size: number, q?: string): Observable<AdminUserPage> {
+  listUsersPaged(
+    page: number,
+    size: number,
+    q?: string,
+    status?: string,
+    sistema?: string,
+  ): Observable<AdminUserPage> {
     let params = new HttpParams().set('page', String(page)).set('size', String(size));
     if (q && q.trim().length > 0) {
       params = params.set('q', sanitizeAuditUsuarioFilter(q));
+    }
+    if (status && status.trim().length > 0) {
+      params = params.set('status', status.trim());
+    }
+    if (sistema && sistema.trim().length > 0) {
+      params = params.set('sistema', sistema.trim());
     }
 
     return this.http
@@ -105,6 +121,30 @@ export class AdminApiService {
   putUserDeniedPermissions(id: number, body: AdminUserPermisoDeniesPut): Observable<void> {
     return this.http
       .put<ApiResponse<unknown>>(`${BASE}/users/${id}/permiso-denegados`, body)
+      .pipe(map(() => undefined));
+  }
+
+  listSistemas(): Observable<readonly SistemaAdmin[]> {
+    return this.http
+      .get<ApiResponse<readonly SistemaAdmin[]>>(`${BASE}/sistemas`)
+      .pipe(map((res) => [...extractApiData(res)]));
+  }
+
+  listSistemaRoles(codigo: string): Observable<readonly SistemaRol[]> {
+    return this.http
+      .get<ApiResponse<readonly SistemaRol[]>>(`${BASE}/sistemas/${codigo}/roles`)
+      .pipe(map((res) => [...extractApiData(res)]));
+  }
+
+  getUserAccesos(id: number): Observable<readonly AccesoSistema[]> {
+    return this.http
+      .get<ApiResponse<readonly AccesoSistema[]>>(`${BASE}/users/${id}/accesos`)
+      .pipe(map((res) => [...extractApiData(res)]));
+  }
+
+  putUserAccesos(id: number, body: AccesosPutRequest): Observable<void> {
+    return this.http
+      .put<ApiResponse<unknown>>(`${BASE}/users/${id}/accesos`, body)
       .pipe(map(() => undefined));
   }
 

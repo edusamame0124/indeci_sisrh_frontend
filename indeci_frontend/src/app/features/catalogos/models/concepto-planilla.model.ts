@@ -17,7 +17,13 @@ export interface ConceptoPlanillaInput {
   naturaleza: string;
 }
 
-/** Mirrors `ConceptoPlanillaResponseDto` (Java response). */
+/**
+ * Mirrors `ConceptoPlanillaResponseDto` (Java response).
+ *
+ * F3.2 — campos extendidos del catálogo enriquecido para que la UI muestre
+ * chips visuales por afectación, vigencia, MUC/CUC y régimen aplicable.
+ * Los campos `S`/`N` se devuelven como strings desde el backend.
+ */
 export interface ConceptoPlanillaRow {
   readonly id: number;
   readonly codigo: string;
@@ -25,8 +31,34 @@ export interface ConceptoPlanillaRow {
   readonly tipo: ConceptoPlanillaTipo;
   readonly naturaleza: string;
   readonly activo: number;
+
   /** Campos MEF (Spec 013 / C1) — pueden ser null en BD. */
   readonly codigoMef?: string | null;
   readonly codigoSisper?: string | null;
   readonly tipoConcepto?: ConceptoPlanillaTipoConcepto | null;
+
+  // F3.2 — códigos externos
+  readonly codigoPlameSunat?: string | null;
+  readonly codigoMcpp?: string | null;
+
+  // F3.2 — afectaciones tributarias / previsionales (S / N)
+  readonly afectoIr5ta?: string | null;
+  readonly afectoAportePens?: string | null;
+  readonly afectoEssalud?: string | null;
+
+  // F3.2 — banderas LEY-07 MUC vs CUC
+  readonly esMuc?: string | null;
+  readonly esCuc?: string | null;
+
+  /**
+   * Régimen aplicable. Acepta valor único ("276", "728", "1057", "SERVIR",
+   * "TODOS") o CSV ("728,1057") según F1.5b para los DS de pacto colectivo.
+   */
+  readonly regimenAplicable?: string | null;
+
+  readonly fechaVigIni?: string | null;
+  readonly fechaVigFin?: string | null;
+
+  /** S/N — motor v3 prorratea por días laborados si "S". */
+  readonly esProrrateable?: string | null;
 }

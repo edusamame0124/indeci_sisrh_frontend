@@ -1,0 +1,330 @@
+<section class="rc-page">
+  <!-- ============================ HEADER ============================ -->
+  <header class="rc-header">
+    <div>
+      <h1>Tablero Consolidado</h1>
+      <p class="rc-header__sub">
+        Evolución, distribución por régimen y conceptos más relevantes del período.
+      </p>
+    </div>
+    <button mat-stroked-button type="button" (click)="recargar()">
+      <mat-icon>refresh</mat-icon>
+      <span>Actualizar</span>
+    </button>
+  </header>
+
+  <!-- ============================ TOOLBAR PERIODO ============================ -->
+  <mat-card class="rc-toolbar">
+    <mat-card-content>
+      <mat-form-field appearance="outline" class="rc-toolbar__field">
+        <mat-label>Período</mat-label>
+        <input matInput type="month" [formControl]="periodoCtrl" autocomplete="off" />
+        <mat-icon matSuffix>event</mat-icon>
+      </mat-form-field>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- ============================ TABS ============================ -->
+  <mat-tab-group
+    class="rc-tabs"
+    [selectedIndex]="tabActivo()"
+    (selectedIndexChange)="onTabChange($event)"
+    animationDuration="200ms"
+  >
+    <!-- ===================== TAB 1 — EVOLUCIÓN ===================== -->
+    <mat-tab label="Evolución">
+      <div class="rc-tab-body">
+        <div class="rc-subtoolbar">
+          <mat-form-field appearance="outline" class="rc-subtoolbar__field">
+            <mat-label>Ventana</mat-label>
+            <mat-select [formControl]="mesesCtrl" (selectionChange)="cargarEvolucion()">
+              @for (m of mesesOpciones; track m) {
+                <mat-option [value]="m">{{ m }} meses</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <button
+            mat-stroked-button
+            type="button"
+            [disabled]="evolucionVacia() || loadingEvolucion()"
+            (click)="exportarEvolucionCsv()"
+          >
+            <mat-icon>download</mat-icon>
+            <span>Exportar CSV</span>
+          </button>
+        </div>
+
+        @if (loadingEvolucion()) {
+          <div class="rc-loading" role="status">
+            <mat-spinner diameter="40"></mat-spinner>
+            <p>Calculando evolución…</p>
+          </div>
+        } @else if (evolucion(); as r) {
+          <!-- KPI -->
+          <div class="rc-kpis">
+            <article class="rc-kpi" data-severity="info">
+              <span class="rc-kpi__label">Neto acumulado</span>
+              <span class="rc-kpi__value">S/ {{ fmtMonto(r.totalNetoAcumulado) }}</span>
+              <span class="rc-kpi__hint">{{ r.meses }} meses al {{ r.periodoBase }}</span>
+            </article>
+            <article class="rc-kpi" data-severity="neutral">
+              <span class="rc-kpi__label">Promedio mensual</span>
+              <span class="rc-kpi__value">S/ {{ fmtMonto(r.promedioMensual) }}</span>
+              <span class="rc-kpi__hint">Neto / # meses</span>
+            </article>
+            <article
+              class="rc-kpi"
+              [attr.data-severity]="severityDelta(r.variacionPctRango)"
+            >
+              <span class="rc-kpi__label">Variación del rango</span>
+              <span class="rc-kpi__value">{{ fmtDeltaPct(r.variacionPctRango) }}</span>
+              <span class="rc-kpi__hint">Último vs primero</span>
+            </article>
+          </div>
+
+          @if (evolucionVacia()) {
+            <div class="rc-empty">
+              <mat-icon class="rc-empty__icon" aria-hidden="true">stacked_line_chart</mat-icon>
+              <h2>Sin movimientos en los meses seleccionados</h2>
+              <p>Verifica que existan planillas generadas en el rango.</p>
+            </div>
+          } @else {
+            <table mat-table [dataSource]="r.items" class="rc-table" aria-label="Evolución por período">
+              <ng-container matColumnDef="periodo">
+                <th mat-header-cell *matHeaderCellDef scope="col">Período</th>
+                <td mat-cell *matCellDef="let i"><strong>{{ i.periodo }}</strong></td>
+              </ng-container>
+
+              <ng-container matColumnDef="empleados">
+                <th mat-header-cell *matHeaderCellDef scope="col" class="col-right">Empleados</th>
+                <td mat-cell *matCellDef="let i" class="col-right rc-num">{{ i.conteoEmpleados }}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="ingresos">
+                <th mat-header-cell *matHeaderCellDef scope="col" class="col-right">Ingresos</th>
+                <td mat-cell *matCellDef="let i" class="col-right rc-num">S/ {{ fmtMonto(i.totalIngresos) }}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="descuentos">
+                <th mat-header-cell *matHeaderCellDef scope="col" class="col-right">Descuentos</th>
+                <td mat-cell *matCellDef="let i" class="col-right rc-num">S/ {{ fmtMonto(i.totalDescuentos) }}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="neto">
+                <th mat-header-cell *matHeaderCellDef scope="col" class="col-right">Neto</th>
+                <td mat-cell *matCellDef="let i" class="col-right rc-num"><strong>S/ {{ fmtMonto(i.totalNeto) }}</strong></td>
+              </ng-container>
+
+              <ng-container matColumnDef="aporteEmp">
+                <th mat-header-cell *matHeaderCellDef scope="col" class="col-right">Aporte empleador</th>
+                <td mat-cell *matCellDef="let i" class="col-right rc-num">S/ {{ fmtMonto(i.totalAporteEmpleador) }}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="netoNoVa">
+                <th mat-header-cell *matHeaderCellDef scope="col" class="col-center">NETO_NO_VA</th>
+                <td mat-cell *matCellDef="let i" class="col-center">
+                  @if (i.conteoNetoNoVa > 0) {
+                    <span class="rc-pill" data-severity="danger">{{ i.conteoNetoNoVa }}</span>
+                  } @else {
+                    <span class="rc-pill" data-severity="neutral">0</span>
+                  }
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="delta">
+                <th mat-header-cell *matHeaderCellDef scope="col" class="col-right">Δ % vs anterior</th>
+                <td mat-cell *matCellDef="let i" class="col-right">
+                  <span
+                    class="rc-delta"
+                    [attr.data-severity]="severityDelta(i.deltaPctNetoVsAnterior)"
+                  >
+                    {{ fmtDeltaPct(i.deltaPctNetoVsAnterior) }}
+                  </span>
+                </td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="columnasEvolucion; sticky: true"></tr>
+              <tr mat-row *matRowDef="let row; columns: columnasEvolucion"></tr>
+            </table>
+          }
+        }
+      </div>
+    </mat-tab>
+
+    <!-- ===================== TAB 2 — RÉGIMEN ===================== -->
+    <mat-tab label="Régimen laboral">
+      <div class="rc-tab-body">
+        @if (loadingRegimen()) {
+          <div class="rc-loading" role="status">
+            <mat-spinner diameter="40"></mat-spinner>
+            <p>Calculando distribución…</p>
+          </div>
+        } @else if (regimen(); as r) {
+          <div class="rc-kpis">
+            <article class="rc-kpi" data-severity="neutral">
+              <span class="rc-kpi__label">Período</span>
+              <span class="rc-kpi__value rc-kpi__value--muted">{{ r.periodo }}</span>
+            </article>
+            <article class="rc-kpi" data-severity="info">
+              <span class="rc-kpi__label">Empleados</span>
+              <span class="rc-kpi__value">{{ r.totalEmpleados }}</span>
+            </article>
+            <article class="rc-kpi" data-severity="success">
+              <span class="rc-kpi__label">Neto total</span>
+              <span class="rc-kpi__value">S/ {{ fmtMonto(r.totalNeto) }}</span>
+            </article>
+          </div>
+
+          @if (regimenVacio()) {
+            <div class="rc-empty">
+              <mat-icon class="rc-empty__icon" aria-hidden="true">pie_chart</mat-icon>
+              <h2>Sin movimientos en el período</h2>
+              <p>Genera la planilla del período para ver la distribución.</p>
+            </div>
+          } @else {
+            <table mat-table [dataSource]="r.items" class="rc-table" aria-label="Distribución por régimen">
+              <ng-container matColumnDef="regimen">
+                <th mat-header-cell *matHeaderCellDef scope="col">Régimen</th>
+                <td mat-cell *matCellDef="let i">
+                  <strong>{{ i.regimenCodigo }}</strong>
+                  <span class="rc-regimen-nombre">{{ i.regimenNombre }}</span>
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="empleados">
+                <th mat-header-cell *matHeaderCellDef scope="col" class="col-right">Empleados</th>
+                <td mat-cell *matCellDef="let i" class="col-right rc-num">{{ i.conteoEmpleados }}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="ingresos">
+                <th mat-header-cell *matHeaderCellDef scope="col" class="col-right">Ingresos</th>
+                <td mat-cell *matCellDef="let i" class="col-right rc-num">S/ {{ fmtMonto(i.totalIngresos) }}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="neto">
+                <th mat-header-cell *matHeaderCellDef scope="col" class="col-right">Neto</th>
+                <td mat-cell *matCellDef="let i" class="col-right rc-num"><strong>S/ {{ fmtMonto(i.totalNeto) }}</strong></td>
+              </ng-container>
+
+              <ng-container matColumnDef="netoPromedio">
+                <th mat-header-cell *matHeaderCellDef scope="col" class="col-right">Neto promedio</th>
+                <td mat-cell *matCellDef="let i" class="col-right rc-num">S/ {{ fmtMonto(i.netoPromedio) }}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="porcentaje">
+                <th mat-header-cell *matHeaderCellDef scope="col">% del total</th>
+                <td mat-cell *matCellDef="let i">
+                  <div class="rc-bar">
+                    <span class="rc-bar__fill" [style.width.%]="i.porcentajeTotal" aria-hidden="true"></span>
+                    <span class="rc-bar__label">{{ fmtPct(i.porcentajeTotal) }}</span>
+                  </div>
+                </td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="columnasRegimen; sticky: true"></tr>
+              <tr mat-row *matRowDef="let row; columns: columnasRegimen"></tr>
+            </table>
+          }
+        }
+      </div>
+    </mat-tab>
+
+    <!-- ===================== TAB 3 — TOP CONCEPTOS ===================== -->
+    <mat-tab label="Top conceptos">
+      <div class="rc-tab-body">
+        <div class="rc-subtoolbar">
+          <mat-form-field appearance="outline" class="rc-subtoolbar__field">
+            <mat-label>Mostrar</mat-label>
+            <mat-select [formControl]="limiteCtrl" (selectionChange)="cargarTopConceptos()">
+              @for (l of limiteOpciones; track l) {
+                <mat-option [value]="l">Top {{ l }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <button
+            mat-stroked-button
+            type="button"
+            [disabled]="topVacio() || loadingTop()"
+            (click)="exportarTopCsv()"
+          >
+            <mat-icon>download</mat-icon>
+            <span>Exportar CSV</span>
+          </button>
+        </div>
+
+        @if (loadingTop()) {
+          <div class="rc-loading" role="status">
+            <mat-spinner diameter="40"></mat-spinner>
+            <p>Calculando ranking…</p>
+          </div>
+        } @else if (topConceptos(); as r) {
+          @if (topVacio()) {
+            <div class="rc-empty">
+              <mat-icon class="rc-empty__icon" aria-hidden="true">leaderboard</mat-icon>
+              <h2>Sin conceptos en el período</h2>
+              <p>Genera la planilla del período para ver el ranking.</p>
+            </div>
+          } @else {
+            <table mat-table [dataSource]="r.items" class="rc-table" aria-label="Top conceptos">
+              <ng-container matColumnDef="rank">
+                <th mat-header-cell *matHeaderCellDef scope="col" class="col-center">#</th>
+                <td mat-cell *matCellDef="let i; let idx = index" class="col-center rc-rank">{{ idx + 1 }}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="codigo">
+                <th mat-header-cell *matHeaderCellDef scope="col">Código MEF</th>
+                <td mat-cell *matCellDef="let i">
+                  <code class="rc-codigo">{{ i.codigoMef || '—' }}</code>
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="nombre">
+                <th mat-header-cell *matHeaderCellDef scope="col">Concepto</th>
+                <td mat-cell *matCellDef="let i" class="rc-nombre">{{ i.nombre }}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="tipo">
+                <th mat-header-cell *matHeaderCellDef scope="col">Tipo</th>
+                <td mat-cell *matCellDef="let i">
+                  <span class="rc-pill" [attr.data-severity]="severityTipo(i.tipoConcepto)">
+                    {{ labelTipo(i.tipoConcepto) }}
+                  </span>
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="empleados">
+                <th mat-header-cell *matHeaderCellDef scope="col" class="col-right">Empleados</th>
+                <td mat-cell *matCellDef="let i" class="col-right rc-num">{{ i.conteoEmpleados }}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="monto">
+                <th mat-header-cell *matHeaderCellDef scope="col" class="col-right">Monto total</th>
+                <td mat-cell *matCellDef="let i" class="col-right rc-num"><strong>S/ {{ fmtMonto(i.montoTotal) }}</strong></td>
+              </ng-container>
+
+              <ng-container matColumnDef="porcentaje">
+                <th mat-header-cell *matHeaderCellDef scope="col">% ingresos período</th>
+                <td mat-cell *matCellDef="let i">
+                  <div class="rc-bar">
+                    <span class="rc-bar__fill" [style.width.%]="i.porcentajeIngresos" aria-hidden="true"></span>
+                    <span class="rc-bar__label">{{ fmtPct(i.porcentajeIngresos) }}</span>
+                  </div>
+                </td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="columnasTop; sticky: true"></tr>
+              <tr mat-row *matRowDef="let row; columns: columnasTop"></tr>
+            </table>
+          }
+        }
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+
+  <p class="rc-spec-note">
+    F3.5 — <code>GET /api/rrhh/reportes/consolidado/&#123;evolucion|regimen|top-conceptos&#125;</code>
+    · solo lectura · agrega datos ya grabados
+  </p>
+</section>

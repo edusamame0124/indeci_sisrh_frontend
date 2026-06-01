@@ -1,0 +1,286 @@
+<section class="vc-page">
+  <!-- ============================ HEADER ============================ -->
+  <header class="vc-header">
+    <div>
+      <h1>Centro de Validaciones</h1>
+      <p class="vc-header__sub">
+        Revisa los hallazgos antes de generar planilla del período.
+      </p>
+    </div>
+    <button
+      mat-flat-button
+      color="primary"
+      type="button"
+      [disabled]="loading()"
+      (click)="evaluar()"
+    >
+      <mat-icon>refresh</mat-icon>
+      <span>Evaluar período</span>
+    </button>
+  </header>
+
+  <!-- ============================ SELECTOR PERIODO ============================ -->
+  <mat-card class="vc-selector">
+    <mat-card-content>
+      <mat-form-field appearance="outline" class="vc-selector__field">
+        <mat-label>Período</mat-label>
+        <input
+          matInput
+          type="month"
+          [formControl]="periodoCtrl"
+          (change)="evaluar()"
+          autocomplete="off"
+        />
+        <mat-icon matSuffix>event</mat-icon>
+      </mat-form-field>
+
+      @if (errorMsg(); as msg) {
+        <p class="vc-error" role="alert">
+          <mat-icon>error_outline</mat-icon>
+          {{ msg }}
+        </p>
+      }
+    </mat-card-content>
+  </mat-card>
+
+  <!-- ============================ LOADING ============================ -->
+  @if (loading()) {
+    <div class="vc-loading" role="status" aria-live="polite">
+      <mat-spinner diameter="40"></mat-spinner>
+      <p>Evaluando validaciones del período…</p>
+    </div>
+  }
+
+  <!-- ============================ KPI CARDS ============================ -->
+  @if (!loading() && result(); as r) {
+    <section class="vc-kpis" aria-label="Resumen de hallazgos">
+      <article
+        class="vc-kpi"
+        data-severity="danger"
+        [attr.aria-label]="'Bloqueos: ' + totalBloqueos()"
+      >
+        <mat-icon class="vc-kpi__icon" aria-hidden="true">error</mat-icon>
+        <div class="vc-kpi__body">
+          <span class="vc-kpi__label">Bloqueos</span>
+          <span class="vc-kpi__value">{{ totalBloqueos() }}</span>
+          <span class="vc-kpi__hint">Impiden generar planilla</span>
+        </div>
+      </article>
+
+      <article
+        class="vc-kpi"
+        data-severity="warning"
+        [attr.aria-label]="'Alertas: ' + totalAlertas()"
+      >
+        <mat-icon class="vc-kpi__icon" aria-hidden="true">warning</mat-icon>
+        <div class="vc-kpi__body">
+          <span class="vc-kpi__label">Alertas</span>
+          <span class="vc-kpi__value">{{ totalAlertas() }}</span>
+          <span class="vc-kpi__hint">Conviene revisarlos</span>
+        </div>
+      </article>
+
+      <article
+        class="vc-kpi"
+        data-severity="info"
+        [attr.aria-label]="'Información: ' + totalInfo()"
+      >
+        <mat-icon class="vc-kpi__icon" aria-hidden="true">info</mat-icon>
+        <div class="vc-kpi__body">
+          <span class="vc-kpi__label">Información</span>
+          <span class="vc-kpi__value">{{ totalInfo() }}</span>
+          <span class="vc-kpi__hint">Estados a tener en cuenta</span>
+        </div>
+      </article>
+    </section>
+
+    <!-- ============================ EMPTY: 0 hallazgos ============================ -->
+    @if (r.hallazgos.length === 0) {
+      <div class="vc-empty">
+        <mat-icon class="vc-empty__icon" aria-hidden="true">verified</mat-icon>
+        <h2>Período listo para generar planilla</h2>
+        <p>
+          No se encontraron hallazgos en {{ r.periodo }}. Puedes continuar con la
+          generación masiva.
+        </p>
+        <button mat-flat-button color="primary" type="button" (click)="irAGeneracion()">
+          <mat-icon>play_arrow</mat-icon>
+          <span>Generar planilla del período</span>
+        </button>
+      </div>
+    } @else {
+      <!-- ============================ TOOLBAR FILTROS ============================ -->
+      <section class="vc-toolbar" aria-label="Filtros de hallazgos">
+        <mat-form-field appearance="outline" class="vc-toolbar__search">
+          <mat-label>Buscar mensaje / empleado / código</mat-label>
+          <input
+            matInput
+            [value]="buscador()"
+            (input)="buscador.set($any($event.target).value)"
+          />
+          <mat-icon matSuffix>search</mat-icon>
+        </mat-form-field>
+
+        <div class="vc-toolbar__chips" role="group" aria-label="Severidad">
+          <button
+            type="button"
+            class="vc-chip"
+            data-severity="danger"
+            [attr.aria-pressed]="isSeveridadActiva('BLOQUEO')"
+            [class.is-off]="!isSeveridadActiva('BLOQUEO')"
+            (click)="toggleSeveridad('BLOQUEO')"
+          >
+            <mat-icon aria-hidden="true">error</mat-icon>
+            <span>Bloqueos</span>
+          </button>
+          <button
+            type="button"
+            class="vc-chip"
+            data-severity="warning"
+            [attr.aria-pressed]="isSeveridadActiva('ALERTA')"
+            [class.is-off]="!isSeveridadActiva('ALERTA')"
+            (click)="toggleSeveridad('ALERTA')"
+          >
+            <mat-icon aria-hidden="true">warning</mat-icon>
+            <span>Alertas</span>
+          </button>
+          <button
+            type="button"
+            class="vc-chip"
+            data-severity="info"
+            [attr.aria-pressed]="isSeveridadActiva('INFO')"
+            [class.is-off]="!isSeveridadActiva('INFO')"
+            (click)="toggleSeveridad('INFO')"
+          >
+            <mat-icon aria-hidden="true">info</mat-icon>
+            <span>Información</span>
+          </button>
+        </div>
+
+        <mat-form-field appearance="outline" class="vc-toolbar__filter">
+          <mat-label>Módulo</mat-label>
+          <mat-select
+            [value]="filtroModulo()"
+            (selectionChange)="setModulo($event.value)"
+          >
+            @for (m of modulosUnicos(); track m) {
+              <mat-option [value]="m">{{ m === 'TODOS' ? 'Todos' : m }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <button
+          mat-stroked-button
+          type="button"
+          class="vc-toolbar__clear"
+          (click)="limpiarFiltros()"
+        >
+          Limpiar filtros
+        </button>
+
+        <span class="vc-toolbar__count" aria-live="polite">
+          {{ hallazgosFiltrados().length }} de {{ r.hallazgos.length }}
+        </span>
+      </section>
+
+      <!-- ============================ TABLA ============================ -->
+      <mat-card class="vc-table-card">
+        @if (hallazgosFiltrados().length === 0) {
+          <div class="vc-empty vc-empty--inline">
+            <mat-icon class="vc-empty__icon" aria-hidden="true">filter_alt_off</mat-icon>
+            <h2>No hay hallazgos que coincidan con los filtros</h2>
+            <button mat-stroked-button type="button" (click)="limpiarFiltros()">
+              Limpiar filtros
+            </button>
+          </div>
+        } @else {
+          <table
+            mat-table
+            [dataSource]="hallazgosFiltrados()"
+            class="vc-table"
+            aria-label="Hallazgos del período"
+          >
+            <!-- Severidad -->
+            <ng-container matColumnDef="severidad">
+              <th mat-header-cell *matHeaderCellDef scope="col">Sev.</th>
+              <td mat-cell *matCellDef="let h">
+                <span
+                  class="vc-sev-chip"
+                  [attr.data-severity]="
+                    h.severidad === 'BLOQUEO'
+                      ? 'danger'
+                      : h.severidad === 'ALERTA'
+                        ? 'warning'
+                        : 'info'
+                  "
+                  [attr.aria-label]="'Severidad: ' + labelSeveridad(h.severidad)"
+                >
+                  <mat-icon aria-hidden="true">{{ iconoSeveridad(h.severidad) }}</mat-icon>
+                  <span>{{ labelSeveridad(h.severidad) }}</span>
+                </span>
+              </td>
+            </ng-container>
+
+            <!-- Código -->
+            <ng-container matColumnDef="codigo">
+              <th mat-header-cell *matHeaderCellDef scope="col">Código</th>
+              <td mat-cell *matCellDef="let h">
+                <code class="vc-codigo">{{ h.codigo }}</code>
+              </td>
+            </ng-container>
+
+            <!-- Módulo -->
+            <ng-container matColumnDef="modulo">
+              <th mat-header-cell *matHeaderCellDef scope="col">Módulo</th>
+              <td mat-cell *matCellDef="let h">{{ h.modulo }}</td>
+            </ng-container>
+
+            <!-- Mensaje -->
+            <ng-container matColumnDef="mensaje">
+              <th mat-header-cell *matHeaderCellDef scope="col">Hallazgo</th>
+              <td mat-cell *matCellDef="let h" class="vc-mensaje">{{ h.mensaje }}</td>
+            </ng-container>
+
+            <!-- Empleado -->
+            <ng-container matColumnDef="empleado">
+              <th mat-header-cell *matHeaderCellDef scope="col">Empleado</th>
+              <td mat-cell *matCellDef="let h">
+                @if (h.empleadoNombre) {
+                  <span class="vc-empleado">{{ h.empleadoNombre }}</span>
+                } @else {
+                  <span class="vc-empleado--vacio" aria-label="Sin empleado asociado">—</span>
+                }
+              </td>
+            </ng-container>
+
+            <!-- Acción -->
+            <ng-container matColumnDef="accion">
+              <th mat-header-cell *matHeaderCellDef scope="col" class="col-center">Acción</th>
+              <td mat-cell *matCellDef="let h" class="col-center">
+                @if (h.empleadoId != null) {
+                  <button
+                    mat-icon-button
+                    type="button"
+                    matTooltip="Ver Ficha 360 del empleado"
+                    [attr.aria-label]="'Ver Ficha 360 de ' + (h.empleadoNombre || h.empleadoId)"
+                    (click)="irAEmpleado(h)"
+                  >
+                    <mat-icon>open_in_new</mat-icon>
+                  </button>
+                }
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="columnas; sticky: true"></tr>
+            <tr mat-row *matRowDef="let row; columns: columnas"></tr>
+          </table>
+        }
+      </mat-card>
+    }
+
+    <p class="vc-spec-note">
+      Reglas V1..V10 — SPEC §5.2 · LEY-01/04/05/06 · F1.5b · F2.4 ·
+      <code>GET /api/rrhh/validaciones/preflight</code>
+    </p>
+  }
+</section>

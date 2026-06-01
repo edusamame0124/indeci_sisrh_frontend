@@ -1,0 +1,420 @@
+/* ============================================================================
+ * F3.3 — Centro de Validaciones (preflight de planilla).
+ * Paleta SISRH institucional, alta densidad operativa.
+ * ============================================================================ */
+
+:host {
+  display: block;
+
+  --sisrh-primary: #1f3a5f;
+  --sisrh-primary-100: #e8eef6;
+
+  --sisrh-success: #157347;
+  --sisrh-success-100: #e7f5ee;
+  --sisrh-warning: #b7791f;
+  --sisrh-warning-100: #fff4db;
+  --sisrh-danger: #b42318;
+  --sisrh-danger-100: #fdecec;
+  --sisrh-info: #2563a6;
+  --sisrh-info-100: #eaf2fb;
+
+  --sisrh-bg: #f5f7fa;
+  --sisrh-surface: #ffffff;
+  --sisrh-border: #d9e1ea;
+  --sisrh-border-soft: #e7ecf2;
+  --sisrh-text: #1f2937;
+  --sisrh-text-muted: #64748b;
+}
+
+.vc-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 16px 24px 32px;
+  background: var(--sisrh-bg);
+  min-height: 100%;
+  color: var(--sisrh-text);
+}
+
+/* ============================ HEADER ============================ */
+
+.vc-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.vc-header h1 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--sisrh-primary);
+}
+
+.vc-header__sub {
+  margin: 4px 0 0;
+  color: var(--sisrh-text-muted);
+  font-size: 13px;
+  max-width: 640px;
+}
+
+/* ============================ SELECTOR ============================ */
+
+.vc-selector mat-card-content {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 16px;
+  align-items: center;
+}
+
+.vc-selector__field {
+  width: 240px;
+  min-width: 200px;
+}
+
+.vc-error {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 6px 12px;
+  border-radius: 6px;
+  background: var(--sisrh-danger-100);
+  color: var(--sisrh-danger);
+  font-size: 13px;
+}
+
+.vc-error mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+}
+
+/* ============================ LOADING ============================ */
+
+.vc-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 48px 24px;
+  background: var(--sisrh-surface);
+  border: 1px solid var(--sisrh-border);
+  border-radius: 8px;
+  color: var(--sisrh-text-muted);
+}
+
+/* ============================ KPI CARDS ============================ */
+
+.vc-kpis {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 960px) {
+  .vc-kpis {
+    grid-template-columns: 1fr;
+  }
+}
+
+.vc-kpi {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  background: var(--sisrh-surface);
+  border: 1px solid var(--sisrh-border);
+  border-left: 4px solid var(--sisrh-border);
+  border-radius: 8px;
+}
+
+.vc-kpi[data-severity='danger']  { border-left-color: var(--sisrh-danger); }
+.vc-kpi[data-severity='warning'] { border-left-color: var(--sisrh-warning); }
+.vc-kpi[data-severity='info']    { border-left-color: var(--sisrh-info); }
+
+.vc-kpi__icon {
+  font-size: 36px;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 auto;
+}
+
+.vc-kpi[data-severity='danger']  .vc-kpi__icon { color: var(--sisrh-danger); }
+.vc-kpi[data-severity='warning'] .vc-kpi__icon { color: var(--sisrh-warning); }
+.vc-kpi[data-severity='info']    .vc-kpi__icon { color: var(--sisrh-info); }
+
+.vc-kpi__body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.vc-kpi__label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--sisrh-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.vc-kpi__value {
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--sisrh-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.vc-kpi__hint {
+  font-size: 12px;
+  color: var(--sisrh-text-muted);
+}
+
+/* ============================ EMPTY STATE ============================ */
+
+.vc-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background: var(--sisrh-surface);
+  border: 1px solid var(--sisrh-border);
+  border-radius: 8px;
+  padding: 48px 24px;
+  gap: 12px;
+}
+
+.vc-empty--inline {
+  border: none;
+  padding: 32px 16px;
+}
+
+.vc-empty__icon {
+  font-size: 56px;
+  width: 56px;
+  height: 56px;
+  color: var(--sisrh-success);
+  opacity: 0.85;
+}
+
+.vc-empty--inline .vc-empty__icon {
+  color: var(--sisrh-text-muted);
+  font-size: 40px;
+  width: 40px;
+  height: 40px;
+}
+
+.vc-empty h2 {
+  margin: 0;
+  font-size: 18px;
+  color: var(--sisrh-primary);
+}
+
+.vc-empty p {
+  margin: 0;
+  color: var(--sisrh-text-muted);
+  font-size: 14px;
+  max-width: 480px;
+}
+
+/* ============================ TOOLBAR / FILTROS ============================ */
+
+.vc-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 16px;
+  background: var(--sisrh-surface);
+  border: 1px solid var(--sisrh-border);
+  border-radius: 8px;
+}
+
+.vc-toolbar__search {
+  flex: 2 1 280px;
+  min-width: 240px;
+}
+
+.vc-toolbar__filter {
+  flex: 1 1 180px;
+  min-width: 160px;
+}
+
+.vc-toolbar__chips {
+  display: inline-flex;
+  gap: 6px;
+}
+
+.vc-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: var(--sisrh-border-soft);
+  color: var(--sisrh-text-muted);
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background-color 200ms ease, color 200ms ease, border-color 200ms ease;
+  white-space: nowrap;
+}
+
+.vc-chip mat-icon {
+  font-size: 14px;
+  width: 14px;
+  height: 14px;
+}
+
+.vc-chip:focus-visible {
+  outline: 2px solid var(--sisrh-primary);
+  outline-offset: 2px;
+}
+
+.vc-chip[data-severity='danger']:not(.is-off) {
+  background: var(--sisrh-danger-100);
+  color: var(--sisrh-danger);
+  border-color: var(--sisrh-danger);
+}
+
+.vc-chip[data-severity='warning']:not(.is-off) {
+  background: var(--sisrh-warning-100);
+  color: var(--sisrh-warning);
+  border-color: var(--sisrh-warning);
+}
+
+.vc-chip[data-severity='info']:not(.is-off) {
+  background: var(--sisrh-info-100);
+  color: var(--sisrh-info);
+  border-color: var(--sisrh-info);
+}
+
+.vc-chip.is-off {
+  opacity: 0.55;
+}
+
+.vc-toolbar__clear {
+  align-self: center;
+}
+
+.vc-toolbar__count {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--sisrh-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ============================ TABLA ============================ */
+
+.vc-table-card {
+  padding: 0;
+  overflow: hidden;
+}
+
+.vc-table {
+  width: 100%;
+}
+
+.vc-table .mat-mdc-header-cell {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--sisrh-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.vc-table .mat-mdc-row:hover {
+  background: var(--sisrh-bg);
+}
+
+.col-center {
+  text-align: center;
+}
+
+.vc-codigo {
+  font-family: 'Fira Code', 'Consolas', monospace;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--sisrh-primary);
+}
+
+.vc-mensaje {
+  max-width: 480px;
+  line-height: 1.4;
+}
+
+.vc-empleado {
+  font-weight: 500;
+}
+
+.vc-empleado--vacio {
+  color: var(--sisrh-text-muted);
+}
+
+/* ============================ SEVERIDAD CHIP (tabla) ============================ */
+
+.vc-sev-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.vc-sev-chip mat-icon {
+  font-size: 14px;
+  width: 14px;
+  height: 14px;
+}
+
+.vc-sev-chip[data-severity='danger'] {
+  background: var(--sisrh-danger-100);
+  color: var(--sisrh-danger);
+}
+
+.vc-sev-chip[data-severity='warning'] {
+  background: var(--sisrh-warning-100);
+  color: var(--sisrh-warning);
+}
+
+.vc-sev-chip[data-severity='info'] {
+  background: var(--sisrh-info-100);
+  color: var(--sisrh-info);
+}
+
+/* ============================ SPEC NOTE ============================ */
+
+.vc-spec-note {
+  margin: 4px 0 0;
+  padding: 8px 12px;
+  font-size: 11px;
+  color: var(--sisrh-text-muted);
+  text-align: right;
+  font-style: italic;
+}
+
+.vc-spec-note code {
+  font-family: 'Fira Code', 'Consolas', monospace;
+  background: var(--sisrh-border-soft);
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+/* ============================ A11Y motion ============================ */
+
+@media (prefers-reduced-motion: reduce) {
+  .vc-chip {
+    transition: none;
+  }
+}

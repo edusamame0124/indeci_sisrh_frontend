@@ -1,0 +1,113 @@
+/* F3.6d — Dialog crear/editar evento del período. */
+
+:host {
+  --sisrh-primary: #1f3a5f;
+  --sisrh-border: #d9e1ea;
+  --sisrh-border-soft: #e7ecf2;
+  --sisrh-text-muted: #64748b;
+  --sisrh-bg: #f5f7fa;
+}
+
+.evento-form {
+  display: contents;
+}
+
+.evento-form__content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 8px;
+  min-width: 480px;
+  max-width: 640px;
+}
+
+@media (max-width: 600px) {
+  .evento-form__content {
+    min-width: unset;
+  }
+}
+
+.evento-form__field {
+  width: 100%;
+}
+
+.evento-form__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+@media (max-width: 600px) {
+  .evento-form__row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.evento-form__adjunto {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.evento-form__adjunto-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--sisrh-text-muted);
+}
+
+.evento-form__adjunto-req {
+  color: var(--sisrh-primary);
+  margin-left: 4px;
+  font-weight: 600;
+}
+
+.evento-form__drop {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border: 1px dashed var(--sisrh-border);
+  border-radius: 6px;
+  background: var(--sisrh-bg);
+}
+
+.evento-form__drop-hint {
+  font-size: 12px;
+  color: var(--sisrh-text-muted);
+}
+
+.evento-form__file {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--sisrh-border);
+  border-radius: 6px;
+  background: white;
+}
+
+.evento-form__file-icon {
+  color: var(--sisrh-primary);
+}
+
+.evento-form__file-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.evento-form__file-name {
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.evento-form__file-info small {
+  font-size: 11px;
+  color: var(--sisrh-text-muted);
+}

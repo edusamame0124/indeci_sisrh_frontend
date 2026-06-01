@@ -12,6 +12,26 @@ export const PLANILLA_ROUTES: Routes = [
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'periodos' },
 
+      /* ——— Centro de Validaciones (F3.3) ——— */
+      {
+        path: 'validaciones',
+        loadComponent: () =>
+          import('./pages/validaciones-centro-page/validaciones-centro-page.component').then(
+            (m) => m.ValidacionesCentroPageComponent,
+          ),
+        title: 'Centro de Validaciones — SISRH-INDECI',
+      },
+
+      /* ——— Asistente de Recálculo (F3.4) ——— */
+      {
+        path: 'recalculo',
+        loadComponent: () =>
+          import('./pages/recalculo-wizard-page/recalculo-wizard-page.component').then(
+            (m) => m.RecalculoWizardPageComponent,
+          ),
+        title: 'Asistente de Recálculo — SISRH-INDECI',
+      },
+
       /* ——— Periodos (T152) ——— */
       {
         path: 'periodos',

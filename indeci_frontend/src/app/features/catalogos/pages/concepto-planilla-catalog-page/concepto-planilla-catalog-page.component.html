@@ -10,20 +10,23 @@
   <mat-card class="page-card sisrh-elevated">
     <mat-card-header>
       <mat-card-title>Conceptos de planilla</mat-card-title>
-      <mat-card-subtitle
-        >Catálogo de ingresos y descuentos — escritura solo para ADMIN / SUPER_ADMIN</mat-card-subtitle
-      >
+      <mat-card-subtitle>
+        Catálogo enriquecido con afectaciones (5ta / AFP / ESSALUD), régimen
+        aplicable, prorrateabilidad (Motor v3) y códigos externos PLAME/MCPP.
+        Escritura solo para ADMIN / SUPER_ADMIN.
+      </mat-card-subtitle>
     </mat-card-header>
     <mat-card-content>
       @if (!canWrite()) {
         <p class="page-hint" role="status">
-          Modo consulta: su rol permite ver el catálogo. Para crear, editar o eliminar se requiere rol ADMIN o
-          SUPER_ADMIN.
+          Modo consulta: su rol permite ver el catálogo. Para crear, editar o
+          eliminar se requiere rol ADMIN o SUPER_ADMIN.
         </p>
       }
 
       @if (!loading() && !loadError()) {
-        <div class="toolbar sisrh-toolbar">
+        <!-- Toolbar: búsqueda + filtros + acciones -->
+        <div class="toolbar sisrh-toolbar concepto-toolbar">
           <mat-form-field appearance="outline" class="toolbar__search">
             <mat-label>Buscar</mat-label>
             <input
@@ -32,13 +35,71 @@
               autocomplete="off"
               [value]="filterText()"
               (input)="onFilter($event)"
-              aria-label="Filtrar conceptos por código, nombre o naturaleza"
+              aria-label="Filtrar conceptos por código, nombre, MEF, SISPER, PLAME o MCPP"
+              placeholder="Código, nombre, MEF, SISPER, PLAME, MCPP…"
             />
             <mat-icon matSuffix fontIcon="search" aria-hidden="true" />
           </mat-form-field>
+
+          <mat-form-field appearance="outline" class="toolbar__filter">
+            <mat-label>Tipo</mat-label>
+            <mat-select
+              [value]="filtroTipoConcepto()"
+              (selectionChange)="setFiltroTipo($event.value)"
+              aria-label="Filtrar por tipo de concepto MEF"
+            >
+              <mat-option value="TODOS">Todos los tipos</mat-option>
+              <mat-option value="REMUNERATIVO">Remunerativo</mat-option>
+              <mat-option value="NO_REMUNERATIVO">No remunerativo</mat-option>
+              <mat-option value="DESCUENTO">Descuento</mat-option>
+              <mat-option value="APORTE_TRABAJADOR">Aporte trabajador</mat-option>
+              <mat-option value="APORTE_EMPLEADOR">Aporte empleador</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="toolbar__filter">
+            <mat-label>Régimen</mat-label>
+            <mat-select
+              [value]="filtroRegimen()"
+              (selectionChange)="setFiltroRegimen($event.value)"
+              aria-label="Filtrar por régimen aplicable"
+            >
+              <mat-option value="TODOS">Todos</mat-option>
+              <mat-option value="276">276 — Carrera Adm.</mat-option>
+              <mat-option value="728">728 — Privada</mat-option>
+              <mat-option value="1057">1057 — CAS</mat-option>
+              <mat-option value="SERVIR">SERVIR</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="toolbar__filter">
+            <mat-label>Prorrateable</mat-label>
+            <mat-select
+              [value]="filtroProrrateable()"
+              (selectionChange)="setFiltroProrrateable($event.value)"
+              aria-label="Filtrar por prorrateabilidad (Motor v3)"
+            >
+              <mat-option value="TODOS">Todos</mat-option>
+              <mat-option value="SI">Sí prorratea</mat-option>
+              <mat-option value="NO">No prorratea</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <button
+            type="button"
+            mat-stroked-button
+            (click)="limpiarFiltros()"
+            matTooltip="Limpiar todos los filtros"
+            aria-label="Limpiar filtros"
+            class="toolbar__clear"
+          >
+            <mat-icon>filter_alt_off</mat-icon>
+          </button>
+
           <span class="toolbar__count" role="status" aria-live="polite">
-            {{ displayed().length }} de {{ rows().length }} registros
+            {{ displayed().length }} de {{ rows().length }}
           </span>
+
           @if (canWrite()) {
             <div class="toolbar__actions">
               <button mat-flat-button color="primary" type="button" (click)="openCreate()">
@@ -80,30 +141,150 @@
         <app-empty-state
           icon="search_off"
           title="Sin coincidencias"
-          [description]="'No se encontraron conceptos para: ' + filterText() + '. Revise el texto e intente de nuevo.'"
-        />
+          description="No se encontraron conceptos con los filtros actuales. Ajusta la búsqueda o limpia los filtros."
+        >
+          <button mat-stroked-button type="button" (click)="limpiarFiltros()">
+            <mat-icon>filter_alt_off</mat-icon>
+            Limpiar filtros
+          </button>
+        </app-empty-state>
       } @else {
         <div class="sisrh-table-scroll">
-          <table mat-table class="tbl" [dataSource]="pagedDisplayed()">
+          <table mat-table class="tbl concepto-tbl" [dataSource]="pagedDisplayed()">
+            <!-- Código -->
             <ng-container matColumnDef="codigo">
               <th mat-header-cell *matHeaderCellDef scope="col">Código</th>
-              <td mat-cell *matCellDef="let row">{{ row.codigo }}</td>
-            </ng-container>
-            <ng-container matColumnDef="nombre">
-              <th mat-header-cell *matHeaderCellDef scope="col">Nombre</th>
-              <td mat-cell *matCellDef="let row">{{ row.nombre }}</td>
-            </ng-container>
-            <ng-container matColumnDef="tipo">
-              <th mat-header-cell *matHeaderCellDef scope="col">Tipo</th>
-              <td mat-cell *matCellDef="let row">{{ labelTipo(row.tipo) }}</td>
-            </ng-container>
-            <ng-container matColumnDef="naturaleza">
-              <th mat-header-cell *matHeaderCellDef scope="col">Naturaleza</th>
-              <td mat-cell *matCellDef="let row">{{ row.naturaleza }}</td>
-            </ng-container>
-            <ng-container matColumnDef="activo">
-              <th mat-header-cell *matHeaderCellDef scope="col">Activo</th>
               <td mat-cell *matCellDef="let row">
+                <strong class="concepto-codigo">{{ row.codigo }}</strong>
+              </td>
+            </ng-container>
+
+            <!-- Nombre + identificadores externos (MEF / SISPER / PLAME / MCPP) -->
+            <ng-container matColumnDef="nombre">
+              <th mat-header-cell *matHeaderCellDef scope="col">Nombre y códigos</th>
+              <td mat-cell *matCellDef="let row">
+                <div class="concepto-nombre">{{ row.nombre }}</div>
+                <div class="concepto-codigos">
+                  @if (row.codigoMef) {
+                    <span class="concepto-codigo-tag" matTooltip="Código MEF / AIRHSP">
+                      MEF {{ row.codigoMef }}
+                    </span>
+                  }
+                  @if (row.codigoSisper) {
+                    <span class="concepto-codigo-tag" matTooltip="Código SISPER">
+                      SISPER {{ row.codigoSisper }}
+                    </span>
+                  }
+                  @if (row.codigoPlameSunat) {
+                    <span class="concepto-codigo-tag" matTooltip="Código PLAME (Anexo 2 SUNAT)">
+                      PLAME {{ row.codigoPlameSunat }}
+                    </span>
+                  }
+                  @if (row.codigoMcpp) {
+                    <span class="concepto-codigo-tag" matTooltip="Código MCPP">
+                      MCPP {{ row.codigoMcpp }}
+                    </span>
+                  }
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- Tipo de concepto MEF -->
+            <ng-container matColumnDef="tipoConcepto">
+              <th mat-header-cell *matHeaderCellDef scope="col">Tipo</th>
+              <td mat-cell *matCellDef="let row">
+                <span
+                  class="concepto-chip"
+                  [attr.data-severity]="severityTipoConcepto(row.tipoConcepto)"
+                  [matTooltip]="'Clasificación MEF: ' + (row.tipoConcepto ?? '—')"
+                >
+                  {{ labelTipoConcepto(row.tipoConcepto) }}
+                </span>
+                @if (row.tipo) {
+                  <small class="concepto-tipo-legacy">{{ labelTipo(row.tipo) }}</small>
+                }
+              </td>
+            </ng-container>
+
+            <!-- Afectaciones (chips múltiples) -->
+            <ng-container matColumnDef="afectaciones">
+              <th mat-header-cell *matHeaderCellDef scope="col">Afectaciones</th>
+              <td mat-cell *matCellDef="let row">
+                <div class="concepto-afectaciones">
+                  @if (isOn(row.afectoIr5ta)) {
+                    <span class="concepto-chip concepto-chip--mini" data-severity="info"
+                      matTooltip="Afecto a retención IR 5ta categoría">
+                      5ta
+                    </span>
+                  }
+                  @if (isOn(row.afectoAportePens)) {
+                    <span class="concepto-chip concepto-chip--mini" data-severity="info"
+                      matTooltip="Afecto a aporte pensionario (ONP/AFP)">
+                      AFP/ONP
+                    </span>
+                  }
+                  @if (isOn(row.afectoEssalud)) {
+                    <span class="concepto-chip concepto-chip--mini" data-severity="info"
+                      matTooltip="Afecto a base de ESSALUD">
+                      ESSALUD
+                    </span>
+                  }
+                  @if (isOn(row.esMuc)) {
+                    <span class="concepto-chip concepto-chip--mini" data-severity="success"
+                      matTooltip="Monto Único Consolidado (LEY-07)">
+                      MUC
+                    </span>
+                  }
+                  @if (isOn(row.esCuc)) {
+                    <span class="concepto-chip concepto-chip--mini" data-severity="success"
+                      matTooltip="Costo Único Consolidado (LEY-07)">
+                      CUC
+                    </span>
+                  }
+                  @if (isOn(row.esProrrateable)) {
+                    <span class="concepto-chip concepto-chip--mini" data-severity="warning"
+                      matTooltip="Motor v3 prorratea por días laborados">
+                      <mat-icon class="concepto-chip__icon">schedule</mat-icon>
+                      Prorratea
+                    </span>
+                  }
+                  @if (
+                    !isOn(row.afectoIr5ta) && !isOn(row.afectoAportePens) &&
+                    !isOn(row.afectoEssalud) && !isOn(row.esMuc) && !isOn(row.esCuc) &&
+                    !isOn(row.esProrrateable)
+                  ) {
+                    <span class="concepto-afectaciones__vacio">—</span>
+                  }
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- Régimen aplicable (1 chip por token CSV) -->
+            <ng-container matColumnDef="regimen">
+              <th mat-header-cell *matHeaderCellDef scope="col">Régimen</th>
+              <td mat-cell *matCellDef="let row">
+                <div class="concepto-regimen">
+                  @for (token of regimenTokens(row.regimenAplicable); track token) {
+                    <span class="concepto-chip concepto-chip--mini" data-severity="neutral">
+                      {{ token }}
+                    </span>
+                  }
+                </div>
+                @if (row.fechaVigIni || row.fechaVigFin) {
+                  <small class="concepto-vigencia" matTooltip="Vigencia del concepto">
+                    {{ row.fechaVigIni ?? '—' }}
+                    @if (row.fechaVigFin) {
+                      → {{ row.fechaVigFin }}
+                    }
+                  </small>
+                }
+              </td>
+            </ng-container>
+
+            <!-- Activo -->
+            <ng-container matColumnDef="activo">
+              <th mat-header-cell *matHeaderCellDef scope="col" class="col-center">Activo</th>
+              <td mat-cell *matCellDef="let row" class="col-center">
                 @if (row.activo === 1) {
                   <span class="sisrh-badge sisrh-badge--success">Sí</span>
                 } @else {
@@ -111,9 +292,11 @@
                 }
               </td>
             </ng-container>
+
+            <!-- Acciones -->
             <ng-container matColumnDef="acciones">
-              <th mat-header-cell *matHeaderCellDef scope="col">Acciones</th>
-              <td mat-cell *matCellDef="let row">
+              <th mat-header-cell *matHeaderCellDef scope="col" class="col-right">Acciones</th>
+              <td mat-cell *matCellDef="let row" class="col-right">
                 <button
                   type="button"
                   mat-icon-button
@@ -134,6 +317,7 @@
                 </button>
               </td>
             </ng-container>
+
             <tr mat-header-row *matHeaderRowDef="displayCols()"></tr>
             <tr mat-row *matRowDef="let row; columns: displayCols()"></tr>
           </table>
@@ -150,4 +334,9 @@
       }
     </mat-card-content>
   </mat-card>
+
+  <p class="concepto-spec-note">
+    Spec F3.2 — Catálogo enriquecido. Los chips reflejan flags del backend
+    <code>INDECI_CONCEPTO_PLANILLA</code> consumidos por el Motor v3.
+  </p>
 </div>

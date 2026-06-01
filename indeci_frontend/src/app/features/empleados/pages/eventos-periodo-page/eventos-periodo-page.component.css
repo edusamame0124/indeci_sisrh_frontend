@@ -1,0 +1,238 @@
+/* ============================================================================
+ * F3.6 — Eventos del Período del empleado.
+ * Paleta SISRH institucional, alta densidad operativa.
+ * ============================================================================ */
+
+:host {
+  --sisrh-primary: #1f3a5f;
+  --sisrh-primary-100: #e8eef6;
+
+  --sisrh-success: #157347;
+  --sisrh-success-100: #e7f5ee;
+  --sisrh-warning: #b7791f;
+  --sisrh-warning-100: #fff4db;
+  --sisrh-danger: #b42318;
+  --sisrh-danger-100: #fdecec;
+
+  --sisrh-bg: #f5f7fa;
+  --sisrh-surface: #ffffff;
+  --sisrh-border: #d9e1ea;
+  --sisrh-border-soft: #e7ecf2;
+  --sisrh-text: #1f2937;
+  --sisrh-text-muted: #64748b;
+}
+
+.eventos-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 16px 24px 32px;
+  background: var(--sisrh-bg);
+  min-height: 100%;
+  color: var(--sisrh-text);
+}
+
+/* ============================ HEADER ============================ */
+
+.eventos-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.eventos-header h1 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--sisrh-primary);
+}
+
+.eventos-header__sub {
+  margin: 4px 0 0;
+  color: var(--sisrh-text-muted);
+  font-size: 13px;
+  max-width: 640px;
+}
+
+/* ============================ SELECTOR ============================ */
+
+.eventos-selector mat-card-content {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 16px;
+  padding: 16px;
+}
+
+@media (max-width: 960px) {
+  .eventos-selector mat-card-content {
+    grid-template-columns: 1fr;
+  }
+}
+
+.eventos-selector__field,
+.eventos-selector__filter {
+  width: 100%;
+}
+
+/* ============================ LOADING / EMPTY ============================ */
+
+.eventos-loading,
+.eventos-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background: var(--sisrh-surface);
+  border: 1px solid var(--sisrh-border);
+  border-radius: 8px;
+  padding: 48px 24px;
+  gap: 12px;
+}
+
+.eventos-empty--inline {
+  border: none;
+  padding: 24px;
+  gap: 8px;
+}
+
+.eventos-empty h2 {
+  margin: 0;
+  font-size: 18px;
+  color: var(--sisrh-primary);
+}
+
+.eventos-empty p {
+  margin: 0;
+  color: var(--sisrh-text-muted);
+  font-size: 14px;
+  max-width: 480px;
+}
+
+.eventos-empty__icon {
+  font-size: 48px;
+  width: 48px;
+  height: 48px;
+  color: var(--sisrh-primary);
+  opacity: 0.6;
+}
+
+/* ============================ TABLA ============================ */
+
+.eventos-card {
+  background: var(--sisrh-surface);
+  border: 1px solid var(--sisrh-border);
+  border-radius: 8px;
+}
+
+.eventos-table {
+  width: 100%;
+}
+
+.eventos-table .mat-mdc-header-cell {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--sisrh-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.eventos-table .mat-mdc-row:hover {
+  background: var(--sisrh-bg);
+}
+
+.evento-tipo {
+  display: block;
+  font-weight: 500;
+}
+
+.evento-tipo__flag {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--sisrh-primary);
+}
+
+.evento-fechas-sep {
+  margin: 0 6px;
+  color: var(--sisrh-text-muted);
+}
+
+.col-num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.col-center {
+  text-align: center;
+}
+
+.col-acciones {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.adjunto-icon {
+  color: var(--sisrh-primary);
+}
+
+.adjunto-vacio {
+  color: var(--sisrh-text-muted);
+}
+
+/* ============================ ESTADO CHIP ============================ */
+
+.estado-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  background: var(--sisrh-warning-100);
+  color: var(--sisrh-warning);
+}
+
+.estado-chip mat-icon {
+  font-size: 14px;
+  width: 14px;
+  height: 14px;
+}
+
+.estado-chip[data-severity='success'] {
+  background: var(--sisrh-success-100);
+  color: var(--sisrh-success);
+}
+
+.estado-chip[data-severity='danger'] {
+  background: var(--sisrh-danger-100);
+  color: var(--sisrh-danger);
+}
+
+/* ============================ ACCIONES ============================ */
+
+.action-validar {
+  color: var(--sisrh-success);
+}
+
+.action-rechazar {
+  color: var(--sisrh-warning);
+}
+
+.action-eliminar {
+  color: var(--sisrh-danger);
+}
+
+/* ============================ SPEC NOTE ============================ */
+
+.eventos-spec-note {
+  margin: 0;
+  padding: 8px 12px;
+  font-size: 11px;
+  color: var(--sisrh-text-muted);
+  text-align: right;
+  font-style: italic;
+}

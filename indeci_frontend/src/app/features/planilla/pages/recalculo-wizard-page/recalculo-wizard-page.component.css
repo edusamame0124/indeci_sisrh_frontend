@@ -1,0 +1,303 @@
+/* ============================================================================
+ * F3.4 — Asistente de Recálculo (wizard 3 pasos).
+ * Paleta SISRH institucional.
+ * ============================================================================ */
+
+:host {
+  display: block;
+
+  --sisrh-primary: #1f3a5f;
+  --sisrh-primary-100: #e8eef6;
+  --sisrh-success: #157347;
+  --sisrh-success-100: #e7f5ee;
+  --sisrh-warning: #b7791f;
+  --sisrh-warning-100: #fff4db;
+  --sisrh-danger: #b42318;
+  --sisrh-danger-100: #fdecec;
+  --sisrh-info: #2563a6;
+  --sisrh-info-100: #eaf2fb;
+
+  --sisrh-bg: #f5f7fa;
+  --sisrh-surface: #ffffff;
+  --sisrh-border: #d9e1ea;
+  --sisrh-border-soft: #e7ecf2;
+  --sisrh-text: #1f2937;
+  --sisrh-text-muted: #64748b;
+}
+
+.rw-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 16px 24px 32px;
+  background: var(--sisrh-bg);
+  min-height: 100%;
+  color: var(--sisrh-text);
+}
+
+/* ============================ HEADER ============================ */
+
+.rw-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.rw-header h1 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--sisrh-primary);
+}
+
+.rw-header__sub {
+  margin: 4px 0 0;
+  color: var(--sisrh-text-muted);
+  font-size: 13px;
+  max-width: 720px;
+}
+
+/* ============================ STEPPER + CARD ============================ */
+
+.rw-stepper {
+  background: transparent;
+}
+
+.rw-card {
+  border: 1px solid var(--sisrh-border);
+  border-radius: 8px;
+}
+
+/* ============================ PASO 1 ============================ */
+
+.rw-paso1 {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.rw-paso1__field {
+  width: 280px;
+  max-width: 100%;
+}
+
+.rw-paso1__textarea {
+  width: 100%;
+}
+
+.rw-paso1__criterio {
+  border: 1px solid var(--sisrh-border-soft);
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin: 0;
+}
+
+.rw-paso1__criterio legend {
+  padding: 0 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--sisrh-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.rw-radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.rw-error {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: var(--sisrh-danger-100);
+  color: var(--sisrh-danger);
+  font-size: 13px;
+}
+
+.rw-error mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+}
+
+.rw-btn-spinner {
+  display: inline-block;
+  margin-right: 8px;
+}
+
+/* ============================ KPI ROW (pasos 2 y 3) ============================ */
+
+.rw-kpi-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+@media (max-width: 768px) {
+  .rw-kpi-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.rw-kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 16px;
+  border: 1px solid var(--sisrh-border);
+  border-left: 4px solid var(--sisrh-border);
+  border-radius: 6px;
+  background: var(--sisrh-surface);
+}
+
+.rw-kpi[data-severity='success'] { border-left-color: var(--sisrh-success); }
+.rw-kpi[data-severity='danger']  { border-left-color: var(--sisrh-danger); }
+.rw-kpi[data-severity='neutral'] { border-left-color: var(--sisrh-border); }
+
+.rw-kpi__label {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--sisrh-text-muted);
+  letter-spacing: 0.04em;
+}
+
+.rw-kpi__value {
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--sisrh-text);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.rw-kpi__value--muted {
+  color: var(--sisrh-text-muted);
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.rw-kpi[data-severity='success'] .rw-kpi__value { color: var(--sisrh-success); }
+.rw-kpi[data-severity='danger']  .rw-kpi__value { color: var(--sisrh-danger); }
+
+/* ============================ EMPTY ============================ */
+
+.rw-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 32px;
+  text-align: center;
+  color: var(--sisrh-text-muted);
+}
+
+.rw-empty__icon {
+  font-size: 40px;
+  width: 40px;
+  height: 40px;
+  opacity: 0.7;
+}
+
+.rw-empty h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--sisrh-primary);
+}
+
+/* ============================ TABLE ============================ */
+
+.rw-table {
+  width: 100%;
+}
+
+.rw-table .mat-mdc-header-cell {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--sisrh-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.rw-table .mat-mdc-row:hover {
+  background: var(--sisrh-bg);
+}
+
+.col-right {
+  text-align: right;
+}
+
+.col-center {
+  text-align: center;
+}
+
+.rw-monto {
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}
+
+.rw-razon {
+  color: var(--sisrh-danger);
+  font-size: 12px;
+}
+
+/* ============================ PILL / DELTA ============================ */
+
+.rw-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  background: var(--sisrh-border-soft);
+  color: var(--sisrh-text-muted);
+}
+
+.rw-pill mat-icon {
+  font-size: 14px;
+  width: 14px;
+  height: 14px;
+}
+
+.rw-pill[data-severity='success'] { background: var(--sisrh-success-100); color: var(--sisrh-success); }
+.rw-pill[data-severity='danger']  { background: var(--sisrh-danger-100);  color: var(--sisrh-danger); }
+.rw-pill[data-severity='info']    { background: var(--sisrh-info-100);    color: var(--sisrh-info); }
+.rw-pill[data-severity='neutral'] { background: var(--sisrh-border-soft); color: var(--sisrh-text-muted); }
+
+.rw-delta[data-severity='success'] { color: var(--sisrh-success); font-weight: 600; }
+.rw-delta[data-severity='danger']  { color: var(--sisrh-danger);  font-weight: 600; }
+.rw-delta[data-severity='neutral'] { color: var(--sisrh-text-muted); }
+
+/* ============================ SPEC NOTE ============================ */
+
+.rw-spec-note {
+  margin: 4px 0 0;
+  padding: 8px 12px;
+  font-size: 11px;
+  color: var(--sisrh-text-muted);
+  text-align: right;
+  font-style: italic;
+}
+
+.rw-spec-note code {
+  font-family: 'Fira Code', 'Consolas', monospace;
+  background: var(--sisrh-border-soft);
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rw-btn-spinner { animation: none; }
+}

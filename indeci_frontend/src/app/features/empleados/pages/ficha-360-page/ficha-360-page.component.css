@@ -1,0 +1,381 @@
+/* ============================================================================
+ * F3.1 — Ficha 360 del Empleado
+ * Estilo sobrio, institucional, denso. Paleta SISRH.
+ * ============================================================================ */
+
+:host {
+  --sisrh-primary: #1f3a5f;
+  --sisrh-primary-700: #17304f;
+  --sisrh-primary-100: #e8eef6;
+
+  --sisrh-success: #157347;
+  --sisrh-success-100: #e7f5ee;
+  --sisrh-warning: #b7791f;
+  --sisrh-warning-100: #fff4db;
+  --sisrh-danger: #b42318;
+  --sisrh-danger-100: #fdecec;
+  --sisrh-info: #2563a6;
+
+  --sisrh-bg: #f5f7fa;
+  --sisrh-surface: #ffffff;
+  --sisrh-border: #d9e1ea;
+  --sisrh-border-soft: #e7ecf2;
+  --sisrh-text: #1f2937;
+  --sisrh-text-muted: #64748b;
+}
+
+.ficha-360-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 16px 24px 32px;
+  min-height: 100%;
+  background: var(--sisrh-bg);
+  color: var(--sisrh-text);
+}
+
+/* ============================ HEADER ============================ */
+
+.ficha-header {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 16px;
+  align-items: center;
+  background: var(--sisrh-surface);
+  border: 1px solid var(--sisrh-border);
+  border-radius: 8px;
+  padding: 16px 20px;
+}
+
+.ficha-header__nav a {
+  color: var(--sisrh-primary);
+}
+
+.ficha-header__nombre {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--sisrh-primary);
+  letter-spacing: -0.01em;
+}
+
+.ficha-header__sub {
+  margin: 4px 0 0;
+  color: var(--sisrh-text-muted);
+  font-size: 13px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.ficha-header__sep {
+  opacity: 0.5;
+}
+
+.ficha-header__chips mat-chip-set {
+  --mdc-chip-container-height: 32px;
+}
+
+/* ============================ LOADING / EMPTY ============================ */
+
+.ficha-loading,
+.ficha-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background: var(--sisrh-surface);
+  border: 1px solid var(--sisrh-border);
+  border-radius: 8px;
+  padding: 48px 24px;
+  gap: 16px;
+}
+
+.ficha-loading p,
+.ficha-empty p {
+  margin: 0;
+  color: var(--sisrh-text-muted);
+  font-size: 14px;
+  max-width: 480px;
+}
+
+.ficha-empty h2 {
+  margin: 0;
+  font-size: 18px;
+  color: var(--sisrh-primary);
+}
+
+.ficha-empty__icon {
+  font-size: 48px;
+  width: 48px;
+  height: 48px;
+  color: var(--sisrh-primary);
+  opacity: 0.6;
+}
+
+.ficha-empty__cta {
+  margin-top: 8px;
+}
+
+/* ============================ KPI CARDS ============================ */
+
+.ficha-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 12px;
+}
+
+@media (max-width: 1280px) {
+  .ficha-kpi-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 720px) {
+  .ficha-kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.kpi-card {
+  border: 1px solid var(--sisrh-border);
+  border-radius: 8px;
+  box-shadow: none;
+  background: var(--sisrh-surface);
+  transition: border-color 200ms ease;
+}
+
+.kpi-card:hover {
+  border-color: var(--sisrh-primary-100);
+}
+
+.kpi-card mat-card-content {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px;
+}
+
+.kpi-card__label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--sisrh-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.kpi-card__value {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--sisrh-primary);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.kpi-card__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--sisrh-success-100);
+  color: var(--sisrh-success);
+  width: fit-content;
+}
+
+.kpi-card__badge mat-icon {
+  font-size: 14px;
+  width: 14px;
+  height: 14px;
+}
+
+.kpi-card__badge[data-severity='warning'] {
+  background: var(--sisrh-warning-100);
+  color: var(--sisrh-warning);
+}
+
+.kpi-card__badge[data-severity='neutral'] {
+  background: var(--sisrh-border-soft);
+  color: var(--sisrh-text-muted);
+}
+
+/* Resalta sutilmente la card "Neto" si está en warning. */
+.kpi-card[data-severity='warning'] {
+  border-color: var(--sisrh-warning);
+}
+
+/* ============================ TABS ============================ */
+
+.ficha-tabs {
+  background: var(--sisrh-surface);
+  border: 1px solid var(--sisrh-border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.tab-icon {
+  margin-right: 6px;
+  vertical-align: middle;
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+}
+
+.ficha-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+  padding: 48px 24px;
+  color: var(--sisrh-text-muted);
+}
+
+.ficha-placeholder mat-icon {
+  font-size: 40px;
+  width: 40px;
+  height: 40px;
+  opacity: 0.5;
+}
+
+.ficha-placeholder p {
+  margin: 0;
+  font-size: 14px;
+  color: var(--sisrh-text);
+}
+
+.ficha-placeholder small {
+  font-size: 12px;
+}
+
+/* ============================ CÁLCULO ============================ */
+
+.ficha-calc {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 20px;
+}
+
+.ficha-calc__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.ficha-calc__header h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--sisrh-primary);
+}
+
+.ficha-calc__bloque {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ficha-calc__bloque-title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--sisrh-text);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.ficha-calc__bloque-title small {
+  font-weight: 400;
+  color: var(--sisrh-text-muted);
+  text-transform: none;
+  letter-spacing: 0;
+  margin-left: 4px;
+}
+
+.ficha-calc__bloque--info {
+  background: var(--sisrh-primary-100);
+  padding: 12px;
+  border-radius: 6px;
+}
+
+.ficha-calc__table {
+  width: 100%;
+  background: transparent;
+}
+
+.ficha-calc__table .mat-mdc-header-cell {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--sisrh-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.ficha-calc__table .mat-mdc-row:hover {
+  background: var(--sisrh-bg);
+}
+
+.col-signo {
+  width: 40px;
+  text-align: center;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--sisrh-primary);
+}
+
+.col-monto {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.col-detalle {
+  color: var(--sisrh-text-muted);
+  font-size: 12px;
+}
+
+.linea-descripcion {
+  display: block;
+  font-weight: 500;
+}
+
+.linea-mef {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--sisrh-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ============================ SPEC NOTE ============================ */
+
+.ficha-spec-note {
+  margin: 0;
+  padding: 8px 12px;
+  font-size: 11px;
+  color: var(--sisrh-text-muted);
+  text-align: right;
+  font-style: italic;
+}
+
+.ficha-spec-note code {
+  font-family: 'Fira Code', 'Consolas', monospace;
+  font-size: 11px;
+  background: var(--sisrh-border-soft);
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+/* ============================ REDUCED MOTION ============================ */
+
+@media (prefers-reduced-motion: reduce) {
+  .kpi-card {
+    transition: none;
+  }
+}

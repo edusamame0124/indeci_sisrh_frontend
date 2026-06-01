@@ -1,0 +1,168 @@
+/* ============================================================================
+ * F5 — PersonaPickerComponent: autocomplete horizontal compartido.
+ * Paleta SISRH institucional.
+ * ============================================================================ */
+
+:host {
+  display: block;
+
+  --sisrh-primary: #1f3a5f;
+  --sisrh-primary-100: #e8eef6;
+  --sisrh-success: #157347;
+  --sisrh-success-100: #e7f5ee;
+  --sisrh-danger: #b42318;
+  --sisrh-danger-100: #fdecec;
+
+  --sisrh-bg: #f5f7fa;
+  --sisrh-surface: #ffffff;
+  --sisrh-border: #d9e1ea;
+  --sisrh-border-soft: #e7ecf2;
+  --sisrh-text: #1f2937;
+  --sisrh-text-muted: #64748b;
+}
+
+.pp-host {
+  background: var(--sisrh-surface);
+  border: 1px solid var(--sisrh-border);
+  border-radius: 8px;
+  padding: 16px 20px;
+}
+
+/* ============================ ESTADO BUSQUEDA ============================ */
+
+.pp-search {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pp-search__field {
+  width: 100%;
+  max-width: 520px;
+}
+
+.pp-search__spinner {
+  margin-right: 8px;
+}
+
+.pp-hint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--sisrh-text-muted);
+}
+
+.pp-error {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 6px 12px;
+  border-radius: 6px;
+  background: var(--sisrh-danger-100);
+  color: var(--sisrh-danger);
+  font-size: 13px;
+}
+
+.pp-error mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+}
+
+/* ============================ OPCIONES ============================ */
+
+.pp-option {
+  height: auto !important;
+  line-height: 1.3 !important;
+  padding: 8px 16px !important;
+}
+
+.pp-option__name {
+  font-weight: 600;
+  color: var(--sisrh-text);
+  font-size: 14px;
+}
+
+.pp-option__meta {
+  font-size: 11px;
+  color: var(--sisrh-text-muted);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pp-option__dni {
+  font-variant-numeric: tabular-nums;
+}
+
+.pp-option__sep {
+  opacity: 0.6;
+}
+
+.pp-empty {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--sisrh-text-muted);
+  font-size: 13px;
+}
+
+.pp-empty mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+}
+
+/* ============================ ESTADO ACTIVO ============================ */
+
+.pp-active {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.pp-active__icon {
+  font-size: 28px;
+  width: 28px;
+  height: 28px;
+  color: var(--sisrh-primary);
+  background: var(--sisrh-primary-100);
+  padding: 8px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+}
+
+.pp-active__body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.pp-active__name {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--sisrh-text);
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pp-active__dni {
+  font-size: 12px;
+  color: var(--sisrh-text-muted);
+  font-variant-numeric: tabular-nums;
+  margin-top: 2px;
+}
+
+.pp-active__action {
+  flex: 0 0 auto;
+}
+
+@media (max-width: 600px) {
+  .pp-active__action {
+    width: 100%;
+  }
+}

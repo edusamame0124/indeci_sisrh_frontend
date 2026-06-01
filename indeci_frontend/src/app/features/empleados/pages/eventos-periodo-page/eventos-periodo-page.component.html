@@ -1,0 +1,235 @@
+<section class="eventos-page" aria-labelledby="eventos-titulo">
+  <header class="eventos-header">
+    <div>
+      <h1 id="eventos-titulo">Eventos del período</h1>
+      <p class="eventos-header__sub">
+        Registra maternidad, enfermedad, licencias, cese y demás eventos del
+        empleado. Los días afectos se descuentan automáticamente del cálculo
+        de planilla cuando el motor v3 está activo.
+      </p>
+    </div>
+    <button
+      type="button"
+      mat-flat-button
+      color="primary"
+      (click)="abrirFormCrear()"
+      [disabled]="!empleadoSeleccionado()"
+      matTooltip="Selecciona primero un empleado"
+      [matTooltipDisabled]="!!empleadoSeleccionado()"
+    >
+      <mat-icon>add</mat-icon>
+      Registrar evento
+    </button>
+  </header>
+
+  <!-- ============ Selector empleado ============ -->
+  <mat-card class="eventos-selector">
+    <mat-card-content>
+      <mat-form-field appearance="outline" class="eventos-selector__field">
+        <mat-label>Empleado</mat-label>
+        <input
+          type="text"
+          matInput
+          [formControl]="empleadoCtrl"
+          [matAutocomplete]="auto"
+          placeholder="Buscar por nombre o DNI…"
+          aria-label="Seleccionar empleado"
+        />
+        <mat-icon matSuffix>person_search</mat-icon>
+        <mat-autocomplete
+          #auto="matAutocomplete"
+          [displayWith]="displayEmpleado"
+          (optionSelected)="onEmpleadoSeleccionado($event.option.value)"
+        >
+          <mat-option
+            *ngFor="let p of empleadosFiltrados()"
+            [value]="p"
+          >
+            <strong>{{ p.nombreCompleto }}</strong>
+            <small> — DNI {{ p.dni }}</small>
+          </mat-option>
+        </mat-autocomplete>
+      </mat-form-field>
+
+      <!-- Filtros visibles solo cuando hay empleado seleccionado -->
+      <ng-container *ngIf="empleadoSeleccionado()">
+        <mat-form-field appearance="outline" class="eventos-selector__filter">
+          <mat-label>Tipo</mat-label>
+          <mat-select [formControl]="filtroTipo">
+            <mat-option [value]="null">Todos los tipos</mat-option>
+            <mat-option *ngFor="let t of tipos()" [value]="t.id">
+              {{ t.nombre }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="eventos-selector__filter">
+          <mat-label>Estado</mat-label>
+          <mat-select [formControl]="filtroEstado">
+            <mat-option [value]="null">Todos</mat-option>
+            <mat-option value="REGISTRADO">Registrado</mat-option>
+            <mat-option value="VALIDADO">Validado</mat-option>
+            <mat-option value="RECHAZADO">Rechazado</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </ng-container>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- ============ Loading ============ -->
+  <div *ngIf="loadingCatalogos() || loadingEventos()" class="eventos-loading" role="status">
+    <mat-spinner diameter="40"></mat-spinner>
+    <p>Cargando…</p>
+  </div>
+
+  <!-- ============ Empty: sin empleado ============ -->
+  <div
+    *ngIf="!loadingCatalogos() && !empleadoSeleccionado()"
+    class="eventos-empty"
+    role="status"
+  >
+    <mat-icon class="eventos-empty__icon">person_add</mat-icon>
+    <h2>Selecciona un empleado</h2>
+    <p>Busca por nombre o DNI para ver sus eventos del período.</p>
+  </div>
+
+  <!-- ============ Tabla ============ -->
+  <mat-card
+    *ngIf="empleadoSeleccionado() && !loadingEventos()"
+    class="eventos-card"
+  >
+    <mat-card-content>
+      <!-- Empty list -->
+      <div
+        *ngIf="eventosFiltrados().length === 0"
+        class="eventos-empty eventos-empty--inline"
+      >
+        <mat-icon>event_busy</mat-icon>
+        <p>
+          {{
+            eventos().length === 0
+              ? 'Este empleado no tiene eventos registrados.'
+              : 'No hay eventos que coincidan con los filtros.'
+          }}
+        </p>
+      </div>
+
+      <table
+        *ngIf="eventosFiltrados().length > 0"
+        mat-table
+        [dataSource]="eventosFiltrados()"
+        class="eventos-table"
+        aria-label="Eventos del período del empleado"
+      >
+        <ng-container matColumnDef="tipo">
+          <th mat-header-cell *matHeaderCellDef>Tipo</th>
+          <td mat-cell *matCellDef="let e">
+            <span class="evento-tipo">{{ e.tipoEventoNombre }}</span>
+            <small *ngIf="e.generaSubsidio === 'S'" class="evento-tipo__flag">
+              Genera subsidio
+            </small>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="periodo">
+          <th mat-header-cell *matHeaderCellDef>Período</th>
+          <td mat-cell *matCellDef="let e">{{ e.periodo ?? '—' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="fechas">
+          <th mat-header-cell *matHeaderCellDef>Fechas</th>
+          <td mat-cell *matCellDef="let e">
+            <span>{{ e.fechaInicio }}</span>
+            <small class="evento-fechas-sep">→</small>
+            <span>{{ e.fechaFin }}</span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="dias">
+          <th mat-header-cell *matHeaderCellDef class="col-num">Días</th>
+          <td mat-cell *matCellDef="let e" class="col-num">{{ e.diasAfectos ?? '—' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="estado">
+          <th mat-header-cell *matHeaderCellDef>Estado</th>
+          <td mat-cell *matCellDef="let e">
+            <span class="estado-chip" [attr.data-severity]="estadoColor(e.estado)">
+              <mat-icon>{{ estadoIcon(e.estado) }}</mat-icon>
+              {{ e.estado }}
+            </span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="adjunto">
+          <th mat-header-cell *matHeaderCellDef class="col-center">Adjunto</th>
+          <td mat-cell *matCellDef="let e" class="col-center">
+            <mat-icon
+              *ngIf="e.sustentoLegajoDocId"
+              [matTooltip]="'Documento de legajo #' + e.sustentoLegajoDocId"
+              class="adjunto-icon"
+              aria-label="Tiene sustento documental"
+            >
+              attach_file
+            </mat-icon>
+            <span *ngIf="!e.sustentoLegajoDocId" class="adjunto-vacio">—</span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="acciones">
+          <th mat-header-cell *matHeaderCellDef class="col-acciones">Acciones</th>
+          <td mat-cell *matCellDef="let e" class="col-acciones">
+            <button
+              mat-icon-button
+              type="button"
+              (click)="abrirFormEditar(e)"
+              matTooltip="Editar evento"
+              aria-label="Editar evento"
+            >
+              <mat-icon>edit</mat-icon>
+            </button>
+            <button
+              mat-icon-button
+              type="button"
+              *ngIf="e.estado === 'REGISTRADO'"
+              (click)="validar(e)"
+              matTooltip="Validar evento"
+              aria-label="Validar evento"
+              class="action-validar"
+            >
+              <mat-icon>check</mat-icon>
+            </button>
+            <button
+              mat-icon-button
+              type="button"
+              *ngIf="e.estado === 'REGISTRADO'"
+              (click)="rechazar(e)"
+              matTooltip="Rechazar evento"
+              aria-label="Rechazar evento"
+              class="action-rechazar"
+            >
+              <mat-icon>close</mat-icon>
+            </button>
+            <button
+              mat-icon-button
+              type="button"
+              (click)="eliminar(e)"
+              matTooltip="Eliminar evento (baja lógica)"
+              aria-label="Eliminar evento"
+              class="action-eliminar"
+            >
+              <mat-icon>delete_outline</mat-icon>
+            </button>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+        <tr mat-row *matRowDef="let row; columns: columnas"></tr>
+      </table>
+    </mat-card-content>
+  </mat-card>
+
+  <p class="eventos-spec-note" *ngIf="empleadoSeleccionado()">
+    Spec F3.6 — Eventos del Período. Los flags por tipo controlan el motor v3
+    (días laborados, subsidios y solape).
+  </p>
+</section>

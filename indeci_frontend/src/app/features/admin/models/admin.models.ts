@@ -4,11 +4,13 @@ export interface AdminUserSummary {
   readonly id: number;
   readonly username: string;
   readonly status: string;
+  readonly sistemas?: readonly AccesoSistema[];
 }
 
 export interface AdminUserDetail extends AdminUserSummary {
   readonly assignedRoleIds: readonly number[];
   readonly deniedPermissionIds?: readonly number[];
+  readonly sistemas?: readonly AccesoSistema[];
 }
 
 export interface AdminUserCreateRequest {
@@ -26,6 +28,39 @@ export interface AdminUserRolesPut {
 
 export interface AdminUserPermisoDeniesPut {
   readonly permisoIds: readonly number[];
+}
+
+export interface SistemaAdmin {
+  readonly codigo: string;
+  readonly nombre: string;
+  readonly descripcion?: string | null;
+  readonly icono?: string | null;
+  readonly orden?: number | null;
+  readonly activo?: number | null;
+}
+
+export interface SistemaRol {
+  readonly codigo: string;
+  readonly nombre: string;
+  readonly descripcion?: string | null;
+  readonly orden?: number | null;
+}
+
+export interface AccesoSistema {
+  readonly codigo: string;
+  readonly nombre: string;
+  readonly activo: boolean;
+  readonly roles: readonly string[];
+}
+
+export interface AccesoSistemaPutItem {
+  readonly codigo: string;
+  readonly activo: boolean;
+  readonly roles: readonly string[];
+}
+
+export interface AccesosPutRequest {
+  readonly accesos: readonly AccesoSistemaPutItem[];
 }
 
 export interface AdminRolRow {

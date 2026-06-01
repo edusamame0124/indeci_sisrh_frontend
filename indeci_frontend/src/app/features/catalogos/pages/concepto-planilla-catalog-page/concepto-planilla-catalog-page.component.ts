@@ -5,15 +5,18 @@ import {
   inject,
   signal,
 } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatChipsModule } from '@angular/material/chips';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
@@ -37,13 +40,16 @@ import type { ConceptoPlanillaInput, ConceptoPlanillaRow } from '../../models/co
   selector: 'app-concepto-planilla-catalog-page',
   standalone: true,
   imports: [
+    CommonModule,
     RouterLink,
     MatCardModule,
+    MatChipsModule,
     MatTableModule,
     MatButtonModule,
     MatIconModule,
     MatFormFieldModule,
     MatInputModule,
+    MatSelectModule,
     MatDialogModule,
     MatTooltipModule,
     MatPaginatorModule,
@@ -65,12 +71,13 @@ export class ConceptoPlanillaCatalogPageComponent {
 
   readonly canWrite = computed(() => hasCatalogosWrite([...this.auth.roles()]));
 
-  /** Columnas base (sin acciones). */
+  /** Columnas base (sin acciones). F3.2 — tabla enriquecida con chips. */
   private static readonly baseCols = [
     'codigo',
     'nombre',
-    'tipo',
-    'naturaleza',
+    'tipoConcepto',
+    'afectaciones',
+    'regimen',
     'activo',
   ] as const;
 
@@ -85,19 +92,51 @@ export class ConceptoPlanillaCatalogPageComponent {
   readonly loadError = signal<string | null>(null);
   readonly rows = signal<readonly ConceptoPlanillaRow[]>([]);
   readonly filterText = signal('');
+
+  // F3.2 — filtros adicionales por chips visuales.
+  readonly filtroTipoConcepto = signal<string>('TODOS');
+  readonly filtroRegimen = signal<string>('TODOS');
+  readonly filtroProrrateable = signal<string>('TODOS');
+
   readonly pageIndex = signal(0);
   readonly pageSize = signal(10);
 
   readonly displayed = computed(() => {
-    const f = this.filterText().trim().toLowerCase();
-    const list = this.rows();
-    if (!f) return list;
-    return list.filter(
-      (r) =>
-        r.codigo.toLowerCase().includes(f) ||
-        r.nombre.toLowerCase().includes(f) ||
-        r.naturaleza.toLowerCase().includes(f),
-    );
+    const q = this.filterText().trim().toLowerCase();
+    const tipo = this.filtroTipoConcepto();
+    const reg = this.filtroRegimen();
+    const pro = this.filtroProrrateable();
+
+    return this.rows().filter((r) => {
+      // Texto libre: código, nombre, naturaleza, MEF, SISPER, PLAME, MCPP.
+      if (q) {
+        const hay =
+          r.codigo.toLowerCase().includes(q) ||
+          r.nombre.toLowerCase().includes(q) ||
+          r.naturaleza.toLowerCase().includes(q) ||
+          (r.codigoMef ?? '').toLowerCase().includes(q) ||
+          (r.codigoSisper ?? '').toLowerCase().includes(q) ||
+          (r.codigoPlameSunat ?? '').toLowerCase().includes(q) ||
+          (r.codigoMcpp ?? '').toLowerCase().includes(q);
+        if (!hay) return false;
+      }
+      if (tipo !== 'TODOS') {
+        if ((r.tipoConcepto ?? '') !== tipo) return false;
+      }
+      if (reg !== 'TODOS') {
+        const tokens = (r.regimenAplicable ?? 'TODOS')
+          .toUpperCase()
+          .split(',')
+          .map((t) => t.trim());
+        if (!tokens.includes(reg) && !tokens.includes('TODOS')) return false;
+      }
+      if (pro !== 'TODOS') {
+        const isPro = (r.esProrrateable ?? 'N').toUpperCase() === 'S';
+        if (pro === 'SI' && !isPro) return false;
+        if (pro === 'NO' && isPro) return false;
+      }
+      return true;
+    });
   });
 
   readonly pagedDisplayed = computed(() => {
@@ -118,9 +157,76 @@ export class ConceptoPlanillaCatalogPageComponent {
     return v === 1 ? 'Sí' : 'No';
   }
 
+  /** Label corto del TIPO_CONCEPTO MEF para chip. */
+  labelTipoConcepto(t: string | null | undefined): string {
+    switch (t) {
+      case 'REMUNERATIVO': return 'Remunerativo';
+      case 'NO_REMUNERATIVO': return 'No remunerativo';
+      case 'DESCUENTO': return 'Descuento';
+      case 'APORTE_TRABAJADOR': return 'Aporte trabajador';
+      case 'APORTE_EMPLEADOR': return 'Aporte empleador';
+      default: return '—';
+    }
+  }
+
+  /** Severidad de chip para TIPO_CONCEPTO (color institucional). */
+  severityTipoConcepto(t: string | null | undefined): 'success' | 'warning' | 'info' | 'neutral' {
+    switch (t) {
+      case 'REMUNERATIVO': return 'success';
+      case 'NO_REMUNERATIVO': return 'info';
+      case 'DESCUENTO':
+      case 'APORTE_TRABAJADOR':
+        return 'warning';
+      case 'APORTE_EMPLEADOR':
+        return 'info';
+      default:
+        return 'neutral';
+    }
+  }
+
+  /** Tokens del régimen aplicable, para renderizar 1 chip por token. */
+  regimenTokens(value: string | null | undefined): readonly string[] {
+    if (!value || value.trim() === '' || value.toUpperCase() === 'TODOS') {
+      return ['TODOS'];
+    }
+    return value
+      .toUpperCase()
+      .split(',')
+      .map((t) => t.trim())
+      .filter((t) => t.length > 0);
+  }
+
+  /** S/N → boolean para mostrar chip. */
+  isOn(v: string | null | undefined): boolean {
+    return (v ?? 'N').toUpperCase() === 'S';
+  }
+
   onFilter(ev: Event): void {
     const v = (ev.target as HTMLInputElement).value;
     this.filterText.set(v);
+    this.pageIndex.set(0);
+  }
+
+  setFiltroTipo(v: string): void {
+    this.filtroTipoConcepto.set(v);
+    this.pageIndex.set(0);
+  }
+
+  setFiltroRegimen(v: string): void {
+    this.filtroRegimen.set(v);
+    this.pageIndex.set(0);
+  }
+
+  setFiltroProrrateable(v: string): void {
+    this.filtroProrrateable.set(v);
+    this.pageIndex.set(0);
+  }
+
+  limpiarFiltros(): void {
+    this.filterText.set('');
+    this.filtroTipoConcepto.set('TODOS');
+    this.filtroRegimen.set('TODOS');
+    this.filtroProrrateable.set('TODOS');
     this.pageIndex.set(0);
   }
 

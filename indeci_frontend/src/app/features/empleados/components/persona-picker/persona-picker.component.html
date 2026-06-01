@@ -1,0 +1,75 @@
+<section class="pp-host" aria-label="Selector de persona">
+  @if (selected(); as s) {
+    <!-- ===================== Estado: persona seleccionada (chip) ===================== -->
+    <div class="pp-active" role="status" aria-live="polite">
+      <mat-icon class="pp-active__icon" aria-hidden="true">badge</mat-icon>
+      <div class="pp-active__body">
+        <span class="pp-active__name">{{ s.nombreCompleto }}</span>
+        <span class="pp-active__dni">DNI {{ s.dni }}</span>
+      </div>
+      <button
+        mat-stroked-button
+        type="button"
+        class="pp-active__action"
+        (click)="onCambiarPersona()"
+      >
+        <mat-icon>swap_horiz</mat-icon>
+        <span>Cambiar persona</span>
+      </button>
+    </div>
+  } @else {
+    <!-- ===================== Estado: búsqueda activa ===================== -->
+    <div class="pp-search">
+      <mat-form-field appearance="outline" class="pp-search__field" subscriptSizing="dynamic">
+        <mat-label>Buscar persona por nombre o DNI</mat-label>
+        <input
+          matInput
+          type="search"
+          autocomplete="off"
+          [formControl]="query"
+          [matAutocomplete]="auto"
+          placeholder="Ej. Juan Pérez o 12345678"
+          aria-label="Buscar persona por nombre o DNI"
+        />
+        @if (loading()) {
+          <mat-spinner matSuffix diameter="18" class="pp-search__spinner"></mat-spinner>
+        } @else {
+          <mat-icon matSuffix aria-hidden="true">search</mat-icon>
+        }
+        <mat-autocomplete
+          #auto="matAutocomplete"
+          [displayWith]="displayPersona"
+          (optionSelected)="onSelectOption($event)"
+        >
+          @if (opciones().length === 0 && !loading() && !errorMsg()) {
+            <mat-option disabled class="pp-empty">
+              <mat-icon>person_search</mat-icon>
+              <span>Sin coincidencias. Prueba con otro nombre o DNI.</span>
+            </mat-option>
+          }
+          @for (p of opciones(); track p.id) {
+            <mat-option [value]="p" class="pp-option">
+              <div class="pp-option__name">{{ p.nombreCompleto }}</div>
+              <div class="pp-option__meta">
+                <span class="pp-option__dni">DNI {{ p.dni }}</span>
+                @if (p.codigoInterno) {
+                  <span class="pp-option__sep" aria-hidden="true">·</span>
+                  <span class="pp-option__codigo">{{ p.codigoInterno }}</span>
+                }
+              </div>
+            </mat-option>
+          }
+        </mat-autocomplete>
+      </mat-form-field>
+
+      <p class="pp-hint">{{ hint() }}</p>
+
+      @if (errorMsg(); as msg) {
+        <p class="pp-error" role="alert">
+          <mat-icon>error_outline</mat-icon>
+          {{ msg }}
+        </p>
+      }
+    </div>
+  }
+</section>

@@ -1,0 +1,80 @@
+<h2 mat-dialog-title>{{ esEdicion() ? 'Editar encargatura' : 'Registrar encargatura' }}</h2>
+
+<mat-dialog-content class="ef-content">
+  <form [formGroup]="form" class="ef-form" (ngSubmit)="guardar()">
+    <!-- ===================== Titular ===================== -->
+    <section class="ef-section">
+      <h3 class="ef-section__title">Titular *</h3>
+      <app-persona-picker
+        hint="Persona en su cargo original."
+        [selected]="titular()"
+        (seleccionar)="onTitular($event)"
+        (limpiar)="onLimpiarTitular()"
+      ></app-persona-picker>
+    </section>
+
+    <!-- ===================== Encargado ===================== -->
+    <section class="ef-section">
+      <h3 class="ef-section__title">Encargado(a) *</h3>
+      <app-persona-picker
+        hint="Persona que cubre temporalmente al titular."
+        [selected]="encargado()"
+        (seleccionar)="onEncargado($event)"
+        (limpiar)="onLimpiarEncargado()"
+      ></app-persona-picker>
+    </section>
+
+    <!-- ===================== Fechas + Resolución ===================== -->
+    <div class="ef-grid">
+      <mat-form-field appearance="outline">
+        <mat-label>Fecha inicio *</mat-label>
+        <input matInput type="date" formControlName="fechaInicio" autocomplete="off" />
+        <mat-icon matSuffix>event</mat-icon>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Fecha fin (opcional)</mat-label>
+        <input matInput type="date" formControlName="fechaFin" autocomplete="off" />
+        <mat-icon matSuffix>event_busy</mat-icon>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="ef-grid__resolucion">
+        <mat-label>Resolución</mat-label>
+        <input
+          matInput
+          formControlName="resolucion"
+          maxlength="80"
+          autocomplete="off"
+          placeholder="Ej. R.A. 012-2026"
+        />
+      </mat-form-field>
+    </div>
+
+    @if (errorMsg(); as msg) {
+      <p class="ef-error" role="alert">
+        <mat-icon>error_outline</mat-icon>
+        {{ msg }}
+      </p>
+    }
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-stroked-button type="button" (click)="cancelar()" [disabled]="enviando()">
+    Cancelar
+  </button>
+  <button
+    mat-flat-button
+    color="primary"
+    type="button"
+    [disabled]="!puedeGuardar()"
+    (click)="guardar()"
+  >
+    @if (enviando()) {
+      <mat-spinner diameter="18" class="ef-btn-spinner"></mat-spinner>
+      <span>Guardando…</span>
+    } @else {
+      <span>{{ esEdicion() ? 'Guardar cambios' : 'Registrar encargatura' }}</span>
+    }
+  </button>
+</mat-dialog-actions>

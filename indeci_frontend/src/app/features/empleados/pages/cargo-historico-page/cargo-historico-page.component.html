@@ -1,0 +1,138 @@
+<section class="ch-page">
+  <!-- ============================ HEADER ============================ -->
+  <header class="ch-header">
+    <div>
+      <h1>Cargo histórico</h1>
+      <p class="ch-header__sub">
+        Trayectoria laboral del empleado dentro de la entidad. Selecciona una
+        persona para ver su línea de tiempo.
+      </p>
+    </div>
+  </header>
+
+  <!-- ============================ HUB HORIZONTAL ============================ -->
+  <app-persona-picker
+    hint="Selecciona una persona para ver su cargo histórico."
+    [selected]="persona()"
+    (seleccionar)="onPersonaSeleccionada($event)"
+    (limpiar)="onPersonaLimpiar()"
+  ></app-persona-picker>
+
+  <!-- ============================ CUERPO ============================ -->
+  @if (loading()) {
+    <div class="ch-loading" role="status" aria-live="polite">
+      <mat-spinner diameter="40"></mat-spinner>
+      <p>Cargando trayectoria laboral…</p>
+    </div>
+  } @else if (!persona()) {
+    <div class="ch-empty">
+      <mat-icon class="ch-empty__icon" aria-hidden="true">person_search</mat-icon>
+      <h2>Aún no has seleccionado a una persona</h2>
+      <p>Usa el buscador de arriba para encontrar al empleado por nombre o DNI.</p>
+    </div>
+  } @else if (puestos().length === 0) {
+    <div class="ch-empty">
+      <mat-icon class="ch-empty__icon" aria-hidden="true">history</mat-icon>
+      <h2>Sin registros de cargo</h2>
+      <p>
+        Este empleado aún no tiene movimientos de puesto registrados. Puedes
+        agregar uno desde "Puesto laboral".
+      </p>
+    </div>
+  } @else {
+    <!-- Timeline -->
+    <div class="ch-timeline" aria-label="Línea de tiempo de cargos">
+      @if (puestoActual(); as actual) {
+        <article class="ch-card ch-card--actual">
+          <span class="ch-dot ch-dot--actual" aria-hidden="true"></span>
+          <header class="ch-card__head">
+            <h3 class="ch-card__cargo">{{ actual.cargo }}</h3>
+            <span class="ch-badge ch-badge--actual">
+              <mat-icon aria-hidden="true">check_circle</mat-icon>
+              Actual
+            </span>
+          </header>
+          <dl class="ch-card__meta">
+            @if (actual.oficina) {
+              <div>
+                <dt>Oficina</dt>
+                <dd>{{ actual.oficina }}</dd>
+              </div>
+            }
+            @if (actual.dependencia) {
+              <div>
+                <dt>Dependencia</dt>
+                <dd>{{ actual.dependencia }}</dd>
+              </div>
+            }
+            @if (actual.jefe) {
+              <div>
+                <dt>Jefe inmediato</dt>
+                <dd>{{ actual.jefe }}</dd>
+              </div>
+            }
+            @if (actual.nivel) {
+              <div>
+                <dt>Nivel</dt>
+                <dd>{{ actual.nivel }}</dd>
+              </div>
+            }
+          </dl>
+          <footer class="ch-card__foot">
+            <span class="ch-fechas">
+              <mat-icon aria-hidden="true">event</mat-icon>
+              {{ fmtFecha(actual.fechaInicio) }}
+              <span class="ch-fechas__sep">→</span>
+              <span class="ch-fechas__al-presente">al presente</span>
+            </span>
+            <span class="ch-duracion">({{ duracion(actual) }})</span>
+          </footer>
+        </article>
+      }
+
+      @for (p of historialAnterior(); track p.id) {
+        <article class="ch-card">
+          <span class="ch-dot" aria-hidden="true"></span>
+          <header class="ch-card__head">
+            <h3 class="ch-card__cargo">{{ p.cargo }}</h3>
+            <span class="ch-badge ch-badge--anterior">Anterior</span>
+          </header>
+          <dl class="ch-card__meta">
+            @if (p.oficina) {
+              <div>
+                <dt>Oficina</dt>
+                <dd>{{ p.oficina }}</dd>
+              </div>
+            }
+            @if (p.jefe) {
+              <div>
+                <dt>Jefe inmediato</dt>
+                <dd>{{ p.jefe }}</dd>
+              </div>
+            }
+            @if (p.nivel) {
+              <div>
+                <dt>Nivel</dt>
+                <dd>{{ p.nivel }}</dd>
+              </div>
+            }
+          </dl>
+          <footer class="ch-card__foot">
+            <span class="ch-fechas">
+              <mat-icon aria-hidden="true">event</mat-icon>
+              {{ fmtFecha(p.fechaInicio) }}
+              <span class="ch-fechas__sep">→</span>
+              {{ fmtFecha(p.fechaFin) }}
+            </span>
+            <span class="ch-duracion">({{ duracion(p) }})</span>
+          </footer>
+        </article>
+      }
+    </div>
+
+    <p class="ch-spec-note">
+      F5.1 — La duración se calcula automáticamente con las fechas de inicio y fin.
+      Fuente: <code>INDECI_EMPLEADO_PUESTO_HIST</code>.
+    </p>
+  }
+</section>

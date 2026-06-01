@@ -74,6 +74,8 @@ export const MAIN_NAV_ITEMS: readonly MainNavItem[] = [
     children: [
       { label: 'Datos personales', route: '/empleados/personas', icon: 'person' },
       { label: 'Puesto laboral', route: '/empleados/puesto', icon: 'assignment_ind' },
+      { label: 'Cargo histórico', route: '/empleados/cargo-historico', icon: 'timeline' },
+      { label: 'Encargaturas', route: '/empleados/encargatura', icon: 'swap_horiz' },
       { label: 'Cuenta bancaria', route: '/empleados/cuentas-bancarias', icon: 'account_balance' },
       { label: 'Configuración pensión', route: '/empleados/pension', icon: 'savings' },
       { label: 'Configuración planilla', route: '/empleados/planilla', icon: 'payments' },
@@ -103,6 +105,8 @@ export const MAIN_NAV_ITEMS: readonly MainNavItem[] = [
     children: [
       { label: 'Periodos', route: '/planilla/periodos', icon: 'event' },
       { label: 'Carga de asistencia', route: '/asistencia/carga', icon: 'event_available' },
+      { label: 'Centro de Validaciones', route: '/planilla/validaciones', icon: 'rule' },
+      { label: 'Asistente de Recálculo', route: '/planilla/recalculo', icon: 'tune' },
       { label: 'Generación masiva', route: '/planilla/generacion-masiva', icon: 'group_work' },
       { label: 'Generación individual', route: '/planilla/generacion-individual', icon: 'person_add' },
       { label: 'Movimientos', route: '/planilla/movimientos', icon: 'list' },
@@ -123,6 +127,7 @@ export const MAIN_NAV_ITEMS: readonly MainNavItem[] = [
     requiredAnyRole: [...REPORTES_ACCESS_ROLES],
     children: [
       { label: 'Resumen general', route: '/reportes/resumen-mensual', icon: 'bar_chart' },
+      { label: 'Tablero consolidado', route: '/reportes/consolidado', icon: 'insights' },
       { label: 'Resumen por meta', route: '/reportes/resumen-meta', icon: 'donut_small' },
       { label: 'Conciliación AIRHSP', route: '/reportes/conciliacion', icon: 'fact_check' },
       { label: 'Archivo de bancos', route: '/reportes/archivo-bancos', icon: 'account_balance' },

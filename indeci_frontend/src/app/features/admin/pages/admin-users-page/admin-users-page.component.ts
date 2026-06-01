@@ -9,17 +9,19 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatChipsModule } from '@angular/material/chips';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatSelectModule } from '@angular/material/select';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 
 import { AdminApiService } from '../../services/admin-api.service';
 import { ErrorMessageService } from '../../../../core/services/error-message.service';
 import { ClientTelemetryService } from '../../../../core/services/client-telemetry.service';
-import type { AdminUserSummary } from '../../models/admin.models';
+import type { AccesoSistema, AdminUserSummary, SistemaAdmin } from '../../models/admin.models';
 import { isErrorResponse } from '../../../../core/models/error-response.model';
 import { EmptyStateComponent } from '../../../../shared/components/empty-state/empty-state.component';
 
@@ -35,7 +37,9 @@ import { EmptyStateComponent } from '../../../../shared/components/empty-state/e
     MatProgressSpinnerModule,
     MatPaginatorModule,
     MatFormFieldModule,
+    MatChipsModule,
     MatInputModule,
+    MatSelectModule,
     MatTooltipModule,
     EmptyStateComponent,
   ],
@@ -69,6 +73,23 @@ import { EmptyStateComponent } from '../../../../shared/components/empty-state/e
                 aria-label="Filtro búsqueda usuario"
               />
               <mat-icon matSuffix fontIcon="search" aria-hidden="true" />
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="toolbar__select">
+              <mat-label>Estado</mat-label>
+              <mat-select [value]="filterStatus()" (selectionChange)="onStatus($event.value)">
+                <mat-option value="">Todos</mat-option>
+                <mat-option value="ACTIVE">Activo</mat-option>
+                <mat-option value="INACTIVE">Inactivo</mat-option>
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="toolbar__select">
+              <mat-label>Sistema</mat-label>
+              <mat-select [value]="filterSistema()" (selectionChange)="onSistema($event.value)">
+                <mat-option value="">Todos</mat-option>
+                @for (s of sistemasCat(); track s.codigo) {
+                  <mat-option [value]="s.codigo">{{ s.nombre }}</mat-option>
+                }
+              </mat-select>
             </mat-form-field>
             <span class="toolbar__count" role="status" aria-live="polite">
               {{ total() }} registro{{ total() === 1 ? '' : 's' }}
@@ -130,6 +151,18 @@ import { EmptyStateComponent } from '../../../../shared/components/empty-state/e
                     }
                   </td>
                 </ng-container>
+                <ng-container matColumnDef="accesos">
+                  <th mat-header-cell *matHeaderCellDef scope="col">Accesos</th>
+                  <td mat-cell *matCellDef="let row">
+                    <mat-chip-set class="access-chips" aria-label="Accesos por sistema">
+                      @for (acceso of accesosVisibles(row); track acceso.codigo) {
+                        <mat-chip disableRipple [class.access-chip--off]="!acceso.activo">
+                          {{ chipAcceso(acceso) }}
+                        </mat-chip>
+                      }
+                    </mat-chip-set>
+                  </td>
+                </ng-container>
                 <ng-container matColumnDef="acciones">
                   <th mat-header-cell *matHeaderCellDef scope="col">Acciones</th>
                   <td mat-cell *matCellDef="let row">
@@ -162,22 +195,47 @@ import { EmptyStateComponent } from '../../../../shared/components/empty-state/e
       </mat-card>
     </div>
   `,
+  styles: [
+    `
+      .toolbar__select {
+        width: min(100%, 180px);
+      }
+      .access-chips {
+        display: flex;
+        max-width: 36rem;
+      }
+      .access-chips mat-chip {
+        min-height: 1.5rem;
+        font-size: 0.75rem;
+        background: rgba(13, 71, 161, 0.08);
+        color: var(--mat-sys-primary, #0d47a1);
+      }
+      .access-chips .access-chip--off {
+        background: #f1f5f9;
+        color: #64748b;
+      }
+    `,
+  ],
 })
 export class AdminUsersPageComponent {
   private readonly api = inject(AdminApiService);
   private readonly errors = inject(ErrorMessageService);
   private readonly telemetry = inject(ClientTelemetryService);
 
-  readonly columns = ['username', 'status', 'acciones'] as const;
+  readonly columns = ['username', 'status', 'accesos', 'acciones'] as const;
   readonly rows = signal<readonly AdminUserSummary[]>([]);
+  readonly sistemasCat = signal<readonly SistemaAdmin[]>([]);
   readonly loading = signal(true);
   readonly loadError = signal<string | null>(null);
   readonly total = signal(0);
   readonly pageIndex = signal(0);
   readonly pageSize = signal(20);
   readonly filterQ = signal('');
+  readonly filterStatus = signal('');
+  readonly filterSistema = signal('');
 
   constructor() {
+    this.loadSistemas();
     this.reload();
   }
 
@@ -194,6 +252,18 @@ export class AdminUsersPageComponent {
     this.reloadDebounced?.();
   }
 
+  onStatus(value: string): void {
+    this.filterStatus.set(value);
+    this.pageIndex.set(0);
+    this.reload();
+  }
+
+  onSistema(value: string): void {
+    this.filterSistema.set(value);
+    this.pageIndex.set(0);
+    this.reload();
+  }
+
   private reloadTimeout: ReturnType<typeof setTimeout> | null = null;
   private reloadDebounced = (): void => {
     if (this.reloadTimeout) clearTimeout(this.reloadTimeout);
@@ -205,14 +275,34 @@ export class AdminUsersPageComponent {
     this.loadError.set(null);
     this.telemetry.track('ADMIN_MODULE_UI', { extra: { action: 'USERS_PAGE_LOAD' } });
     const qRaw = this.filterQ().trim();
-    this.api.listUsersPaged(this.pageIndex(), this.pageSize(), qRaw || undefined).subscribe({
+    this.api
+      .listUsersPaged(
+        this.pageIndex(),
+        this.pageSize(),
+        qRaw || undefined,
+        this.filterStatus() || undefined,
+        this.filterSistema() || undefined,
+      )
+      .subscribe({
       next: (p) => {
         this.rows.set(p.content ?? []);
         this.total.set(p.totalElements);
         this.loading.set(false);
       },
       error: (err: HttpErrorResponse) => this.fail(err),
-    });
+      });
+  }
+
+  accesosVisibles(row: AdminUserSummary): readonly AccesoSistema[] {
+    const accesos = row.sistemas ?? [];
+    return accesos.length > 0 ? accesos : [];
+  }
+
+  chipAcceso(acceso: AccesoSistema): string {
+    if (!acceso.activo || acceso.roles.length === 0) {
+      return `${acceso.nombre}: sin acceso`;
+    }
+    return `${acceso.nombre}: ${acceso.roles.join(', ')}`;
   }
 
   private fail(err: HttpErrorResponse): void {
@@ -225,5 +315,12 @@ export class AdminUsersPageComponent {
     });
     const raw = isErrorResponse(err.error) ? err.error.mensaje : null;
     this.loadError.set(this.errors.translateAdminApi(raw));
+  }
+
+  private loadSistemas(): void {
+    this.api.listSistemas().subscribe({
+      next: (sistemas) => this.sistemasCat.set(sistemas),
+      error: () => this.sistemasCat.set([]),
+    });
   }
 }
