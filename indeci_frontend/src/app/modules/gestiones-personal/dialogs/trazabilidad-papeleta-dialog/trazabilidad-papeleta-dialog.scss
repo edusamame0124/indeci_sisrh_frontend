@@ -1,0 +1,72 @@
+.dialog-body {
+  min-width: 820px;
+}
+
+.summary {
+  background: #f1f5f9;
+  border-radius: 12px;
+  padding: 0.85rem;
+  margin-bottom: 1rem;
+  color: #334155;
+  font-size: 0.85rem;
+}
+
+.loading {
+  padding: 1rem;
+  color: #475569;
+}
+
+.error {
+  margin-bottom: 1rem;
+  background: #fee2e2;
+  color: #991b1b;
+  border-radius: 10px;
+  padding: 0.65rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.table-wrap {
+  overflow-x: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+}
+
+table {
+  width: 100%;
+  min-width: 780px;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+thead {
+  background: #0f172a;
+  color: #fff;
+}
+
+th,
+td {
+  padding: 0.65rem;
+  border-bottom: 1px solid #e2e8f0;
+  text-align: left;
+}
+
+tbody tr:hover {
+  background: #f8fafc;
+}
+
+.center {
+  text-align: center;
+}
+
+.empty {
+  text-align: center;
+  color: #64748b;
+  padding: 1.2rem;
+}
+
+@media (max-width: 900px) {
+  .dialog-body {
+    min-width: auto;
+  }
+}
