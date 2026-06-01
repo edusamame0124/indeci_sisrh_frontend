@@ -33,7 +33,9 @@ import type {
   AccesoSistema,
   AdminPermisoRow,
   AdminRolRow,
+  PermisoGrantedRow,
   SistemaAdmin,
+  SistemaArea,
   SistemaRol,
 } from '../../models/admin.models';
 
@@ -116,6 +118,28 @@ import type {
             </form>
           </section>
 
+          <section class="form-section" aria-labelledby="st-grants">
+            <h3 id="st-grants">Permisos otorgados directamente</h3>
+            <p class="page-hint">
+              Permisos SISRH asignados al usuario independientemente de su rol.
+            </p>
+            <form [formGroup]="grantsForm" class="stack" (ngSubmit)="guardarOtorgados()" novalidate>
+              <mat-form-field appearance="outline">
+                <mat-label>Permisos otorgados</mat-label>
+                <mat-select formControlName="permisoIds" multiple>
+                  @for (p of permisosCat(); track p.id) {
+                    <mat-option [value]="p.id">{{ p.codigo }} — {{ p.nombre }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+              <div class="acts">
+                <button mat-flat-button color="primary" type="submit" [disabled]="savingGrants()">
+                  Guardar permisos otorgados
+                </button>
+              </div>
+            </form>
+          </section>
+
           <section class="form-section" aria-labelledby="st-deny">
             <h3 id="st-deny">Denegaciones explícitas de permiso</h3>
             <p class="page-hint">
@@ -160,6 +184,22 @@ import type {
                         Tiene acceso
                       </mat-slide-toggle>
                     </div>
+
+                    @if (areasDeSistema(sistema.codigo).length > 0) {
+                      <mat-form-field appearance="outline">
+                        <mat-label>Área *</mat-label>
+                        <mat-select
+                          [value]="areaSeleccionada(sistema.codigo)"
+                          [disabled]="!isAccesoActivo(sistema.codigo)"
+                          (selectionChange)="onAreaAcceso(sistema.codigo, $event.value)"
+                        >
+                          <mat-option value="">— Sin área —</mat-option>
+                          @for (area of areasDeSistema(sistema.codigo); track area.codigo) {
+                            <mat-option [value]="area.codigo">{{ area.sigla ?? area.codigo }} — {{ area.nombre }}</mat-option>
+                          }
+                        </mat-select>
+                      </mat-form-field>
+                    }
 
                     <mat-form-field appearance="outline">
                       <mat-label>Roles en {{ sistema.nombre }}</mat-label>
@@ -271,9 +311,11 @@ export class AdminUserEditPageComponent {
   readonly sistemasCat = signal<readonly SistemaAdmin[]>([]);
   readonly accesos = signal<readonly AccesoSistema[]>([]);
   readonly rolesSistema = signal<Readonly<Record<string, readonly SistemaRol[]>>>({});
+  readonly areasSistema = signal<Readonly<Record<string, readonly SistemaArea[]>>>({});
 
   readonly savingEstado = signal(false);
   readonly savingRoles = signal(false);
+  readonly savingGrants = signal(false);
   readonly savingDenies = signal(false);
   readonly savingAccesos = signal(false);
   readonly resetting = signal(false);
@@ -290,6 +332,10 @@ export class AdminUserEditPageComponent {
 
   readonly rolesForm = this.fb.group({
     roleIds: this.fb.nonNullable.control<number[]>([]),
+  });
+
+  readonly grantsForm = this.fb.group({
+    permisoIds: this.fb.nonNullable.control<number[]>([]),
   });
 
   readonly deniesForm = this.fb.group({
@@ -318,8 +364,11 @@ export class AdminUserEditPageComponent {
       deniesExtra: this.api
         .listUserDeniedPermissions(userId)
         .pipe(catchError(() => of<readonly PermisoDeniedRow[]>([]))),
+      grantsExtra: this.api
+        .listUserGrantedPermissions(userId)
+        .pipe(catchError(() => of<readonly PermisoGrantedRow[]>([]))),
     }).subscribe({
-      next: ({ usuario, roles, permisos, sistemas, accesos, deniesExtra }) => {
+      next: ({ usuario, roles, permisos, sistemas, accesos, deniesExtra, grantsExtra }) => {
         this.headline.set(usuario.username);
         const estado = usuario.status?.toUpperCase() === 'INACTIVE' ? 'INACTIVE' : 'ACTIVE';
         this.statusForm.patchValue({ status: estado });
@@ -328,12 +377,15 @@ export class AdminUserEditPageComponent {
         this.permisosCat.set(permisos);
         this.sistemasCat.set(sistemas);
         this.accesos.set(accesos.length > 0 ? accesos : (usuario.sistemas ?? []));
-        this.loadRolesExternos(sistemas);
+        this.loadExternos(sistemas);
 
         const fromDetail = usuario.deniedPermissionIds ?? [];
         const fromRows = deniesExtra.map((d) => d.permisoId);
         const deniedUniq = [...new Set<number>([...fromDetail, ...fromRows])];
         this.deniesForm.patchValue({ permisoIds: deniedUniq });
+
+        const grantedIds = grantsExtra.map((g) => g.permisoId);
+        this.grantsForm.patchValue({ permisoIds: grantedIds });
 
         const assigned = usuario.assignedRoleIds ?? [];
         this.rolesForm.patchValue({ roleIds: [...assigned] });
@@ -391,6 +443,24 @@ export class AdminUserEditPageComponent {
     });
   }
 
+  guardarOtorgados(): void {
+    if (!this.userIdOk()) return;
+    this.savingGrants.set(true);
+    const permisoIds = this.grantsForm.controls.permisoIds.value.map((id) => id);
+    this.api.putUserGrantedPermissions(this.parsedId, { permisoIds }).subscribe({
+      next: () => {
+        this.savingGrants.set(false);
+        this.notify('Permisos otorgados actualizados.');
+        this.telemetry.track('ADMIN_MODULE_UI', { extra: { action: 'USER_GRANTS_SAVE' } });
+      },
+      error: (err: HttpErrorResponse) => {
+        this.savingGrants.set(false);
+        const raw = isErrorResponse(err.error) ? err.error.mensaje : null;
+        this.notify(this.errors.translateAdminApi(raw), SISRH_SNACK_DURATION_MS.long);
+      },
+    });
+  }
+
   guardarDenegaciones(): void {
     if (!this.userIdOk()) return;
     this.savingDenies.set(true);
@@ -418,6 +488,7 @@ export class AdminUserEditPageComponent {
         codigo: sistema.codigo,
         activo: current?.activo ?? false,
         roles: current?.activo ? [...(current.roles ?? [])] : [],
+        area: current?.activo ? (current.area ?? null) : null,
       };
     });
     this.api.putUserAccesos(this.parsedId, { accesos }).subscribe({
@@ -446,12 +517,24 @@ export class AdminUserEditPageComponent {
     return this.rolesSistema()[codigo] ?? [];
   }
 
+  areasDeSistema(codigo: string): readonly SistemaArea[] {
+    return this.areasSistema()[codigo] ?? [];
+  }
+
+  areaSeleccionada(codigo: string): string {
+    return this.findAcceso(codigo)?.area ?? '';
+  }
+
   onToggleAcceso(codigo: string, activo: boolean): void {
-    this.upsertAcceso(codigo, { activo, roles: activo ? this.rolesSeleccionados(codigo) : [] });
+    this.upsertAcceso(codigo, { activo, roles: activo ? this.rolesSeleccionados(codigo) : [], area: activo ? this.areaSeleccionada(codigo) : null });
   }
 
   onRolesAcceso(codigo: string, roles: readonly string[]): void {
-    this.upsertAcceso(codigo, { activo: this.isAccesoActivo(codigo), roles: [...roles] });
+    this.upsertAcceso(codigo, { activo: this.isAccesoActivo(codigo), roles: [...roles], area: this.areaSeleccionada(codigo) });
+  }
+
+  onAreaAcceso(codigo: string, area: string): void {
+    this.upsertAcceso(codigo, { activo: this.isAccesoActivo(codigo), roles: [...this.rolesSeleccionados(codigo)], area: area || null });
   }
 
   abrirConfirmReset(): void {
@@ -493,7 +576,7 @@ export class AdminUserEditPageComponent {
 
   private upsertAcceso(
     codigo: string,
-    patch: Pick<AccesoSistema, 'activo' | 'roles'>,
+    patch: Pick<AccesoSistema, 'activo' | 'roles' | 'area'>,
   ): void {
     const sistema = this.sistemasCat().find((s) => s.codigo === codigo);
     const current = this.findAcceso(codigo);
@@ -502,25 +585,22 @@ export class AdminUserEditPageComponent {
       nombre: current?.nombre ?? sistema?.nombre ?? codigo,
       activo: patch.activo,
       roles: patch.roles,
+      area: patch.area ?? null,
     };
     const others = this.accesos().filter((a) => a.codigo !== codigo);
     this.accesos.set([...others, next]);
   }
 
-  private loadRolesExternos(sistemas: readonly SistemaAdmin[]): void {
+  private loadExternos(sistemas: readonly SistemaAdmin[]): void {
     const externos = sistemas.filter((s) => s.codigo !== 'sisrh');
     for (const sistema of externos) {
       this.api.listSistemaRoles(sistema.codigo).subscribe({
-        next: (roles) =>
-          this.rolesSistema.update((current) => ({
-            ...current,
-            [sistema.codigo]: roles,
-          })),
-        error: () =>
-          this.rolesSistema.update((current) => ({
-            ...current,
-            [sistema.codigo]: [],
-          })),
+        next: (roles) => this.rolesSistema.update((cur) => ({ ...cur, [sistema.codigo]: roles })),
+        error: () => this.rolesSistema.update((cur) => ({ ...cur, [sistema.codigo]: [] })),
+      });
+      this.api.listSistemaAreas(sistema.codigo).subscribe({
+        next: (areas) => this.areasSistema.update((cur) => ({ ...cur, [sistema.codigo]: areas })),
+        error: () => this.areasSistema.update((cur) => ({ ...cur, [sistema.codigo]: [] })),
       });
     }
   }
