@@ -35,11 +35,14 @@ export const ADMIN_MODULE_ACCESS_ROLES = [...TI_ALL_ROLES] as const;
 export const CATALOGOS_ACCESS_ROLES = [...TI_ALL_ROLES, ...RRHH_ALL_OPERATIONAL_ROLES] as const;
 export const CATALOGOS_WRITE_ROLES = [...TI_ALL_ROLES] as const;
 
-/** Roles del portal de papeletas (empleado, jefe inmediato, gestión RRHH). */
+/** Roles del portal de papeletas (empleado, jefe inmediato, gestión RRHH).
+ *  Acceso EXCLUSIVO a /gestiones-personal y autoservicio.
+ *  NO deben ver módulos de planilla operativa (MCPP, Suspensiones, Cierre, Semáforo). */
 export const PORTAL_PAPELETAS_ROLES = ['EMPLEADO', 'JEFE', 'RRHH_PAPELETA'] as const;
 
-/** Empleados + Planilla + Portal empleado. */
-export const EMPLEADOS_ACCESS_ROLES = [
+/** Módulos operativos TI + RRHH: Planilla, Empleados, Catálogos.
+ *  Excluye deliberadamente PORTAL_PAPELETAS_ROLES (segregación de privilegios). */
+export const PLANILLA_OPERATIVA_ROLES = [
   ...TI_ALL_ROLES,
   ...RRHH_JEFE_ROLES,
   ...RRHH_ANALISTA_ROLES,
@@ -47,6 +50,12 @@ export const EMPLEADOS_ACCESS_ROLES = [
   ...PLANILLA_APROBADOR_ROLES,
   ...RRHH_CONSULTA_ROLES,
   ...RRHH_LEGACY_ROLES,
+] as const;
+
+/** Empleados + Portal papeletas: incluye roles operativos TI/RRHH + portal autoservicio.
+ *  Usado por empleadosAccessGuard y gestiones-personal. */
+export const EMPLEADOS_ACCESS_ROLES = [
+  ...PLANILLA_OPERATIVA_ROLES,
   ...PORTAL_PAPELETAS_ROLES,
 ] as const;
 

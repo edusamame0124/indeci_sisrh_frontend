@@ -4,6 +4,7 @@ import { ADMIN_MODULE_ACCESS_ROLES } from '../guards/admin-access.guard';
 import { CATALOGOS_ACCESS_ROLES } from '../guards/catalogos-access.guard';
 import { REPORTES_ACCESS_ROLES } from '../guards/reportes-access.guard';
 import { EMPLEADOS_ACCESS_ROLES } from './empleados-access-roles';
+import { PLANILLA_OPERATIVA_ROLES } from './sisrh-roles.config';
 
 /**
  * Menú lateral principal (shell post-login).
@@ -82,6 +83,8 @@ export const MAIN_NAV_ITEMS: readonly MainNavItem[] = [
       { label: 'Conceptos asignados', route: '/empleados/conceptos', icon: 'list_alt' },
       { label: 'Préstamos', route: '/empleados/prestamos', icon: 'request_quote' },
       { label: 'Vacaciones', route: '/empleados/vacaciones', icon: 'beach_access' },
+      { label: 'Eventos del período', route: '/empleados/eventos', icon: 'event_note' },
+      { label: 'Ficha 360', route: '/empleados/ficha', icon: 'manage_search' },
     ],
   },
 
@@ -101,7 +104,7 @@ export const MAIN_NAV_ITEMS: readonly MainNavItem[] = [
     label: 'Planilla',
     route: '',
     icon: 'calculate',
-    requiredAnyRole: [...EMPLEADOS_ACCESS_ROLES],
+    requiredAnyRole: [...PLANILLA_OPERATIVA_ROLES],
     children: [
       { label: 'Periodos', route: '/planilla/periodos', icon: 'event' },
       { label: 'Carga de asistencia', route: '/asistencia/carga', icon: 'event_available' },
@@ -110,6 +113,8 @@ export const MAIN_NAV_ITEMS: readonly MainNavItem[] = [
       { label: 'Generación masiva', route: '/planilla/generacion-masiva', icon: 'group_work' },
       { label: 'Generación individual', route: '/planilla/generacion-individual', icon: 'person_add' },
       { label: 'Movimientos', route: '/planilla/movimientos', icon: 'list' },
+      { label: 'Suspensiones / Licencias', route: '/planilla/suspensiones', icon: 'event_busy' },
+      { label: 'MCPP', route: '/planilla/mcpp', icon: 'receipt' },
     ],
   },
 

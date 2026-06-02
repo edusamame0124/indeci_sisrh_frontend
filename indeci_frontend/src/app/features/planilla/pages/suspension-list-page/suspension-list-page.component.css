@@ -1,18 +1,43 @@
-.placeholder-card {
-  max-width: 640px;
-  margin: 2rem auto;
+.loading-center { display: flex; justify-content: center; padding: 48px; }
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.empleado-field { min-width: 280px; }
+
+.empty {
   text-align: center;
+  padding: 40px;
+  color: rgba(0,0,0,.45);
 }
 
-.placeholder-card mat-icon {
-  font-size: 3rem;
-  width: 3rem;
-  height: 3rem;
-  color: var(--mat-sys-primary, #3f51b5);
-}
+.num { text-align: right; font-variant-numeric: tabular-nums; }
 
-.placeholder-card .ref {
-  margin-top: 1rem;
-  font-size: 0.75rem;
-  color: rgba(0, 0, 0, 0.6);
+.actions-cell { text-align: right; white-space: nowrap; }
+
+.w-full { width: 100%; }
+
+.row-anulado { opacity: 0.5; }
+
+.badge {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 12px;
+  letter-spacing: 0.02em;
+}
+.badge-activo   { background: #e6f4ea; color: #1e7e34; }
+.badge-anulado  { background: #fce8e6; color: #c62828; }
+
+.ref {
+  font-size: 0.7rem;
+  color: rgba(0,0,0,.38);
+  margin-top: 8px;
+  padding-left: 4px;
 }

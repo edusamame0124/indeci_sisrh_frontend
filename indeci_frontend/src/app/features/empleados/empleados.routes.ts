@@ -239,6 +239,14 @@ export const EMPLEADOS_ROUTES: Routes = [
 
       /* ——— Ficha 360 del Empleado (F3.1) ——— */
       {
+        path: 'ficha',
+        loadComponent: () =>
+          import('./pages/ficha-selector-page/ficha-selector-page.component').then(
+            (m) => m.FichaSelectorPageComponent,
+          ),
+        title: 'Ficha 360 — Seleccionar empleado — SISRH-INDECI',
+      },
+      {
         path: 'ficha/:empleadoId/:periodo',
         loadComponent: () =>
           import('./pages/ficha-360-page/ficha-360-page.component').then(
