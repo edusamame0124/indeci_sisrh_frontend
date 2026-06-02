@@ -35,6 +35,9 @@ export const ADMIN_MODULE_ACCESS_ROLES = [...TI_ALL_ROLES] as const;
 export const CATALOGOS_ACCESS_ROLES = [...TI_ALL_ROLES, ...RRHH_ALL_OPERATIONAL_ROLES] as const;
 export const CATALOGOS_WRITE_ROLES = [...TI_ALL_ROLES] as const;
 
+/** Roles del portal de papeletas (empleado, jefe inmediato, gestión RRHH). */
+export const PORTAL_PAPELETAS_ROLES = ['EMPLEADO', 'JEFE', 'RRHH_PAPELETA'] as const;
+
 /** Empleados + Planilla + Portal empleado. */
 export const EMPLEADOS_ACCESS_ROLES = [
   ...TI_ALL_ROLES,
@@ -44,6 +47,7 @@ export const EMPLEADOS_ACCESS_ROLES = [
   ...PLANILLA_APROBADOR_ROLES,
   ...RRHH_CONSULTA_ROLES,
   ...RRHH_LEGACY_ROLES,
+  ...PORTAL_PAPELETAS_ROLES,
 ] as const;
 
 /** Reportes: TI + jefe RRHH + consulta + analistas planilla (archivo bancos / AIRHSP). */

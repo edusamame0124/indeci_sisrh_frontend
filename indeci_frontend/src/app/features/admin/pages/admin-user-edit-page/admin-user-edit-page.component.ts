@@ -6,7 +6,7 @@ import {
   signal,
 } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { catchError, forkJoin, of } from 'rxjs';
+import { catchError, forkJoin, of, Subscription } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -18,7 +18,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 
-import { AdminApiService, type PermisoDeniedRow } from '../../services/admin-api.service';
+import { AdminApiService } from '../../services/admin-api.service';
 import { ErrorMessageService } from '../../../../core/services/error-message.service';
 import { ClientTelemetryService } from '../../../../core/services/client-telemetry.service';
 import { AuthService } from '../../../../core/services/auth.service';
@@ -33,7 +33,6 @@ import type {
   AccesoSistema,
   AdminPermisoRow,
   AdminRolRow,
-  PermisoGrantedRow,
   SistemaAdmin,
   SistemaArea,
   SistemaRol,
@@ -80,7 +79,7 @@ import type {
         <mat-card class="page-card sisrh-elevated">
           <mat-card-header>
             <mat-card-title>Usuario {{ headline() }}</mat-card-title>
-            <mat-card-subtitle>Gestionar estado, roles, denegaciones y reinicio de clave institucional</mat-card-subtitle>
+            <mat-card-subtitle>Gestionar estado, roles y reinicio de clave institucional</mat-card-subtitle>
           </mat-card-header>
           <mat-card-content class="stack">
           <section class="form-section" aria-labelledby="st-estado">
@@ -101,6 +100,7 @@ import type {
 
           <section class="form-section" aria-labelledby="st-roles">
             <h3 id="st-roles">Asignación de roles</h3>
+            <p class="page-hint">El usuario heredará automáticamente los permisos de los roles seleccionados.</p>
             <form [formGroup]="rolesForm" class="stack" (ngSubmit)="guardarRoles()" novalidate>
               <mat-form-field appearance="outline">
                 <mat-label>Roles</mat-label>
@@ -118,48 +118,29 @@ import type {
             </form>
           </section>
 
-          <section class="form-section" aria-labelledby="st-grants">
-            <h3 id="st-grants">Permisos otorgados directamente</h3>
+          <section class="form-section" aria-labelledby="st-permisos-rol">
+            <h3 id="st-permisos-rol">Permisos de los roles asignados</h3>
             <p class="page-hint">
-              Permisos SISRH asignados al usuario independientemente de su rol.
+              Asignados automáticamente según el rol. Solo lectura.
             </p>
-            <form [formGroup]="grantsForm" class="stack" (ngSubmit)="guardarOtorgados()" novalidate>
-              <mat-form-field appearance="outline">
-                <mat-label>Permisos otorgados</mat-label>
-                <mat-select formControlName="permisoIds" multiple>
-                  @for (p of permisosCat(); track p.id) {
-                    <mat-option [value]="p.id">{{ p.codigo }} — {{ p.nombre }}</mat-option>
-                  }
-                </mat-select>
-              </mat-form-field>
-              <div class="acts">
-                <button mat-flat-button color="primary" type="submit" [disabled]="savingGrants()">
-                  Guardar permisos otorgados
-                </button>
+            @if (loadingPermisos()) {
+              <p class="page-hint">Cargando permisos...</p>
+            } @else if (permisosDelRol().length === 0) {
+              <p class="perm-empty">Sin rol asignado o el rol no tiene permisos configurados.</p>
+            } @else {
+              <div class="perm-grupos">
+                @for (g of gruposPermiso(); track g.grupo) {
+                  <div class="perm-grupo">
+                    <span class="perm-grupo__label">{{ g.grupo }}</span>
+                    <div class="perm-chips">
+                      @for (p of g.permisos; track p.id) {
+                        <span class="perm-chip" [title]="p.nombre">{{ p.codigo }}</span>
+                      }
+                    </div>
+                  </div>
+                }
               </div>
-            </form>
-          </section>
-
-          <section class="form-section" aria-labelledby="st-deny">
-            <h3 id="st-deny">Denegaciones explícitas de permiso</h3>
-            <p class="page-hint">
-              Lista anulaciones directas sobre el modelo UsuarioPermisoDeny según servidor.
-            </p>
-            <form [formGroup]="deniesForm" class="stack" (ngSubmit)="guardarDenegaciones()" novalidate>
-              <mat-form-field appearance="outline">
-                <mat-label>Permisos denegados</mat-label>
-                <mat-select formControlName="permisoIds" multiple>
-                  @for (p of permisosCat(); track p.id) {
-                    <mat-option [value]="p.id">{{ p.codigo }} — {{ p.nombre }}</mat-option>
-                  }
-                </mat-select>
-              </mat-form-field>
-              <div class="acts">
-                <button mat-flat-button color="primary" type="submit" [disabled]="savingDenies()">
-                  Guardar denegaciones
-                </button>
-              </div>
-            </form>
+            }
           </section>
 
           @if (canManageAccesos()) {
@@ -287,6 +268,50 @@ import type {
       .access-row mat-form-field {
         width: 100%;
       }
+      .perm-grupos {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        margin-top: 0.5rem;
+      }
+      .perm-grupo {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.75rem;
+      }
+      .perm-grupo__label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--sisrh-text-muted, #64748b);
+        min-width: 100px;
+        padding-top: 0.25rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+      .perm-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.375rem;
+      }
+      .perm-chip {
+        display: inline-block;
+        padding: 0.2rem 0.6rem;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        font-family: monospace;
+        background: var(--sisrh-primary-100, #e8eef6);
+        color: var(--sisrh-primary, #1f3a5f);
+        border: 1px solid var(--sisrh-border-soft, #e7ecf2);
+        cursor: default;
+        user-select: none;
+      }
+      .perm-empty {
+        font-size: 0.875rem;
+        color: var(--sisrh-text-muted, #64748b);
+        font-style: italic;
+        margin: 0.5rem 0;
+      }
     `,
   ],
 })
@@ -307,16 +332,25 @@ export class AdminUserEditPageComponent {
   readonly headline = signal('');
 
   readonly rolesCat = signal<readonly AdminRolRow[]>([]);
-  readonly permisosCat = signal<readonly AdminPermisoRow[]>([]);
   readonly sistemasCat = signal<readonly SistemaAdmin[]>([]);
   readonly accesos = signal<readonly AccesoSistema[]>([]);
   readonly rolesSistema = signal<Readonly<Record<string, readonly SistemaRol[]>>>({});
   readonly areasSistema = signal<Readonly<Record<string, readonly SistemaArea[]>>>({});
+  readonly permisosDelRol = signal<readonly AdminPermisoRow[]>([]);
+  readonly loadingPermisos = signal(false);
+
+  readonly gruposPermiso = computed(() => {
+    const map = new Map<string, AdminPermisoRow[]>();
+    for (const p of this.permisosDelRol()) {
+      const grupo = this.grupoDePermiso(p.codigo);
+      if (!map.has(grupo)) map.set(grupo, []);
+      map.get(grupo)!.push(p);
+    }
+    return [...map.entries()].map(([grupo, permisos]) => ({ grupo, permisos }));
+  });
 
   readonly savingEstado = signal(false);
   readonly savingRoles = signal(false);
-  readonly savingGrants = signal(false);
-  readonly savingDenies = signal(false);
   readonly savingAccesos = signal(false);
   readonly resetting = signal(false);
   readonly canManageAccesos = computed(() => this.auth.roles().includes('SUPER_ADMIN'));
@@ -334,13 +368,8 @@ export class AdminUserEditPageComponent {
     roleIds: this.fb.nonNullable.control<number[]>([]),
   });
 
-  readonly grantsForm = this.fb.group({
-    permisoIds: this.fb.nonNullable.control<number[]>([]),
-  });
-
-  readonly deniesForm = this.fb.group({
-    permisoIds: this.fb.nonNullable.control<number[]>([]),
-  });
+  private rolesSub?: Subscription;
+  private permisosLoadSeq = 0;
 
   constructor() {
     const idOk = this.userIdOk();
@@ -356,39 +385,28 @@ export class AdminUserEditPageComponent {
     forkJoin({
       usuario: this.api.getUser(userId),
       roles: this.api.listRoles(),
-      permisos: this.api.listPermisos(),
       sistemas: this.canManageAccesos() ? this.api.listSistemas() : of<readonly SistemaAdmin[]>([]),
       accesos: this.canManageAccesos()
         ? this.api.getUserAccesos(userId).pipe(catchError(() => of<readonly AccesoSistema[]>([])))
         : of<readonly AccesoSistema[]>([]),
-      deniesExtra: this.api
-        .listUserDeniedPermissions(userId)
-        .pipe(catchError(() => of<readonly PermisoDeniedRow[]>([]))),
-      grantsExtra: this.api
-        .listUserGrantedPermissions(userId)
-        .pipe(catchError(() => of<readonly PermisoGrantedRow[]>([]))),
     }).subscribe({
-      next: ({ usuario, roles, permisos, sistemas, accesos, deniesExtra, grantsExtra }) => {
+      next: ({ usuario, roles, sistemas, accesos }) => {
         this.headline.set(usuario.username);
         const estado = usuario.status?.toUpperCase() === 'INACTIVE' ? 'INACTIVE' : 'ACTIVE';
         this.statusForm.patchValue({ status: estado });
 
         this.rolesCat.set(roles);
-        this.permisosCat.set(permisos);
         this.sistemasCat.set(sistemas);
         this.accesos.set(accesos.length > 0 ? accesos : (usuario.sistemas ?? []));
         this.loadExternos(sistemas);
 
-        const fromDetail = usuario.deniedPermissionIds ?? [];
-        const fromRows = deniesExtra.map((d) => d.permisoId);
-        const deniedUniq = [...new Set<number>([...fromDetail, ...fromRows])];
-        this.deniesForm.patchValue({ permisoIds: deniedUniq });
-
-        const grantedIds = grantsExtra.map((g) => g.permisoId);
-        this.grantsForm.patchValue({ permisoIds: grantedIds });
-
         const assigned = usuario.assignedRoleIds ?? [];
-        this.rolesForm.patchValue({ roleIds: [...assigned] });
+        this.rolesForm.patchValue({ roleIds: [...assigned] }, { emitEvent: false });
+        this.loadPermisosDeRoles(assigned);
+
+        this.rolesSub = this.rolesForm.controls.roleIds.valueChanges.subscribe((ids) => {
+          this.loadPermisosDeRoles(ids);
+        });
 
         this.loading.set(false);
       },
@@ -398,6 +416,57 @@ export class AdminUserEditPageComponent {
         this.loading.set(false);
       },
     });
+  }
+
+  private loadPermisosDeRoles(roleIds: readonly number[]): void {
+    const seq = ++this.permisosLoadSeq;
+    if (roleIds.length === 0) {
+      this.permisosDelRol.set([]);
+      this.loadingPermisos.set(false);
+      return;
+    }
+    this.loadingPermisos.set(true);
+    forkJoin(
+      roleIds.map((id) =>
+        this.api.getRolPermisos(id).pipe(catchError(() => of<readonly AdminPermisoRow[]>([])))
+      )
+    ).subscribe({
+      next: (resultados) => {
+        if (seq !== this.permisosLoadSeq) return;
+        const vistos = new Set<number>();
+        const todos: AdminPermisoRow[] = [];
+        for (const lista of resultados) {
+          for (const p of lista) {
+            if (!vistos.has(p.id)) {
+              vistos.add(p.id);
+              todos.push(p);
+            }
+          }
+        }
+        this.permisosDelRol.set(
+          todos.sort((a, b) => a.codigo.localeCompare(b.codigo))
+        );
+        this.loadingPermisos.set(false);
+      },
+      error: () => {
+        if (seq !== this.permisosLoadSeq) return;
+        this.loadingPermisos.set(false);
+      },
+    });
+  }
+
+  private grupoDePermiso(codigo: string): string {
+    if (codigo.startsWith('CAT_')) return 'Catálogos';
+    if (codigo.startsWith('EMP_')) return 'Empleados';
+    if (codigo.startsWith('PLA_')) return 'Planilla';
+    if (codigo.startsWith('PAP_')) return 'Papeletas';
+    if (codigo.startsWith('REP_') || codigo.startsWith('RPT_')) return 'Reportes';
+    if (codigo.startsWith('ADM_')) return 'Administración';
+    return 'General';
+  }
+
+  ngOnDestroy(): void {
+    this.rolesSub?.unsubscribe();
   }
 
   private notify(
@@ -437,42 +506,6 @@ export class AdminUserEditPageComponent {
       },
       error: (err: HttpErrorResponse) => {
         this.savingRoles.set(false);
-        const raw = isErrorResponse(err.error) ? err.error.mensaje : null;
-        this.notify(this.errors.translateAdminApi(raw), SISRH_SNACK_DURATION_MS.long);
-      },
-    });
-  }
-
-  guardarOtorgados(): void {
-    if (!this.userIdOk()) return;
-    this.savingGrants.set(true);
-    const permisoIds = this.grantsForm.controls.permisoIds.value.map((id) => id);
-    this.api.putUserGrantedPermissions(this.parsedId, { permisoIds }).subscribe({
-      next: () => {
-        this.savingGrants.set(false);
-        this.notify('Permisos otorgados actualizados.');
-        this.telemetry.track('ADMIN_MODULE_UI', { extra: { action: 'USER_GRANTS_SAVE' } });
-      },
-      error: (err: HttpErrorResponse) => {
-        this.savingGrants.set(false);
-        const raw = isErrorResponse(err.error) ? err.error.mensaje : null;
-        this.notify(this.errors.translateAdminApi(raw), SISRH_SNACK_DURATION_MS.long);
-      },
-    });
-  }
-
-  guardarDenegaciones(): void {
-    if (!this.userIdOk()) return;
-    this.savingDenies.set(true);
-    const permisoIds = this.deniesForm.controls.permisoIds.value.map((id) => id);
-    this.api.putUserDeniedPermissions(this.parsedId, { permisoIds }).subscribe({
-      next: () => {
-        this.savingDenies.set(false);
-        this.notify(this.errors.adminUsuarioDenegacionesLista());
-        this.telemetry.track('ADMIN_MODULE_UI', { extra: { action: 'USER_DENIES_SAVE' } });
-      },
-      error: (err: HttpErrorResponse) => {
-        this.savingDenies.set(false);
         const raw = isErrorResponse(err.error) ? err.error.mensaje : null;
         this.notify(this.errors.translateAdminApi(raw), SISRH_SNACK_DURATION_MS.long);
       },
