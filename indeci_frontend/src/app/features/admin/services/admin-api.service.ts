@@ -175,6 +175,12 @@ export class AdminApiService {
       .pipe(map((res) => [...extractApiData(res)]));
   }
 
+  getRolPermisos(rolId: number): Observable<readonly AdminPermisoRow[]> {
+    return this.http
+      .get<ApiResponse<readonly AdminPermisoRow[]>>(`${BASE}/roles/${rolId}/permisos`)
+      .pipe(map((res) => [...extractApiData(res)]));
+  }
+
   listPermisos(): Observable<readonly AdminPermisoRow[]> {
     return this.http
       .get<ApiResponse<readonly AdminPermisoRow[]>>(`${BASE}/permissions`)
