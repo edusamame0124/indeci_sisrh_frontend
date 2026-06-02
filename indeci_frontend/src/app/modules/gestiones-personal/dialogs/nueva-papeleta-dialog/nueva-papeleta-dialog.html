@@ -17,36 +17,38 @@
     </label>
 
     <label class="field">
-    <span>Fecha inicio</span>
-    <input type="date" [(ngModel)]="fechaInicio" (change)="calcularDias()" />
+      <span>Fecha inicio</span>
+      <input type="date" [(ngModel)]="fechaInicio" (change)="calcularDias()" />
     </label>
 
     <label class="field">
-    <span>Fecha fin</span>
-    <input type="date" [(ngModel)]="fechaFin" (change)="calcularDias()" />
+      <span>Fecha fin</span>
+      <input type="date" [(ngModel)]="fechaFin" (change)="calcularDias()" />
     </label>
 
     <ng-container *ngIf="!mostrarHoras()">
       <label class="field">
         <span>Cantidad de días</span>
         <input type="number" [ngModel]="cantidadDias" disabled />
-        </label>
+      </label>
     </ng-container>
 
-        <label class="field">
+    <ng-container *ngIf="mostrarHoras()">
+      <label class="field">
         <span>Hora inicio</span>
         <input type="time" [(ngModel)]="horaInicio" (change)="calcularHoras()" />
-        </label>
+      </label>
 
-        <label class="field">
+      <label class="field">
         <span>Hora fin</span>
         <input type="time" [(ngModel)]="horaFin" (change)="calcularHoras()" />
-        </label>
+      </label>
 
-        <label class="field">
+      <label class="field">
         <span>Cantidad de horas</span>
         <input type="text" [value]="cantidadHorasTexto" disabled />
-        </label>
+      </label>
+    </ng-container>
 
     <label class="field field--full">
       <span>Motivo</span>
