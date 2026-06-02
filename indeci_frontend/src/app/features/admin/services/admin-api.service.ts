@@ -21,9 +21,12 @@ import type {
   AdminUserDetail,
   AdminUserPage,
   AdminUserPermisoDeniesPut,
+  AdminUserPermisoGrantsPut,
   AdminUserRolesPut,
   AdminUserStatusPatch,
+  PermisoGrantedRow,
   SistemaAdmin,
+  SistemaArea,
   SistemaRol,
 } from '../models/admin.models';
 
@@ -124,6 +127,18 @@ export class AdminApiService {
       .pipe(map(() => undefined));
   }
 
+  listUserGrantedPermissions(id: number): Observable<readonly PermisoGrantedRow[]> {
+    return this.http
+      .get<ApiResponse<readonly PermisoGrantedRow[]>>(`${BASE}/users/${id}/permiso-otorgados`)
+      .pipe(map((res) => extractApiData(res)));
+  }
+
+  putUserGrantedPermissions(id: number, body: AdminUserPermisoGrantsPut): Observable<void> {
+    return this.http
+      .put<ApiResponse<unknown>>(`${BASE}/users/${id}/permiso-otorgados`, body)
+      .pipe(map(() => undefined));
+  }
+
   listSistemas(): Observable<readonly SistemaAdmin[]> {
     return this.http
       .get<ApiResponse<readonly SistemaAdmin[]>>(`${BASE}/sistemas`)
@@ -133,6 +148,12 @@ export class AdminApiService {
   listSistemaRoles(codigo: string): Observable<readonly SistemaRol[]> {
     return this.http
       .get<ApiResponse<readonly SistemaRol[]>>(`${BASE}/sistemas/${codigo}/roles`)
+      .pipe(map((res) => [...extractApiData(res)]));
+  }
+
+  listSistemaAreas(codigo: string): Observable<readonly SistemaArea[]> {
+    return this.http
+      .get<ApiResponse<readonly SistemaArea[]>>(`${BASE}/sistemas/${codigo}/areas`)
       .pipe(map((res) => [...extractApiData(res)]));
   }
 

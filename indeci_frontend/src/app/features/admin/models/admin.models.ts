@@ -30,6 +30,16 @@ export interface AdminUserPermisoDeniesPut {
   readonly permisoIds: readonly number[];
 }
 
+export interface AdminUserPermisoGrantsPut {
+  readonly permisoIds: readonly number[];
+}
+
+export interface PermisoGrantedRow {
+  readonly permisoId: number;
+  readonly codigo?: string;
+  readonly nombre?: string;
+}
+
 export interface SistemaAdmin {
   readonly codigo: string;
   readonly nombre: string;
@@ -46,17 +56,26 @@ export interface SistemaRol {
   readonly orden?: number | null;
 }
 
+export interface SistemaArea {
+  readonly codigo: string;
+  readonly nombre: string;
+  readonly sigla?: string | null;
+  readonly orden?: number | null;
+}
+
 export interface AccesoSistema {
   readonly codigo: string;
   readonly nombre: string;
   readonly activo: boolean;
   readonly roles: readonly string[];
+  readonly area?: string | null;
 }
 
 export interface AccesoSistemaPutItem {
   readonly codigo: string;
   readonly activo: boolean;
   readonly roles: readonly string[];
+  readonly area?: string | null;
 }
 
 export interface AccesosPutRequest {
