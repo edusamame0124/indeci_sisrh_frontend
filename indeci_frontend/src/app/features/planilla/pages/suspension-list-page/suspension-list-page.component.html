@@ -1,8 +1,116 @@
-<mat-card class="placeholder-card">
-  <mat-card-content>
-    <mat-icon aria-hidden="true">event_busy</mat-icon>
-    <h2>Suspensiones / Licencias</h2>
-    <p>Módulo en construcción — la interfaz se habilitará en la fase visual de B3-7.</p>
-    <p class="ref">Base: SPEC §9 — Tabla 21 SUNAT (días subsidiados y no laborados, archivo .snl)</p>
-  </mat-card-content>
-</mat-card>
+<div class="page sisrh-page">
+  <nav class="crumbs sisrh-crumbs" aria-label="Ubicación">
+    <a mat-button routerLink="/">Inicio</a>
+    <span class="crumbs__sep" aria-hidden="true">/</span>
+    <span class="crumbs__group">Planilla</span>
+    <span class="crumbs__sep" aria-hidden="true">/</span>
+    <span class="crumbs__here">Suspensiones / Licencias</span>
+  </nav>
+
+  <mat-card class="page-card sisrh-elevated">
+    <mat-card-header>
+      <mat-card-title>Suspensiones / Licencias</mat-card-title>
+      <mat-card-subtitle>
+        Registra y gestiona los días de suspensión y licencias (Tabla 21 SUNAT — fuente del archivo .snl).
+      </mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content>
+      @if (loading()) {
+        <div class="loading-center">
+          <mat-progress-spinner mode="indeterminate" diameter="48" aria-label="Cargando" />
+        </div>
+      } @else {
+        <div class="toolbar">
+          <mat-form-field appearance="outline" class="empleado-field">
+            <mat-label>Empleado</mat-label>
+            <mat-select [value]="selectedEmpId()"
+                        (selectionChange)="seleccionarEmpleado($event.value)">
+              @for (p of personas(); track p.empleadoId) {
+                <mat-option [value]="p.empleadoId">
+                  {{ p.nombreCompleto }} — {{ p.dni }}
+                </mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          @if (selectedEmpId()) {
+            <button mat-flat-button color="primary"
+                    (click)="abrir()"
+                    [disabled]="saving()">
+              <mat-icon>add</mat-icon>
+              Nueva suspensión
+            </button>
+          }
+        </div>
+
+        @if (!selectedEmpId()) {
+          <p class="empty">Selecciona un empleado para ver sus suspensiones.</p>
+        } @else if (loadingRows()) {
+          <div class="loading-center">
+            <mat-progress-spinner mode="indeterminate" diameter="40" />
+          </div>
+        } @else if (!rows().length) {
+          <p class="empty">Sin suspensiones registradas para este empleado.</p>
+        } @else {
+          <table mat-table [dataSource]="rows()" class="sisrh-table w-full">
+
+            <ng-container matColumnDef="codSuspension">
+              <th mat-header-cell *matHeaderCellDef>Código</th>
+              <td mat-cell *matCellDef="let r">{{ r.codSuspension }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="descripcion">
+              <th mat-header-cell *matHeaderCellDef>Tipo</th>
+              <td mat-cell *matCellDef="let r">{{ descCatalogo(r.codSuspension) }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="fechaInicio">
+              <th mat-header-cell *matHeaderCellDef>Inicio</th>
+              <td mat-cell *matCellDef="let r">{{ r.fechaInicio }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="fechaFin">
+              <th mat-header-cell *matHeaderCellDef>Fin</th>
+              <td mat-cell *matCellDef="let r">{{ r.fechaFin }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="diasAfectos">
+              <th mat-header-cell *matHeaderCellDef>Días</th>
+              <td mat-cell *matCellDef="let r" class="num">{{ r.diasAfectos }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="estado">
+              <th mat-header-cell *matHeaderCellDef>Estado</th>
+              <td mat-cell *matCellDef="let r">
+                <span [class]="'badge badge-' + r.estado.toLowerCase()">{{ r.estado }}</span>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="acciones">
+              <th mat-header-cell *matHeaderCellDef></th>
+              <td mat-cell *matCellDef="let r" class="actions-cell">
+                @if (r.estado !== 'ANULADO') {
+                  <button mat-icon-button matTooltip="Editar"
+                          (click)="abrir(r)" [disabled]="saving()">
+                    <mat-icon>edit</mat-icon>
+                  </button>
+                  <button mat-icon-button matTooltip="Anular"
+                          (click)="eliminar(r)" [disabled]="saving()">
+                    <mat-icon>delete_outline</mat-icon>
+                  </button>
+                }
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="columns"></tr>
+            <tr mat-row *matRowDef="let row; columns: columns;"
+                [class.row-anulado]="row.estado === 'ANULADO'"></tr>
+          </table>
+        }
+      }
+    </mat-card-content>
+  </mat-card>
+
+  <p class="ref">Base: SPEC §9 — Tabla 21 SUNAT (días subsidiados y no laborados, archivo .snl)</p>
+</div>
