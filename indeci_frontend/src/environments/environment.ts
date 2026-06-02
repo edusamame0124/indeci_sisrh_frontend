@@ -8,7 +8,7 @@
  */
 export const environment = {
   production: true,
-  apiUrl: 'https://app.indeci.gob.pe/api',
+   apiUrl: '/api',
   appName: 'SISRH-INDECI',
   tokenKey: 'sisrh_access_token',
   /**
@@ -27,7 +27,7 @@ export const environment = {
    * productivo según el dominio real de cada sistema.
    */
   sistemasExternos: {
-    convocatoria: 'https://app.indeci.gob.pe/convocatoria',
-    rendimiento: 'https://app.indeci.gob.pe/rendimiento',
+    convocatoria: 'http://10.64.24.19:8089',
+  rendimiento: 'http://10.64.24.19:8088',
   } as Readonly<Record<string, string>>,
 };
