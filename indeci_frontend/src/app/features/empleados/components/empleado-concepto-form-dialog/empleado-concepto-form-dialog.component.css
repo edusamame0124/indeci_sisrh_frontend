@@ -11,8 +11,36 @@
   min-width: min(100%, 440px);
 }
 
+.regimen-line {
+  margin: 0 24px 0.25rem;
+  font-size: 0.8rem;
+  color: #475569;
+}
+
+.regimen-line--warn {
+  color: #8a5300;
+}
+
 .full {
   width: 100%;
+}
+
+.vigencia-label {
+  margin: 0.5rem 0 0.125rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.req {
+  color: #b3261e;
+  margin-left: 2px;
+}
+
+.vigencia-hint {
+  font-weight: 400;
+  color: #64748b;
+  font-size: 0.775rem;
 }
 
 .vigencia-row {

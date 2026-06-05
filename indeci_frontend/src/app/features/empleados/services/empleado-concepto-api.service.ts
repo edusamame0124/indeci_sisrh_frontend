@@ -4,6 +4,7 @@ import { map, type Observable } from 'rxjs';
 import type { ApiResponse } from '../../../core/models/api-response.model';
 import { extractApiData } from '../../../core/http/map-api-response';
 import type {
+  ConceptosAsignables,
   EmpleadoConceptoInput,
   EmpleadoConceptoRow,
 } from '../models/empleado-concepto.model';
@@ -22,6 +23,15 @@ export class EmpleadoConceptoApiService {
         `/api/rrhh/empleado-concepto/${empleadoId}`,
       )
       .pipe(map((r) => [...extractApiData(r)]));
+  }
+
+  /** Conceptos asignables al empleado (ya filtrados por su régimen) + el régimen. */
+  listarAsignables(empleadoId: number): Observable<ConceptosAsignables> {
+    return this.http
+      .get<ApiResponse<ConceptosAsignables>>(
+        `/api/rrhh/empleado-concepto/${empleadoId}/asignables`,
+      )
+      .pipe(map(extractApiData));
   }
 
   guardar(body: EmpleadoConceptoInput): Observable<null> {

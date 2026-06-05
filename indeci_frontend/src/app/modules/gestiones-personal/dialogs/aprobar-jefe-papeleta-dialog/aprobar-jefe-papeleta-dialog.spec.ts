@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { AprobarJefePapeletaDialog } from './aprobar-jefe-papeleta-dialog';
+import { AprobarJefePapeletaDialogComponent } from './aprobar-jefe-papeleta-dialog';
 
 describe('AprobarJefePapeletaDialog', () => {
-  let component: AprobarJefePapeletaDialog;
-  let fixture: ComponentFixture<AprobarJefePapeletaDialog>;
+  let component: AprobarJefePapeletaDialogComponent;
+  let fixture: ComponentFixture<AprobarJefePapeletaDialogComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [AprobarJefePapeletaDialog]
+      imports: [AprobarJefePapeletaDialogComponent]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(AprobarJefePapeletaDialog);
+    fixture = TestBed.createComponent(AprobarJefePapeletaDialogComponent);
     component = fixture.componentInstance;
     await fixture.whenStable();
   });

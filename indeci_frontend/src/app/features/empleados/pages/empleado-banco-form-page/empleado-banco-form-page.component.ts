@@ -77,7 +77,7 @@ function cciOpcionalValidator(control: AbstractControl): ValidationErrors | null
         <span class="crumbs__here">{{ isEdit() ? 'Editar cuenta' : 'Nueva cuenta' }}</span>
       </nav>
 
-      <a mat-button [routerLink]="['/empleados/cuentas-bancarias/personas', personaId()]">Volver</a>
+      <a mat-button routerLink="/empleados/personas">Volver</a>
 
       @if (empleadoId() > 0 && !pageLoading()) {
         <app-empleado-flow-warning-banner

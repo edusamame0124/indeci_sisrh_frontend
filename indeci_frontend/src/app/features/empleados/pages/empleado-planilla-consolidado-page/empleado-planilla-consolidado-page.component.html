@@ -1,0 +1,136 @@
+<div class="page sisrh-page">
+  <nav class="crumbs sisrh-crumbs" aria-label="Ubicación">
+    <a mat-button routerLink="/">Inicio</a>
+    <span class="crumbs__sep" aria-hidden="true">/</span>
+    <span class="crumbs__here">Configuración planilla</span>
+  </nav>
+
+  <mat-card class="page-card sisrh-elevated">
+    <mat-card-header>
+      <mat-card-title>Configuración de planilla</mat-card-title>
+      <mat-card-subtitle>
+        Todos los empleados activos. Edita la configuración o registra la de quienes aún no la tienen.
+      </mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      @if (!loading() && !loadError()) {
+        <div class="toolbar sisrh-toolbar">
+          <mat-form-field appearance="outline" class="toolbar__search" subscriptSizing="dynamic">
+            <mat-label>Buscar</mat-label>
+            <mat-icon matSuffix fontIcon="search" aria-hidden="true" />
+            <input
+              matInput
+              type="search"
+              [value]="filterText()"
+              (input)="onFilter($event)"
+              aria-label="Filtrar por nombre, DNI o régimen"
+            />
+          </mat-form-field>
+          <span class="toolbar__count" role="status" aria-live="polite">
+            {{ displayed().length }} de {{ rows().length }} empleados
+          </span>
+        </div>
+      }
+
+      @if (loading()) {
+        <div class="page-loading" aria-busy="true">
+          <mat-progress-spinner diameter="48" mode="indeterminate" aria-label="Cargando" />
+        </div>
+      } @else if (loadError()) {
+        <app-empty-state
+          variant="error"
+          icon="error_outline"
+          title="No se pudo cargar el listado"
+          [description]="loadError()!"
+        >
+          <button mat-stroked-button type="button" (click)="reload()">Reintentar</button>
+        </app-empty-state>
+      } @else if (displayed().length === 0) {
+        <app-empty-state
+          icon="search_off"
+          title="Sin coincidencias"
+          description="No se encontraron empleados con ese criterio."
+        />
+      } @else {
+        <div class="sisrh-table-scroll">
+          <table mat-table [dataSource]="pagedRows()" class="tbl">
+            <ng-container matColumnDef="empleado">
+              <th mat-header-cell *matHeaderCellDef scope="col">Empleado</th>
+              <td mat-cell *matCellDef="let r" class="col-nombre">{{ r.nombreCompleto ?? '—' }}</td>
+            </ng-container>
+            <ng-container matColumnDef="dni">
+              <th mat-header-cell *matHeaderCellDef scope="col">DNI</th>
+              <td mat-cell *matCellDef="let r" class="sisrh-tabular">{{ r.dni ?? '—' }}</td>
+            </ng-container>
+            <ng-container matColumnDef="regimen">
+              <th mat-header-cell *matHeaderCellDef scope="col">Régimen</th>
+              <td mat-cell *matCellDef="let r">
+                @if (r.regimenLaboral) {
+                  <span class="badge badge--reg">{{ r.regimenLaboral }}</span>
+                } @else {
+                  —
+                }
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="tipoContrato">
+              <th mat-header-cell *matHeaderCellDef scope="col">Tipo contrato</th>
+              <td mat-cell *matCellDef="let r">{{ r.tipoContrato ?? '—' }}</td>
+            </ng-container>
+            <ng-container matColumnDef="condicion">
+              <th mat-header-cell *matHeaderCellDef scope="col">Condición</th>
+              <td mat-cell *matCellDef="let r">{{ r.condicionLaboral ?? '—' }}</td>
+            </ng-container>
+            <ng-container matColumnDef="sueldo">
+              <th mat-header-cell *matHeaderCellDef scope="col">Sueldo básico</th>
+              <td mat-cell *matCellDef="let r" class="sisrh-tabular">{{ fmtMoney(r.sueldoBasico) }}</td>
+            </ng-container>
+            <ng-container matColumnDef="estado">
+              <th mat-header-cell *matHeaderCellDef scope="col">Estado</th>
+              <td mat-cell *matCellDef="let r">
+                @if (r.tieneConfig) {
+                  <span class="badge badge--ok">Configurada</span>
+                } @else {
+                  <span class="badge badge--pend">Sin configurar</span>
+                }
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="acciones">
+              <th mat-header-cell *matHeaderCellDef scope="col">Acciones</th>
+              <td mat-cell *matCellDef="let r">
+                @if (r.tieneConfig) {
+                  <a
+                    mat-icon-button
+                    [routerLink]="['/empleados/planilla/personas', r.personaId, 'editar', r.planillaId]"
+                    matTooltip="Editar configuración"
+                    aria-label="Editar configuración"
+                  >
+                    <mat-icon fontIcon="edit" aria-hidden="true" />
+                  </a>
+                } @else {
+                  <a
+                    mat-stroked-button
+                    color="primary"
+                    [routerLink]="['/empleados/planilla/personas', r.personaId, 'nueva']"
+                  >
+                    <mat-icon fontIcon="add" aria-hidden="true" /> Registrar
+                  </a>
+                }
+              </td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="columns"></tr>
+            <tr mat-row *matRowDef="let row; columns: columns"></tr>
+          </table>
+        </div>
+        <mat-paginator
+          [length]="displayed().length"
+          [pageIndex]="pageIndex()"
+          [pageSize]="pageSize()"
+          [pageSizeOptions]="pageSizeOptions"
+          (page)="onPage($event)"
+          showFirstLastButtons
+          aria-label="Paginador de empleados"
+        />
+      }
+    </mat-card-content>
+  </mat-card>
+</div>

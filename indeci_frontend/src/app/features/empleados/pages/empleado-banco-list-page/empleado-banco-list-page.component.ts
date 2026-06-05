@@ -54,7 +54,7 @@ import type { PersonaEmpleado } from '../../models/persona-empleado.model';
       </nav>
 
       <div class="actions">
-        <a mat-button routerLink="/empleados/cuentas-bancarias">Volver</a>
+        <a mat-button routerLink="/empleados/personas">Volver</a>
         @if (canEdit()) {
           <a
             mat-flat-button

@@ -62,53 +62,17 @@ export class NuevaPapeletaDialogComponent implements OnInit {
     });
   }
 
-<<<<<<< HEAD
-tipoSeleccionado(): TipoSolicitudRrhh | null {
-=======
- tipoSeleccionado(): TipoSolicitudRrhh | null {
->>>>>>> 152564ac200ff9dcc6a20506f425124056231af2
+  tipoSeleccionado(): TipoSolicitudRrhh | null {
+    return (
+      this.tipos().find(
+        (x) => Number(x.id) === Number(this.tipoSolicitudId),
+      ) ?? null
+    );
+  }
 
-  const tipo =
-    this.tipos().find(
-      (x) => Number(x.id) === Number(this.tipoSolicitudId),
-    ) ?? null;
-<<<<<<< HEAD
-=======
-
-  console.log('ID seleccionado:', this.tipoSolicitudId);
-  console.log('Tipo completo:', tipo);
-  console.log('mostrarHoras:', tipo?.mostrarHoras);
-
-  return tipo;
-}
-
-mostrarHoras(): boolean {
-  const tipo = this.tipoSeleccionado();
-
-  const resultado = Number(tipo?.mostrarHoras) === 1;
-
-  console.log('Resultado mostrarHoras():', resultado);
-
-  return resultado;
-}
->>>>>>> 152564ac200ff9dcc6a20506f425124056231af2
-
-  console.log('ID seleccionado:', this.tipoSolicitudId);
-  console.log('Tipo completo:', tipo);
-  console.log('mostrarHoras:', tipo?.mostrarHoras);
-
-  return tipo;
-}
-
-mostrarHoras(): boolean {
-  const tipo = this.tipoSeleccionado();
-
-  const resultado = Number(tipo?.mostrarHoras) === 1;
-
-  console.log('Resultado mostrarHoras():', resultado);
-
-  return resultado;
-}
+  mostrarHoras(): boolean {
+    return Number(this.tipoSeleccionado()?.mostrarHoras) === 1;
+  }
   calcularDias(): void {
     if (!this.fechaInicio || !this.fechaFin) {
       this.cantidadDias = null;

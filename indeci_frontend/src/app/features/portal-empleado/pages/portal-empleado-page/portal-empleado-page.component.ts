@@ -166,7 +166,7 @@ export class PortalEmpleadoPageComponent implements OnInit {
     this.personaApi
       .actualizar(persona.id, {
         nombreCompleto: persona.nombreCompleto,
-        dni: persona.dni,
+        dni: persona.dni ?? '',
         email,
         telefono: this.telefonoEdit().trim(),
         direccion: persona.direccion ?? '',

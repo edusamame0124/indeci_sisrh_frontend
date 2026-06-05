@@ -24,7 +24,14 @@ import { isErrorResponse } from '../../../../core/models/error-response.model';
 import type {
   ExplicacionLinea,
   ExplicacionPlanilla,
+  ExplicacionSnapshot,
 } from '../../models/explicacion-planilla.model';
+
+/** Par clave/valor ya legible para mostrar los parámetros de un snapshot. */
+interface SnapshotParam {
+  readonly etiqueta: string;
+  readonly valor: string;
+}
 
 /**
  * F3.1 — Ficha 360 del Empleado.
@@ -103,6 +110,41 @@ export class Ficha360PageComponent implements OnInit {
 
   readonly columnasLineas = ['signo', 'descripcion', 'detalle', 'monto'];
 
+  /** FASE 2 — Snapshots de trazabilidad del cálculo (read-only). */
+  readonly snapshots = computed<readonly ExplicacionSnapshot[]>(
+    () => this.data()?.snapshots ?? [],
+  );
+
+  /** Nombres legibles por regla de snapshot. */
+  private static readonly REGLA_LABEL: Readonly<Record<string, string>> = {
+    GENERAL: 'Contexto del cálculo',
+    IR4TA_CAS: 'Retención 4.ª categoría (CAS · tributo SUNAT 3042)',
+    IR5TA: 'Retención 5.ª categoría',
+    SUBSIDIO: 'Subsidio',
+    ESSALUD: 'EsSalud empleador (aporte + tope)',
+  };
+
+  /** Etiquetas legibles por clave de parámetro del snapshot. */
+  private static readonly PARAM_LABEL: Readonly<Record<string, string>> = {
+    regimen: 'Régimen',
+    baseReconocida: 'Base reconocida (S/)',
+    uit: 'UIT (S/)',
+    anioFiscal: 'Año fiscal',
+    totalIngresos: 'Total ingresos (S/)',
+    totalDescuentos: 'Total descuentos (S/)',
+    tributoSunat: 'Tributo SUNAT',
+    baseImponible: 'Base imponible (S/)',
+    baseAfecta: 'Base afecta (S/)',
+    baseInafecta: 'Base inafecta (S/)',
+    tasa: 'Tasa',
+    suspensionVigente: 'Suspensión vigente',
+    nroConstancia: 'N.° constancia SUNAT',
+  };
+
+  reglaLegible(regla: string): string {
+    return Ficha360PageComponent.REGLA_LABEL[regla] ?? regla;
+  }
+
   ngOnInit(): void {
     const empIdRaw = this.route.snapshot.paramMap.get('empleadoId');
     const periodo = this.route.snapshot.paramMap.get('periodo');
@@ -154,6 +196,48 @@ export class Ficha360PageComponent implements OnInit {
     if (linea.grupo === 'INGRESO') return '+';
     if (linea.grupo === 'DESCUENTO' || linea.grupo === 'APORTE_TRABAJADOR') return '−';
     return '·';
+  }
+
+  /**
+   * Parsea el `parametrosJson` de un snapshot a pares legibles. Defensivo:
+   * si el JSON está vacío o es inválido, devuelve []. No muestra claves cuyo
+   * valor es null/'' (no aportan a la explicación).
+   */
+  parametros(snapshot: ExplicacionSnapshot): readonly SnapshotParam[] {
+    const raw = snapshot.parametrosJson;
+    if (!raw) return [];
+    let obj: Record<string, unknown>;
+    try {
+      const parsed: unknown = JSON.parse(raw);
+      if (typeof parsed !== 'object' || parsed === null) return [];
+      obj = parsed as Record<string, unknown>;
+    } catch {
+      return [];
+    }
+    const out: SnapshotParam[] = [];
+    for (const [clave, valor] of Object.entries(obj)) {
+      if (valor === null || valor === '') continue;
+      out.push({
+        etiqueta: Ficha360PageComponent.PARAM_LABEL[clave] ?? clave,
+        valor: this.valorLegible(valor),
+      });
+    }
+    return out;
+  }
+
+  /** Identidad para `track` en el @for de snapshots. */
+  trackSnapshot(_index: number, snapshot: ExplicacionSnapshot): string {
+    return snapshot.regla;
+  }
+
+  trackParam(_index: number, param: SnapshotParam): string {
+    return param.etiqueta;
+  }
+
+  private valorLegible(valor: unknown): string {
+    if (typeof valor === 'boolean') return valor ? 'Sí' : 'No';
+    if (typeof valor === 'number') return this.fmt(valor);
+    return String(valor);
   }
 
   private cargar(empleadoId: number, periodo: string): void {

@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { NuevaPapeletaDialog } from './nueva-papeleta-dialog';
+import { NuevaPapeletaDialogComponent } from './nueva-papeleta-dialog';
 
 describe('NuevaPapeletaDialog', () => {
-  let component: NuevaPapeletaDialog;
-  let fixture: ComponentFixture<NuevaPapeletaDialog>;
+  let component: NuevaPapeletaDialogComponent;
+  let fixture: ComponentFixture<NuevaPapeletaDialogComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [NuevaPapeletaDialog]
+      imports: [NuevaPapeletaDialogComponent]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(NuevaPapeletaDialog);
+    fixture = TestBed.createComponent(NuevaPapeletaDialogComponent);
     component = fixture.componentInstance;
     await fixture.whenStable();
   });

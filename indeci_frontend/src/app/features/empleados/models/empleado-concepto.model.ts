@@ -10,6 +10,15 @@ export interface EmpleadoConceptoInput {
   fechaFin?: string | null;
 }
 
+/**
+ * Mirrors `ConceptosAsignablesDto` (Java): conceptos ya filtrados por el régimen
+ * del empleado (mejora 2026-06-03). Importa el tipo del catálogo para el dropdown.
+ */
+export interface ConceptosAsignables {
+  readonly regimenLaboral: string | null;
+  readonly conceptos: readonly import('../../catalogos/models/concepto-planilla.model').ConceptoPlanillaRow[];
+}
+
 /** Mirrors `EmpleadoConceptoResponseDto` (Java). */
 export interface EmpleadoConceptoRow {
   readonly id: number;

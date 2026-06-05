@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { EnviarPapeletaDialog } from './enviar-papeleta-dialog';
+import { EnviarPapeletaDialogComponent } from './enviar-papeleta-dialog';
 
 describe('EnviarPapeletaDialog', () => {
-  let component: EnviarPapeletaDialog;
-  let fixture: ComponentFixture<EnviarPapeletaDialog>;
+  let component: EnviarPapeletaDialogComponent;
+  let fixture: ComponentFixture<EnviarPapeletaDialogComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [EnviarPapeletaDialog]
+      imports: [EnviarPapeletaDialogComponent]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(EnviarPapeletaDialog);
+    fixture = TestBed.createComponent(EnviarPapeletaDialogComponent);
     component = fixture.componentInstance;
     await fixture.whenStable();
   });

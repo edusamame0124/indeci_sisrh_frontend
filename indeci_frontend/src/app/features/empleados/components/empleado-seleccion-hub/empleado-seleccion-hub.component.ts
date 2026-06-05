@@ -30,6 +30,12 @@ export interface empleadosHubRouteData {
   readonly subtitle: string;
   /** URL segment after `/empleados/`, ej. `cuentas-bancarias` */
   readonly segment: string;
+  /**
+   * Opt-in: muestra la columna "Régimen" (FASE1 — útil en pantallas tributarias
+   * como suspensión de 4ta para identificar CAS). Por defecto false → los demás
+   * módulos no se ven afectados.
+   */
+  readonly showRegimen?: boolean;
 }
 
 @Component({
@@ -132,6 +138,16 @@ export interface empleadosHubRouteData {
                 <th mat-header-cell *matHeaderCellDef scope="col">Código interno</th>
                 <td mat-cell *matCellDef="let row">{{ row.codigoInterno ?? '—' }}</td>
               </ng-container>
+              <ng-container matColumnDef="regimen">
+                <th mat-header-cell *matHeaderCellDef scope="col">Régimen</th>
+                <td mat-cell *matCellDef="let row">
+                  @if (row.regimenLaboral) {
+                    <span class="regimen-badge">{{ row.regimenLaboral }}</span>
+                  } @else {
+                    —
+                  }
+                </td>
+              </ng-container>
               <ng-container matColumnDef="acciones">
                 <th mat-header-cell *matHeaderCellDef scope="col">Acciones</th>
                 <td mat-cell *matCellDef="let row">
@@ -151,8 +167,8 @@ export interface empleadosHubRouteData {
                   </a>
                 </td>
               </ng-container>
-              <tr mat-header-row *matHeaderRowDef="columns"></tr>
-              <tr mat-row *matRowDef="let row; columns: columns"></tr>
+              <tr mat-header-row *matHeaderRowDef="displayedColumns()"></tr>
+              <tr mat-row *matRowDef="let row; columns: displayedColumns()"></tr>
             </table>
             </div>
             <div class="pager-wrap">
@@ -176,6 +192,15 @@ export interface empleadosHubRouteData {
       font-weight: 600;
       color: var(--sisrh-color-primary, #0f172a);
     }
+    .regimen-badge {
+      display: inline-block;
+      padding: 0.1rem 0.5rem;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      background: #e8f0fe;
+      color: #1967d2;
+    }
     :host ::ng-deep .hub-table .hub-col-dni {
       white-space: nowrap;
     }
@@ -197,8 +222,15 @@ export class EmpleadoSeleccionHubComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly errors = inject(ErrorMessageService);
 
-  readonly columns = ['nombreCompleto', 'dni', 'codigoInterno', 'acciones'] as const;
   readonly pageSizeOptions = [10, 20, 50] as const;
+
+  /** Columnas mostradas; "régimen" solo si la ruta lo habilita (opt-in). */
+  readonly displayedColumns = computed<readonly string[]>(() => {
+    const cols = ['nombreCompleto', 'dni', 'codigoInterno'];
+    if (this.hub().showRegimen) cols.push('regimen');
+    cols.push('acciones');
+    return cols;
+  });
 
   readonly hub = toSignal(
     this.route.data.pipe(map((d) => d['empleadosHub'] as empleadosHubRouteData)),
@@ -207,7 +239,7 @@ export class EmpleadoSeleccionHubComponent {
         title: 'Selección',
         subtitle: '',
         segment: 'personas',
-      },
+      } as empleadosHubRouteData,
     },
   );
 
@@ -224,7 +256,7 @@ export class EmpleadoSeleccionHubComponent {
     rows.sort((a, b) => a.nombreCompleto.localeCompare(b.nombreCompleto, 'es-PE'));
     if (!q) return rows;
     return rows.filter((p) => {
-      const blob = `${p.nombreCompleto} ${p.dni} ${p.codigoInterno ?? ''}`.toLowerCase();
+      const blob = `${p.nombreCompleto} ${p.dni} ${p.codigoInterno ?? ''} ${p.regimenLaboral ?? ''}`.toLowerCase();
       return blob.includes(q);
     });
   });

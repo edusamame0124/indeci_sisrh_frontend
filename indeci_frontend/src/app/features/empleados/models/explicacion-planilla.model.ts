@@ -52,6 +52,25 @@ export interface ExplicacionTotales {
   readonly estadoAirhsp: string | null;
 }
 
+/**
+ * FASE 2 — Snapshot de trazabilidad ("¿cómo se obtuvo S/ X?").
+ *
+ * Espejo de `ExplicacionSnapshotDto`. El `parametrosJson` llega como texto
+ * (objeto JSON serializado); la UI lo parsea para mostrar pares clave/valor.
+ */
+export interface ExplicacionSnapshot {
+  /** 'GENERAL' | 'IR4TA_CAS' | 'IR5TA' | 'SUBSIDIO'. */
+  readonly regla: string;
+  readonly baseCalculo: number | null;
+  readonly resultado: number | null;
+  /** Fórmula legible: "(1800.00) × 0.08 = 144.00". */
+  readonly formula: string | null;
+  /** Versión de parámetros usados (típicamente el año fiscal). */
+  readonly versionParametros: string | null;
+  /** Payload JSON (texto) con los parámetros específicos de la regla. */
+  readonly parametrosJson: string | null;
+}
+
 /** Respuesta completa del endpoint `/explicacion/{periodo}`. */
 export interface ExplicacionPlanilla {
   readonly aplica: boolean;
@@ -60,4 +79,6 @@ export interface ExplicacionPlanilla {
   readonly cabecera: ExplicacionCabecera | null;
   readonly totales: ExplicacionTotales | null;
   readonly lineas: readonly ExplicacionLinea[];
+  /** FASE 2 — Snapshots de trazabilidad del cálculo (puede venir vacío). */
+  readonly snapshots: readonly ExplicacionSnapshot[];
 }

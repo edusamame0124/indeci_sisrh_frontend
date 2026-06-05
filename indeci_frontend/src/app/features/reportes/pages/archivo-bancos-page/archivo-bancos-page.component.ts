@@ -221,7 +221,7 @@ export class ArchivoBancosPageComponent implements OnInit {
         const mapa = new Map<number, EmpleadoInfo>();
         for (const p of personas) {
           if (p.empleadoId != null) {
-            mapa.set(p.empleadoId, { nombre: p.nombreCompleto, dni: p.dni });
+            mapa.set(p.empleadoId, { nombre: p.nombreCompleto, dni: p.dni ?? '' });
           }
         }
         this.empleadoInfo.set(mapa);

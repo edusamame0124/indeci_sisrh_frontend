@@ -28,6 +28,8 @@ import { PeriodoPlanillaApiService } from '../../services/periodo-planilla-api.s
 import { GeneradorPlanillaApiService } from '../../services/generador-planilla-api.service';
 import { ErrorMessageService } from '../../../../core/services/error-message.service';
 import { isErrorResponse } from '../../../../core/models/error-response.model';
+import { ValidacionPreflightApiService } from '../../services/validacion-preflight-api.service';
+import type { ValidacionHallazgoRow } from '../../models/validacion-hallazgo.model';
 import type { PersonaEmpleado } from '../../../empleados/models/persona-empleado.model';
 import type { PeriodoPlanillaRow } from '../../models/periodo-planilla.model';
 import type { ResumenPlanilla } from '../../models/resumen-planilla.model';
@@ -70,6 +72,7 @@ export class GeneracionIndividualPageComponent implements OnInit {
   private readonly personaApi = inject(PersonaApiService);
   private readonly periodoApi = inject(PeriodoPlanillaApiService);
   private readonly generadorApi = inject(GeneradorPlanillaApiService);
+  private readonly preflightApi = inject(ValidacionPreflightApiService);
   private readonly dialogs = inject(MatDialog);
   private readonly snack = inject(MatSnackBar);
   private readonly errors = inject(ErrorMessageService);
@@ -86,6 +89,15 @@ export class GeneracionIndividualPageComponent implements OnInit {
   readonly resumen = signal<ResumenPlanilla | null>(null);
   /** true = el resumen mostrado proviene de una planilla ya guardada en BD. */
   readonly yaExistia = signal(false);
+  /** Hallazgos del preflight filtrados para el empleado seleccionado (no bloquean). */
+  readonly hallazgosEmpleado = signal<readonly ValidacionHallazgoRow[]>([]);
+  readonly cargandoPreflight = signal(false);
+  readonly severidadMaxima = computed(() => {
+    const h = this.hallazgosEmpleado();
+    if (h.some((x) => x.severidad === 'BLOQUEO')) return 'bloqueo';
+    if (h.some((x) => x.severidad === 'ALERTA')) return 'alerta';
+    return 'info';
+  });
 
   readonly periodosAbiertos = computed(() =>
     this.periodos().filter((p) => p.estado === 'ABIERTO'),
@@ -119,6 +131,12 @@ export class GeneracionIndividualPageComponent implements OnInit {
     );
   });
 
+  iconoSeveridad(severidad: string): string {
+    if (severidad === 'BLOQUEO') return 'error';
+    if (severidad === 'ALERTA') return 'warning_amber';
+    return 'info';
+  }
+
   fmtMonto(value: number | null | undefined): string {
     return new Intl.NumberFormat('es-PE', {
       minimumFractionDigits: 2,
@@ -138,6 +156,7 @@ export class GeneracionIndividualPageComponent implements OnInit {
             this.resumen.set(null);
             this.fase.set('idle');
             this.yaExistia.set(false);
+            this.hallazgosEmpleado.set([]);
           }
         }
       });
@@ -157,12 +176,14 @@ export class GeneracionIndividualPageComponent implements OnInit {
     if (persona && persona.empleadoId != null && persona.empleadoId > 0) {
       this.empleadoSeleccionado.set(persona);
       this.refrescarResumenExistente();
+      this.verificarPreflight();
     }
   }
 
   onPeriodoChange(periodo: string): void {
     this.periodoSeleccionado.set(periodo);
     this.refrescarResumenExistente();
+    this.verificarPreflight();
   }
 
   /**
@@ -279,6 +300,28 @@ export class GeneracionIndividualPageComponent implements OnInit {
       error: (err: HttpErrorResponse) => {
         this.onHttpSnack(err);
         checkReady();
+      },
+    });
+  }
+
+  private verificarPreflight(): void {
+    const emp = this.empleadoSeleccionado();
+    const periodo = this.periodoSeleccionado();
+    if (!emp || emp.empleadoId == null || emp.empleadoId < 1 || !periodo) {
+      this.hallazgosEmpleado.set([]);
+      return;
+    }
+    const empId = emp.empleadoId;
+    this.cargandoPreflight.set(true);
+    this.hallazgosEmpleado.set([]);
+    this.preflightApi.preflight(periodo).subscribe({
+      next: (res) => {
+        this.hallazgosEmpleado.set(res.hallazgos.filter((h) => h.empleadoId === empId));
+        this.cargandoPreflight.set(false);
+      },
+      error: () => {
+        this.hallazgosEmpleado.set([]);
+        this.cargandoPreflight.set(false);
       },
     });
   }

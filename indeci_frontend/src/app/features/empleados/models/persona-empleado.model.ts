@@ -1,11 +1,35 @@
+/**
+ * Proyección ligera para listados (GET /api/rrhh/persona y /persona/page).
+ * Solo los campos que necesitan la tabla y los hubs de selección.
+ */
+export interface PersonaResumen {
+  readonly id: number;
+  readonly empleadoId?: number | null;
+  readonly nombreCompleto: string;
+  readonly dni?: string | null;
+  readonly codigoInterno?: string | null;
+  readonly estado?: string | null;
+  readonly regimenLaboral?: string | null;
+}
+
+/** Respuesta paginada de GET /api/rrhh/persona/page */
+export interface PersonaPage {
+  readonly content: readonly PersonaResumen[];
+  readonly totalElements: number;
+  readonly totalPages: number;
+  readonly pageNumber: number;
+  readonly pageSize: number;
+}
+
 /** Aligned with backend `PersonaEmpleadoResponseDto` (may include empleado nullable fields). */
 export interface PersonaEmpleado {
   readonly id: number;
   /** Backend `empleadoId`; required for banco/pension APIs. */
   readonly empleadoId?: number | null;
   readonly nombreCompleto: string;
-  readonly dni: string;
-  readonly email: string;
+  readonly dni?: string | null;
+  readonly ruc?: string | null;
+  readonly email?: string | null;
   readonly telefono?: string | null;
   readonly direccion?: string | null;
   readonly distritoId?: string | null;
@@ -22,12 +46,15 @@ export interface PersonaEmpleado {
   readonly profesion?: string | null;
   readonly gradoAcademicoId?: number | null;
   readonly gradoAcademico?: string | null;
+  /** Código del régimen laboral vigente (CAS, 728, 276, SERVIR). FASE1. */
+  readonly regimenLaboral?: string | null;
 }
 
 /** Body POST/PUT alineado a `PersonaEmpleadoDto` (camelCase). */
 export interface PersonaEmpleadoInput {
   nombreCompleto: string;
   dni: string;
+  ruc?: string;
   email: string;
   telefono: string;
   direccion: string;

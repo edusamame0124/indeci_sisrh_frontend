@@ -28,8 +28,8 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
-import { ConceptoPlanillaApiService } from '../../../catalogos/services/concepto-planilla-api.service';
 import type { ConceptoPlanillaRow } from '../../../catalogos/models/concepto-planilla.model';
+import { EmpleadoConceptoApiService } from '../../services/empleado-concepto-api.service';
 import type { EmpleadoConceptoInput, EmpleadoConceptoRow } from '../../models/empleado-concepto.model';
 import { EstimacionNetoApiService } from '../../services/estimacion-neto-api.service';
 import type { EstimacionNetoResult } from '../../models/estimacion-neto.model';
@@ -72,12 +72,25 @@ const MEF_AUTOCALCULADOS: ReadonlySet<string> = new Set([
   '05101', '06001', '06002', '05309', '05401', '05402',
 ]);
 
+/**
+ * Conceptos de remuneración base (mejora 2026-06-03): el motor los calcula desde
+ * el sueldo básico de Configuración de planilla → NO se asignan a mano. El backend
+ * ya los excluye de `asignables`; esto es defensa en profundidad en el front.
+ * CAS=00501, 728=00301, 276=00102(+00101 legacy); SERVIR L001–L004 (RD0111).
+ */
+const MEF_BASE_REMUNERATIVA: ReadonlySet<string> = new Set([
+  '00101', '00102', '00301', '00501', 'L001', 'L002', 'L003', 'L004',
+]);
+
 /** Un concepto lo calcula el motor → no debe ofrecerse para asignación manual. */
 function esCalculadoPorMotor(c: ConceptoPlanillaRow): boolean {
   if (c.tipoConcepto === 'APORTE_TRABAJADOR' || c.tipoConcepto === 'APORTE_EMPLEADOR') {
     return true;
   }
-  return c.codigoMef != null && MEF_AUTOCALCULADOS.has(c.codigoMef);
+  return (
+    c.codigoMef != null &&
+    (MEF_AUTOCALCULADOS.has(c.codigoMef) || MEF_BASE_REMUNERATIVA.has(c.codigoMef))
+  );
 }
 
 /** Al menos un valor: monto o porcentaje (Spec 013 / C1 — fórmula eliminada). */
@@ -99,9 +112,13 @@ export function atLeastOneConceptoValor(): ValidatorFn {
 export function vigenciaRangoValido(): ValidatorFn {
   return (control: AbstractControl): ValidationErrors | null => {
     const g = control as FormGroup;
-    const ini = g.get('fechaInicio')?.value as string | undefined;
-    const fin = g.get('fechaFin')?.value as string | undefined;
-    if (!ini || !fin) return null;
+    const iniMes  = g.get('fechaInicioMes')?.value  as number | null;
+    const iniAnio = g.get('fechaInicioAnio')?.value as number | null;
+    const finMes  = g.get('fechaFinMes')?.value     as number | null;
+    const finAnio = g.get('fechaFinAnio')?.value    as number | null;
+    if (!iniMes || !iniAnio || !finMes || !finAnio) return null;
+    const ini = `${iniAnio}-${String(iniMes).padStart(2, '0')}`;
+    const fin = `${finAnio}-${String(finMes).padStart(2, '0')}`;
     return fin < ini ? { vigenciaInvalida: true } : null;
   };
 }
@@ -113,16 +130,32 @@ function toNullableNumber(value: unknown): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
-/** "YYYY-MM" (input type=month) → "YYYY-MM-01" ISO; vacío → null. */
-function mesAIsoDate(value: string | null | undefined): string | null {
-  if (value == null || value.trim() === '') return null;
-  return `${value}-01`;
+/** Mes (1-12) + Año → "YYYY-MM-01" ISO; si falta alguno → null. */
+function mesAnioAIsoDate(mes: number | null, anio: number | null): string | null {
+  if (!mes || !anio) return null;
+  return `${anio}-${String(mes).padStart(2, '0')}-01`;
 }
 
-/** ISO `YYYY-MM-DD` → `YYYY-MM` para input type=month; vacío → ''. */
-function isoDateAMes(value: string | null | undefined): string {
-  if (value == null || value.trim() === '') return '';
-  return value.slice(0, 7);
+/** ISO `YYYY-MM-DD` → { mes: number, anio: number } | null. */
+function isoDateAMesAnio(value: string | null | undefined): { mes: number; anio: number } | null {
+  if (value == null || value.trim() === '') return null;
+  const [anioStr, mesStr] = value.slice(0, 7).split('-');
+  const mes = parseInt(mesStr, 10);
+  const anio = parseInt(anioStr, 10);
+  return Number.isFinite(mes) && Number.isFinite(anio) ? { mes, anio } : null;
+}
+
+export const MESES_NOMBRES: readonly string[] = [
+  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+];
+
+/** Genera rango de años: 5 años atrás hasta 5 años adelante desde el actual. */
+function generarAnios(): readonly number[] {
+  const actual = new Date().getFullYear();
+  const anios: number[] = [];
+  for (let y = actual - 5; y <= actual + 5; y++) anios.push(y);
+  return anios;
 }
 
 @Component({
@@ -147,12 +180,14 @@ export class EmpleadoConceptoFormDialogComponent implements OnInit {
     MatDialogRef<EmpleadoConceptoFormDialogComponent, EmpleadoConceptoInput | undefined>,
   );
   private readonly fb = inject(FormBuilder);
-  private readonly conceptosApi = inject(ConceptoPlanillaApiService);
+  private readonly empleadoConceptoApi = inject(EmpleadoConceptoApiService);
   private readonly estimacionApi = inject(EstimacionNetoApiService);
 
   readonly catalogLoading = signal(true);
   readonly catalogError = signal(false);
   readonly opcionesConcepto = signal<readonly ConceptoPlanillaRow[]>([]);
+  /** Régimen del empleado (de la planilla). null = sin planilla → no se puede filtrar. */
+  readonly regimen = signal<string | null>(null);
   readonly esEdicion = computed(() => this.data.registro != null);
 
   /** Preview de neto (Spec 013 / C1). null = aún sin datos suficientes. */
@@ -208,6 +243,9 @@ export class EmpleadoConceptoFormDialogComponent implements OnInit {
     ].filter((g) => g.items.length > 0);
   });
 
+  readonly meses = MESES_NOMBRES;
+  readonly anios = generarAnios();
+
   readonly form = this.fb.group(
     {
       conceptoPlanillaId: this.fb.control<number | null>(null, {
@@ -215,10 +253,12 @@ export class EmpleadoConceptoFormDialogComponent implements OnInit {
       }),
       monto: this.fb.control<number | null>(null),
       porcentaje: this.fb.control<number | null>(null),
-      fechaInicio: this.fb.nonNullable.control('', {
-        validators: [Validators.required],
-      }),
-      fechaFin: this.fb.nonNullable.control(''),
+      // Vigencia desde (requerida)
+      fechaInicioMes:  this.fb.control<number | null>(null, { validators: [Validators.required] }),
+      fechaInicioAnio: this.fb.control<number | null>(null, { validators: [Validators.required] }),
+      // Vigencia hasta (opcional)
+      fechaFinMes:  this.fb.control<number | null>(null),
+      fechaFinAnio: this.fb.control<number | null>(null),
     },
     { validators: [atLeastOneConceptoValor(), vigenciaRangoValido()] },
   );
@@ -280,9 +320,10 @@ export class EmpleadoConceptoFormDialogComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.conceptosApi.listar().subscribe({
-      next: (rows) => {
-        const active = rows.filter((r) => r.activo === 1);
+    this.empleadoConceptoApi.listarAsignables(this.data.empleadoId).subscribe({
+      next: (resp) => {
+        this.regimen.set(resp.regimenLaboral);
+        const active = resp.conceptos.filter((r) => r.activo === 1);
         const skip = this.data.conceptosYaAsignadosIds;
         const registro = this.data.registro;
         const filtered = skip
@@ -295,12 +336,16 @@ export class EmpleadoConceptoFormDialogComponent implements OnInit {
         this.opcionesConcepto.set(filtered);
         this.catalogLoading.set(false);
         if (registro != null) {
+          const ini = isoDateAMesAnio(registro.fechaInicio);
+          const fin = isoDateAMesAnio(registro.fechaFin);
           this.form.patchValue({
             conceptoPlanillaId: registro.conceptoPlanillaId,
             monto: registro.monto,
             porcentaje: registro.porcentaje,
-            fechaInicio: isoDateAMes(registro.fechaInicio),
-            fechaFin: isoDateAMes(registro.fechaFin),
+            fechaInicioMes:  ini?.mes  ?? null,
+            fechaInicioAnio: ini?.anio ?? null,
+            fechaFinMes:  fin?.mes  ?? null,
+            fechaFinAnio: fin?.anio ?? null,
           });
           this.form.controls.conceptoPlanillaId.disable({ emitEvent: false });
         }
@@ -337,9 +382,9 @@ export class EmpleadoConceptoFormDialogComponent implements OnInit {
       conceptoPlanillaId: v.conceptoPlanillaId as number,
       monto: toNullableNumber(v.monto),
       porcentaje: toNullableNumber(v.porcentaje),
-      formula: null, // campo eliminado del modal (Spec 013 / C1)
-      fechaInicio: mesAIsoDate(v.fechaInicio),
-      fechaFin: mesAIsoDate(v.fechaFin),
+      formula: null,
+      fechaInicio: mesAnioAIsoDate(v.fechaInicioMes, v.fechaInicioAnio),
+      fechaFin:    mesAnioAIsoDate(v.fechaFinMes,    v.fechaFinAnio),
     };
     this.dialogRef.close(body);
   }

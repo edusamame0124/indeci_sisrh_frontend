@@ -54,7 +54,7 @@ import type { PersonaEmpleado } from '../../models/persona-empleado.model';
       </nav>
 
       <div class="actions">
-        <a mat-button routerLink="/empleados/planilla">Volver</a>
+        <a mat-button routerLink="/empleados/personas">Volver</a>
         <button
           mat-flat-button
           color="primary"
@@ -130,6 +130,18 @@ import type { PersonaEmpleado } from '../../models/persona-empleado.model';
                 <ng-container matColumnDef="numHijos">
                   <th mat-header-cell *matHeaderCellDef scope="col">N° hijos</th>
                   <td mat-cell *matCellDef="let row" class="sisrh-tabular">{{ row.numHijos ?? '—' }}</td>
+                </ng-container>
+                <ng-container matColumnDef="regimen">
+                  <th mat-header-cell *matHeaderCellDef scope="col">Régimen</th>
+                  <td mat-cell *matCellDef="let row">{{ row.regimenLaboral ?? '—' }}</td>
+                </ng-container>
+                <ng-container matColumnDef="tipoContrato">
+                  <th mat-header-cell *matHeaderCellDef scope="col">Tipo contrato</th>
+                  <td mat-cell *matCellDef="let row">{{ row.tipoContrato ?? '—' }}</td>
+                </ng-container>
+                <ng-container matColumnDef="condicion">
+                  <th mat-header-cell *matHeaderCellDef scope="col">Condición</th>
+                  <td mat-cell *matCellDef="let row">{{ row.condicionLaboral ?? '—' }}</td>
                 </ng-container>
                 <ng-container matColumnDef="acciones">
                   <th mat-header-cell *matHeaderCellDef scope="col">Acciones</th>
@@ -233,6 +245,9 @@ export class EmpleadoPlanillaListPageComponent implements OnInit {
   private readonly errors = inject(ErrorMessageService);
 
   readonly columns = [
+    'regimen',
+    'tipoContrato',
+    'condicion',
     'sueldoBasico',
     'movilidad',
     'alimentacion',

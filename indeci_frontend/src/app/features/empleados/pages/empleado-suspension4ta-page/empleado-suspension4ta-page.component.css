@@ -1,0 +1,115 @@
+.page-card {
+  max-width: 980px;
+  margin: 1rem auto;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  padding: 2rem 0;
+}
+
+.aviso {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.65rem 0.9rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  line-height: 1.35;
+  margin: 0.75rem 0 0.25rem;
+}
+
+.aviso mat-icon {
+  flex: 0 0 auto;
+}
+
+.aviso--warn {
+  background: #fff4e5;
+  color: #8a5300;
+  border: 1px solid #f0c987;
+}
+
+.aviso--info {
+  background: #e8f0fe;
+  color: #1967d2;
+  border: 1px solid #b6cdf7;
+}
+
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.5rem 0 1rem;
+}
+
+.form-title {
+  margin: 0.25rem 0 0.75rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.span-2 {
+  grid-column: 1 / -1;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.badge--ok {
+  background: #e6f4ea;
+  color: #1e7e34;
+}
+
+.badge--warn {
+  background: #fdecea;
+  color: #b71c1c;
+}
+
+.badge--info {
+  background: #e8f0fe;
+  color: #1967d2;
+}
+
+.badge--muted {
+  background: #eceff1;
+  color: #546e7a;
+}
+
+.nota-referencia {
+  display: block;
+  padding: 0.75rem 1rem 1rem;
+  font-size: 0.72rem;
+  color: #607d8b;
+  line-height: 1.35;
+}
+
+@media (max-width: 640px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+}

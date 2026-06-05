@@ -24,7 +24,9 @@ import { sisrhConfirmDialogConfig } from '../../../../core/config/sisrh-dialog.c
 import { ConfirmDialogComponent } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { PeriodoPlanillaApiService } from '../../services/periodo-planilla-api.service';
 import { MovimientoPlanillaApiService } from '../../services/movimiento-planilla-api.service';
+import { ExportPlanillaApiService } from '../../services/export-planilla-api.service';
 import { ErrorMessageService } from '../../../../core/services/error-message.service';
+import type { ExportHistorialRow } from '../../models/export-historial.model';
 import { isErrorResponse } from '../../../../core/models/error-response.model';
 import { PeriodoEstadoBadgeComponent } from '../../components/periodo-estado-badge/periodo-estado-badge.component';
 import type { PeriodoPlanillaRow } from '../../models/periodo-planilla.model';
@@ -69,12 +71,15 @@ export type FiltroSemaforo = 'TODOS' | 'BIEN' | 'NETO_NO_VA' | 'SIN_VALIDAR';
 export class MovimientosPageComponent implements OnInit {
   private readonly periodoApi = inject(PeriodoPlanillaApiService);
   private readonly movimientoApi = inject(MovimientoPlanillaApiService);
+  private readonly exportApi = inject(ExportPlanillaApiService);
   private readonly dialogs = inject(MatDialog);
   private readonly snack = inject(MatSnackBar);
   private readonly errors = inject(ErrorMessageService);
 
   readonly columns = [
-    'empleadoId',
+    'empleado',
+    'empleadoDni',
+    'regimenLaboral',
     'totalIngresos',
     'totalDescuentos',
     'netoPagar',
@@ -94,6 +99,10 @@ export class MovimientosPageComponent implements OnInit {
   readonly pageIndex = signal(0);
   readonly pageSize = signal(10);
   readonly filtroSemaforo = signal<FiltroSemaforo>('TODOS');
+  readonly descargando = signal(false);
+  readonly descargandoCas = signal(false);
+  readonly historial = signal<readonly ExportHistorialRow[]>([]);
+  readonly historialVisible = signal(false);
 
   readonly periodoActivo = computed(() => {
     const sel = this.periodoSeleccionado();
@@ -148,6 +157,21 @@ export class MovimientosPageComponent implements OnInit {
     }).format(value ?? 0);
   }
 
+  empleadoNombre(row: MovimientoPlanillaRow): string {
+    return row.empleadoNombre?.trim() || `Empleado #${row.empleadoId}`;
+  }
+
+  empleadoDni(row: MovimientoPlanillaRow): string {
+    return row.empleadoDni?.trim() || 'Sin DNI';
+  }
+
+  regimenLaboral(row: MovimientoPlanillaRow): string {
+    const codigo = row.regimenLaboralCodigo?.trim();
+    const nombre = row.regimenLaboralNombre?.trim();
+    if (codigo && nombre) return `${codigo} - ${nombre}`;
+    return codigo || nombre || 'Sin régimen';
+  }
+
   /** Estados distintos al actual (para el menú de transición). */
   estadosOtros(row: MovimientoPlanillaRow): readonly EstadoMovimiento[] {
     return this.estadosDisponibles.filter((e) => e !== row.estado);
@@ -161,6 +185,69 @@ export class MovimientosPageComponent implements OnInit {
     this.periodoSeleccionado.set(periodo);
     this.pageIndex.set(0);
     this.cargarMovimientos(periodo);
+    this.cargarHistorial(periodo);
+  }
+
+  descargarXlsx(): void {
+    const periodo = this.periodoSeleccionado();
+    if (!periodo || this.descargando()) return;
+    this.descargando.set(true);
+    this.exportApi.descargarXlsx(periodo).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `planilla_consolidada_${periodo}.xlsx`;
+        a.click();
+        URL.revokeObjectURL(url);
+        this.descargando.set(false);
+        this.snack.open('XLSX descargado correctamente.', 'Cerrar', { duration: 4000 });
+        this.cargarHistorial(periodo);
+      },
+      error: () => {
+        this.descargando.set(false);
+        this.snack.open('Error al generar el archivo XLSX.', 'Cerrar', { duration: 6000 });
+      },
+    });
+  }
+
+  /** P0 — Descarga la Planilla CAS Consolidada (19 bloques). */
+  descargarCasConsolidada(): void {
+    const periodo = this.periodoSeleccionado();
+    if (!periodo || this.descargandoCas()) return;
+    this.descargandoCas.set(true);
+    this.exportApi.descargarCasConsolidada(periodo).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `planilla-cas-consolidada-${periodo}.xlsx`;
+        a.click();
+        URL.revokeObjectURL(url);
+        this.descargandoCas.set(false);
+        this.snack.open('Planilla CAS Consolidada descargada.', 'Cerrar', { duration: 4000 });
+        this.cargarHistorial(periodo);
+      },
+      error: () => {
+        this.descargandoCas.set(false);
+        this.snack.open(
+          'No se pudo generar la Planilla CAS Consolidada. Verifica tus permisos.',
+          'Cerrar',
+          { duration: 6000 },
+        );
+      },
+    });
+  }
+
+  toggleHistorial(): void {
+    this.historialVisible.set(!this.historialVisible());
+  }
+
+  fmtFecha(iso: string): string {
+    return new Date(iso).toLocaleString('es-PE', {
+      day: '2-digit', month: '2-digit', year: 'numeric',
+      hour: '2-digit', minute: '2-digit',
+    });
   }
 
   onPage(ev: PageEvent): void {
@@ -184,7 +271,7 @@ export class MovimientosPageComponent implements OnInit {
       ConfirmDialogComponent,
       sisrhConfirmDialogConfig({
         title: 'Eliminar movimiento',
-        message: `Se eliminará el movimiento del empleado #${row.empleadoId} en el periodo ${row.periodo}. ¿Continuar?`,
+        message: `Se eliminará el movimiento de ${this.empleadoNombre(row)} en el periodo ${row.periodo}. ¿Continuar?`,
         confirmLabel: 'Eliminar',
         cancelLabel: 'Cancelar',
         severity: 'danger',
@@ -217,6 +304,7 @@ export class MovimientosPageComponent implements OnInit {
           this.periodoSeleccionado.set(inicial.periodo);
           this.loading.set(false);
           this.cargarMovimientos(inicial.periodo);
+          this.cargarHistorial(inicial.periodo);
         } else {
           this.loading.set(false);
         }
@@ -225,6 +313,13 @@ export class MovimientosPageComponent implements OnInit {
         this.loading.set(false);
         this.onHttpSnack(err);
       },
+    });
+  }
+
+  private cargarHistorial(periodo: string): void {
+    this.exportApi.historial(periodo).subscribe({
+      next: (rows) => this.historial.set(rows),
+      error: () => this.historial.set([]),
     });
   }
 

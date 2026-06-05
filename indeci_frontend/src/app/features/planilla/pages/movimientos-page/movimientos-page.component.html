@@ -42,7 +42,83 @@
               <app-periodo-estado-badge [estado]="periodoActivo()!.estado" />
             </div>
           }
+          <!-- B1 — Botón export XLSX -->
+          <div class="header-row__export">
+            <button
+              mat-stroked-button
+              color="primary"
+              type="button"
+              [disabled]="descargando() || rows().length === 0"
+              (click)="descargarXlsx()"
+              aria-label="Descargar planilla consolidada en Excel"
+            >
+              @if (descargando()) {
+                <mat-progress-spinner diameter="16" mode="indeterminate" />
+              } @else {
+                <mat-icon fontIcon="table_view" aria-hidden="true" />
+              }
+              {{ descargando() ? 'Generando…' : 'Descargar XLSX' }}
+            </button>
+            <!-- P0 — Planilla CAS Consolidada (19 bloques) -->
+            <button
+              mat-flat-button
+              color="primary"
+              type="button"
+              [disabled]="descargandoCas() || rows().length === 0"
+              (click)="descargarCasConsolidada()"
+              matTooltip="Exporta los 19 bloques de la Planilla CAS (datos personales, banco, pensión, aportes, validaciones)"
+              aria-label="Descargar Planilla CAS Consolidada"
+            >
+              @if (descargandoCas()) {
+                <mat-progress-spinner diameter="16" mode="indeterminate" />
+              } @else {
+                <mat-icon fontIcon="description" aria-hidden="true" />
+              }
+              {{ descargandoCas() ? 'Generando…' : 'Planilla CAS Consolidada' }}
+            </button>
+            @if (historial().length > 0) {
+              <button
+                mat-icon-button
+                type="button"
+                [matTooltip]="historialVisible() ? 'Ocultar historial' : 'Ver historial de exports (' + historial().length + ')'"
+                (click)="toggleHistorial()"
+                aria-label="Historial de exports"
+              >
+                <mat-icon fontIcon="history" aria-hidden="true" />
+              </button>
+            }
+          </div>
         </div>
+
+        <!-- Historial de exports XLSX -->
+        @if (historialVisible() && historial().length > 0) {
+          <div class="historial-exports" role="region" aria-label="Historial de exports">
+            <h4 class="historial-exports__titulo">
+              <mat-icon fontIcon="history" aria-hidden="true" />
+              Historial de exports del per&iacute;odo
+            </h4>
+            <table class="historial-tabla" aria-label="Exports anteriores">
+              <thead>
+                <tr>
+                  <th scope="col">Archivo</th>
+                  <th scope="col">Fecha generado</th>
+                  <th scope="col">Tama&ntilde;o</th>
+                  <th scope="col">SHA-256 (8 car.)</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (h of historial(); track h.id) {
+                  <tr>
+                    <td>{{ h.nombreArchivo }}</td>
+                    <td>{{ fmtFecha(h.fechaGenerado) }}</td>
+                    <td>{{ (h.nroLineas / 1024).toFixed(1) }} KB</td>
+                    <td class="hash">{{ h.hashSha256.slice(0, 8) }}&hellip;</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
 
         <!-- Semáforo resumen + filtro (§12.2 PANTALLA-01) -->
         @if (!tableLoading() && rows().length > 0) {
@@ -94,9 +170,22 @@
         } @else {
           <div class="sisrh-table-scroll">
             <table mat-table [dataSource]="pagedRows()" class="tbl">
-              <ng-container matColumnDef="empleadoId">
+              <ng-container matColumnDef="empleado">
                 <th mat-header-cell *matHeaderCellDef scope="col">Empleado</th>
-                <td mat-cell *matCellDef="let row" class="sisrh-tabular">#{{ row.empleadoId }}</td>
+                <td mat-cell *matCellDef="let row">
+                  <div class="empleado-cell">
+                    <strong>{{ empleadoNombre(row) }}</strong>
+                    <span>#{{ row.empleadoId }}</span>
+                  </div>
+                </td>
+              </ng-container>
+              <ng-container matColumnDef="empleadoDni">
+                <th mat-header-cell *matHeaderCellDef scope="col">DNI</th>
+                <td mat-cell *matCellDef="let row" class="sisrh-tabular">{{ empleadoDni(row) }}</td>
+              </ng-container>
+              <ng-container matColumnDef="regimenLaboral">
+                <th mat-header-cell *matHeaderCellDef scope="col">Tipo de régimen</th>
+                <td mat-cell *matCellDef="let row">{{ regimenLaboral(row) }}</td>
               </ng-container>
               <ng-container matColumnDef="totalIngresos">
                 <th mat-header-cell *matHeaderCellDef scope="col" class="num">Ingresos</th>

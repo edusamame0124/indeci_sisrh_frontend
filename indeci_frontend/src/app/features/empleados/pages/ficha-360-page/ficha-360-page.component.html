@@ -269,6 +269,50 @@
             <tr mat-row *matRowDef="let row; columns: columnasLineas"></tr>
           </table>
         </div>
+
+        <!-- ¿CÓMO SE CALCULÓ? (FASE 2 — trazabilidad / snapshot, solo lectura) -->
+        <div
+          class="ficha-calc__bloque ficha-trazas"
+          *ngIf="snapshots().length > 0"
+        >
+          <h3 class="ficha-calc__bloque-title">
+            <mat-icon class="ficha-trazas__icon" aria-hidden="true">fact_check</mat-icon>
+            ¿Cómo se calculó?
+            <small>(parámetros usados — solo lectura)</small>
+          </h3>
+
+          <article
+            class="traza-card"
+            *ngFor="let s of snapshots(); trackBy: trackSnapshot"
+          >
+            <header class="traza-card__header">
+              <span class="traza-card__regla">{{ reglaLegible(s.regla) }}</span>
+              <span class="traza-card__version" *ngIf="s.versionParametros">
+                Parámetros {{ s.versionParametros }}
+              </span>
+            </header>
+
+            <p class="traza-card__formula" *ngIf="s.formula">{{ s.formula }}</p>
+
+            <dl class="traza-card__params" *ngIf="parametros(s).length > 0">
+              <ng-container *ngFor="let p of parametros(s); trackBy: trackParam">
+                <dt>{{ p.etiqueta }}</dt>
+                <dd>{{ p.valor }}</dd>
+              </ng-container>
+            </dl>
+
+            <div class="traza-card__resultado" *ngIf="s.resultado !== null">
+              <span class="traza-card__resultado-label">Resultado</span>
+              <span class="traza-card__resultado-monto">S/ {{ fmt(s.resultado) }}</span>
+            </div>
+          </article>
+
+          <p class="ficha-trazas__nota">
+            Base normativa: D.L. 1451 (trazabilidad/auditoría). El cálculo oficial lo
+            realiza el motor en backend; este panel solo muestra los parámetros con que
+            se obtuvo cada monto y no recalcula nada.
+          </p>
+        </div>
       </section>
     </mat-tab>
 

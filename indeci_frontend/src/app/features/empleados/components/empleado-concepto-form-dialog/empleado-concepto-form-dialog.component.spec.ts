@@ -9,7 +9,7 @@ import {
   atLeastOneConceptoValor,
   vigenciaRangoValido,
 } from './empleado-concepto-form-dialog.component';
-import { ConceptoPlanillaApiService } from '../../../catalogos/services/concepto-planilla-api.service';
+import { EmpleadoConceptoApiService } from '../../services/empleado-concepto-api.service';
 import { EstimacionNetoApiService } from '../../services/estimacion-neto-api.service';
 
 describe('EmpleadoConceptoFormDialogComponent (Spec 013/C1 — modal descuento/ajuste)', () => {
@@ -52,8 +52,11 @@ describe('EmpleadoConceptoFormDialogComponent (Spec 013/C1 — modal descuento/a
         },
         { provide: MatDialogRef, useValue: { close: () => undefined } },
         {
-          provide: ConceptoPlanillaApiService,
-          useValue: { listar: () => of([conceptoActivo]) },
+          provide: EmpleadoConceptoApiService,
+          useValue: {
+            listarAsignables: () =>
+              of({ regimenLaboral: 'CAS', conceptos: [conceptoActivo] }),
+          },
         },
         { provide: EstimacionNetoApiService, useValue: estimacionApiMock },
       ],

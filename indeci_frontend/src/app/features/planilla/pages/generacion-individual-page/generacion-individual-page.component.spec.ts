@@ -107,6 +107,21 @@ describe('GeneracionIndividualPageComponent (Spec 009 / T154)', () => {
     expect(fixture.componentInstance.canGenerar()).toBe(false);
   });
 
+  it('muestra notas técnicas de Regla 50 y Pensión sin calcular en frontend', () => {
+    const fixture = build();
+    flushBoot([persona(1, 42, 'Ana')], [periodoAbierto()]);
+    fixture.detectChanges();
+
+    const text = fixture.nativeElement.textContent as string;
+    expect(text).toContain('Regla 50');
+    expect(text).toContain('base libre de disponibilidad');
+    expect(text).toContain('Subsidios CAS');
+    expect(text).toContain('PLAME 0915/0916');
+    expect(text).toContain('2073');
+    expect(text).toContain('Pensión');
+    expect(text).toContain('Solo los regímenes ONP y AFP');
+  });
+
   it('canGenerar() es true con empleado válido + periodo + fase idle', () => {
     const fixture = build();
     flushBoot([persona(1, 42, 'Ana')], [periodoAbierto()]);

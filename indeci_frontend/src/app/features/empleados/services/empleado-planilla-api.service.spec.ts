@@ -31,6 +31,12 @@ describe('EmpleadoPlanillaApiService', () => {
         activo: 1,
         descuentoBanco: 250,
         descuentoInstitucion: null,
+        regimenLaboralId: 3,
+        tipoContratoId: null,
+        condicionLaboralId: null,
+        regimenLaboral: 'CAS',
+        tipoContrato: null,
+        condicionLaboral: null,
       },
     ];
     let out: readonly EmpleadoPlanillaRow[] | undefined;
@@ -48,6 +54,7 @@ describe('EmpleadoPlanillaApiService', () => {
       empleadoId: 1,
       sueldoBasico: 3000,
       tieneAsignacionFamiliar: 0,
+      regimenLaboralId: 3,
     };
     let done = false;
     service.guardar(body).subscribe(() => {
@@ -64,6 +71,7 @@ describe('EmpleadoPlanillaApiService', () => {
     const body: EmpleadoPlanillaInput = {
       empleadoId: 1,
       sueldoBasico: 3200,
+      regimenLaboralId: 3,
     };
     let done = false;
     service.actualizar(5, body).subscribe(() => {

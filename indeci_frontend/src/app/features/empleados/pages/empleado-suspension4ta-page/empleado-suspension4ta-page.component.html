@@ -1,0 +1,177 @@
+<mat-card class="page-card">
+  <mat-card-header>
+    <mat-card-title>Suspensión de retención de 4ta categoría</mat-card-title>
+    <mat-card-subtitle>
+      @if (persona(); as p) {
+        {{ p.nombreCompleto }} — DNI {{ p.dni }}
+      } @else {
+        Datos tributarios del empleado
+      }
+    </mat-card-subtitle>
+  </mat-card-header>
+
+  <mat-card-content>
+    @if (pageLoading()) {
+      <div class="loading"><mat-spinner diameter="32"></mat-spinner></div>
+    } @else if (empleadoId() == null) {
+      <app-empty-state
+        icon="badge"
+        title="La persona no es empleado"
+        description="Registra primero al empleado para gestionar sus datos tributarios."
+      ></app-empty-state>
+    } @else {
+      @if (regimenNoCas()) {
+        <div class="aviso aviso--warn" role="alert">
+          <mat-icon>warning</mat-icon>
+          <span>
+            Este empleado es de régimen <strong>{{ regimen() }}</strong>, no CAS/D.Leg. 1057. La
+            suspensión de retención de 4.ª categoría <strong>solo aplica a CAS</strong>:
+            registrar una constancia aquí no afectará el cálculo de su planilla.
+          </span>
+        </div>
+      } @else if (regimenDesconocido()) {
+        <div class="aviso aviso--info" role="status">
+          <mat-icon>info</mat-icon>
+          <span>
+            No se pudo determinar el régimen del empleado (sin configuración de planilla
+            vigente). Verifica que sea CAS/D.Leg. 1057 antes de registrar la constancia.
+          </span>
+        </div>
+      }
+
+      <div class="toolbar">
+        <a mat-stroked-button routerLink="/empleados/personas">
+          <mat-icon>arrow_back</mat-icon> Volver
+        </a>
+        <button mat-flat-button color="primary" (click)="toggleForm()">
+          <mat-icon>{{ showForm() ? 'close' : 'add' }}</mat-icon>
+          {{ showForm() ? 'Cancelar' : 'Nueva constancia' }}
+        </button>
+      </div>
+
+      @if (showForm()) {
+        <h3 class="form-title">{{ editId() ? 'Editar constancia' : 'Nueva constancia' }}</h3>
+        <form [formGroup]="form" (ngSubmit)="guardar()" class="form-grid">
+          <mat-form-field appearance="outline">
+            <mat-label>N.° de orden/operación de la constancia SUNAT</mat-label>
+            <input
+              matInput
+              formControlName="nroConstancia"
+              inputmode="numeric"
+              maxlength="20"
+              required
+              (input)="onNroConstanciaInput($event)"
+            />
+            <mat-hint>
+              Número de Orden de la Constancia de Suspensión de 4.ª (Formulario Virtual 1609).
+            </mat-hint>
+            @if (form.controls.nroConstancia.touched && form.controls.nroConstancia.hasError('required')) {
+              <mat-error>Ingresa el número de la constancia SUNAT.</mat-error>
+            } @else if (form.controls.nroConstancia.touched && form.controls.nroConstancia.hasError('pattern')) {
+              <mat-error>Debe ser numérico (entre 4 y 20 dígitos).</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Fecha de emisión</mat-label>
+            <input matInput [matDatepicker]="dpEmi" formControlName="fechaEmision" />
+            <mat-datepicker-toggle matIconSuffix [for]="dpEmi"></mat-datepicker-toggle>
+            <mat-datepicker #dpEmi></mat-datepicker>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Vigente desde</mat-label>
+            <input matInput [matDatepicker]="dpIni" formControlName="fechaVigIni" required />
+            <mat-datepicker-toggle matIconSuffix [for]="dpIni"></mat-datepicker-toggle>
+            <mat-datepicker #dpIni></mat-datepicker>
+            @if (form.controls.fechaVigIni.touched && form.controls.fechaVigIni.invalid) {
+              <mat-error>La fecha de inicio de vigencia es obligatoria.</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Vigente hasta</mat-label>
+            <input matInput [matDatepicker]="dpFin" formControlName="fechaVigFin" />
+            <mat-datepicker-toggle matIconSuffix [for]="dpFin"></mat-datepicker-toggle>
+            <mat-datepicker #dpFin></mat-datepicker>
+            <mat-hint>Vacío = indefinida (se recomienda setear).</mat-hint>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="span-2">
+            <mat-label>Observación</mat-label>
+            <input matInput formControlName="observacion" maxlength="300" />
+          </mat-form-field>
+
+          <div class="form-actions span-2">
+            <button mat-flat-button color="primary" type="submit" [disabled]="saving()">
+              @if (saving()) {
+                <mat-spinner diameter="18"></mat-spinner>
+              } @else {
+                {{ editId() ? 'Actualizar constancia' : 'Guardar constancia' }}
+              }
+            </button>
+          </div>
+        </form>
+      }
+
+      @if (tableLoading()) {
+        <div class="loading"><mat-spinner diameter="28"></mat-spinner></div>
+      } @else if (tableLoadError()) {
+        <app-empty-state icon="error" title="No se pudo cargar" [description]="tableLoadError()!"></app-empty-state>
+      } @else if (rows().length === 0) {
+        <app-empty-state
+          icon="gavel"
+          title="Sin constancias registradas"
+          description="Este empleado no tiene constancias de suspensión de 4ta. Si no tiene, se retiene el 8% sobre la base afecta."
+        ></app-empty-state>
+      } @else {
+        <table mat-table [dataSource]="rows()" class="mat-elevation-z1 full-width">
+          <ng-container matColumnDef="nroConstancia">
+            <th mat-header-cell *matHeaderCellDef>N.° constancia</th>
+            <td mat-cell *matCellDef="let r">{{ r.nroConstancia ?? '—' }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="fechaEmision">
+            <th mat-header-cell *matHeaderCellDef>Emisión</th>
+            <td mat-cell *matCellDef="let r">{{ fmtFecha(r.fechaEmision) }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="vigencia">
+            <th mat-header-cell *matHeaderCellDef>Vigencia</th>
+            <td mat-cell *matCellDef="let r">
+              {{ fmtFecha(r.fechaVigIni) }} → {{ r.fechaVigFin ? fmtFecha(r.fechaVigFin) : 'indefinida' }}
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="estadoVigencia">
+            <th mat-header-cell *matHeaderCellDef>Estado</th>
+            <td mat-cell *matCellDef="let r">
+              <span [class]="badgeClass(r.estadoVigencia)">{{ r.estadoVigencia }}</span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="acciones">
+            <th mat-header-cell *matHeaderCellDef>Acciones</th>
+            <td mat-cell *matCellDef="let r">
+              <button mat-icon-button color="primary" (click)="editar(r)" aria-label="Editar" matTooltip="Editar">
+                <mat-icon>edit</mat-icon>
+              </button>
+              <button mat-icon-button color="warn" (click)="confirmAnular(r)" aria-label="Anular" matTooltip="Anular">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="columns"></tr>
+          <tr mat-row *matRowDef="let row; columns: columns"></tr>
+        </table>
+      }
+    }
+  </mat-card-content>
+
+  <mat-card-footer class="nota-referencia">
+    Base normativa: TUO de la Ley del Impuesto a la Renta — retención de 4.ª categoría
+    (D.Leg. 1057 CAS). Tributo SUNAT 3042. Si existe constancia vigente de suspensión,
+    el motor no retiene; en caso contrario retiene 8% sobre la base afecta &gt; inafecto.
+  </mat-card-footer>
+</mat-card>

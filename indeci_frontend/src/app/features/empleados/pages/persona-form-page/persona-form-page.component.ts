@@ -156,10 +156,10 @@ export interface PersonaFormDialogResult {
                     formControlName="dni"
                     maxlength="8"
                     inputmode="numeric"
-                    pattern="[0-9]*"
                     autocomplete="off"
+                    (input)="onDniInput($event)"
                   />
-                  <mat-hint>8 dígitos</mat-hint>
+                  <mat-hint>8 dígitos numéricos</mat-hint>
                   @if (form.controls.dni.errors?.['required']) {
                     <mat-error>Ingresa el DNI</mat-error>
                   } @else if (form.controls.dni.errors?.['pattern']) {
@@ -172,19 +172,42 @@ export interface PersonaFormDialogResult {
 
               <div class="row two">
                 <mat-form-field appearance="outline">
+                  <mat-label>RUC</mat-label>
+                  <input
+                    matInput
+                    formControlName="ruc"
+                    maxlength="12"
+                    inputmode="numeric"
+                    autocomplete="off"
+                    (input)="onRucInput($event)"
+                  />
+                  <mat-hint>12 dígitos numéricos (opcional)</mat-hint>
+                  @if (form.controls.ruc.errors?.['pattern']) {
+                    <mat-error>El RUC debe tener exactamente 12 dígitos</mat-error>
+                  }
+                </mat-form-field>
+              </div>
+
+              <div class="row two">
+                <mat-form-field appearance="outline">
                   <mat-label>Correo institucional</mat-label>
-                  <input matInput type="email" formControlName="email" autocomplete="email" />
+                  <input matInput type="email" formControlName="email" maxlength="150" autocomplete="email" />
+                  <mat-hint>Ej. nombre&#64;entidad.gob.pe</mat-hint>
                   @if (form.controls.email.errors?.['required']) {
-                    <mat-error>Ingresa el correo</mat-error>
-                  } @else if (form.controls.email.errors?.['email']) {
-                    <mat-error>Correo no válido</mat-error>
+                    <mat-error>Ingresa el correo institucional</mat-error>
+                  } @else if (form.controls.email.errors?.['pattern']) {
+                    <mat-error>Formato inválido — Ej. nombre&#64;dominio.gob.pe</mat-error>
                   } @else if (emailServerError()) {
                     <mat-error>{{ emailServerError() }}</mat-error>
                   }
                 </mat-form-field>
                 <mat-form-field appearance="outline">
                   <mat-label>Teléfono</mat-label>
-                  <input matInput formControlName="telefono" maxlength="20" autocomplete="tel" />
+                  <input matInput formControlName="telefono" maxlength="20" inputmode="tel" autocomplete="tel" />
+                  <mat-hint>Ej. 987 654 321 (7–15 dígitos)</mat-hint>
+                  @if (form.controls.telefono.errors?.['pattern']) {
+                    <mat-error>Solo dígitos, espacios o guiones (7–15 caracteres)</mat-error>
+                  }
                 </mat-form-field>
               </div>
                 </div>
@@ -628,8 +651,16 @@ export class PersonaFormPageComponent implements OnInit {
   readonly form = this.fb.group({
     nombreCompleto: this.fb.nonNullable.control('', [Validators.required, Validators.maxLength(240)]),
     dni: this.fb.nonNullable.control('', [Validators.required, Validators.pattern(/^[0-9]{8}$/)]),
-    email: this.fb.nonNullable.control('', [Validators.required, Validators.email]),
-    telefono: this.fb.nonNullable.control(''),
+    ruc: this.fb.nonNullable.control('', [
+      Validators.pattern(/^[0-9]{12}$/),
+    ]),
+    email: this.fb.nonNullable.control('', [
+      Validators.required,
+      Validators.pattern(/^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/),
+    ]),
+    telefono: this.fb.nonNullable.control('', [
+      Validators.pattern(/^[+]?[\d\s\-]{7,15}$/),
+    ]),
     direccion: this.fb.nonNullable.control(''),
     distritoId: this.fb.nonNullable.control('', Validators.required),
     codigoInterno: this.fb.nonNullable.control(''),
@@ -706,6 +737,24 @@ export class PersonaFormPageComponent implements OnInit {
     this.loadCatalogs(() => this.pageLoading.set(false));
   }
 
+  onDniInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const clean = input.value.replace(/[^0-9]/g, '').slice(0, 8);
+    if (input.value !== clean) {
+      input.value = clean;
+      this.form.controls.dni.setValue(clean, { emitEvent: true });
+    }
+  }
+
+  onRucInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const clean = input.value.replace(/[^0-9]/g, '').slice(0, 12);
+    if (input.value !== clean) {
+      input.value = clean;
+      this.form.controls.ruc.setValue(clean, { emitEvent: true });
+    }
+  }
+
   onCancel(): void {
     this.dialogShell?.close(undefined);
     if (!this.dialogShell) {
@@ -736,6 +785,7 @@ export class PersonaFormPageComponent implements OnInit {
     return {
       nombreCompleto: v.nombreCompleto.trim(),
       dni: v.dni.trim(),
+      ruc: v.ruc.trim(),
       email: v.email.trim().toLowerCase(),
       telefono: v.telefono,
       direccion: v.direccion.trim().toUpperCase(),
@@ -811,7 +861,8 @@ export class PersonaFormPageComponent implements OnInit {
         this.form.patchValue({
           nombreCompleto: p.nombreCompleto,
           dni: dniTxt,
-          email: p.email,
+          ruc: (p.ruc ?? '').trim(),
+          email: p.email ?? '',
           telefono: (p.telefono ?? '').trim(),
           direccion: (p.direccion ?? '').trim(),
           distritoId: String(p.distritoId ?? ''),

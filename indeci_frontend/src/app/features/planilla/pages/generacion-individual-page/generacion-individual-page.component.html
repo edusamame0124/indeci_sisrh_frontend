@@ -23,6 +23,44 @@
           <a mat-button routerLink="/planilla/periodos">Periodos</a>.
         </p>
       } @else {
+        <section class="calculo-notes" aria-label="Notas técnicas del cálculo">
+          <article class="calculo-note">
+            <mat-icon fontIcon="fact_check" aria-hidden="true" />
+            <div>
+              <h3>Regla 50</h3>
+              <p>
+                El motor valida el margen de descuentos sobre la base libre de disponibilidad:
+                ingresos mensuales permanentes menos descuentos legales y mandatos judiciales.
+                Esta validación controla descuentos voluntarios o de terceros; no limita la
+                ejecución de un mandato judicial.
+              </p>
+            </div>
+          </article>
+
+          <article class="calculo-note">
+            <mat-icon fontIcon="account_balance_wallet" aria-hidden="true" />
+            <div>
+              <h3>Pensión</h3>
+              <p>
+                Solo los regímenes ONP y AFP generan descuento pensionario. Pensionista, retiro
+                y sin régimen pensionario no generan aporte AFP/ONP; el cálculo oficial lo resuelve
+                el backend según la configuración activa del empleado.
+              </p>
+            </div>
+          </article>
+          <article class="calculo-note">
+            <mat-icon fontIcon="medical_services" aria-hidden="true" />
+            <div>
+              <h3>Subsidios CAS</h3>
+              <p>
+                Para enfermedad, los primeros 20 d&iacute;as se acumulan por trabajador en el a&ntilde;o
+                calendario; EsSalud reconoce los d&iacute;as excedentes. Maternidad y enfermedad se
+                registran con c&oacute;digos PLAME 0915/0916 y el diferencial CAS con 2073.
+              </p>
+            </div>
+          </article>
+        </section>
+
         <div class="form-row">
           <!-- Selector empleado (autocomplete) -->
           <mat-form-field appearance="outline" class="empleado">
@@ -79,6 +117,38 @@
               <strong>{{ empleadoSeleccionado()!.nombreCompleto }}</strong>
               — DNI {{ empleadoSeleccionado()!.dni }}
             </span>
+          </div>
+        }
+
+        <!-- Avisos preflight del empleado seleccionado (informativos, no bloquean la generación) -->
+        @if (cargandoPreflight()) {
+          <p class="preflight-cargando" aria-live="polite">
+            <mat-icon fontIcon="hourglass_empty" aria-hidden="true" />
+            Verificando alertas del per&iacute;odo&hellip;
+          </p>
+        }
+        @if (!cargandoPreflight() && hallazgosEmpleado().length > 0) {
+          <div
+            class="preflight-avisos preflight-avisos--{{ severidadMaxima() }}"
+            role="status"
+            aria-live="polite"
+          >
+            <div class="preflight-avisos__header">
+              <mat-icon fontIcon="report_problem" aria-hidden="true" />
+              <span class="preflight-avisos__titulo">Avisos para este empleado</span>
+              <a mat-button class="preflight-link" routerLink="/planilla/validaciones">
+                Ver Centro de Validaciones
+              </a>
+            </div>
+            @for (h of hallazgosEmpleado(); track h.codigo) {
+              <div class="preflight-aviso preflight-aviso--{{ h.severidad.toLowerCase() }}">
+                <mat-icon [fontIcon]="iconoSeveridad(h.severidad)" aria-hidden="true" />
+                <div class="preflight-aviso__cuerpo">
+                  <span class="preflight-aviso__cod">{{ h.codigo }}</span>
+                  <span class="preflight-aviso__msg">{{ h.mensaje }}</span>
+                </div>
+              </div>
+            }
           </div>
         }
 

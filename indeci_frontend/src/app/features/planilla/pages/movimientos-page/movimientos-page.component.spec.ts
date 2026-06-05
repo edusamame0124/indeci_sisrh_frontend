@@ -56,6 +56,7 @@ describe('MovimientosPageComponent (Spec 009 T155 + Spec 010 PANTALLA-01)', () =
     empleadoId: number,
     estado: string,
     estadoNeto: string | null = 'BIEN',
+    extra: Partial<MovimientoPlanillaRow> = {},
   ): MovimientoPlanillaRow => ({
     id,
     empleadoId,
@@ -68,6 +69,7 @@ describe('MovimientosPageComponent (Spec 009 T155 + Spec 010 PANTALLA-01)', () =
     activo: 1,
     neto50pctMinimo: 450,
     estadoNeto,
+    ...extra,
   });
 
   it('al cargar pide periodos y selecciona el primer ABIERTO por defecto', () => {
@@ -144,13 +146,15 @@ describe('MovimientosPageComponent (Spec 009 T155 + Spec 010 PANTALLA-01)', () =
     httpMock.expectOne('/api/rrhh/movimiento-planilla/periodo/2026-05').flush({ data: [] });
   });
 
-  it('declara las 8 columnas en orden esperado (incluye semaforo y acciones)', () => {
+  it('declara las 10 columnas en orden esperado (incluye identificacion y acciones)', () => {
     const fixture = build();
     httpMock.expectOne('/api/rrhh/periodo-planilla').flush({ data: [periodoAbierto()] });
     httpMock.expectOne('/api/rrhh/movimiento-planilla/periodo/2026-05').flush({ data: [] });
 
     expect([...fixture.componentInstance.columns]).toEqual([
-      'empleadoId',
+      'empleado',
+      'empleadoDni',
+      'regimenLaboral',
       'totalIngresos',
       'totalDescuentos',
       'netoPagar',
@@ -159,6 +163,27 @@ describe('MovimientosPageComponent (Spec 009 T155 + Spec 010 PANTALLA-01)', () =
       'observacion',
       'acciones',
     ]);
+  });
+
+  it('muestra nombre, DNI y tipo de regimen del empleado en la tabla', () => {
+    const fixture = build();
+    httpMock.expectOne('/api/rrhh/periodo-planilla').flush({ data: [periodoAbierto()] });
+    httpMock.expectOne('/api/rrhh/movimiento-planilla/periodo/2026-05').flush({
+      data: [
+        movFila(10, 42, 'PROCESADO', 'BIEN', {
+          empleadoNombre: 'Ana Isabel Salas Ramos',
+          empleadoDni: '44552584',
+          regimenLaboralCodigo: '1057',
+          regimenLaboralNombre: 'CAS',
+        }),
+      ],
+    });
+    fixture.detectChanges();
+
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.textContent).toContain('Ana Isabel Salas Ramos');
+    expect(root.textContent).toContain('44552584');
+    expect(root.textContent).toContain('1057 - CAS');
   });
 
   it('cada fila tiene routerLinks a resumen y detalle con empleadoId+periodo', () => {

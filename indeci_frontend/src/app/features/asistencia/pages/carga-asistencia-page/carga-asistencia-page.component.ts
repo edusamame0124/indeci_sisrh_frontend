@@ -420,7 +420,7 @@ export class CargaAsistenciaPageComponent implements OnInit {
           .map<EmpleadoOpcion>((p) => ({
             empleadoId: p.empleadoId as number,
             nombre: p.nombreCompleto,
-            dni: p.dni,
+            dni: p.dni ?? '',
           }))
           .sort((a, b) => a.nombre.localeCompare(b.nombre));
         this.empleados.set(opciones);

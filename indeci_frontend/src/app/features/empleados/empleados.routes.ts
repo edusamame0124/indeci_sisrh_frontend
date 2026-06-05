@@ -140,6 +140,38 @@ export const EMPLEADOS_ROUTES: Routes = [
         ],
       },
 
+      /* ——— Datos tributarios: Suspensión de 4ta (FASE 1) ——— */
+      {
+        path: 'suspension-4ta',
+        children: [
+          {
+            path: '',
+            loadComponent: () =>
+              import('./components/empleado-seleccion-hub/empleado-seleccion-hub.component').then(
+                (m) => m.EmpleadoSeleccionHubComponent,
+              ),
+            title: 'Suspensión de 4ta — SISRH-INDECI',
+            data: {
+              empleadosHub: {
+                title: 'Suspensión de retención de 4ta',
+                subtitle:
+                  'Selecciona una persona para registrar o revisar su constancia SUNAT de suspensión de 4ta (CAS).',
+                segment: 'suspension-4ta',
+                showRegimen: true,
+              },
+            },
+          },
+          {
+            path: 'personas/:personaId',
+            loadComponent: () =>
+              import(
+                './pages/empleado-suspension4ta-page/empleado-suspension4ta-page.component'
+              ).then((m) => m.EmpleadoSuspension4taPageComponent),
+            title: 'Suspensión de 4ta por persona — SISRH-INDECI',
+          },
+        ],
+      },
+
       /* ——— Planilla (005) ——— */
       {
         path: 'planilla',
@@ -153,11 +185,19 @@ export const EMPLEADOS_ROUTES: Routes = [
             title: 'Planilla — SISRH-INDECI',
             data: {
               empleadosHub: {
-                title: 'Planilla',
-                subtitle: 'Selecciona una persona para registrar o revisar la planilla activa.',
+                title: 'Configuración de planilla',
+                subtitle: 'Selecciona una persona para ver o registrar su configuración remunerativa.',
                 segment: 'planilla',
               },
             },
+          },
+          {
+            path: 'personas/:personaId',
+            loadComponent: () =>
+              import('./pages/empleado-planilla-list-page/empleado-planilla-list-page.component').then(
+                (m) => m.EmpleadoPlanillaListPageComponent,
+              ),
+            title: 'Planilla — SISRH-INDECI',
           },
           {
             path: 'personas/:personaId/editar/:planillaId',
@@ -176,14 +216,6 @@ export const EMPLEADOS_ROUTES: Routes = [
               ),
             title: 'Nueva configuración remunerativa — SISRH-INDECI',
             data: { mode: 'create' as const },
-          },
-          {
-            path: 'personas/:personaId',
-            loadComponent: () =>
-              import('./pages/empleado-planilla-list-page/empleado-planilla-list-page.component').then(
-                (m) => m.EmpleadoPlanillaListPageComponent,
-              ),
-            title: 'Planilla por persona — SISRH-INDECI',
           },
         ],
       },

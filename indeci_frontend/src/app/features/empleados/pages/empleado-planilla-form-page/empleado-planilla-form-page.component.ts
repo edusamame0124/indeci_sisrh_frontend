@@ -20,8 +20,13 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { EmpleadoPlanillaApiService } from '../../services/empleado-planilla-api.service';
+import { CatalogoApiService } from '../../services/catalogo-api.service';
+import type { RegimenLaboral } from '../../../catalogos/models/regimen-laboral.model';
+import type { TipoContrato } from '../../../catalogos/models/tipo-contrato.model';
+import type { CondicionLaboral } from '../../../catalogos/models/condicion-laboral.model';
 import { PersonaApiService } from '../../services/persona-api.service';
 import { ErrorMessageService } from '../../../../core/services/error-message.service';
+import { NotificacionService } from '../../../../core/services/notificacion.service';
 import { isErrorResponse } from '../../../../core/models/error-response.model';
 import { EmpleadoFlowWarningBannerComponent } from '../../components/empleado-flow-warning-banner/empleado-flow-warning-banner.component';
 import { EmpleadoFlowService } from '../../services/empleado-flow.service';
@@ -64,7 +69,7 @@ const SUELDO_MAX = 99999.99;
         <span class="crumbs__here">{{ isEdit() ? 'Editar configuración' : 'Nueva configuración' }}</span>
       </nav>
 
-      <a mat-button [routerLink]="['/empleados/planilla/personas', personaId()]">Volver</a>
+      <a mat-button routerLink="/empleados/personas">Volver</a>
 
       @if (empleadoId() > 0 && !pageLoading()) {
         <app-empleado-flow-warning-banner
@@ -90,6 +95,38 @@ const SUELDO_MAX = 99999.99;
           <mat-card-content>
             <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
               <div class="grid">
+                <mat-form-field appearance="outline" class="full">
+                  <mat-label>Régimen laboral</mat-label>
+                  <mat-select formControlName="regimenLaboralId" required>
+                    @for (r of regimenes(); track r.id) {
+                      <mat-option [value]="r.id">{{ r.codigo }} — {{ r.nombre }}</mat-option>
+                    }
+                  </mat-select>
+                  <mat-hint>Determina cómo calcula el motor (5.ª/4.ª, asig. familiar, topes).</mat-hint>
+                  @if (form.controls.regimenLaboralId.hasError('required')) {
+                    <mat-error>Selecciona el régimen laboral</mat-error>
+                  }
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="half">
+                  <mat-label>Tipo de contrato</mat-label>
+                  <mat-select formControlName="tipoContratoId">
+                    <mat-option [value]="null">— Sin especificar —</mat-option>
+                    @for (t of tiposContrato(); track t.id) {
+                      <mat-option [value]="t.id">{{ t.nombre }}</mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+                <mat-form-field appearance="outline" class="half">
+                  <mat-label>Condición laboral</mat-label>
+                  <mat-select formControlName="condicionLaboralId">
+                    <mat-option [value]="null">— Sin especificar —</mat-option>
+                    @for (c of condiciones(); track c.id) {
+                      <mat-option [value]="c.id">{{ c.nombre }}</mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+
                 <mat-form-field appearance="outline" class="full">
                   <mat-label>Sueldo básico</mat-label>
                   <input
@@ -234,7 +271,9 @@ export class EmpleadoPlanillaFormPageComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly personaApi = inject(PersonaApiService);
   private readonly planillaApi = inject(EmpleadoPlanillaApiService);
+  private readonly catalogoApi = inject(CatalogoApiService);
   private readonly snack = inject(MatSnackBar);
+  private readonly notif = inject(NotificacionService);
   private readonly errors = inject(ErrorMessageService);
   private readonly empleadoFlow = inject(EmpleadoFlowService);
   private readonly flowBackendSync = inject(EmpleadoFlowBackendSyncService);
@@ -247,7 +286,16 @@ export class EmpleadoPlanillaFormPageComponent implements OnInit {
   readonly pageLoading = signal(true);
   readonly saving = signal(false);
 
+  // Catálogos de configuración laboral (mejora 2026-06-03).
+  readonly regimenes = signal<readonly RegimenLaboral[]>([]);
+  readonly tiposContrato = signal<readonly TipoContrato[]>([]);
+  readonly condiciones = signal<readonly CondicionLaboral[]>([]);
+
   readonly form = this.fb.group({
+    // Régimen laboral: obligatorio — el motor lo necesita (5ta/4ta, asig. fam., topes).
+    regimenLaboralId: this.fb.control<number | null>(null, [Validators.required]),
+    tipoContratoId: this.fb.control<number | null>(null),
+    condicionLaboralId: this.fb.control<number | null>(null),
     sueldoBasico: this.fb.control<number | null>(null, [
       Validators.required,
       Validators.min(0.01),
@@ -277,6 +325,8 @@ export class EmpleadoPlanillaFormPageComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.cargarCatalogos();
+
     const mode = this.route.snapshot.data['mode'] === 'edit' ? 'edit' : 'create';
     this.isEdit.set(mode === 'edit');
 
@@ -284,7 +334,7 @@ export class EmpleadoPlanillaFormPageComponent implements OnInit {
     const pid = pidStr ? Number(pidStr) : NaN;
     if (!Number.isFinite(pid) || pid < 1) {
       void this.router.navigate(['/empleados/planilla']);
-      return;
+      return; // sin personaId válido, no podemos ir a la lista del empleado
     }
     this.personaId.set(pid);
 
@@ -306,7 +356,7 @@ export class EmpleadoPlanillaFormPageComponent implements OnInit {
           const eid = p.empleadoId != null && p.empleadoId > 0 ? p.empleadoId : 0;
           if (eid < 1) {
             this.snack.open('No hay empleado vinculado a esta persona.', 'Cerrar', { duration: 5000 });
-            void this.router.navigate(['/empleados/planilla']);
+            void this.router.navigate(['/empleados/planilla/personas', pid]);
             return EMPTY;
           }
           this.empleadoId.set(eid);
@@ -328,13 +378,29 @@ export class EmpleadoPlanillaFormPageComponent implements OnInit {
       });
   }
 
+  /** Carga los catálogos de los selects de configuración laboral. */
+  private cargarCatalogos(): void {
+    this.catalogoApi.listarRegimenesLaborales().subscribe({
+      next: (list) => this.regimenes.set(list),
+      error: () => this.regimenes.set([]),
+    });
+    this.catalogoApi.listarTiposContrato().subscribe({
+      next: (list) => this.tiposContrato.set(list),
+      error: () => this.tiposContrato.set([]),
+    });
+    this.catalogoApi.listarCondicionesLaborales().subscribe({
+      next: (list) => this.condiciones.set(list),
+      error: () => this.condiciones.set([]),
+    });
+  }
+
   private patchFromList(empleadoId: number, targetId: number): void {
     this.planillaApi.listar(empleadoId).subscribe({
       next: (list) => {
         const row = list.find((r) => r.id === targetId);
         if (!row) {
           this.snack.open('No se encontró el registro de planilla solicitado.', 'Cerrar', { duration: 5000 });
-          void this.router.navigate(['/empleados/planilla/personas', this.personaId()]);
+          void this.router.navigate(['/empleados/planilla']);
           return;
         }
         // Spec 013/C1 — `tieneAsignacionFamiliar`, `descuentoBanco` y
@@ -342,6 +408,9 @@ export class EmpleadoPlanillaFormPageComponent implements OnInit {
         // de `numHijos > 0` al guardar; los descuentos viven en INDECI_PRESTAMO
         // y EmpleadoConcepto (módulos dedicados).
         this.form.patchValue({
+          regimenLaboralId: row.regimenLaboralId,
+          tipoContratoId: row.tipoContratoId,
+          condicionLaboralId: row.condicionLaboralId,
           sueldoBasico: row.sueldoBasico,
           movilidad: row.movilidad,
           alimentacion: row.alimentacion,
@@ -386,6 +455,7 @@ export class EmpleadoPlanillaFormPageComponent implements OnInit {
     // `descuentoInstitucion` se omiten: hoy son letra muerta en el motor; los
     // descuentos reales viven en INDECI_PRESTAMO y EmpleadoConcepto.
     const numHijos = v.numHijos ?? 0;
+    if (v.regimenLaboralId == null) return; // requerido (guard extra)
     const body = {
       empleadoId: empId,
       sueldoBasico: v.sueldoBasico,
@@ -393,6 +463,9 @@ export class EmpleadoPlanillaFormPageComponent implements OnInit {
       alimentacion: v.alimentacion ?? undefined,
       tieneAsignacionFamiliar: numHijos > 0 ? 1 : 0,
       numHijos: v.numHijos ?? undefined,
+      regimenLaboralId: v.regimenLaboralId,
+      tipoContratoId: v.tipoContratoId ?? null,
+      condicionLaboralId: v.condicionLaboralId ?? null,
     };
 
     this.saving.set(true);
@@ -416,7 +489,7 @@ export class EmpleadoPlanillaFormPageComponent implements OnInit {
 
   private onSaved(msg: string): void {
     this.saving.set(false);
-    this.snack.open(msg, 'Cerrar', { duration: 4000 });
+    this.notif.exito(msg);
     void this.router.navigate(['/empleados/planilla/personas', this.personaId()]);
   }
 

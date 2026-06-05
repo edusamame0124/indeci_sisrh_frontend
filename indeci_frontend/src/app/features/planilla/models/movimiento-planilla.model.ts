@@ -2,6 +2,10 @@
 export interface MovimientoPlanillaRow {
   readonly id: number;
   readonly empleadoId: number;
+  readonly empleadoNombre?: string | null;
+  readonly empleadoDni?: string | null;
+  readonly regimenLaboralCodigo?: string | null;
+  readonly regimenLaboralNombre?: string | null;
   readonly periodo: string;
   readonly totalIngresos: number;
   readonly totalDescuentos: number;

@@ -1,12 +1,11 @@
-/** Cuerpo POST — espejo de `EmpleadoPuestoDto`. */
+/** Cuerpo POST — espejo de `EmpleadoPuestoDto` en backend. */
 export interface EmpleadoPuestoInput {
   readonly empleadoId: number;
-  readonly cargo: string;
+  readonly cargoId: number;
   readonly nivelId?: number;
   readonly sedeId?: number;
   readonly oficinaId?: number;
   readonly jefeId?: number;
-  // ===== Spec 009 / T135 — catálogos organizacionales =====
   readonly dependenciaId?: number;
   readonly estructuraOrganicaId?: number;
 }

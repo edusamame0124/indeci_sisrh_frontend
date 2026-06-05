@@ -11,7 +11,7 @@
     <span class="crumbs__here">{{ isEdit() ? 'Editar pensión' : 'Nueva pensión' }}</span>
   </nav>
 
-  <a mat-button [routerLink]="['/empleados/pension/personas', personaId()]">Volver</a>
+  <a mat-button routerLink="/empleados/personas">Volver</a>
 
   @if (empleadoId() > 0 && !pageLoading()) {
     <app-empleado-flow-warning-banner

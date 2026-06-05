@@ -147,6 +147,16 @@ describe('Ficha360PageComponent (F3.1)', () => {
           fuenteId: 903,
         },
       ],
+      snapshots: [
+        {
+          regla: 'IR4TA_CAS',
+          baseCalculo: 1800.0,
+          resultado: 144.0,
+          formula: '(1800.00) × 0.08 = 144.00',
+          versionParametros: '2026',
+          parametrosJson: '{"tasa":0.08,"suspensionVigente":false,"baseInafecta":1500}',
+        },
+      ],
     };
 
     httpMock
@@ -160,6 +170,12 @@ describe('Ficha360PageComponent (F3.1)', () => {
     expect(comp.lineasIngreso()).toHaveLength(1);
     expect(comp.lineasDescuento()).toHaveLength(1);
     expect(comp.lineasAporteEmpleador()).toHaveLength(1);
+    // FASE 2 — snapshot de trazabilidad disponible y parseado.
+    expect(comp.snapshots()).toHaveLength(1);
+    expect(comp.reglaLegible('IR4TA_CAS')).toContain('4.ª categoría');
+    const params = comp.parametros(comp.snapshots()[0]);
+    expect(params.find((p) => p.etiqueta === 'Tasa')?.valor).toBe('0.08');
+    expect(params.find((p) => p.etiqueta === 'Suspensión vigente')?.valor).toBe('No');
     expect(comp.netoSeverity()).toBe('success');
     expect(comp.airhspSeverity()).toBe('success');
   });

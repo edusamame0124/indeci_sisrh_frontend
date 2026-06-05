@@ -29,6 +29,72 @@
   align-items: center;
 }
 
+.header-row__export {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+/* ── Historial de exports ──────────────────────────────────────────────── */
+
+.historial-exports {
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+
+.historial-exports__titulo {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0 0 0.75rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.historial-exports__titulo mat-icon {
+  font-size: 1rem;
+  width: 1rem;
+  height: 1rem;
+  color: #64748b;
+}
+
+.historial-tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+.historial-tabla th {
+  text-align: left;
+  padding: 0.35rem 0.6rem;
+  background: #e2e8f0;
+  color: #475569;
+  font-weight: 600;
+  border-bottom: 2px solid #cbd5e1;
+}
+
+.historial-tabla td {
+  padding: 0.3rem 0.6rem;
+  border-bottom: 1px solid #f1f5f9;
+  color: #334155;
+  vertical-align: middle;
+}
+
+.historial-tabla tr:last-child td {
+  border-bottom: none;
+}
+
+.historial-tabla .hash {
+  font-family: monospace;
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
 .semaforo-bar {
   display: flex;
   flex-wrap: wrap;
@@ -46,6 +112,24 @@
 
 .filtro-select {
   min-width: 200px;
+}
+
+.empleado-cell {
+  display: inline-flex;
+  min-width: 12rem;
+  flex-direction: column;
+  gap: 0.125rem;
+  line-height: 1.25;
+}
+
+.empleado-cell strong {
+  color: var(--sisrh-text);
+  font-weight: 700;
+}
+
+.empleado-cell span {
+  color: var(--sisrh-text-soft);
+  font-size: 0.75rem;
 }
 
 .sem-dot {

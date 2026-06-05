@@ -74,13 +74,8 @@ export const MAIN_NAV_ITEMS: readonly MainNavItem[] = [
     requiredAnyRole: [...EMPLEADOS_ACCESS_ROLES],
     children: [
       { label: 'Datos personales', route: '/empleados/personas', icon: 'person' },
-      { label: 'Puesto laboral', route: '/empleados/puesto', icon: 'assignment_ind' },
       { label: 'Cargo histórico', route: '/empleados/cargo-historico', icon: 'timeline' },
       { label: 'Encargaturas', route: '/empleados/encargatura', icon: 'swap_horiz' },
-      { label: 'Cuenta bancaria', route: '/empleados/cuentas-bancarias', icon: 'account_balance' },
-      { label: 'Configuración pensión', route: '/empleados/pension', icon: 'savings' },
-      { label: 'Configuración planilla', route: '/empleados/planilla', icon: 'payments' },
-      { label: 'Conceptos asignados', route: '/empleados/conceptos', icon: 'list_alt' },
       { label: 'Préstamos', route: '/empleados/prestamos', icon: 'request_quote' },
       { label: 'Vacaciones', route: '/empleados/vacaciones', icon: 'beach_access' },
       { label: 'Eventos del período', route: '/empleados/eventos', icon: 'event_note' },

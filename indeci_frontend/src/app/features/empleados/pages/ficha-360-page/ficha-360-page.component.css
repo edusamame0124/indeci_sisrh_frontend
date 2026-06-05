@@ -372,6 +372,109 @@
   border-radius: 3px;
 }
 
+/* ===================== TRAZABILIDAD / SNAPSHOT (FASE 2) ===================== */
+
+.ficha-trazas {
+  gap: 12px;
+}
+
+.ficha-trazas__icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  vertical-align: text-bottom;
+  margin-right: 4px;
+  color: var(--sisrh-primary);
+}
+
+.traza-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  background: var(--sisrh-surface);
+  border: 1px solid var(--sisrh-border);
+  border-left: 3px solid var(--sisrh-primary);
+  border-radius: 6px;
+}
+
+.traza-card__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.traza-card__regla {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--sisrh-text);
+}
+
+.traza-card__version {
+  font-size: 12px;
+  color: var(--sisrh-text-muted);
+}
+
+.traza-card__formula {
+  margin: 0;
+  font-family: 'Consolas', 'Roboto Mono', monospace;
+  font-size: 13px;
+  color: var(--sisrh-primary);
+  background: var(--sisrh-bg);
+  padding: 6px 10px;
+  border-radius: 4px;
+  overflow-x: auto;
+}
+
+.traza-card__params {
+  display: grid;
+  grid-template-columns: minmax(140px, max-content) 1fr;
+  gap: 2px 16px;
+  margin: 0;
+}
+
+.traza-card__params dt {
+  font-size: 12px;
+  color: var(--sisrh-text-muted);
+}
+
+.traza-card__params dd {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--sisrh-text);
+}
+
+.traza-card__resultado {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  border-top: 1px dashed var(--sisrh-border);
+  padding-top: 8px;
+}
+
+.traza-card__resultado-label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--sisrh-text-muted);
+}
+
+.traza-card__resultado-monto {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--sisrh-text);
+}
+
+.ficha-trazas__nota {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--sisrh-text-muted);
+}
+
 /* ============================ REDUCED MOTION ============================ */
 
 @media (prefers-reduced-motion: reduce) {

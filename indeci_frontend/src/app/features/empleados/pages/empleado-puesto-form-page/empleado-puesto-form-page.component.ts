@@ -33,6 +33,8 @@ import type { EmpleadoPuestoRow } from '../../models/empleado-puesto.model';
 import { EmpleadoFlowWarningBannerComponent } from '../../components/empleado-flow-warning-banner/empleado-flow-warning-banner.component';
 import { EmpleadoFlowService } from '../../services/empleado-flow.service';
 import { EmpleadoFlowBackendSyncService } from '../../services/empleado-flow-backend-sync.service';
+import { CargoApiService } from '../../services/cargo-api.service';
+import type { Cargo } from '../../models/cargo.model';
 
 @Component({
   selector: 'app-empleado-puesto-form-page',
@@ -63,7 +65,7 @@ import { EmpleadoFlowBackendSyncService } from '../../services/empleado-flow-bac
         <span class="crumbs__here">{{ isEdit() ? 'Editar puesto' : 'Nuevo puesto' }}</span>
       </nav>
 
-      <a mat-button [routerLink]="['/empleados/puesto/personas', personaId()]">Volver</a>
+      <a mat-button routerLink="/empleados/personas">Volver</a>
 
       @if (empleadoId() > 0 && !pageLoading()) {
         <app-empleado-flow-warning-banner
@@ -103,15 +105,14 @@ import { EmpleadoFlowBackendSyncService } from '../../services/empleado-flow-bac
               <div class="grid">
                 <mat-form-field appearance="outline" class="full">
                   <mat-label>Cargo</mat-label>
-                  <input
-                    matInput
-                    formControlName="cargo"
-                    maxlength="200"
-                    autocomplete="organization-title"
-                    aria-required="true"
-                  />
-                  @if (form.controls.cargo.hasError('required')) {
-                    <mat-error>Ingresa el cargo</mat-error>
+                  <mat-select formControlName="cargoId" aria-required="true">
+                    <mat-option [value]="0">Selecciona un cargo</mat-option>
+                    @for (c of cargos(); track c.id) {
+                      <mat-option [value]="c.id">{{ c.nombre }}</mat-option>
+                    }
+                  </mat-select>
+                  @if (form.controls.cargoId.hasError('cargoRequired')) {
+                    <mat-error>Debes ingresar el cargo del puesto</mat-error>
                   }
                 </mat-form-field>
 
@@ -262,6 +263,7 @@ export class EmpleadoPuestoFormPageComponent implements OnInit {
   private readonly personaApi = inject(PersonaApiService);
   private readonly puestoApi = inject(EmpleadoPuestoApiService);
   private readonly catalogos = inject(CatalogoApiService);
+  private readonly cargoApi = inject(CargoApiService);
   private readonly snack = inject(MatSnackBar);
   private readonly errors = inject(ErrorMessageService);
   private readonly destroyRef = inject(DestroyRef);
@@ -278,6 +280,7 @@ export class EmpleadoPuestoFormPageComponent implements OnInit {
   readonly pageLoading = signal(true);
   readonly saving = signal(false);
 
+  readonly cargos = signal<readonly Cargo[]>([]);
   readonly niveles = signal<readonly Nivel[]>([]);
   readonly sedes = signal<readonly Sede[]>([]);
   readonly oficinas = signal<readonly Oficina[]>([]);
@@ -286,7 +289,9 @@ export class EmpleadoPuestoFormPageComponent implements OnInit {
   readonly estructuras = signal<readonly EstructuraOrganica[]>([]);
 
   readonly form = this.fb.group({
-    cargo: this.fb.nonNullable.control('', [Validators.required, Validators.maxLength(200)]),
+    cargoId: this.fb.nonNullable.control(0, [
+      (c) => (c.value && c.value > 0 ? null : { cargoRequired: true }),
+    ]),
     nivelId: this.fb.control<number | null>(null),
     sedeId: this.fb.control<number | null>(null),
     oficinaId: this.fb.control<number | null>(null),
@@ -338,6 +343,7 @@ export class EmpleadoPuestoFormPageComponent implements OnInit {
           const eid = eidCandidate;
           return forkJoin({
             historial: this.puestoApi.listar(eid),
+            cargos: this.cargoApi.listarCargos(),
             niveles: this.catalogos.listarNiveles(),
             sedes: this.catalogos.listarSedes(),
             dependencias: this.catalogos.listarDependencias(),
@@ -353,11 +359,12 @@ export class EmpleadoPuestoFormPageComponent implements OnInit {
       )
       .subscribe({
         next: (res) => {
-          const { persona, eid, historial, niveles, sedes, dependencias, estructuras } = res;
+          const { persona, eid, historial, cargos, niveles, sedes, dependencias, estructuras } = res;
           this.personaLabel.set(persona.nombreCompleto);
           this.empleadoId.set(eid);
           this.primerRegistroDePuesto.set(historial.length === 0);
           this.empleadoFlow.hydrateFromPersona(persona);
+          this.cargos.set(cargos);
           this.niveles.set(niveles);
           this.sedes.set(sedes);
           this.dependencias.set(dependencias);
@@ -389,8 +396,12 @@ export class EmpleadoPuestoFormPageComponent implements OnInit {
   }
 
   private patchFromRow(row: EmpleadoPuestoRow): void {
+    // Encontrar el cargoId basado en el nombre del cargo
+    const cargoEncontrado = this.cargos().find((c) => c.nombre === row.cargo);
+    const cargoId = cargoEncontrado?.id ?? 0;
+
     this.form.patchValue({
-      cargo: row.cargo,
+      cargoId,
       nivelId: row.nivelId,
       sedeId: row.sedeId,
       dependenciaId: row.dependenciaId ?? null,
@@ -458,12 +469,9 @@ export class EmpleadoPuestoFormPageComponent implements OnInit {
     const empId = this.empleadoId();
     if (empId < 1) return;
 
-    const cargo = v.cargo.trim().toUpperCase();
-    if (!cargo) return;
-
     const body: import('../../models/empleado-puesto.model').EmpleadoPuestoInput = {
       empleadoId: empId,
-      cargo,
+      cargoId: v.cargoId,
       nivelId: v.nivelId != null && v.nivelId > 0 ? v.nivelId : undefined,
       sedeId: v.sedeId != null && v.sedeId > 0 ? v.sedeId : undefined,
       oficinaId: v.oficinaId != null && v.oficinaId > 0 ? v.oficinaId : undefined,

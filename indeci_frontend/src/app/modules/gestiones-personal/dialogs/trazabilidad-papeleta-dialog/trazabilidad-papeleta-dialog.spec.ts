@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { TrazabilidadPapeletaDialog } from './trazabilidad-papeleta-dialog';
+import { TrazabilidadPapeletaDialogComponent } from './trazabilidad-papeleta-dialog';
 
 describe('TrazabilidadPapeletaDialog', () => {
-  let component: TrazabilidadPapeletaDialog;
-  let fixture: ComponentFixture<TrazabilidadPapeletaDialog>;
+  let component: TrazabilidadPapeletaDialogComponent;
+  let fixture: ComponentFixture<TrazabilidadPapeletaDialogComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [TrazabilidadPapeletaDialog]
+      imports: [TrazabilidadPapeletaDialogComponent]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(TrazabilidadPapeletaDialog);
+    fixture = TestBed.createComponent(TrazabilidadPapeletaDialogComponent);
     component = fixture.componentInstance;
     await fixture.whenStable();
   });

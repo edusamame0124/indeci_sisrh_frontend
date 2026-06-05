@@ -1,4 +1,17 @@
 <h2 mat-dialog-title id="empleado-concepto-dialog-title">{{ data.title }}</h2>
+@if (!catalogLoading() && !catalogError()) {
+  @if (regimen()) {
+    <p class="regimen-line">
+      Régimen del empleado: <strong>{{ regimen() }}</strong>. Solo se muestran conceptos
+      aplicables a este régimen.
+    </p>
+  } @else {
+    <p class="regimen-line regimen-line--warn" role="status">
+      El empleado no tiene configuración de planilla (régimen). Configúrala primero para
+      filtrar los conceptos por régimen.
+    </p>
+  }
+}
 @if (catalogLoading()) {
   <mat-dialog-content class="content" tabindex="0">
     <div class="centered" aria-busy="true">
@@ -17,8 +30,9 @@
 } @else if (gruposConcepto().length === 0) {
   <mat-dialog-content class="content" tabindex="0">
     <p class="hint" role="status">
-      No hay conceptos disponibles para asignar manualmente (todos están ya
-      asignados, son calculados por el motor, o el catálogo está vacío).
+      No hay conceptos disponibles para asignar manualmente (no aplican al régimen
+      del empleado, ya están asignados, son calculados por el motor, o el catálogo
+      está vacío).
     </p>
   </mat-dialog-content>
   <mat-dialog-actions align="end">
@@ -61,19 +75,55 @@
         </mat-form-field>
       }
 
+      <!-- Vigencia desde (requerida) -->
+      <p class="vigencia-label">Vigencia desde <span class="req" aria-hidden="true">*</span></p>
       <div class="vigencia-row">
         <mat-form-field appearance="outline" class="vigencia-field">
-          <mat-label>Vigencia desde</mat-label>
-          <input matInput type="month" formControlName="fechaInicio" autocomplete="off" />
-          @if (form.controls.fechaInicio.hasError('required') && form.controls.fechaInicio.touched) {
-            <mat-error>Indica el mes de inicio</mat-error>
+          <mat-label>Mes</mat-label>
+          <mat-select formControlName="fechaInicioMes" aria-label="Mes de inicio">
+            @for (m of meses; track $index) {
+              <mat-option [value]="$index + 1">{{ m }}</mat-option>
+            }
+          </mat-select>
+          @if (form.controls.fechaInicioMes.hasError('required') && form.controls.fechaInicioMes.touched) {
+            <mat-error>Selecciona el mes</mat-error>
           }
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="vigencia-field">
-          <mat-label>Vigencia hasta (opcional)</mat-label>
-          <input matInput type="month" formControlName="fechaFin" autocomplete="off" />
-          <mat-hint>Sin fecha = vigencia indefinida</mat-hint>
+          <mat-label>Año</mat-label>
+          <mat-select formControlName="fechaInicioAnio" aria-label="Año de inicio">
+            @for (a of anios; track a) {
+              <mat-option [value]="a">{{ a }}</mat-option>
+            }
+          </mat-select>
+          @if (form.controls.fechaInicioAnio.hasError('required') && form.controls.fechaInicioAnio.touched) {
+            <mat-error>Selecciona el año</mat-error>
+          }
+        </mat-form-field>
+      </div>
+
+      <!-- Vigencia hasta (opcional) -->
+      <p class="vigencia-label">Vigencia hasta <span class="vigencia-hint">(opcional — sin fecha = vigencia indefinida)</span></p>
+      <div class="vigencia-row">
+        <mat-form-field appearance="outline" class="vigencia-field">
+          <mat-label>Mes</mat-label>
+          <mat-select formControlName="fechaFinMes" aria-label="Mes de fin">
+            <mat-option [value]="null">—</mat-option>
+            @for (m of meses; track $index) {
+              <mat-option [value]="$index + 1">{{ m }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="vigencia-field">
+          <mat-label>Año</mat-label>
+          <mat-select formControlName="fechaFinAnio" aria-label="Año de fin">
+            <mat-option [value]="null">—</mat-option>
+            @for (a of anios; track a) {
+              <mat-option [value]="a">{{ a }}</mat-option>
+            }
+          </mat-select>
         </mat-form-field>
       </div>
 
