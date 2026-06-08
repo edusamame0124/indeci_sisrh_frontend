@@ -1,0 +1,30 @@
+<div class="asistencia-shell">
+  <nav class="asistencia-shell__crumbs" aria-label="Ubicación">
+    <a mat-button routerLink="/">Inicio</a>
+    <span class="asistencia-shell__sep" aria-hidden="true">/</span>
+    <span class="asistencia-shell__here">Carga de asistencia</span>
+  </nav>
+
+  <mat-card class="asistencia-shell__header">
+    <mat-card-header>
+      <mat-card-title>Carga de asistencia</mat-card-title>
+      <mat-card-subtitle>
+        Registra asistencia manual por empleado o importa el reporte CSV mensual del marcador.
+      </mat-card-subtitle>
+    </mat-card-header>
+  </mat-card>
+
+  <section class="asistencia-shell__tabs">
+    <mat-tab-group animationDuration="150ms" dynamicHeight aria-label="Opciones de carga de asistencia">
+      <mat-tab label="Carga individual">
+        <app-carga-asistencia-page />
+      </mat-tab>
+      <mat-tab label="Carga masiva CSV">
+        <app-carga-masiva-csv-page />
+      </mat-tab>
+      <mat-tab label="Historial de importaciones">
+        <app-historial-importaciones-page />
+      </mat-tab>
+    </mat-tab-group>
+  </section>
+</div>

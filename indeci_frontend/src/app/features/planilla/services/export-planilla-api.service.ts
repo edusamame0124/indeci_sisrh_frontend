@@ -25,7 +25,7 @@ export class ExportPlanillaApiService {
 
   /**
    * P0 — Descarga la Planilla CAS Consolidada (XLSX de 19 bloques). Requiere
-   * permiso PLANILLA_WRITE en backend (contiene datos bancarios).
+   * permiso PLA_WRITE en backend (contiene datos bancarios).
    */
   descargarCasConsolidada(periodo: string): Observable<Blob> {
     const params = new HttpParams().set('periodo', periodo);

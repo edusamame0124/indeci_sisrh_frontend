@@ -11,8 +11,19 @@ export const TIPOS_DIA = [
   'LICENCIA',
   'VACACIONES',
   'DESCANSO',
+  'FERIADO',
+  'OBSERVADO',
 ] as const;
 export type TipoDia = (typeof TIPOS_DIA)[number];
+
+export const ESTADOS_ASISTENCIA = [
+  'BORRADOR',
+  'PREVALIDADA',
+  'LISTA_PARA_VALIDAR',
+  'OBSERVADA',
+  'VALIDADA',
+] as const;
+export type EstadoAsistencia = (typeof ESTADOS_ASISTENCIA)[number];
 
 /** Día calendario — espejo de `AsistenciaDiaDto`. */
 export interface AsistenciaDia {
@@ -21,6 +32,17 @@ export interface AsistenciaDia {
   tipoDia: TipoDia;
   minutosTardanza: number;
   observacion: string | null;
+  diaSemana?: string | null;
+  marcaEntrada?: string | null;
+  marcaSalida?: string | null;
+  horaEntradaEsperada?: string | null;
+  minutosSalidaAnticipada?: number | null;
+  horasTrabajadasMin?: number | null;
+  horasExtra25Min?: number | null;
+  horasExtra35Min?: number | null;
+  horasExtra100Min?: number | null;
+  horasExtraTotalMin?: number | null;
+  origen?: 'MANUAL' | 'IMPORT_MARCADOR' | null;
 }
 
 /** Respuesta GET — espejo de `AsistenciaResponseDto`. */
@@ -34,7 +56,7 @@ export interface AsistenciaResponse {
   readonly totalMinTardanza: number;
   readonly descuentoTardanza: number;
   readonly descuentoFalta: number;
-  readonly estado: string;
+  readonly estado: EstadoAsistencia;
   readonly observacion: string | null;
   readonly dias: readonly AsistenciaDia[];
 }
@@ -45,6 +67,6 @@ export interface AsistenciaGuardarInput {
   readonly periodo: string;
   readonly remuneracionBase: number | null;
   readonly observacion: string | null;
-  readonly estado?: string;
+  readonly estado?: EstadoAsistencia;
   readonly dias: readonly AsistenciaDia[];
 }

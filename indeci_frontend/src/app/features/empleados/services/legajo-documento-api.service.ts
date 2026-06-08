@@ -1,4 +1,4 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, type HttpResponse } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { map, type Observable } from 'rxjs';
 import type { ApiResponse } from '../../../core/models/api-response.model';
@@ -62,6 +62,14 @@ export class LegajoDocumentoApiService {
     return this.http
       .get<ApiResponse<LegajoDocumentoResponse>>(`${this.baseUrl}/${id}`)
       .pipe(map(extractApiData));
+  }
+
+  /** Descarga el binario del documento (FTP o almacenamiento local en dev). */
+  descargar(id: number): Observable<HttpResponse<Blob>> {
+    return this.http.get(`${this.baseUrl}/${id}/download`, {
+      responseType: 'blob',
+      observe: 'response',
+    });
   }
 
   /**

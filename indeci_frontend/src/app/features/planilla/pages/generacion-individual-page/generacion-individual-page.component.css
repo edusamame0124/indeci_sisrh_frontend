@@ -73,6 +73,14 @@
   line-height: 1.5;
 }
 
+.calculo-note p.calculo-note__ref {
+  margin-top: 0.4rem;
+  padding-top: 0.4rem;
+  border-top: 1px solid #e2e8f0;
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
 @media (max-width: 720px) {
   .form-row {
     grid-template-columns: 1fr;

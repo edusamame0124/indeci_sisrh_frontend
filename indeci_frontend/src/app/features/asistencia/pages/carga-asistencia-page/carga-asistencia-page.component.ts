@@ -1,4 +1,4 @@
-import {
+﻿import {
   ChangeDetectionStrategy,
   Component,
   OnInit,
@@ -18,36 +18,28 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { MatExpansionModule } from '@angular/material/expansion';
 import { PeriodoPlanillaApiService } from '../../../planilla/services/periodo-planilla-api.service';
 import { PersonaApiService } from '../../../empleados/services/persona-api.service';
 import { AsistenciaApiService } from '../../services/asistencia-api.service';
 import { ErrorMessageService } from '../../../../core/services/error-message.service';
 import { isErrorResponse } from '../../../../core/models/error-response.model';
 import type { PeriodoPlanillaRow } from '../../../planilla/models/periodo-planilla.model';
-import { TIPOS_DIA, type AsistenciaDia, type TipoDia } from '../../models/asistencia.model';
+import {
+  ESTADOS_ASISTENCIA,
+  TIPOS_DIA,
+  type AsistenciaDia,
+  type EstadoAsistencia,
+  type TipoDia,
+} from '../../models/asistencia.model';
 
-/** Opción del selector de empleado (SPEC §12.2 PANTALLA-02). */
+/** OpciÃ³n del selector de empleado (SPEC Â§12.2 PANTALLA-02). */
 interface EmpleadoOpcion {
   readonly empleadoId: number;
   readonly nombre: string;
   readonly dni: string;
 }
 
-/** Resultado visible tras importar CSV (éxito parcial). */
-interface ResultadoImportCsv {
-  readonly aplicados: number;
-  readonly omitidos: readonly CsvFilaFallida[];
-}
-
-/** Fila del CSV rechazada con motivo operativo. */
-interface CsvFilaFallida {
-  readonly linea: number;
-  readonly contenido: string;
-  readonly motivo: string;
-}
-
-/** Resumen de la asistencia cargada (SPEC §12.2 PANTALLA-02). */
+/** Resumen de la asistencia cargada (SPEC Â§12.2 PANTALLA-02). */
 interface ResumenAsistencia {
   readonly diasLaborados: number;
   readonly diasFalta: number;
@@ -57,19 +49,19 @@ interface ResumenAsistencia {
   readonly totalDescuento: number;
 }
 
-/** Tipos que cuentan como día efectivamente laborado. */
+/** Tipos que cuentan como dÃ­a efectivamente laborado. */
 const TIPOS_LABORADOS: ReadonlySet<TipoDia> = new Set<TipoDia>(['LABORAL', 'TARDANZA']);
 
 /**
- * PANTALLA-02 — Carga de Asistencia (SPEC §12.2, ROL_RRHH).
+ * PANTALLA-02 â€” Carga de Asistencia (SPEC Â§12.2, ROL_RRHH).
  *
- * Calendario mensual visual por empleado y período: cada día tiene un tipo
+ * Calendario mensual visual por empleado y perÃ­odo: cada dÃ­a tiene un tipo
  * (LABORAL / FALTA / TARDANZA / LICENCIA / VACACIONES / DESCANSO) y minutos de
- * tardanza. El descuento se calcula en tiempo real según D.Leg. 276 Art. 24
- * (REGLA 276-02). Permite import masivo desde CSV.
+ * tardanza. El descuento se calcula en tiempo real segÃºn D.Leg. 276 Art. 24
+ * (REGLA 276-02). La importaciÃ³n masiva del marcador vive en una pestaÃ±a separada.
  *
  * El selector de empleado se alimenta de `GET /api/rrhh/persona` (toda persona
- * con vínculo de empleado), independiente de que exista o no planilla generada.
+ * con vÃ­nculo de empleado), independiente de que exista o no planilla generada.
  */
 @Component({
   selector: 'app-carga-asistencia-page',
@@ -85,7 +77,6 @@ const TIPOS_LABORADOS: ReadonlySet<TipoDia> = new Set<TipoDia>(['LABORAL', 'TARD
     MatInputModule,
     MatSelectModule,
     MatProgressSpinnerModule,
-    MatExpansionModule,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './carga-asistencia-page.component.html',
@@ -98,9 +89,10 @@ export class CargaAsistenciaPageComponent implements OnInit {
   private readonly snack = inject(MatSnackBar);
   private readonly errors = inject(ErrorMessageService);
 
-  /** Días de la semana (lunes a domingo) para el encabezado de la grilla. */
-  readonly diasSemana = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'] as const;
+  /** DÃ­as de la semana (lunes a domingo) para el encabezado de la grilla. */
+  readonly diasSemana = ['Lun', 'Mar', 'MiÃ©', 'Jue', 'Vie', 'SÃ¡b', 'Dom'] as const;
   readonly tiposDia = TIPOS_DIA;
+  readonly estadosAsistencia = ESTADOS_ASISTENCIA;
 
   readonly periodos = signal<readonly PeriodoPlanillaRow[]>([]);
   readonly periodoSeleccionado = signal<string | null>(null);
@@ -110,15 +102,13 @@ export class CargaAsistenciaPageComponent implements OnInit {
   readonly dias = signal<readonly AsistenciaDia[]>([]);
   readonly remuneracionBase = signal<number | null>(null);
   readonly observacion = signal<string>('');
-  readonly estadoAsistencia = signal<string>('BORRADOR');
+  readonly estadoAsistencia = signal<EstadoAsistencia>('BORRADOR');
 
   readonly loading = signal(true);
   readonly cargandoEmpleados = signal(true);
   readonly cargandoCalendario = signal(false);
   readonly guardando = signal(false);
   readonly calendarioListo = signal(false);
-  readonly arrastrando = signal(false);
-  readonly resultadoImport = signal<ResultadoImportCsv | null>(null);
 
   readonly periodoActivo = computed(() => {
     const sel = this.periodoSeleccionado();
@@ -126,7 +116,7 @@ export class CargaAsistenciaPageComponent implements OnInit {
     return this.periodos().find((p) => p.periodo === sel) ?? null;
   });
 
-  /** Resumen en tiempo real — descuento según D.Leg. 276 Art. 24 (REGLA 276-02). */
+  /** Resumen en tiempo real â€” descuento segÃºn D.Leg. 276 Art. 24 (REGLA 276-02). */
   readonly resumen = computed<ResumenAsistencia>(() => {
     let diasLaborados = 0;
     let diasFalta = 0;
@@ -149,7 +139,7 @@ export class CargaAsistenciaPageComponent implements OnInit {
     };
   });
 
-  /** Días agrupados en semanas (lunes a domingo) para la grilla de calendario. */
+  /** DÃ­as agrupados en semanas (lunes a domingo) para la grilla de calendario. */
   readonly semanas = computed<readonly (AsistenciaDia | null)[][]>(() => {
     const lista = this.dias();
     if (lista.length === 0) return [];
@@ -166,18 +156,26 @@ export class CargaAsistenciaPageComponent implements OnInit {
     return semanas;
   });
 
+  readonly pdfUrl = computed(() => {
+    const empleadoId = this.empleadoSeleccionado();
+    const periodo = this.periodoSeleccionado();
+    if (empleadoId == null || periodo == null || !this.calendarioListo()) {
+      return null;
+    }
+    return this.asistenciaApi.pdfUrl(empleadoId, periodo);
+  });
+
   ngOnInit(): void {
     this.cargarPeriodos();
     this.cargarEmpleados();
   }
 
-  // ============ Selección período / empleado ============
+  // ============ SelecciÃ³n perÃ­odo / empleado ============
 
   onPeriodoChange(periodo: string): void {
     this.periodoSeleccionado.set(periodo);
     this.dias.set([]);
     this.calendarioListo.set(false);
-    this.resultadoImport.set(null);
     if (this.empleadoSeleccionado() != null) {
       this.cargarAsistencia();
     }
@@ -188,9 +186,9 @@ export class CargaAsistenciaPageComponent implements OnInit {
     this.cargarAsistencia();
   }
 
-  // ============ Edición del calendario ============
+  // ============ EdiciÃ³n del calendario ============
 
-  /** Cicla el tipo de día (LABORAL → TARDANZA → FALTA → … → DESCANSO → LABORAL). */
+  /** Cicla el tipo de dÃ­a (LABORAL â†’ TARDANZA â†’ FALTA â†’ â€¦ â†’ DESCANSO â†’ LABORAL). */
   cycleTipo(dia: AsistenciaDia): void {
     const idx = this.tiposDia.indexOf(dia.tipoDia);
     const siguiente = this.tiposDia[(idx + 1) % this.tiposDia.length];
@@ -214,146 +212,14 @@ export class CargaAsistenciaPageComponent implements OnInit {
     );
   }
 
-  /** Clase CSS del semáforo de color por tipo de día. */
+  onMinutosInput(dia: AsistenciaDia, event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.onMinutos(dia, input.value);
+  }
+
+  /** Clase CSS del semÃ¡foro de color por tipo de dÃ­a. */
   claseDia(tipo: TipoDia): string {
     return `cal-dia--${tipo.toLowerCase()}`;
-  }
-
-  // ============ Import CSV (SPEC §12.2 — import masivo) ============
-
-  onArchivoCsv(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
-    if (file) {
-      void file.text().then((texto) => this.importarCsv(texto));
-    }
-    input.value = '';
-  }
-
-  onDragOver(event: DragEvent): void {
-    event.preventDefault();
-    this.arrastrando.set(true);
-  }
-
-  onDragLeave(event: DragEvent): void {
-    event.preventDefault();
-    this.arrastrando.set(false);
-  }
-
-  onDrop(event: DragEvent): void {
-    event.preventDefault();
-    this.arrastrando.set(false);
-    const file = event.dataTransfer?.files?.[0];
-    if (file) {
-      void file.text().then((texto) => this.importarCsv(texto));
-    }
-  }
-
-  abrirSelectorCsv(input: HTMLInputElement): void {
-    input.click();
-  }
-
-  /**
-   * Aplica un CSV `fecha,tipo,minutos` sobre el calendario cargado.
-   * Las filas cuya fecha no pertenece al período se ignoran.
-   */
-  importarCsv(texto: string): void {
-    if (this.dias().length === 0) {
-      this.snack.open('Seleccione período y empleado antes de importar.', 'Cerrar', {
-        duration: 5000,
-      });
-      return;
-    }
-    const validos = new Set<string>(this.tiposDia);
-    const fechasPeriodo = new Set<string>(this.dias().map((d) => d.dia));
-    const cambios = new Map<string, { tipo: TipoDia; minutos: number }>();
-    const omitidos: CsvFilaFallida[] = [];
-    const lineas = texto.split(/\r?\n/);
-
-    for (let i = 0; i < lineas.length; i++) {
-      const cruda = lineas[i].trim();
-      if (cruda.length === 0 || cruda.toLowerCase().startsWith('fecha')) continue;
-
-      const partes = cruda.split(/[,;]/).map((p) => p.trim());
-      if (partes.length < 2) {
-        omitidos.push({
-          linea: i + 1,
-          contenido: cruda,
-          motivo: 'Formato inválido — use fecha,tipo,minutos',
-        });
-        continue;
-      }
-
-      const fecha = partes[0];
-      const tipo = partes[1].toUpperCase();
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
-        omitidos.push({
-          linea: i + 1,
-          contenido: cruda,
-          motivo: 'Fecha inválida — use AAAA-MM-DD',
-        });
-        continue;
-      }
-      if (!fechasPeriodo.has(fecha)) {
-        omitidos.push({
-          linea: i + 1,
-          contenido: cruda,
-          motivo: 'La fecha no pertenece al período seleccionado',
-        });
-        continue;
-      }
-      if (!validos.has(tipo)) {
-        omitidos.push({
-          linea: i + 1,
-          contenido: cruda,
-          motivo: 'Tipo de día no reconocido',
-        });
-        continue;
-      }
-
-      const minutos = Math.max(0, Math.trunc(Number(partes[2]) || 0));
-      cambios.set(fecha, { tipo: tipo as TipoDia, minutos });
-    }
-
-    if (cambios.size === 0 && omitidos.length === 0) {
-      this.resultadoImport.set(null);
-      this.snack.open('El CSV no tiene filas válidas (fecha,tipo,minutos).', 'Cerrar', {
-        duration: 6000,
-      });
-      return;
-    }
-
-    if (cambios.size > 0) {
-      this.dias.update((lista) =>
-        lista.map((d) => {
-          const c = cambios.get(d.dia);
-          if (!c) return d;
-          return {
-            ...d,
-            tipoDia: c.tipo,
-            minutosTardanza: c.tipo === 'TARDANZA' ? c.minutos : 0,
-          };
-        }),
-      );
-    }
-
-    this.resultadoImport.set({ aplicados: cambios.size, omitidos });
-
-    if (cambios.size > 0 && omitidos.length === 0) {
-      this.snack.open(`${cambios.size} día(s) actualizado(s) desde CSV.`, 'Cerrar', {
-        duration: 4000,
-      });
-    } else if (cambios.size > 0) {
-      this.snack.open(
-        `${cambios.size} día(s) importado(s). ${omitidos.length} fila(s) omitida(s).`,
-        'Cerrar',
-        { duration: 6000 },
-      );
-    } else {
-      this.snack.open('Ninguna fila pudo importarse. Revise el detalle de errores.', 'Cerrar', {
-        duration: 6000,
-      });
-    }
   }
 
   // ============ Guardar ============
@@ -460,8 +326,8 @@ export class CargaAsistenciaPageComponent implements OnInit {
   }
 
   /**
-   * Arma el calendario del período: un día por fecha entre inicio y fin.
-   * Usa los días ya guardados; el resto: fin de semana → DESCANSO, resto → LABORAL.
+   * Arma el calendario del perÃ­odo: un dÃ­a por fecha entre inicio y fin.
+   * Usa los dÃ­as ya guardados; el resto: fin de semana â†’ DESCANSO, resto â†’ LABORAL.
    */
   private construirCalendario(
     fechaInicio: string,
@@ -491,7 +357,7 @@ export class CargaAsistenciaPageComponent implements OnInit {
 
   // ============ Helpers ============
 
-  /** Número de día dentro del mes (para mostrar en la celda). */
+  /** NÃºmero de dÃ­a dentro del mes (para mostrar en la celda). */
   numeroDia(dia: AsistenciaDia): number {
     return this.parseYmd(dia.dia).getDate();
   }
@@ -508,7 +374,7 @@ export class CargaAsistenciaPageComponent implements OnInit {
     return `${y}-${m}-${d}`;
   }
 
-  /** Día de la semana con lunes = 0 … domingo = 6. */
+  /** DÃ­a de la semana con lunes = 0 â€¦ domingo = 6. */
   private weekdayMon(date: Date): number {
     return (date.getDay() + 6) % 7;
   }
@@ -525,3 +391,4 @@ export class CargaAsistenciaPageComponent implements OnInit {
     this.snack.open(msg, 'Cerrar', { duration: 7000 });
   }
 }
+

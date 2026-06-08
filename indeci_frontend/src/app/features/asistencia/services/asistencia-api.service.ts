@@ -28,4 +28,8 @@ export class AsistenciaApiService {
       .post<ApiResponse<null>>(this.baseUrl, body)
       .pipe(map(extractApiData));
   }
+
+  pdfUrl(empleadoId: number, periodo: string): string {
+    return `${this.baseUrl}/${empleadoId}/${periodo}/pdf`;
+  }
 }

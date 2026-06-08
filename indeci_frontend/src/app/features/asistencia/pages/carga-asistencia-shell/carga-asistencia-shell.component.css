@@ -1,0 +1,38 @@
+:host {
+  display: block;
+  background: var(--surface-base, #F5F6F8);
+}
+
+.asistencia-shell {
+  display: grid;
+  gap: 16px;
+  padding: 16px;
+}
+
+.asistencia-shell__crumbs {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary, #4A5568);
+  font-size: 13px;
+}
+
+.asistencia-shell__sep,
+.asistencia-shell__here {
+  color: var(--text-muted, #8A96A8);
+}
+
+.asistencia-shell__header {
+  border: 0.5px solid var(--border-main, #E2E6ED);
+  border-radius: var(--radius-md, 7px);
+  box-shadow: none;
+  background: var(--surface-card, #FFFFFF);
+}
+
+.asistencia-shell__tabs {
+  min-width: 0;
+}
+
+.asistencia-shell__tabs ::ng-deep .mat-mdc-tab-labels {
+  border-bottom: 0.5px solid var(--border-subtle, #EEF0F4);
+}
