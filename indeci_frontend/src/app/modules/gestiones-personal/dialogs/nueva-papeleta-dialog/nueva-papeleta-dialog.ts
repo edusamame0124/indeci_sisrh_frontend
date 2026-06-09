@@ -38,6 +38,8 @@ export class NuevaPapeletaDialogComponent implements OnInit {
   cantidadHorasTexto = '';
   motivo = '';
   observacion = '';
+  lugarComision = '';
+  archivoSustento: File | null = null;
 
   ngOnInit(): void {
     this.cargarTipos();
@@ -48,12 +50,13 @@ export class NuevaPapeletaDialogComponent implements OnInit {
 
     this.service.listarTiposSolicitud().subscribe({
       next: (resp) => {
-        const activos = (resp.data ?? []).filter(
-          (tipo) => Number(tipo.activo) === 1,
-        );
+        const activos = (resp.data ?? []).filter((tipo) => Number(tipo.activo) === 1);
 
         this.tipos.set(activos);
         this.cargandoTipos.set(false);
+        if (this.mostrarHoras()) {
+          this.fechaFin = this.fechaInicio;
+        }
       },
       error: () => {
         this.error.set('No se pudo cargar el catálogo de tipos de solicitud.');
@@ -62,29 +65,24 @@ export class NuevaPapeletaDialogComponent implements OnInit {
     });
   }
 
- tipoSeleccionado(): TipoSolicitudRrhh | null {
+  tipoSeleccionado(): TipoSolicitudRrhh | null {
+    const tipo = this.tipos().find((x) => Number(x.id) === Number(this.tipoSolicitudId)) ?? null;
 
-  const tipo =
-    this.tipos().find(
-      (x) => Number(x.id) === Number(this.tipoSolicitudId),
-    ) ?? null;
+    console.log('ID seleccionado:', this.tipoSolicitudId);
+    console.log('Tipo completo:', tipo);
+    console.log('mostrarHoras:', tipo?.mostrarHoras);
 
-  console.log('ID seleccionado:', this.tipoSolicitudId);
-  console.log('Tipo completo:', tipo);
-  console.log('mostrarHoras:', tipo?.mostrarHoras);
+    return tipo;
+  }
+  mostrarHoras(): boolean {
+    const tipo = this.tipoSeleccionado();
 
-  return tipo;
-}
+    const resultado = Number(tipo?.mostrarHoras) === 1;
 
-mostrarHoras(): boolean {
-  const tipo = this.tipoSeleccionado();
+    console.log('Resultado mostrarHoras():', resultado);
 
-  const resultado = Number(tipo?.mostrarHoras) === 1;
-
-  console.log('Resultado mostrarHoras():', resultado);
-
-  return resultado;
-}
+    return resultado;
+  }
 
   calcularDias(): void {
     if (!this.fechaInicio || !this.fechaFin) {
@@ -155,7 +153,20 @@ mostrarHoras(): boolean {
       this.error.set('Ingrese el motivo de la solicitud.');
       return;
     }
+    if (this.requiereSustento() && !this.archivoSustento) {
+      this.error.set('Debe adjuntar el documento de sustento.');
+      return;
+    }
 
+    if (this.requiereLugar() && !this.lugarComision.trim()) {
+      this.error.set('Debe ingresar el lugar de comisión.');
+      return;
+    }
+
+    if (this.requiereObservacion() && !this.observacion.trim()) {
+      this.error.set('Debe ingresar una observación.');
+      return;
+    }
     if (this.mostrarHoras()) {
       if (!this.horaInicio || !this.horaFin) {
         this.error.set('Ingrese la hora de inicio y la hora de fin.');
@@ -183,7 +194,12 @@ mostrarHoras(): boolean {
       this.cantidadHoras = null;
       this.cantidadHorasTexto = '';
     }
-
+    if (!this.requiereSustento()) {
+      this.archivoSustento = null;
+    }
+    if (this.mostrarHoras()) {
+      this.fechaFin = this.fechaInicio;
+    }
     const payload: CrearSolicitudRrhhRequest = {
       tipoSolicitudId: Number(this.tipoSolicitudId),
       fechaInicio: this.fechaInicio,
@@ -194,11 +210,12 @@ mostrarHoras(): boolean {
       horaInicio: this.mostrarHoras() ? this.horaInicio : null,
       horaFin: this.mostrarHoras() ? this.horaFin : null,
       cantidadHoras: this.mostrarHoras() ? this.cantidadHoras : null,
+      lugarComision: this.requiereLugar() ? this.lugarComision.trim() : null,
     };
 
     this.guardando.set(true);
 
-    this.service.crearSolicitud(payload).subscribe({
+    this.service.crearSolicitud(payload, this.archivoSustento).subscribe({
       next: () => {
         this.guardando.set(false);
         this.dialogRef.close(true);
@@ -207,16 +224,34 @@ mostrarHoras(): boolean {
         this.guardando.set(false);
 
         const mensaje =
-          err?.error?.mensaje ??
-          err?.error?.message ??
-          'No se pudo registrar la papeleta.';
+          err?.error?.mensaje ?? err?.error?.message ?? 'No se pudo registrar la papeleta.';
 
         this.error.set(mensaje);
       },
     });
   }
-
+  onFechaInicioChange(): void {
+    if (this.mostrarHoras()) {
+      this.fechaFin = this.fechaInicio;
+    }
+  }
   cerrar(): void {
     this.dialogRef.close(false);
+  }
+  requiereSustento(): boolean {
+    return Number(this.tipoSeleccionado()?.requiereSustento) === 1;
+  }
+
+  requiereLugar(): boolean {
+    return Number(this.tipoSeleccionado()?.requiereLugar) === 1;
+  }
+
+  requiereObservacion(): boolean {
+    return Number(this.tipoSeleccionado()?.requiereObservacion) === 1;
+  }
+
+  onArchivoSeleccionado(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.archivoSustento = input.files?.[0] ?? null;
   }
 }

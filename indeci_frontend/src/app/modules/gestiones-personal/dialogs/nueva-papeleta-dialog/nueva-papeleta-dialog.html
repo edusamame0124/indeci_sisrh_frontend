@@ -1,9 +1,7 @@
 <h2 mat-dialog-title>Nueva papeleta</h2>
 
 <mat-dialog-content class="dialog-body">
-  <div *ngIf="cargandoTipos()" class="loading">
-    Cargando tipos de solicitud...
-  </div>
+  <div *ngIf="cargandoTipos()" class="loading">Cargando tipos de solicitud...</div>
 
   <div class="grid">
     <label class="field">
@@ -18,14 +16,24 @@
 
     <label class="field">
       <span>Fecha inicio</span>
-      <input type="date" [(ngModel)]="fechaInicio" (change)="calcularDias()" />
+      <input
+        type="date"
+        [(ngModel)]="fechaInicio"
+        (change)="calcularDias()"
+        (ngModelChange)="onFechaInicioChange()"
+      />
     </label>
 
-    <label class="field">
+
+    <label  class="field" *ngIf="!mostrarHoras()">
       <span>Fecha fin</span>
-      <input type="date" [(ngModel)]="fechaFin" (change)="calcularDias()" />
+      <input
+        type="date"
+        [(ngModel)]="fechaFin"
+        (change)="calcularDias()"
+        [disabled]="mostrarHoras()"
+      />
     </label>
-
     <ng-container *ngIf="!mostrarHoras()">
       <label class="field">
         <span>Cantidad de días</span>
@@ -54,9 +62,20 @@
       <span>Motivo</span>
       <textarea rows="3" [(ngModel)]="motivo"></textarea>
     </label>
+    <label class="field field--full" *ngIf="requiereLugar()">
+      <span>Lugar de comisión</span>
+      <input type="text" [(ngModel)]="lugarComision" />
+    </label>
 
+    <label class="field field--full" *ngIf="requiereSustento()">
+      <span>Documento de sustento</span>
+      <input type="file" (change)="onArchivoSeleccionado($event)" />
+    </label>
     <label class="field field--full">
-      <span>Observación</span>
+      <span>
+        Observación
+        <strong *ngIf="requiereObservacion()">*</strong>
+      </span>
       <textarea rows="3" [(ngModel)]="observacion"></textarea>
     </label>
   </div>
@@ -71,7 +90,13 @@
     Cancelar
   </button>
 
-  <button mat-flat-button color="primary" type="button" (click)="guardar()" [disabled]="guardando()">
+  <button
+    mat-flat-button
+    color="primary"
+    type="button"
+    (click)="guardar()"
+    [disabled]="guardando()"
+  >
     <mat-icon>save</mat-icon>
     {{ guardando() ? 'Guardando...' : 'Guardar borrador' }}
   </button>

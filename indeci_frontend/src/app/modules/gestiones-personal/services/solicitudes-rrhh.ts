@@ -45,12 +45,14 @@ export interface DocumentoSolicitud {
 }
 
 export interface TipoSolicitudRrhh {
-    id: number;
-    nombre: string;
-    codigo?: string;
-    activo?: number;
-    mostrarHoras?: number;
-    requiereSustento?: number;
+  id: number;
+  nombre: string;
+  codigo?: string;
+  activo?: number;
+  mostrarHoras?: number;
+  requiereSustento?: number;
+  requiereLugar?: number;
+  requiereObservacion?: number;
 }
 
 export interface CrearSolicitudRrhhRequest {
@@ -63,6 +65,7 @@ export interface CrearSolicitudRrhhRequest {
   horaInicio?: string | null;
   horaFin?: string | null;
   cantidadHoras?: number | null;
+  lugarComision?: string | null;
 }
 
 @Injectable({
@@ -93,82 +96,91 @@ export class SolicitudesRrhhService {
   /**
    * Crear nueva solicitud
    */
+  /**crearSolicitud(payload: CrearSolicitudRrhhRequest): Observable<ApiResponse<SolicitudRrhh>> {
+    return this.http.post<ApiResponse<SolicitudRrhh>>(`${this.apiUrl}/rrhh/solicitudes`, payload);
+  }*/
   crearSolicitud(
     payload: CrearSolicitudRrhhRequest,
+    sustento?: File | null,
   ): Observable<ApiResponse<SolicitudRrhh>> {
+    const formData = new FormData();
+
+    formData.append(
+      'datos',
+      new Blob([JSON.stringify(payload)], {
+        type: 'application/json',
+      }),
+    );
+
+    if (sustento) {
+      formData.append('sustento', sustento);
+    }
+
     return this.http.post<ApiResponse<SolicitudRrhh>>(
-      `${this.apiUrl}/rrhh/solicitudes`,
-      payload,
+      `${this.apiUrl}/rrhh/solicitudes/registrar`,
+      formData,
     );
   }
 
-    /**
+  /**
    * Lista solicitudes para ser aprobadas RRHH
-   * 
+   *
    */
 
-   listarTodasSolicitudes(): Observable<ApiResponse<SolicitudRrhh[]>> {
-  return this.http.get<ApiResponse<SolicitudRrhh[]>>(
-    `${this.apiUrl}/rrhh/solicitudes/todas`,
-  );
-}
+  listarTodasSolicitudes(): Observable<ApiResponse<SolicitudRrhh[]>> {
+    return this.http.get<ApiResponse<SolicitudRrhh[]>>(`${this.apiUrl}/rrhh/solicitudes/todas`);
+  }
 
-aprobarRrhh(
-  idPapeleta: number,
-  file: File,
-  observacion: string,
-): Observable<ApiResponse<unknown>> {
-  const formData = new FormData();
+  aprobarRrhh(
+    idPapeleta: number,
+    file: File,
+    observacion: string,
+  ): Observable<ApiResponse<unknown>> {
+    const formData = new FormData();
 
-  formData.append('file', file);
-  formData.append('observacion', observacion);
+    formData.append('file', file);
+    formData.append('observacion', observacion);
 
-  return this.http.put<ApiResponse<unknown>>(
-    `${this.apiUrl}/rrhh/solicitudes/aprobar-rrhh/${idPapeleta}`,
-    formData,
-  );
-}
-
-
+    return this.http.put<ApiResponse<unknown>>(
+      `${this.apiUrl}/rrhh/solicitudes/aprobar-rrhh/${idPapeleta}`,
+      formData,
+    );
+  }
 
   /**
    * Lista solicitudes para ser aprobadas por el jefe
    */
 
-      listarSolicitudesColaboradores(): Observable<ApiResponse<SolicitudRrhh[]>> {
-      return this.http.get<ApiResponse<SolicitudRrhh[]>>(
-        `${this.apiUrl}/rrhh/solicitudes/mis-colaboradores`,
-      );
-    }
+  listarSolicitudesColaboradores(): Observable<ApiResponse<SolicitudRrhh[]>> {
+    return this.http.get<ApiResponse<SolicitudRrhh[]>>(
+      `${this.apiUrl}/rrhh/solicitudes/mis-colaboradores`,
+    );
+  }
 
-    aprobarJefe(
-      idPapeleta: number,
-      file: File,
-      observacion: string,
-    ): Observable<ApiResponse<unknown>> {
-      const formData = new FormData();
+  aprobarJefe(
+    idPapeleta: number,
+    file: File,
+    observacion: string,
+  ): Observable<ApiResponse<unknown>> {
+    const formData = new FormData();
 
-      formData.append('file', file);
-      formData.append('observacion', observacion);
+    formData.append('file', file);
+    formData.append('observacion', observacion);
 
-      return this.http.put<ApiResponse<unknown>>(
-        `${this.apiUrl}/rrhh/solicitudes/aprobar-jefe/${idPapeleta}`,
-        formData,
-      );
-    }
+    return this.http.put<ApiResponse<unknown>>(
+      `${this.apiUrl}/rrhh/solicitudes/aprobar-jefe/${idPapeleta}`,
+      formData,
+    );
+  }
 
   /**
    * Descargar formato PDF de la papeleta
    */
   descargarFormatoPapeleta(idPapeleta: number): Observable<Blob> {
-  return this.http.post(
-    `${this.apiUrl}/rrhh/reportes/papeleta/${idPapeleta}`,
-    null,
-    {
+    return this.http.post(`${this.apiUrl}/rrhh/reportes/papeleta/${idPapeleta}`, null, {
       responseType: 'blob',
-    },
-  );
-}
+    });
+  }
   /**
    * Enviar papeleta firmada al jefe
    */
@@ -191,9 +203,7 @@ aprobarRrhh(
   /**
    * Historial documental de una solicitud
    */
-  listarDocumentosSolicitud(
-    idPapeleta: number,
-  ): Observable<ApiResponse<DocumentoSolicitud[]>> {
+  listarDocumentosSolicitud(idPapeleta: number): Observable<ApiResponse<DocumentoSolicitud[]>> {
     return this.http.get<ApiResponse<DocumentoSolicitud[]>>(
       `${this.apiUrl}/rrhh/solicitudes-doc/${idPapeleta}`,
     );
@@ -203,17 +213,11 @@ aprobarRrhh(
    * Descargar documento desde FTP
    */
   descargarDocumento(rutaArchivo: string): Observable<Blob> {
-    const params = new HttpParams().set(
-      'rutaArchivo',
-      rutaArchivo,
-    );
+    const params = new HttpParams().set('rutaArchivo', rutaArchivo);
 
-    return this.http.get(
-      `${this.apiUrl}/rrhh/ftp/download`,
-      {
-        params,
-        responseType: 'blob',
-      },
-    );
+    return this.http.get(`${this.apiUrl}/rrhh/ftp/download`, {
+      params,
+      responseType: 'blob',
+    });
   }
 }

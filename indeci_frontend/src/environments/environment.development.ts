@@ -3,7 +3,8 @@
  */
 export const environment = {
   production: false,
-  apiUrl: '/api', // proxy.conf.json redirige a http://localhost:8080
+  //apiUrl: '/api', // proxy.conf.json redirige a http://localhost:8080
+  apiUrl: 'http://localhost:8081/api',
   appName: 'SISRH-INDECI',
   tokenKey: 'sisrh_access_token',
   /**
