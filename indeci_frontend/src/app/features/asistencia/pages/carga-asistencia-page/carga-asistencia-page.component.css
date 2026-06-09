@@ -10,7 +10,7 @@
 
 .crumbs__here {
   color: var(--sisrh-color-secondary);
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .selectores {
@@ -44,7 +44,7 @@
 }
 
 .import-result__panel {
-  border: 1px solid var(--sisrh-border);
+  border: 0.5px solid var(--sisrh-border);
   border-radius: var(--sisrh-radius-md);
 }
 
@@ -56,7 +56,7 @@
 }
 
 .import-result__linea {
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .import-result__codigo {
@@ -80,14 +80,14 @@
   gap: 0.15rem;
   min-width: 130px;
   padding: 0.6rem 0.9rem;
-  border: 1px solid var(--sisrh-border);
+  border: 0.5px solid var(--sisrh-border);
   border-radius: var(--sisrh-radius-md);
   background: var(--sisrh-surface-muted);
 }
 
 .resumen-item__valor {
   font-size: 1.15rem;
-  font-weight: 700;
+  font-weight: 500;
   color: var(--sisrh-color-primary);
 }
 
@@ -150,7 +150,7 @@
 .cal-encabezado__dia {
   text-align: center;
   font-size: 0.75rem;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--sisrh-text-muted);
 }
 
@@ -160,7 +160,7 @@
 
 .cal-celda {
   min-height: 64px;
-  border: 1px solid var(--sisrh-border);
+  border: 0.5px solid var(--sisrh-border);
   border-radius: var(--sisrh-radius-md);
   display: flex;
   flex-direction: column;
@@ -187,13 +187,13 @@
 
 .cal-celda__num {
   font-size: 0.9rem;
-  font-weight: 700;
+  font-weight: 500;
   color: var(--sisrh-color-primary);
 }
 
 .cal-celda__tipo {
   font-size: 0.62rem;
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: 0.02em;
 }
 
@@ -202,7 +202,7 @@
   margin: 0 0.2rem 0.2rem;
   font-size: 0.72rem;
   padding: 0.1rem 0.25rem;
-  border: 1px solid var(--sisrh-color-border-strong);
+  border: 0.5px solid var(--sisrh-color-border-strong);
   border-radius: var(--sisrh-radius-sm);
 }
 
@@ -260,6 +260,24 @@
   color: var(--sisrh-text-muted);
 }
 
+.cal-dia--feriado {
+  background: var(--status-info-bg, #E6F1FB);
+  border-color: color-mix(in srgb, var(--status-info, #185FA5) 35%, transparent);
+}
+
+.cal-dia--feriado .cal-celda__tipo {
+  color: var(--status-info, #185FA5);
+}
+
+.cal-dia--observado {
+  background: var(--status-warn-bg, #FAEEDA);
+  border-color: color-mix(in srgb, var(--status-warn, #854F0B) 35%, transparent);
+}
+
+.cal-dia--observado .cal-celda__tipo {
+  color: var(--status-warn, #854F0B);
+}
+
 .leyenda-dot.cal-dia--laboral {
   background: var(--sisrh-badge-success-fg);
 }
@@ -284,11 +302,24 @@
   background: var(--sisrh-text-muted);
 }
 
+.leyenda-dot.cal-dia--feriado {
+  background: var(--status-info, #185FA5);
+}
+
+.leyenda-dot.cal-dia--observado {
+  background: var(--status-warn, #854F0B);
+}
+
 .acciones {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
   gap: 1rem;
+}
+
+.acciones__pdf {
+  border-color: var(--indeci-red, #C8102E);
+  color: var(--indeci-red, #C8102E);
 }
 
 .acc-obs {

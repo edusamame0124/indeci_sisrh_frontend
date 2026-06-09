@@ -83,6 +83,7 @@ describe('AdminApiService', () => {
     const detalle: AdminUserDetail = {
       id: 1,
       username: 'x',
+      dni: '12345678',
       status: 'ACTIVE',
       assignedRoleIds: [],
       deniedPermissionIds: [],
@@ -91,5 +92,13 @@ describe('AdminApiService', () => {
     const req = httpMock.expectOne('/api/admin/users/1');
     expect(req.request.method).toBe('GET');
     req.flush({ estado: 'OK', mensaje: '', data: detalle });
+  });
+
+  it('lookupPersonas', () => {
+    service.lookupPersonas('1234').subscribe();
+    const req = httpMock.expectOne((r) => r.url === '/api/admin/users/persona-lookup');
+    expect(req.request.method).toBe('GET');
+    expect(req.request.params.get('q')).toBe('1234');
+    req.flush({ estado: 'OK', mensaje: '', data: [] });
   });
 });

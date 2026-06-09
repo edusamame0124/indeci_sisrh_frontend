@@ -16,8 +16,8 @@ export const ASISTENCIA_ROUTES: Routes = [
       {
         path: 'carga',
         loadComponent: () =>
-          import('./pages/carga-asistencia-page/carga-asistencia-page.component').then(
-            (m) => m.CargaAsistenciaPageComponent,
+          import('./pages/carga-asistencia-shell/carga-asistencia-shell.component').then(
+            (m) => m.CargaAsistenciaShellComponent,
           ),
         title: 'Carga de asistencia — SISRH-INDECI',
       },

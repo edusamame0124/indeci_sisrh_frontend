@@ -1,4 +1,4 @@
-import { describe, expect, it, afterEach } from 'vitest';
+﻿import { describe, expect, it, afterEach } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { provideHttpClient } from '@angular/common/http';
@@ -35,7 +35,7 @@ describe('CargaAsistenciaPageComponent (Spec 010 PANTALLA-02)', () => {
     httpMock.verify();
   });
 
-  // Período corto: 2026-05-01 (vie) … 2026-05-07 (jue) → 02 y 03 son fin de semana.
+  // PerÃ­odo corto: 2026-05-01 (vie) â€¦ 2026-05-07 (jue) â†’ 02 y 03 son fin de semana.
   const periodoAbierto = (): PeriodoPlanillaRow => ({
     id: 1,
     periodo: '2026-05',
@@ -77,7 +77,7 @@ describe('CargaAsistenciaPageComponent (Spec 010 PANTALLA-02)', () => {
     dias,
   });
 
-  /** Arranca el componente y deja período + empleados cargados. */
+  /** Arranca el componente y deja perÃ­odo + empleados cargados. */
   function conPeriodo(personas: PersonaEmpleado[] = [persona(42, 'Ana Lopez'), persona(7, 'Carlos Ruiz')]) {
     const fixture = build();
     httpMock.expectOne('/api/rrhh/periodo-planilla').flush({ data: [periodoAbierto()] });
@@ -92,7 +92,7 @@ describe('CargaAsistenciaPageComponent (Spec 010 PANTALLA-02)', () => {
     expect(comp.empleados().map((e) => e.empleadoId)).toEqual([42, 7]);
   });
 
-  it('excluye del selector a las personas sin vínculo de empleado', () => {
+  it('excluye del selector a las personas sin vÃ­nculo de empleado', () => {
     const comp = conPeriodo([
       persona(42, 'Ana Lopez'),
       persona(null, 'Persona Sin Empleo'),
@@ -106,11 +106,11 @@ describe('CargaAsistenciaPageComponent (Spec 010 PANTALLA-02)', () => {
     httpMock.expectOne('/api/rrhh/asistencia/42/2026-05').flush({ data: asistencia(42) });
 
     expect(comp.calendarioListo()).toBe(true);
-    // 7 días del 2026-05-01 al 2026-05-07
+    // 7 dÃ­as del 2026-05-01 al 2026-05-07
     expect(comp.dias().length).toBe(7);
   });
 
-  it('el calendario respeta los días guardados y marca fines de semana como DESCANSO', () => {
+  it('el calendario respeta los dÃ­as guardados y marca fines de semana como DESCANSO', () => {
     const comp = conPeriodo().componentInstance;
     comp.onEmpleadoChange(42);
     httpMock.expectOne('/api/rrhh/asistencia/42/2026-05').flush({
@@ -121,12 +121,12 @@ describe('CargaAsistenciaPageComponent (Spec 010 PANTALLA-02)', () => {
 
     const dia = (clave: string) => comp.dias().find((d) => d.dia === clave);
     expect(dia('2026-05-01')?.tipoDia).toBe('LABORAL');
-    expect(dia('2026-05-02')?.tipoDia).toBe('DESCANSO'); // sábado
+    expect(dia('2026-05-02')?.tipoDia).toBe('DESCANSO'); // sÃ¡bado
     expect(dia('2026-05-03')?.tipoDia).toBe('DESCANSO'); // domingo
     expect(dia('2026-05-04')?.tipoDia).toBe('FALTA'); // guardado
   });
 
-  it('resumen() calcula el descuento según D.Leg. 276 Art. 24 (REGLA 276-02)', () => {
+  it('resumen() calcula el descuento segÃºn D.Leg. 276 Art. 24 (REGLA 276-02)', () => {
     const comp = conPeriodo().componentInstance;
     comp.onEmpleadoChange(42);
     httpMock.expectOne('/api/rrhh/asistencia/42/2026-05').flush({
@@ -149,7 +149,7 @@ describe('CargaAsistenciaPageComponent (Spec 010 PANTALLA-02)', () => {
     expect(r.totalDescuento).toBe(225);
   });
 
-  it('cycleTipo() avanza el tipo de día al siguiente del ciclo', () => {
+  it('cycleTipo() avanza el tipo de dÃ­a al siguiente del ciclo', () => {
     const comp = conPeriodo().componentInstance;
     comp.onEmpleadoChange(42);
     httpMock.expectOne('/api/rrhh/asistencia/42/2026-05').flush({ data: asistencia(42) });
@@ -160,36 +160,33 @@ describe('CargaAsistenciaPageComponent (Spec 010 PANTALLA-02)', () => {
     expect(comp.dias().find((d) => d.dia === '2026-05-04')?.tipoDia).toBe('TARDANZA');
   });
 
-  it('importarCsv() aplica los días válidos del CSV sobre el calendario', () => {
-    const comp = conPeriodo().componentInstance;
+  it('no muestra dropzone CSV en la carga individual manual', () => {
+    const fixture = conPeriodo();
+    const comp = fixture.componentInstance;
     comp.onEmpleadoChange(42);
     httpMock.expectOne('/api/rrhh/asistencia/42/2026-05').flush({ data: asistencia(42) });
+    fixture.detectChanges();
 
-    comp.importarCsv('fecha,tipo,minutos\n2026-05-06,FALTA,0\n2026-05-01,TARDANZA,30');
-
-    expect(comp.dias().find((d) => d.dia === '2026-05-06')?.tipoDia).toBe('FALTA');
-    const tardanza = comp.dias().find((d) => d.dia === '2026-05-01');
-    expect(tardanza?.tipoDia).toBe('TARDANZA');
-    expect(tardanza?.minutosTardanza).toBe(30);
-    expect(comp.resultadoImport()?.aplicados).toBe(2);
-    expect(comp.resultadoImport()?.omitidos.length).toBe(0);
+    expect(fixture.nativeElement.querySelector('.sisrh-dropzone')).toBeNull();
   });
 
-  it('importarCsv() reporta filas omitidas cuando hay errores parciales', () => {
-    const comp = conPeriodo().componentInstance;
+  it('muestra enlace PDF RR. HH. cuando el calendario esta listo', () => {
+    const fixture = conPeriodo();
+    const comp = fixture.componentInstance;
+
+    expect(comp.pdfUrl()).toBeNull();
+
     comp.onEmpleadoChange(42);
     httpMock.expectOne('/api/rrhh/asistencia/42/2026-05').flush({ data: asistencia(42) });
+    fixture.detectChanges();
 
-    comp.importarCsv(
-      'fecha,tipo,minutos\n2026-05-06,FALTA,0\n2026-12-01,LABORAL,0\n2026-05-01,INVALIDO,0',
-    );
-
-    expect(comp.resultadoImport()?.aplicados).toBe(1);
-    expect(comp.resultadoImport()?.omitidos.length).toBe(2);
-    expect(comp.dias().find((d) => d.dia === '2026-05-06')?.tipoDia).toBe('FALTA');
+    const link = fixture.nativeElement.querySelector('.acciones__pdf') as HTMLAnchorElement;
+    expect(comp.pdfUrl()).toBe('/api/rrhh/asistencia/42/2026-05/pdf');
+    expect(link.href).toContain('/api/rrhh/asistencia/42/2026-05/pdf');
+    expect(link.textContent).toContain('Descargar PDF');
   });
 
-  it('guardar() hace POST a /api/rrhh/asistencia con los días del calendario', () => {
+  it('guardar() hace POST a /api/rrhh/asistencia con los dÃ­as del calendario', () => {
     const comp = conPeriodo().componentInstance;
     comp.onEmpleadoChange(42);
     httpMock.expectOne('/api/rrhh/asistencia/42/2026-05').flush({ data: asistencia(42) });
@@ -203,3 +200,4 @@ describe('CargaAsistenciaPageComponent (Spec 010 PANTALLA-02)', () => {
     req.flush({ data: null });
   });
 });
+

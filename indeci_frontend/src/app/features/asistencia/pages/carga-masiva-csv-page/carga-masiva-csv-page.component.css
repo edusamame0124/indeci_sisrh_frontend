@@ -1,0 +1,207 @@
+:host {
+  display: block;
+}
+
+.masiva {
+  padding: 16px 0 0;
+}
+
+.masiva__step {
+  display: grid;
+  gap: 16px;
+  padding: 16px 0;
+}
+
+.masiva__field {
+  max-width: 360px;
+}
+
+.masiva__upload {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  max-width: 720px;
+  padding: 16px;
+  border: 0.5px dashed var(--border-main, #E2E6ED);
+  border-radius: var(--radius-md, 7px);
+  background: var(--surface-hover, #F8FAFD);
+}
+
+.masiva__upload-title,
+.masiva__selected {
+  margin: 0;
+  color: var(--text-primary, #0A1E35);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.masiva__hint,
+.masiva__muted {
+  display: block;
+  margin: 2px 0 0;
+  color: var(--text-secondary, #4A5568);
+  font-size: 12px;
+}
+
+.masiva__file-button {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: var(--radius-md, 7px);
+  background: var(--indeci-red, #C8102E);
+  color: #FFFFFF;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.masiva__file-button input {
+  display: none;
+}
+
+.masiva__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.masiva__stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.masiva__employee-card,
+.masiva__summary-card {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+  max-width: 860px;
+  padding: 12px 14px;
+  border: 0.5px solid var(--border-subtle, #EEF0F4);
+  border-radius: var(--radius-md, 7px);
+  background: var(--surface-hover, #F8FAFD);
+}
+
+.masiva__employee-card > div {
+  display: grid;
+  gap: 2px;
+  min-width: 220px;
+}
+
+.masiva__employee-label {
+  color: var(--text-secondary, #4A5568);
+  font-size: 12px;
+}
+
+.masiva__employee-card strong {
+  color: var(--text-primary, #0A1E35);
+  font-size: 18px;
+  line-height: 1.2;
+}
+
+.masiva__summary-card {
+  display: grid;
+  gap: 4px;
+  align-items: start;
+  margin-bottom: 12px;
+}
+
+.masiva__summary-card h3,
+.masiva__summary-card p {
+  margin: 0;
+}
+
+.masiva__summary-card h3 {
+  color: var(--text-primary, #0A1E35);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.masiva__summary-card p {
+  color: var(--text-secondary, #4A5568);
+  font-size: 13px;
+}
+
+.masiva__summary-warning {
+  color: var(--status-danger, #A32D2D) !important;
+  font-weight: 600;
+}
+
+.masiva__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.masiva__filter--active {
+  border-color: var(--primary-600, #0A66C2);
+  background: var(--status-info-bg, #E6F1FB);
+  color: var(--status-info, #185FA5);
+}
+
+.masiva__stats span,
+.masiva__badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 8px;
+  border-radius: var(--radius-sm, 5px);
+  background: var(--status-info-bg, #E6F1FB);
+  color: var(--status-info, #185FA5);
+  font-size: 12px;
+}
+
+.masiva__badge--error {
+  background: var(--status-danger-bg, #FCEBEB);
+  color: var(--status-danger, #A32D2D);
+}
+
+.masiva__badge--valid {
+  background: var(--status-success-bg, #E7F5EE);
+  color: var(--status-success, #157347);
+}
+
+.masiva__badge--warn {
+  background: var(--status-warn-bg, #FAEEDA);
+  color: var(--status-warn, #8A5A00);
+}
+
+.masiva__badge--observed {
+  background: var(--status-info-bg, #E6F1FB);
+  color: var(--status-info, #185FA5);
+}
+
+.masiva__table-scroll {
+  overflow: auto;
+  border: 0.5px solid var(--border-subtle, #EEF0F4);
+  border-radius: var(--radius-md, 7px);
+}
+
+.masiva__table {
+  width: 100%;
+}
+
+.masiva__table td.mat-mdc-cell:last-child {
+  min-width: 360px;
+}
+
+.masiva__alert {
+  margin: 0;
+  max-width: 720px;
+  padding: 12px;
+  border: 0.5px solid var(--status-danger, #A32D2D);
+  border-radius: var(--radius-md, 7px);
+  background: var(--status-danger-bg, #FCEBEB);
+  color: var(--status-danger, #A32D2D);
+  font-size: 13px;
+}
+
+.masiva__alert--strong {
+  border-color: var(--indeci-red, #C8102E);
+  background: var(--status-warn-bg, #FAEEDA);
+  color: var(--text-primary, #0A1E35);
+}

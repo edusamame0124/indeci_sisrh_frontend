@@ -31,6 +31,11 @@ import { isErrorResponse } from '../../../../core/models/error-response.model';
 import type { PersonaEmpleado } from '../../../empleados/models/persona-empleado.model';
 import type { MovimientoPlanillaRow } from '../../../planilla/models/movimiento-planilla.model';
 import type { PrestamoRow, VacacionSaldoRow } from '../../models/portal-empleado.model';
+import type {
+  AsistenciaDia,
+  AsistenciaResponse,
+  TipoDia,
+} from '../../../asistencia/models/asistencia.model';
 
 /**
  * PANTALLA-08 — Portal del Empleado (SPEC §12.2).
@@ -81,12 +86,15 @@ export class PortalEmpleadoPageComponent implements OnInit {
   readonly movimientos = signal<readonly MovimientoPlanillaRow[]>([]);
   readonly prestamos = signal<readonly PrestamoRow[]>([]);
   readonly vacaciones = signal<readonly VacacionSaldoRow[]>([]);
+  readonly asistenciaPeriodo = signal('');
+  readonly asistenciaPropia = signal<AsistenciaResponse | null>(null);
 
   readonly emailEdit = signal('');
   readonly telefonoEdit = signal('');
 
   readonly loading = signal(true);
   readonly datosLoading = signal(false);
+  readonly asistenciaLoading = signal(false);
   readonly guardandoContacto = signal(false);
   readonly datosListos = signal(false);
 
@@ -131,6 +139,29 @@ export class PortalEmpleadoPageComponent implements OnInit {
         .reduce((s, p) => s + p.saldoPendiente, 0),
     ),
   );
+
+  readonly asistenciaDiasSemana = ['Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab', 'Dom'] as const;
+
+  readonly asistenciaSemanas = computed<readonly (AsistenciaDia | null)[][]>(() => {
+    const dias = this.asistenciaPropia()?.dias ?? [];
+    if (dias.length === 0) {
+      return [];
+    }
+    const ordenados = [...dias].sort((a, b) => a.dia.localeCompare(b.dia));
+    const offset = this.weekdayMon(this.parseYmd(ordenados[0].dia));
+    const celdas: (AsistenciaDia | null)[] = [
+      ...Array<AsistenciaDia | null>(offset).fill(null),
+      ...ordenados,
+    ];
+    while (celdas.length % 7 !== 0) {
+      celdas.push(null);
+    }
+    const semanas: (AsistenciaDia | null)[][] = [];
+    for (let i = 0; i < celdas.length; i += 7) {
+      semanas.push(celdas.slice(i, i + 7));
+    }
+    return semanas;
+  });
 
   ngOnInit(): void {
     this.cargarPersonas();
@@ -192,6 +223,42 @@ export class PortalEmpleadoPageComponent implements OnInit {
       });
   }
 
+  consultarMiAsistencia(): void {
+    const periodo = this.asistenciaPeriodo().trim();
+    if (periodo.length === 0) {
+      this.snack.open('Ingrese el periodo a consultar.', 'Cerrar', { duration: 4000 });
+      return;
+    }
+    this.asistenciaLoading.set(true);
+    this.portalApi.asistenciaPropia(periodo).subscribe({
+      next: (asistencia) => {
+        this.asistenciaPropia.set(asistencia);
+        this.asistenciaLoading.set(false);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.asistenciaLoading.set(false);
+        this.onHttpSnack(err);
+      },
+    });
+  }
+
+  asistenciaPdfUrl(): string | null {
+    const periodo = this.asistenciaPeriodo().trim();
+    return periodo.length > 0 ? this.portalApi.asistenciaPdfUrl(periodo) : null;
+  }
+
+  numeroDiaAsistencia(dia: AsistenciaDia): number {
+    return this.parseYmd(dia.dia).getDate();
+  }
+
+  claseDiaAsistencia(tipo: TipoDia): string {
+    return `portal-asistencia__day--${tipo.toLowerCase()}`;
+  }
+
+  fmtMinutos(value: number | null | undefined): string {
+    return `${value ?? 0} min`;
+  }
+
   // ============ Carga de datos ============
 
   private cargarPersonas(): void {
@@ -226,6 +293,10 @@ export class PortalEmpleadoPageComponent implements OnInit {
         this.movimientos.set(movimientos);
         this.prestamos.set(prestamos);
         this.vacaciones.set(vacaciones);
+        const periodo = movimientos.slice().sort((a, b) => b.periodo.localeCompare(a.periodo))[0]?.periodo;
+        if (periodo != null && this.asistenciaPeriodo().length === 0) {
+          this.asistenciaPeriodo.set(periodo);
+        }
         this.datosLoading.set(false);
         this.datosListos.set(true);
       },
@@ -240,6 +311,15 @@ export class PortalEmpleadoPageComponent implements OnInit {
 
   private round2(value: number): number {
     return Math.round((value + Number.EPSILON) * 100) / 100;
+  }
+
+  private parseYmd(value: string): Date {
+    const [year, month, day] = value.split('-').map(Number);
+    return new Date(year, month - 1, day);
+  }
+
+  private weekdayMon(date: Date): number {
+    return (date.getDay() + 6) % 7;
   }
 
   private onHttpSnack(err: HttpErrorResponse): void {

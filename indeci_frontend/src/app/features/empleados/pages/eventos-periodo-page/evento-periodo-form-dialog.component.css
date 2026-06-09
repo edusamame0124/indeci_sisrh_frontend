@@ -1,4 +1,4 @@
-/* F3.6d — Dialog crear/editar evento del período. */
+/* F3.6d + P0 maternidad — Dialog evento del período. */
 
 :host {
   --sisrh-primary: #1f3a5f;
@@ -6,19 +6,33 @@
   --sisrh-border-soft: #e7ecf2;
   --sisrh-text-muted: #64748b;
   --sisrh-bg: #f5f7fa;
+  --sisrh-info: #185fa5;
+  --sisrh-info-bg: #e6f1fb;
+  --sisrh-info-border: #b9d6f0;
+  --sisrh-warning: #b7791f;
+  --sisrh-warning-bg: #fff4db;
+  --sisrh-warning-border: #f0d9a8;
 }
 
 .evento-form {
   display: contents;
 }
 
+.evento-form__empleado-readonly {
+  margin: 0;
+  padding: 10px 12px;
+  background: #e8eef6;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
 .evento-form__content {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
   padding-top: 8px;
-  min-width: 480px;
-  max-width: 640px;
+  min-width: 520px;
+  max-width: 800px;
 }
 
 @media (max-width: 600px) {
@@ -27,8 +41,59 @@
   }
 }
 
+.form-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.form-section__title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--sisrh-primary);
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--sisrh-border-soft);
+}
+
 .evento-form__field {
   width: 100%;
+}
+
+.evento-form__aviso {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.evento-form__aviso--info {
+  background: var(--sisrh-info-bg);
+  color: var(--sisrh-info);
+  border: 1px solid var(--sisrh-info-border);
+}
+
+.evento-form__aviso--warn {
+  background: var(--sisrh-warning-bg);
+  color: var(--sisrh-warning);
+  border: 1px solid var(--sisrh-warning-border);
+}
+
+.evento-form__aviso mat-icon {
+  flex-shrink: 0;
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+}
+
+.evento-form__nota-periodo {
+  margin: 0;
+  font-size: 12px;
+  color: var(--sisrh-text-muted);
+  line-height: 1.5;
 }
 
 .evento-form__row {
@@ -43,22 +108,55 @@
   }
 }
 
-.evento-form__adjunto {
+.evento-form__radio-group {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  margin-top: 4px;
 }
 
-.evento-form__adjunto-label {
+.evento-form__radio-label {
   font-size: 13px;
   font-weight: 500;
   color: var(--sisrh-text-muted);
 }
 
+.evento-form__radios {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.evento-form__table {
+  width: 100%;
+  font-size: 12px;
+}
+
+.evento-form__dl {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 16px;
+  margin: 0;
+  font-size: 12px;
+}
+
+.evento-form__dl dt {
+  font-weight: 500;
+  color: var(--sisrh-text-muted);
+}
+
+.evento-form__dl dd {
+  margin: 0;
+  color: #1f2937;
+}
+
+.evento-form__adjunto {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 .evento-form__adjunto-req {
   color: var(--sisrh-primary);
-  margin-left: 4px;
   font-weight: 600;
 }
 
@@ -93,9 +191,6 @@
 
 .evento-form__file-info {
   flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
   min-width: 0;
 }
 
@@ -105,9 +200,30 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  display: block;
 }
 
-.evento-form__file-info small {
-  font-size: 11px;
-  color: var(--sisrh-text-muted);
+.evento-form__preview {
+  padding: 12px;
+  background: var(--sisrh-bg);
+  border-radius: 6px;
+  border: 1px solid var(--sisrh-border-soft);
+}
+
+.evento-form__preview-list {
+  margin: 8px 0 0;
+  padding-left: 20px;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
 }

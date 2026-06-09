@@ -27,6 +27,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { AuthService } from '../../core/services/auth.service';
 import { ClientTelemetryService } from '../../core/services/client-telemetry.service';
+import { LoginFlowService } from '../../features/auth/services/login-flow.service';
 import {
   filterNavChildrenByQuery,
   filterVisibleNavItems,
@@ -224,7 +225,7 @@ import { flattenNavLeaves } from '../../core/models/main-nav-item.model';
             </span>
           </button>
           <mat-menu #accountMenu="matMenu" [hasBackdrop]="true">
-            <button type="button" mat-menu-item (click)="headerLogout()">Cerrar sesión</button>
+            <button type="button" mat-menu-item (click)="headerExitToSelector()">Salir</button>
           </mat-menu>
         </mat-toolbar>
 
@@ -566,6 +567,7 @@ import { flattenNavLeaves } from '../../core/models/main-nav-item.model';
 export class MainLayoutComponent {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly flow = inject(LoginFlowService);
   private readonly telemetry = inject(ClientTelemetryService);
   private readonly breakpoint = inject(BreakpointObserver);
 
@@ -687,8 +689,13 @@ export class MainLayoutComponent {
     if (this.isCompact()) this.drawerOpenCompact.set(false);
   }
 
-  headerLogout(): void {
-    this.telemetry.track('HEADER_LOGOUT', { url: this.router.url });
-    void this.router.navigate(['/auth/logout']);
+  /**
+   * Salir del módulo SISRH hacia el Portal Selector (hub SSO).
+   * No revoca la sesión central: el cierre total queda en el selector (/auth/logout).
+   */
+  headerExitToSelector(): void {
+    this.telemetry.track('HEADER_EXIT_TO_SELECTOR', { url: this.router.url });
+    this.flow.clearReturnUrl();
+    void this.router.navigate(['/auth/seleccionar-sistema']);
   }
 }

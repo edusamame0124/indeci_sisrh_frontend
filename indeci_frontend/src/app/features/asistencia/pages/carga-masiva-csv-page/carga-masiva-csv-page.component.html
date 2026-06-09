@@ -1,0 +1,251 @@
+<section class="masiva">
+  <mat-stepper linear orientation="horizontal" aria-label="Importación masiva de asistencia">
+    <mat-step [completed]="periodoSeleccionado() != null">
+      <ng-template matStepLabel>Periodo</ng-template>
+      <div class="masiva__step">
+        @if (loadingPeriodos()) {
+          <mat-progress-spinner mode="indeterminate" diameter="40" aria-label="Cargando periodos" />
+        } @else {
+          <mat-form-field appearance="outline" class="masiva__field">
+            <mat-label>Periodo abierto</mat-label>
+            <mat-select [value]="periodoSeleccionado()" (selectionChange)="onPeriodoChange($event.value)">
+              @for (periodo of periodos(); track periodo.id) {
+                <mat-option [value]="periodo.periodo">{{ periodo.periodo }} - {{ periodo.estado }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          <button mat-flat-button color="primary" matStepperNext [disabled]="periodoSeleccionado() == null">
+            Continuar
+          </button>
+        }
+      </div>
+    </mat-step>
+
+    <mat-step [completed]="archivo() != null">
+      <ng-template matStepLabel>Archivo CSV</ng-template>
+      <div class="masiva__step">
+        <div class="masiva__upload">
+          <mat-icon fontIcon="upload_file" aria-hidden="true" />
+          <div>
+            <p class="masiva__upload-title">Reporte CSV del marcador biométrico</p>
+            <p class="masiva__hint">Use el archivo con separador punto y coma (;).</p>
+          </div>
+          <label class="masiva__file-button">
+            Seleccionar archivo
+            <input type="file" accept=".csv,text/csv" (change)="onArchivoChange($event)" />
+          </label>
+        </div>
+        @if (archivo(); as file) {
+          <p class="masiva__selected" role="status">{{ file.name }}</p>
+        }
+        <div class="masiva__actions">
+          <button mat-stroked-button matStepperPrevious>Volver</button>
+          <button mat-flat-button color="primary" matStepperNext [disabled]="archivo() == null">
+            Continuar
+          </button>
+        </div>
+      </div>
+    </mat-step>
+
+    <mat-step [completed]="preview() != null">
+      <ng-template matStepLabel>Validar</ng-template>
+      <div class="masiva__step">
+        <button
+          mat-flat-button
+          color="primary"
+          type="button"
+          [disabled]="procesandoPreview() || archivo() == null || periodoSeleccionado() == null"
+          (click)="generarPreview()"
+        >
+          <mat-icon fontIcon="fact_check" aria-hidden="true" />
+          Validar archivo
+        </button>
+
+        @if (procesandoPreview()) {
+          <mat-progress-spinner mode="indeterminate" diameter="40" aria-label="Validando archivo" />
+        }
+
+        @if (preview(); as data) {
+          <div class="masiva__stats" role="status">
+            <span>Total: {{ data.filasTotal }}</span>
+            <span>Válidas limpias: {{ data.filasValidasLimpias }}</span>
+            <span>Con advertencia: {{ data.filasAdvertencia }}</span>
+            <span>Observadas: {{ data.filasObservadas }}</span>
+            <span>Errores: {{ data.filasError }}</span>
+          </div>
+
+          <section class="masiva__employee-card" aria-label="Resumen de empleados del archivo">
+            <div>
+              <span class="masiva__employee-label">N° Empleados importables</span>
+              <strong>{{ data.empleadosDetectados }}</strong>
+            </div>
+            <div>
+              <span class="masiva__employee-label">N° Empleados con error</span>
+              <strong>{{ data.empleadosConError }}</strong>
+            </div>
+          </section>
+
+          @if (data.errores.length > 0) {
+            <div class="masiva__filters" aria-label="Filtrar filas validadas">
+              @for (filtro of filtrosPreview; track filtro.value) {
+                <button
+                  mat-stroked-button
+                  type="button"
+                  [class.masiva__filter--active]="filtroPreview() === filtro.value"
+                  (click)="cambiarFiltro(filtro.value)"
+                >
+                  {{ filtro.label }} ({{ totalFiltro(filtro.value) }})
+                </button>
+              }
+            </div>
+            <div class="masiva__table-scroll">
+              <table mat-table [dataSource]="filasPaginadas()" class="masiva__table">
+                <ng-container matColumnDef="linea">
+                  <th mat-header-cell *matHeaderCellDef scope="col">Línea</th>
+                  <td mat-cell *matCellDef="let row">{{ row.linea }}</td>
+                </ng-container>
+                <ng-container matColumnDef="dni">
+                  <th mat-header-cell *matHeaderCellDef scope="col">DNI</th>
+                  <td mat-cell *matCellDef="let row">{{ row.dni || '-' }}</td>
+                </ng-container>
+                <ng-container matColumnDef="fecha">
+                  <th mat-header-cell *matHeaderCellDef scope="col">Fecha</th>
+                  <td mat-cell *matCellDef="let row">{{ row.fecha || '-' }}</td>
+                </ng-container>
+                <ng-container matColumnDef="severidad">
+                  <th mat-header-cell *matHeaderCellDef scope="col">Estado</th>
+                  <td mat-cell *matCellDef="let row">
+                    <span
+                      class="masiva__badge"
+                      [class.masiva__badge--valid]="row.severidad === 'VALIDA'"
+                      [class.masiva__badge--warn]="row.severidad === 'WARN'"
+                      [class.masiva__badge--observed]="row.severidad === 'OBSERVADA'"
+                      [class.masiva__badge--error]="row.severidad === 'ERROR'"
+                    >
+                      {{ badgeLabel(row.severidad) }}
+                    </span>
+                  </td>
+                </ng-container>
+                <ng-container matColumnDef="mensaje">
+                  <th mat-header-cell *matHeaderCellDef scope="col">Mensaje</th>
+                  <td mat-cell *matCellDef="let row">{{ row.mensaje }}</td>
+                </ng-container>
+                <tr mat-header-row *matHeaderRowDef="columnasErrores"></tr>
+                <tr mat-row *matRowDef="let row; columns: columnasErrores"></tr>
+              </table>
+              <mat-paginator
+                [length]="filasFiltradas().length"
+                [pageIndex]="pageIndex()"
+                [pageSize]="pageSize()"
+                [pageSizeOptions]="[10, 25, 50, 100]"
+                aria-label="Paginación de filas validadas"
+                (page)="onPage($event)"
+              />
+            </div>
+          }
+        }
+
+        <div class="masiva__actions">
+          <button mat-stroked-button matStepperPrevious>Volver</button>
+          <button mat-flat-button color="primary" matStepperNext [disabled]="preview() == null">
+            Revisar resumen
+          </button>
+        </div>
+      </div>
+    </mat-step>
+
+    <mat-step>
+      <ng-template matStepLabel>Resumen</ng-template>
+      @if (preview(); as data) {
+        <section class="masiva__summary-card" aria-label="Resumen por empleado">
+          <h3>Resumen por empleado</h3>
+          <p>{{ data.empleadosDetectados }} empleados detectados a partir de {{ data.filasValidas + data.filasObservadas }} filas importables.</p>
+          @if (data.filasError > 0) {
+            <p class="masiva__summary-warning">
+              Existen {{ data.filasError }} filas con error que impiden confirmar la importación.
+            </p>
+          }
+        </section>
+        <div class="masiva__table-scroll">
+          <table mat-table [dataSource]="data.empleados" class="masiva__table">
+            <ng-container matColumnDef="empleado">
+              <th mat-header-cell *matHeaderCellDef scope="col">Empleado</th>
+              <td mat-cell *matCellDef="let row">
+                <strong>{{ row.nombreSistema || row.nombreMarcador }}</strong>
+                <span class="masiva__muted">DNI {{ row.dni }}</span>
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="dias">
+              <th mat-header-cell *matHeaderCellDef scope="col">Días</th>
+              <td mat-cell *matCellDef="let row">
+                Lab. {{ row.diasLaborados }} / Faltas {{ row.diasFalta }} / Obs. {{ row.diasObservados }}
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="tardanza">
+              <th mat-header-cell *matHeaderCellDef scope="col">Tardanza</th>
+              <td mat-cell *matCellDef="let row">{{ row.totalMinTardanza }} min</td>
+            </ng-container>
+            <ng-container matColumnDef="descuento">
+              <th mat-header-cell *matHeaderCellDef scope="col">Descuento</th>
+              <td mat-cell *matCellDef="let row">S/ {{ fmtMonto(row.descuentoTotal) }}</td>
+            </ng-container>
+            <ng-container matColumnDef="estado">
+              <th mat-header-cell *matHeaderCellDef scope="col">Estado propuesto</th>
+              <td mat-cell *matCellDef="let row">{{ row.estadoCabeceraPropuesto }}</td>
+            </ng-container>
+            <ng-container matColumnDef="conflicto">
+              <th mat-header-cell *matHeaderCellDef scope="col">Conflicto</th>
+              <td mat-cell *matCellDef="let row">{{ row.conflictoExistente ? 'Sí' : 'No' }}</td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="columnasResumen"></tr>
+            <tr mat-row *matRowDef="let row; columns: columnasResumen"></tr>
+          </table>
+        </div>
+      }
+      <div class="masiva__actions">
+        <button mat-stroked-button matStepperPrevious>Volver</button>
+        <button mat-flat-button color="primary" matStepperNext [disabled]="preview() == null">
+          Confirmar
+        </button>
+      </div>
+    </mat-step>
+
+    <mat-step>
+      <ng-template matStepLabel>Confirmar</ng-template>
+      <div class="masiva__step">
+        @if (tieneConflictos()) {
+          <mat-form-field appearance="outline" class="masiva__field">
+            <mat-label>Estrategia ante asistencia existente</mat-label>
+            <mat-select [value]="estrategia()" (selectionChange)="estrategia.set($event.value)">
+              @for (item of estrategias; track item.value) {
+                <mat-option [value]="item.value">{{ item.label }}</mat-option>
+              }
+            </mat-select>
+            <mat-hint>{{ estrategiaSeleccionada().hint }}</mat-hint>
+          </mat-form-field>
+        }
+        @if (estrategia() === 'REEMPLAZAR_PERIODO_COMPLETO') {
+          <p class="masiva__alert masiva__alert--strong" role="alert">
+            Esta accion reemplazara la asistencia del periodo para todos los empleados validos del archivo.
+            Revise el resumen antes de confirmar.
+          </p>
+        }
+        @if (tieneErroresBloqueantes()) {
+          <p class="masiva__alert" role="alert">
+            No se puede confirmar porque existen filas con errores. Corrija el archivo y vuelva a validar.
+          </p>
+        }
+        <button
+          mat-flat-button
+          color="primary"
+          type="button"
+          [disabled]="confirmando() || preview() == null || tieneErroresBloqueantes()"
+          (click)="confirmar()"
+        >
+          <mat-icon fontIcon="check_circle" aria-hidden="true" />
+          Confirmar importación
+        </button>
+      </div>
+    </mat-step>
+  </mat-stepper>
+</section>

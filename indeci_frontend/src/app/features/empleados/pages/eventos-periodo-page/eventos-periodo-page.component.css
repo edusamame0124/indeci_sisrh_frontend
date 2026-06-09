@@ -76,6 +76,27 @@
   width: 100%;
 }
 
+.eventos-resumen {
+  margin: 0 0 12px;
+  font-size: 13px;
+  color: var(--sisrh-text-muted);
+}
+
+.evento-empleado {
+  font-weight: 600;
+  color: var(--sisrh-primary);
+}
+
+.evento-dni {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+.eventos-paginator {
+  margin-top: 8px;
+  border-top: 1px solid var(--sisrh-border-soft);
+}
+
 /* ============================ LOADING / EMPTY ============================ */
 
 .eventos-loading,
@@ -174,8 +195,17 @@
   white-space: nowrap;
 }
 
-.adjunto-icon {
+.adjunto-btn {
   color: var(--sisrh-primary);
+}
+
+.adjunto-btn:hover:not([disabled]) {
+  background: color-mix(in srgb, var(--sisrh-primary) 8%, transparent);
+}
+
+.adjunto-btn:focus-visible {
+  outline: 2px solid var(--sisrh-primary);
+  outline-offset: 2px;
 }
 
 .adjunto-vacio {

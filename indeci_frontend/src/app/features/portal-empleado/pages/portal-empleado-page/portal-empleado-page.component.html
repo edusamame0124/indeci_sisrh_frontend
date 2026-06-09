@@ -91,6 +91,113 @@
             }
           </mat-tab>
 
+          <mat-tab label="Mi asistencia">
+            <div class="contacto">
+              <mat-form-field appearance="outline" class="contacto__field">
+                <mat-label>Periodo</mat-label>
+                <input
+                  matInput
+                  placeholder="2026-06"
+                  [ngModel]="asistenciaPeriodo()"
+                  (ngModelChange)="asistenciaPeriodo.set($event)"
+                  aria-label="Periodo de asistencia"
+                />
+              </mat-form-field>
+              <button
+                mat-flat-button
+                color="primary"
+                type="button"
+                [disabled]="asistenciaLoading()"
+                (click)="consultarMiAsistencia()"
+              >
+                <mat-icon fontIcon="event_available" aria-hidden="true" />
+                Consultar asistencia
+              </button>
+            </div>
+
+            @if (asistenciaLoading()) {
+              <div class="loading" aria-busy="true">
+                <mat-progress-spinner mode="indeterminate" diameter="36" aria-label="Cargando asistencia" />
+              </div>
+            } @else if (asistenciaPropia(); as asistencia) {
+              <div class="portal-asistencia">
+                <div class="portal-asistencia__summary" role="status">
+                  <span class="portal-asistencia__metric">
+                    <strong class="sisrh-tabular">{{ asistencia.totalMinTardanza }}</strong>
+                    min. tardanza
+                  </span>
+                  <span class="portal-asistencia__metric">Estado: {{ asistencia.estado }}</span>
+                  <span class="portal-asistencia__metric">Laborados: {{ asistencia.diasLaborados }}</span>
+                  <span class="portal-asistencia__metric">Faltas: {{ asistencia.diasFalta }}</span>
+                  <span class="portal-asistencia__metric">
+                    Desc. tardanza: S/ {{ fmtMonto(asistencia.descuentoTardanza) }}
+                  </span>
+                  <span class="portal-asistencia__metric">
+                    Desc. falta: S/ {{ fmtMonto(asistencia.descuentoFalta) }}
+                  </span>
+                </div>
+
+                @if (asistenciaSemanas().length > 0) {
+                  <section class="portal-asistencia__calendar" aria-label="Calendario readonly de asistencia">
+                    <div class="portal-asistencia__weekdays">
+                      @for (dia of asistenciaDiasSemana; track dia) {
+                        <span>{{ dia }}</span>
+                      }
+                    </div>
+                    @for (semana of asistenciaSemanas(); track $index) {
+                      <div class="portal-asistencia__week">
+                        @for (dia of semana; track $index) {
+                          @if (dia === null) {
+                            <span class="portal-asistencia__day portal-asistencia__day--empty" aria-hidden="true"></span>
+                          } @else {
+                            <article
+                              class="portal-asistencia__day {{ claseDiaAsistencia(dia.tipoDia) }}"
+                              [attr.aria-label]="'Día ' + numeroDiaAsistencia(dia) + ', ' + dia.tipoDia"
+                            >
+                              <span class="portal-asistencia__day-number">{{ numeroDiaAsistencia(dia) }}</span>
+                              <span class="portal-asistencia__day-type">{{ dia.tipoDia }}</span>
+                              @if (dia.minutosTardanza > 0) {
+                                <span class="portal-asistencia__day-note">{{ fmtMinutos(dia.minutosTardanza) }}</span>
+                              }
+                            </article>
+                          }
+                        }
+                      </div>
+                    }
+                  </section>
+
+                  <div class="portal-asistencia__detail" aria-label="Detalle diario de asistencia">
+                    @for (dia of asistencia.dias; track dia.dia) {
+                      <div class="portal-asistencia__detail-row">
+                        <span class="sisrh-tabular">{{ dia.dia }}</span>
+                        <span>{{ dia.tipoDia }}</span>
+                        <span>Entrada: {{ dia.marcaEntrada || '-' }}</span>
+                        <span>Salida: {{ dia.marcaSalida || '-' }}</span>
+                        <span>Tardanza: {{ fmtMinutos(dia.minutosTardanza) }}</span>
+                      </div>
+                    }
+                  </div>
+                } @else {
+                  <p class="portal-asistencia__empty" role="status">
+                    No hay detalle diario registrado para el periodo consultado.
+                  </p>
+                }
+              </div>
+              @if (asistenciaPdfUrl(); as url) {
+                <a mat-stroked-button [href]="url" target="_blank" rel="noopener">
+                  <mat-icon fontIcon="picture_as_pdf" aria-hidden="true" />
+                  Descargar PDF
+                </a>
+              }
+            } @else {
+              <app-empty-state
+                icon="event_available"
+                title="Seleccione un periodo"
+                description="Consulte su asistencia del periodo seleccionado."
+              />
+            }
+          </mat-tab>
+
           <mat-tab label="Historial">
             @if (historial().length === 0) {
               <app-empty-state

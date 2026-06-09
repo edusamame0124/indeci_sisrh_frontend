@@ -51,11 +51,19 @@
           <article class="calculo-note">
             <mat-icon fontIcon="medical_services" aria-hidden="true" />
             <div>
-              <h3>Subsidios CAS</h3>
+              <h3>Subsidios CAS (maternidad / enfermedad)</h3>
               <p>
-                Para enfermedad, los primeros 20 d&iacute;as se acumulan por trabajador en el a&ntilde;o
-                calendario; EsSalud reconoce los d&iacute;as excedentes. Maternidad y enfermedad se
-                registran con c&oacute;digos PLAME 0915/0916 y el diferencial CAS con 2073.
+                El subsidio del 100 % se paga al trabajador y <strong>rellena</strong> el sueldo
+                que ya se prorratea por los d&iacute;as de descanso (ingreso no remunerativo, no es
+                doble pago). El <strong>diferencial</strong> que asume la entidad (PLAME 2073) es
+                costo del empleador y <strong>no</strong> suma al neto del trabajador. En enfermedad,
+                los primeros 20 d&iacute;as los asume el empleador y EsSalud reconoce desde el
+                d&iacute;a 21; maternidad usa 0915, enfermedad 0916.
+              </p>
+              <p class="calculo-note__ref">
+                Base: Ley 26790 y D.S. 009-97-SA &middot; maternidad 98 d&iacute;as (Ley 30367)
+                &middot; CAS D.Leg. 1057. El subsidio solo entra a la planilla si el tipo de
+                evento resta d&iacute;as laborados (si no, alerta V18 en validaciones).
               </p>
             </div>
           </article>

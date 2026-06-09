@@ -12,6 +12,7 @@ import { AuthService } from '../../../../core/services/auth.service';
 import type { PersonaEmpleado } from '../../../empleados/models/persona-empleado.model';
 import type { MovimientoPlanillaRow } from '../../../planilla/models/movimiento-planilla.model';
 import type { PrestamoRow, VacacionSaldoRow } from '../../models/portal-empleado.model';
+import type { AsistenciaResponse } from '../../../asistencia/models/asistencia.model';
 
 describe('PortalEmpleadoPageComponent (Spec 010 PANTALLA-08 — Portal del empleado)', () => {
   let httpMock: HttpTestingController;
@@ -90,6 +91,46 @@ describe('PortalEmpleadoPageComponent (Spec 010 PANTALLA-08 — Portal del emple
     diasGozados: 30 - saldo,
     diasSaldo: saldo,
     observacion: null,
+  });
+
+  const asistencia = (): AsistenciaResponse => ({
+    id: 91,
+    empleadoId: 42,
+    periodo: '2026-05',
+    remuneracionBase: 2500,
+    diasLaborados: 2,
+    diasFalta: 1,
+    totalMinTardanza: 20,
+    descuentoTardanza: 3.47,
+    descuentoFalta: 83.33,
+    estado: 'VALIDADA',
+    observacion: null,
+    dias: [
+      {
+        dia: '2026-05-01',
+        tipoDia: 'TARDANZA',
+        minutosTardanza: 20,
+        observacion: null,
+        marcaEntrada: '08:20',
+        marcaSalida: '17:30',
+      },
+      {
+        dia: '2026-05-02',
+        tipoDia: 'LABORAL',
+        minutosTardanza: 0,
+        observacion: null,
+        marcaEntrada: '08:00',
+        marcaSalida: '17:30',
+      },
+      {
+        dia: '2026-05-03',
+        tipoDia: 'FALTA',
+        minutosTardanza: 0,
+        observacion: null,
+        marcaEntrada: null,
+        marcaSalida: null,
+      },
+    ],
   });
 
   /** Arranca el componente y selecciona el empleado 42 con sus datos. */
@@ -171,5 +212,22 @@ describe('PortalEmpleadoPageComponent (Spec 010 PANTALLA-08 — Portal del emple
     httpMock.expectOne('/api/rrhh/vacacion-saldo/empleado/42').flush({ data: [] });
 
     expect(fixture.componentInstance.empleadoSeleccionado()).toBe(42);
+  });
+
+  it('consulta Mi asistencia y muestra calendario readonly con PDF propio', () => {
+    const fixture = conEmpleado();
+    const comp = fixture.componentInstance;
+    comp.asistenciaPeriodo.set('2026-05');
+
+    comp.consultarMiAsistencia();
+    httpMock.expectOne('/api/portal/asistencia/2026-05').flush({ data: asistencia() });
+    fixture.detectChanges();
+
+    const text = fixture.nativeElement.textContent as string;
+    expect(comp.asistenciaSemanas().length).toBeGreaterThan(0);
+    expect(text).toContain('VALIDADA');
+    expect(text).toContain('TARDANZA');
+    expect(text).toContain('Entrada: 08:20');
+    expect(comp.asistenciaPdfUrl()).toBe('/api/portal/asistencia/2026-05/pdf');
   });
 });

@@ -27,7 +27,7 @@ export const environment = {
    * productivo según el dominio real de cada sistema.
    */
   sistemasExternos: {
-    convocatoria: 'http://10.64.24.19:8089',
+  convocatoria: 'http://10.64.24.19:8089',
   rendimiento: 'http://10.64.24.19:8088',
   } as Readonly<Record<string, string>>,
 };

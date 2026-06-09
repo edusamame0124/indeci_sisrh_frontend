@@ -1,0 +1,92 @@
+<section class="historial">
+  <div class="historial__filters">
+    <mat-form-field appearance="outline" class="historial__field">
+      <mat-label>Periodo</mat-label>
+      <input
+        matInput
+        placeholder="2026-06"
+        [ngModel]="periodoFiltro()"
+        (ngModelChange)="periodoFiltro.set($event)"
+        aria-label="Filtrar historial por periodo"
+      />
+    </mat-form-field>
+    <button mat-flat-button color="primary" type="button" (click)="cargar()">
+      Buscar
+    </button>
+  </div>
+
+  @if (loading()) {
+    <mat-progress-spinner mode="indeterminate" diameter="40" aria-label="Cargando historial" />
+  } @else if (rows().length === 0) {
+    <p class="historial__empty" role="status">
+      No hay importaciones registradas para el filtro seleccionado.
+    </p>
+  } @else {
+    @if (periodosConPlanilla().size > 0) {
+      <p class="historial__recalculo-alert" role="alert">
+        Existen periodos con planilla generada. Si valida cabeceras de asistencia, ejecute el recálculo de planilla
+        para que los descuentos se reflejen correctamente.
+      </p>
+    }
+    <div class="historial__table-scroll">
+      <table mat-table [dataSource]="rows()" class="historial__table">
+        <ng-container matColumnDef="fecha">
+          <th mat-header-cell *matHeaderCellDef scope="col">Fecha</th>
+          <td mat-cell *matCellDef="let row">{{ fmtFecha(row.fechaImportacion) }}</td>
+        </ng-container>
+        <ng-container matColumnDef="periodo">
+          <th mat-header-cell *matHeaderCellDef scope="col">Periodo</th>
+          <td mat-cell *matCellDef="let row">{{ row.periodo }}</td>
+        </ng-container>
+        <ng-container matColumnDef="archivo">
+          <th mat-header-cell *matHeaderCellDef scope="col">Archivo</th>
+          <td mat-cell *matCellDef="let row">{{ row.nombreArchivo }}</td>
+        </ng-container>
+        <ng-container matColumnDef="estado">
+          <th mat-header-cell *matHeaderCellDef scope="col">Estado</th>
+          <td mat-cell *matCellDef="let row">
+            <span class="historial__badge">{{ row.estado }}</span>
+            @if (requiereRecalculo(row)) {
+              <span class="historial__badge historial__badge--warn">Requiere recálculo</span>
+            }
+          </td>
+        </ng-container>
+        <ng-container matColumnDef="filas">
+          <th mat-header-cell *matHeaderCellDef scope="col">Filas</th>
+          <td mat-cell *matCellDef="let row">
+            {{ row.filasValidas }} válidas / {{ row.filasError }} error(es)
+          </td>
+        </ng-container>
+        <ng-container matColumnDef="empleados">
+          <th mat-header-cell *matHeaderCellDef scope="col">Empleados</th>
+          <td mat-cell *matCellDef="let row">{{ row.empleadosProcesados }}</td>
+        </ng-container>
+        <ng-container matColumnDef="usuario">
+          <th mat-header-cell *matHeaderCellDef scope="col">Usuario</th>
+          <td mat-cell *matCellDef="let row">{{ row.usuario }}</td>
+        </ng-container>
+        <ng-container matColumnDef="acciones">
+          <th mat-header-cell *matHeaderCellDef scope="col">Acciones</th>
+          <td mat-cell *matCellDef="let row">
+            <button
+              mat-stroked-button
+              type="button"
+              class="historial__validate"
+              [disabled]="!puedeValidar(row) || validandoImportacionId() === row.id"
+              (click)="validarCabeceras(row)"
+            >
+              @if (validandoImportacionId() === row.id) {
+                <mat-progress-spinner mode="indeterminate" diameter="18" aria-label="Validando cabeceras" />
+              } @else {
+                <mat-icon fontIcon="verified" aria-hidden="true" />
+              }
+              Validar cabeceras
+            </button>
+          </td>
+        </ng-container>
+        <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+        <tr mat-row *matRowDef="let row; columns: columnas"></tr>
+      </table>
+    </div>
+  }
+</section>

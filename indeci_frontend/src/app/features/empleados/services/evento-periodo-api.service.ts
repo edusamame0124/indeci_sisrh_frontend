@@ -1,12 +1,15 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { map, type Observable } from 'rxjs';
 import type { ApiResponse } from '../../../core/models/api-response.model';
 import { extractApiData } from '../../../core/http/map-api-response';
 import type {
   EstadoEvento,
+  EventoPeriodoListParams,
+  EventoPeriodoPage,
   EventoPeriodoRequest,
   EventoPeriodoResponse,
+  MaternidadPreview,
   TipoEvento,
 } from '../models/evento-periodo.model';
 
@@ -24,6 +27,25 @@ export class EventoPeriodoApiService {
     return this.http
       .get<ApiResponse<TipoEvento[]>>(`${this.baseUrl}/tipos`)
       .pipe(map((r) => [...extractApiData(r)]));
+  }
+
+  /** Bandeja operativa paginada con filtros opcionales (server-side). */
+  listarPaginado(params: EventoPeriodoListParams): Observable<EventoPeriodoPage> {
+    let httpParams = new HttpParams()
+      .set('page', String(params.page))
+      .set('size', String(params.size));
+    if (params.empleadoId != null) {
+      httpParams = httpParams.set('empleadoId', String(params.empleadoId));
+    }
+    if (params.tipoEventoId != null) {
+      httpParams = httpParams.set('tipoEventoId', String(params.tipoEventoId));
+    }
+    if (params.estado) {
+      httpParams = httpParams.set('estado', params.estado);
+    }
+    return this.http
+      .get<ApiResponse<EventoPeriodoPage>>(this.baseUrl, { params: httpParams })
+      .pipe(map(extractApiData));
   }
 
   /** Eventos del empleado, más recientes primero. */
@@ -71,6 +93,15 @@ export class EventoPeriodoApiService {
   eliminar(id: number): Observable<null> {
     return this.http
       .delete<ApiResponse<null>>(`${this.baseUrl}/${id}`)
+      .pipe(map(extractApiData));
+  }
+
+  previewMaternidad(dto: EventoPeriodoRequest): Observable<MaternidadPreview> {
+    return this.http
+      .post<ApiResponse<MaternidadPreview>>(
+        `${this.baseUrl}/preview-maternidad`,
+        dto,
+      )
       .pipe(map(extractApiData));
   }
 }

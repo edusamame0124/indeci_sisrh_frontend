@@ -25,6 +25,129 @@
   margin-top: 0.25rem;
 }
 
+.portal-asistencia {
+  display: grid;
+  gap: 1rem;
+  margin-top: 0.75rem;
+}
+
+.portal-asistencia__summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.5rem;
+}
+
+.portal-asistencia__metric {
+  padding: 0.65rem 0.75rem;
+  border: 0.5px solid var(--border-subtle, #EEF0F4);
+  border-radius: var(--radius-md, 7px);
+  background: var(--surface-hover, #F8FAFD);
+  color: var(--text-secondary, #4A5568);
+  font-size: 0.8125rem;
+}
+
+.portal-asistencia__metric strong {
+  color: var(--text-primary, #0A1E35);
+  font-weight: 500;
+}
+
+.portal-asistencia__calendar {
+  display: grid;
+  gap: 0.35rem;
+  max-width: 780px;
+}
+
+.portal-asistencia__weekdays,
+.portal-asistencia__week {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.35rem;
+}
+
+.portal-asistencia__weekdays span {
+  text-align: center;
+  color: var(--text-muted, #8A96A8);
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.portal-asistencia__day {
+  min-height: 58px;
+  padding: 0.35rem;
+  border: 0.5px solid var(--border-main, #E2E6ED);
+  border-radius: var(--radius-md, 7px);
+  background: var(--surface-card, #FFFFFF);
+}
+
+.portal-asistencia__day--empty {
+  border-color: transparent;
+  background: transparent;
+}
+
+.portal-asistencia__day-number,
+.portal-asistencia__day-type,
+.portal-asistencia__day-note {
+  display: block;
+}
+
+.portal-asistencia__day-number {
+  color: var(--text-primary, #0A1E35);
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.portal-asistencia__day-type,
+.portal-asistencia__day-note {
+  color: var(--text-secondary, #4A5568);
+  font-size: 0.68rem;
+}
+
+.portal-asistencia__day--laboral {
+  background: var(--status-active-bg, #E1F5EE);
+}
+
+.portal-asistencia__day--tardanza,
+.portal-asistencia__day--observado {
+  background: var(--status-warn-bg, #FAEEDA);
+}
+
+.portal-asistencia__day--falta {
+  background: var(--status-danger-bg, #FCEBEB);
+}
+
+.portal-asistencia__day--licencia,
+.portal-asistencia__day--vacaciones,
+.portal-asistencia__day--feriado {
+  background: var(--status-info-bg, #E6F1FB);
+}
+
+.portal-asistencia__day--descanso {
+  background: var(--surface-hover, #F8FAFD);
+}
+
+.portal-asistencia__detail {
+  display: grid;
+  gap: 0.35rem;
+  max-width: 920px;
+}
+
+.portal-asistencia__detail-row {
+  display: grid;
+  grid-template-columns: 110px 120px repeat(3, minmax(120px, 1fr));
+  gap: 0.5rem;
+  padding: 0.55rem 0.75rem;
+  border: 0.5px solid var(--border-subtle, #EEF0F4);
+  border-radius: var(--radius-sm, 5px);
+  color: var(--text-secondary, #4A5568);
+  font-size: 0.78rem;
+}
+
+.portal-asistencia__empty {
+  margin: 0;
+  color: var(--text-muted, #8A96A8);
+  font-size: 0.8125rem;
+}
+
 .boleta-actual {
   display: flex;
   flex-direction: column;
@@ -107,5 +230,18 @@
 @media (max-width: 600px) {
   .portal-tabs ::ng-deep .mat-mdc-tab-labels {
     flex-wrap: wrap;
+  }
+
+  .portal-asistencia__day {
+    min-height: 52px;
+    padding: 0.25rem;
+  }
+
+  .portal-asistencia__day-type {
+    font-size: 0.58rem;
+  }
+
+  .portal-asistencia__detail-row {
+    grid-template-columns: 1fr;
   }
 }
