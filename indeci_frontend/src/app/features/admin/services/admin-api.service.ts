@@ -17,6 +17,7 @@ import type {
   AdminRolRow,
   AccesoSistema,
   AccesosPutRequest,
+  AdminPersonaLookup,
   AdminUserCreateRequest,
   AdminUserDetail,
   AdminUserPage,
@@ -88,6 +89,13 @@ export class AdminApiService {
     return this.http
       .get<ApiResponse<AdminUserDetail>>(`${BASE}/users/${id}`)
       .pipe(map((res) => extractApiData(res)));
+  }
+
+  lookupPersonas(q: string): Observable<readonly AdminPersonaLookup[]> {
+    const params = new HttpParams().set('q', q.trim());
+    return this.http
+      .get<ApiResponse<readonly AdminPersonaLookup[]>>(`${BASE}/users/persona-lookup`, { params })
+      .pipe(map((res) => [...extractApiData(res)]));
   }
 
   createUser(body: AdminUserCreateRequest): Observable<AdminUserDetail> {

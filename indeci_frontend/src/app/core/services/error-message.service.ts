@@ -26,6 +26,9 @@ export class ErrorMessageService {
     'El DNI es obligatorio': 'El DNI es obligatorio.',
     'El DNI ya está registrado':
       'Ese DNI ya está registrado en el sistema. Verifique el número o edite la persona existente.',
+    'El DNI debe tener 8 dígitos': 'El DNI debe tener exactamente 8 dígitos numéricos.',
+    'Esta persona ya tiene una cuenta institucional vinculada':
+      'Esta persona ya tiene una cuenta institucional vinculada. Use otro DNI o gestione la cuenta existente.',
     'El email ya está registrado':
       'Ese correo electrónico ya está registrado. Use otro correo o edite la persona existente.',
     'Persona no encontrada': 'No encontramos el registro solicitado.',
@@ -140,6 +143,10 @@ export class ErrorMessageService {
 
   adminUsuarioRolesActualizadosLista(): string {
     return 'Roles institucionales del usuario actualizados.';
+  }
+
+  adminSistemaRolesCatalogoError(sistemaNombre: string): string {
+    return `No se pudo cargar el catálogo de roles de ${sistemaNombre}. Verifique que el seed V010_45 esté aplicado en Oracle y vuelva a intentar.`;
   }
 
   adminUsuarioDenegacionesLista(): string {

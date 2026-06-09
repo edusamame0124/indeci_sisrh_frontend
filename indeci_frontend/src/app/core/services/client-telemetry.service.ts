@@ -15,6 +15,8 @@ export type TelemetryCategory =
   | 'BACKEND_UNREACHABLE'
   | 'MULTI_TAB_LOGOUT'
   | 'HEADER_LOGOUT'
+  /** Salir del módulo SISRH hacia el portal selector (sin revocar sesión SSO). */
+  | 'HEADER_EXIT_TO_SELECTOR'
   /** Acciones UI módulo catálogos ADMIN (Spec 006); detalle en payload.extra.action */
   | 'CATALOG_ADMIN_UI'
   /** Módulo administración usuarios/roles/permisos/auditoría (Spec 007) */

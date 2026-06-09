@@ -8,6 +8,7 @@ export interface AdminUserSummary {
 }
 
 export interface AdminUserDetail extends AdminUserSummary {
+  readonly dni?: string | null;
   readonly assignedRoleIds: readonly number[];
   readonly deniedPermissionIds?: readonly number[];
   readonly sistemas?: readonly AccesoSistema[];
@@ -16,6 +17,18 @@ export interface AdminUserDetail extends AdminUserSummary {
 export interface AdminUserCreateRequest {
   readonly username: string;
   readonly password: string;
+  readonly dni: string;
+}
+
+/** Preview de persona para autocomplete en alta de usuario. */
+export interface AdminPersonaLookup {
+  readonly personaId: number;
+  readonly dni: string;
+  readonly nombreCompleto: string;
+  readonly empleadoId: number | null;
+  readonly codigoInterno: string | null;
+  readonly cuentaVinculada: boolean;
+  readonly usernameVinculado: string | null;
 }
 
 export interface AdminUserStatusPatch {

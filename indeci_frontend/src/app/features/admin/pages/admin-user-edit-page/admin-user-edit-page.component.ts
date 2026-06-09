@@ -29,6 +29,7 @@ import {
   type SisrhSnackDurationMs,
 } from '../../../../core/config/sisrh-snack.config';
 import { ConfirmDialogComponent, type ConfirmDialogData } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
+import { SistemaAreaPickerComponent } from '../../components/sistema-area-picker/sistema-area-picker.component';
 import type {
   AccesoSistema,
   AdminPermisoRow,
@@ -51,6 +52,7 @@ import type {
     MatDialogModule,
     MatProgressSpinnerModule,
     MatSlideToggleModule,
+    SistemaAreaPickerComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -167,19 +169,13 @@ import type {
                     </div>
 
                     @if (areasDeSistema(sistema.codigo).length > 0) {
-                      <mat-form-field appearance="outline">
-                        <mat-label>Área *</mat-label>
-                        <mat-select
-                          [value]="areaSeleccionada(sistema.codigo)"
-                          [disabled]="!isAccesoActivo(sistema.codigo)"
-                          (selectionChange)="onAreaAcceso(sistema.codigo, $event.value)"
-                        >
-                          <mat-option value="">— Sin área —</mat-option>
-                          @for (area of areasDeSistema(sistema.codigo); track area.codigo) {
-                            <mat-option [value]="area.codigo">{{ area.sigla ?? area.codigo }} — {{ area.nombre }}</mat-option>
-                          }
-                        </mat-select>
-                      </mat-form-field>
+                      <app-sistema-area-picker
+                        [areas]="areasDeSistema(sistema.codigo)"
+                        [selected]="areaSeleccionada(sistema.codigo)"
+                        [disabled]="!isAccesoActivo(sistema.codigo)"
+                        [label]="areaLabel(sistema.codigo)"
+                        (areaChange)="onAreaAcceso(sistema.codigo, $event)"
+                      />
                     }
 
                     <mat-form-field appearance="outline">
@@ -199,8 +195,20 @@ import type {
                 }
               </div>
 
+              @if (accesosInvalidos()) {
+                <p class="page-hint access-hint-error" role="alert">
+                  Para cada sistema con acceso activo, seleccione la oficina (si aplica) y al menos un rol.
+                </p>
+              }
+
               <div class="acts">
-                <button mat-flat-button color="primary" type="button" (click)="guardarAccesos()" [disabled]="savingAccesos()">
+                <button
+                  mat-flat-button
+                  color="primary"
+                  type="button"
+                  (click)="guardarAccesos()"
+                  [disabled]="savingAccesos() || accesosInvalidos()"
+                >
                   Guardar accesos
                 </button>
               </div>
@@ -267,6 +275,10 @@ import type {
       }
       .access-row mat-form-field {
         width: 100%;
+      }
+      .access-hint-error {
+        color: var(--sisrh-color-error, #b71c1c);
+        font-weight: 500;
       }
       .perm-grupos {
         display: flex;
@@ -357,6 +369,24 @@ export class AdminUserEditPageComponent {
   readonly sistemasExternos = computed(() =>
     this.sistemasCat().filter((s) => s.codigo !== 'sisrh'),
   );
+
+  /**
+   * Bloquea «Guardar accesos» si algún sistema con acceso activo no cumple:
+   * al menos un rol y, cuando el sistema tiene catálogo de oficinas, una elegida.
+   */
+  readonly accesosInvalidos = computed(() => {
+    for (const sistema of this.sistemasExternos()) {
+      if (!this.isAccesoActivo(sistema.codigo)) continue;
+      if (this.rolesSeleccionados(sistema.codigo).length === 0) return true;
+      if (
+        this.areasDeSistema(sistema.codigo).length > 0 &&
+        !this.areaSeleccionada(sistema.codigo)
+      ) {
+        return true;
+      }
+    }
+    return false;
+  });
 
   readonly statusForm = this.fb.group({
     status: this.fb.nonNullable.control<'ACTIVE' | 'INACTIVE'>('ACTIVE', {
@@ -554,6 +584,11 @@ export class AdminUserEditPageComponent {
     return this.areasSistema()[codigo] ?? [];
   }
 
+  /** Etiqueta contextual del selector de area: Rendimiento (GDR) usa «Oficina». */
+  areaLabel(codigo: string): string {
+    return codigo === 'rendimiento' ? 'Oficina' : 'Área';
+  }
+
   areaSeleccionada(codigo: string): string {
     return this.findAcceso(codigo)?.area ?? '';
   }
@@ -629,7 +664,21 @@ export class AdminUserEditPageComponent {
     for (const sistema of externos) {
       this.api.listSistemaRoles(sistema.codigo).subscribe({
         next: (roles) => this.rolesSistema.update((cur) => ({ ...cur, [sistema.codigo]: roles })),
-        error: () => this.rolesSistema.update((cur) => ({ ...cur, [sistema.codigo]: [] })),
+        error: (err: HttpErrorResponse) => {
+          this.rolesSistema.update((cur) => ({ ...cur, [sistema.codigo]: [] }));
+          const raw = isErrorResponse(err.error) ? err.error.mensaje : null;
+          const msg = raw
+            ? this.errors.translateAdminApi(raw)
+            : this.errors.adminSistemaRolesCatalogoError(sistema.nombre);
+          this.notify(msg, SISRH_SNACK_DURATION_MS.long);
+          this.telemetry.track('ADMIN_MODULE_UI', {
+            extra: {
+              action: 'SISTEMA_ROLES_LOAD_ERROR',
+              sistema: sistema.codigo,
+              status: err.status,
+            },
+          });
+        },
       });
       this.api.listSistemaAreas(sistema.codigo).subscribe({
         next: (areas) => this.areasSistema.update((cur) => ({ ...cur, [sistema.codigo]: areas })),
