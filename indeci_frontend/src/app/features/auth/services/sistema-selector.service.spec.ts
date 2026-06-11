@@ -119,6 +119,25 @@ describe('SistemaSelectorService', () => {
     });
   });
 
+  it('aplica display label para roles GDR normativos V010_69', () => {
+    auth.setSession({
+      token: accessTokenConSistemas({
+        sisrh: ['SUPER_ADMIN'],
+        rendimiento: ['GDR_CIE', 'GDR_TITULAR', 'GDR_AUDITOR'],
+      }),
+      roles: [],
+      permisos: [],
+    });
+
+    const rendimiento = service.cards().find((c) => c.codigo === 'rendimiento');
+
+    expect(rendimiento!.roles).toEqual([
+      { code: 'GDR_CIE', label: 'CIE' },
+      { code: 'GDR_TITULAR', label: 'Titular' },
+      { code: 'GDR_AUDITOR', label: 'Auditor' },
+    ]);
+  });
+
   it('código sin display map → label cae al código crudo', () => {
     auth.setSession({
       token: accessTokenConSistemas({

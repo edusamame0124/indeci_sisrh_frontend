@@ -124,6 +124,9 @@ export const SISTEMAS_METADATA: ReadonlyArray<SistemaMetadata> = [
       GDR_JUNTA_DIRECTIVOS: 'Junta de Directivos',
       GDR_USUARIO: 'Usuario GDR',
       GDR_CONSULTA: 'Consulta',
+      GDR_CIE: 'CIE',
+      GDR_TITULAR: 'Titular',
+      GDR_AUDITOR: 'Auditor',
     },
   },
 ] as const;
