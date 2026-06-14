@@ -2,56 +2,7 @@
   overflow: hidden;
 }
 
-.legajo-shell__avatar {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--sisrh-surface-muted, #f5f5f5);
-  color: var(--sisrh-primary, #1565c0);
-}
-
-.legajo-shell__body {
-  display: grid;
-  grid-template-columns: minmax(220px, 280px) 1fr;
-  gap: 1.5rem;
-  padding-top: 0.5rem;
-}
-
-.legajo-shell__nav {
-  border-right: 1px solid var(--sisrh-border, #e0e0e0);
-  padding-right: 0.5rem;
-}
-
-.legajo-shell__nav-list {
-  padding: 0;
-}
-
-.legajo-shell__nav-link {
-  border-radius: 6px;
-  margin-bottom: 2px;
-  text-decoration: none;
-  color: inherit;
-}
-
-.legajo-shell__nav-link--active {
-  background: var(--sisrh-surface-muted, #f5f5f5);
-  font-weight: 600;
-}
-
 .legajo-shell__content {
   min-height: 12rem;
-  padding: 0.25rem 0.5rem;
-}
-
-@media (max-width: 768px) {
-  .legajo-shell__body {
-    grid-template-columns: 1fr;
-  }
-
-  .legajo-shell__nav {
-    border-right: none;
-    border-bottom: 1px solid var(--sisrh-border, #e0e0e0);
-    padding-right: 0;
-    padding-bottom: 1rem;
-  }
+  padding: 1rem 1.25rem;
 }

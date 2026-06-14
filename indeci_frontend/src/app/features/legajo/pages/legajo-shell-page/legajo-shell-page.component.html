@@ -6,37 +6,8 @@
   </nav>
 
   <mat-card class="page-card sisrh-elevated legajo-shell__card">
-    <mat-card-header>
-      <div mat-card-avatar class="legajo-shell__avatar">
-        <mat-icon aria-hidden="true">folder_shared</mat-icon>
-      </div>
-      <mat-card-title>Legajo Personal</mat-card-title>
-      <mat-card-subtitle>
-        Expediente digital del servidor público — seleccione una sección para continuar.
-      </mat-card-subtitle>
-    </mat-card-header>
-
-    <mat-card-content class="legajo-shell__body">
-      <nav class="legajo-shell__nav" aria-label="Secciones del legajo personal">
-        <mat-nav-list class="legajo-shell__nav-list">
-          @for (section of sections; track section.id) {
-            <a
-              mat-list-item
-              class="legajo-shell__nav-link"
-              [routerLink]="['/legajo', section.route]"
-              routerLinkActive="legajo-shell__nav-link--active"
-              [attr.aria-current]="null"
-            >
-              <mat-icon matListItemIcon aria-hidden="true">{{ section.icon }}</mat-icon>
-              <span matListItemTitle>{{ section.label }}</span>
-            </a>
-          }
-        </mat-nav-list>
-      </nav>
-
-      <div class="legajo-shell__content">
-        <router-outlet />
-      </div>
+    <mat-card-content class="legajo-shell__content">
+      <router-outlet />
     </mat-card-content>
   </mat-card>
 </div>
