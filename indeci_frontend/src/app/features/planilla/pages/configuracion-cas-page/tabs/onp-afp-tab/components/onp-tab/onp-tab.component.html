@@ -1,0 +1,186 @@
+<div class="onp-section">
+
+  <!-- Alerta normativa ONP -->
+  <div class="onp-alert" role="note">
+    <mat-icon fontIcon="info" aria-hidden="true" />
+    <span>
+      <strong>ONP (Ley 19990):</strong> aporte del trabajador del 13% sobre la remuneración asegurable.
+      No aplica a servidores bajo régimen CAS que optaron por AFP. Tasa parametrizada — no hardcodeada.
+    </span>
+  </div>
+
+  <!-- Filtros -->
+  <div class="onp-filters" role="search" aria-label="Filtros de parámetros ONP">
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="filter-field">
+      <mat-label>Período</mat-label>
+      <input
+        matInput
+        type="text"
+        placeholder="ej. 202601"
+        [value]="filtroPeriodo()"
+        (input)="filtroPeriodo.set($any($event.target).value)"
+      />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="filter-field">
+      <mat-label>Estado</mat-label>
+      <mat-select
+        [value]="filtroEstado()"
+        (selectionChange)="filtroEstado.set($event.value)"
+      >
+        @for (op of estadosOpciones; track op.valor) {
+          <mat-option [value]="op.valor">{{ op.etiqueta }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="filter-search">
+      <mat-icon matPrefix fontIcon="search" aria-hidden="true" />
+      <input
+        matInput
+        type="search"
+        placeholder="Buscar por vigencia, fuente..."
+        [value]="busqueda()"
+        (input)="onBusqueda($any($event.target).value)"
+        aria-label="Buscar parámetros ONP"
+      />
+    </mat-form-field>
+
+    <button mat-flat-button color="primary" (click)="aplicarFiltros()" aria-label="Aplicar filtros">
+      Filtrar
+    </button>
+  </div>
+
+  <!-- Botones de acción -->
+  <div class="onp-actions" role="toolbar" aria-label="Acciones sobre parámetros ONP">
+    <button mat-flat-button color="primary" (click)="nuevaVigencia()">
+      <mat-icon fontIcon="add" aria-hidden="true" />
+      Nueva vigencia ONP
+    </button>
+    <button mat-stroked-button (click)="exportar()">
+      <mat-icon fontIcon="download" aria-hidden="true" />
+      Exportar
+    </button>
+  </div>
+
+  <!-- Estado de carga / error / vacío / tabla -->
+  @if (loading()) {
+    <div class="onp-state onp-state--loading" aria-live="polite">
+      <mat-spinner diameter="36" />
+      <span>Cargando parámetros ONP…</span>
+    </div>
+  } @else if (error()) {
+    <div class="onp-state onp-state--error" role="alert">
+      <mat-icon fontIcon="error_outline" aria-hidden="true" />
+      {{ error() }}
+    </div>
+  } @else if (rowsFiltradas().length === 0) {
+    <div class="onp-state onp-state--empty">
+      <mat-icon fontIcon="security" aria-hidden="true" />
+      <span>No se encontraron parámetros ONP con los filtros aplicados.</span>
+    </div>
+  } @else {
+    <div class="onp-table-wrap" role="region" aria-label="Tabla de parámetros ONP">
+      <table mat-table [dataSource]="pagedRows()" class="onp-table" aria-label="Parámetros ONP por vigencia">
+
+        <ng-container matColumnDef="vigenciaInicio">
+          <th mat-header-cell *matHeaderCellDef>Vigencia inicio</th>
+          <td mat-cell *matCellDef="let r" class="col-date">{{ formatPeriodo(r.periodoInicio) }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="vigenciaFin">
+          <th mat-header-cell *matHeaderCellDef>Vigencia fin</th>
+          <td mat-cell *matCellDef="let r" class="col-date">{{ formatPeriodo(r.periodoFin) }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="aporteOnpPct">
+          <th mat-header-cell *matHeaderCellDef class="col-num">Aporte ONP %</th>
+          <td mat-cell *matCellDef="let r" class="col-num">
+            <span class="tasa-badge">{{ r.aporteOnpPct | number:'1.2-2' }}%</span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="fuenteOficial">
+          <th mat-header-cell *matHeaderCellDef>Fuente oficial</th>
+          <td mat-cell *matCellDef="let r">
+            <span class="badge badge--fuente">{{ r.fuenteOficial }}</span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="observacion">
+          <th mat-header-cell *matHeaderCellDef>Observación</th>
+          <td mat-cell *matCellDef="let r" class="col-obs">{{ r.observacion ?? '—' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="estado">
+          <th mat-header-cell *matHeaderCellDef>Estado</th>
+          <td mat-cell *matCellDef="let r">
+            <span
+              class="badge"
+              [class.badge--vigente]="r.estado === 'VIGENTE'"
+              [class.badge--programado]="r.estado === 'PROGRAMADO'"
+              [class.badge--cerrado]="r.estado === 'CERRADO'"
+              [class.badge--inactivo]="r.estado === 'INACTIVO'"
+            >
+              @if (r.bloqueadoPorPlanilla) {
+                <mat-icon fontIcon="lock" class="badge__lock" aria-label="Bloqueado por planilla cerrada" />
+              }
+              {{ r.estado | titlecase }}
+            </span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="acciones">
+          <th mat-header-cell *matHeaderCellDef class="col-actions">Acciones</th>
+          <td mat-cell *matCellDef="let r" class="col-actions">
+            <button
+              mat-icon-button
+              (click)="verDetalle(r)"
+              matTooltip="Ver detalle"
+              [attr.aria-label]="'Ver detalle período ' + r.periodoInicio"
+            >
+              <mat-icon fontIcon="visibility" />
+            </button>
+            <button
+              mat-icon-button
+              (click)="editar(r)"
+              [disabled]="r.bloqueadoPorPlanilla"
+              [matTooltip]="r.bloqueadoPorPlanilla ? 'Bloqueado: planilla cerrada' : 'Editar'"
+              [attr.aria-label]="'Editar vigencia ONP ' + r.periodoInicio"
+            >
+              <mat-icon fontIcon="edit" />
+            </button>
+            <button
+              mat-icon-button
+              (click)="cerrarVigencia(r)"
+              [disabled]="r.bloqueadoPorPlanilla || r.estado !== 'VIGENTE'"
+              matTooltip="Cerrar vigencia"
+              [attr.aria-label]="'Cerrar vigencia ONP ' + r.periodoInicio"
+            >
+              <mat-icon fontIcon="timer_off" />
+            </button>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="columns"></tr>
+        <tr mat-row *matRowDef="let r; columns: columns;" class="onp-row"></tr>
+      </table>
+    </div>
+
+    <div class="onp-pag-row">
+      <span class="onp-count">
+        Mostrando {{ rangoMostrado().start }} a {{ rangoMostrado().end }} de {{ rangoMostrado().total }} registros
+      </span>
+      <mat-paginator
+        [length]="rowsFiltradas().length"
+        [pageSize]="pageSize()"
+        [pageIndex]="pageIndex()"
+        [pageSizeOptions]="pageSizeOptions"
+        (page)="onPage($event)"
+        aria-label="Paginación de parámetros ONP"
+      />
+    </div>
+  }
+
+  <p class="onp-note">Base normativa: Ley 19990 — Sistema Nacional de Pensiones · D.S. 054-97-EF · ONP Perú</p>
+</div>

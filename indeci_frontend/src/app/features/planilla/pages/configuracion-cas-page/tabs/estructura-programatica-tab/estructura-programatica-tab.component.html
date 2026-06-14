@@ -1,0 +1,122 @@
+<div class="tab-section">
+  <div class="tab-section__head">
+    <div>
+      <h2 class="tab-section__title">Estructura Programática CAS</h2>
+      <p class="tab-section__desc">
+        Metas presupuestales y cadenas programáticas vinculadas a las plazas CAS del ejercicio.
+        Estas cadenas se usan en la generación del MCPP Web y en los clasificadores del PLAME.
+      </p>
+    </div>
+    <button
+      mat-flat-button
+      color="primary"
+      class="tab-section__action"
+      (click)="agregar()"
+      matTooltip="Registrar nueva cadena programática"
+      aria-label="Registrar nueva cadena programática"
+    >
+      <mat-icon fontIcon="add" aria-hidden="true" />
+      Nueva cadena
+    </button>
+  </div>
+
+  @if (!loading() && !error()) {
+    <mat-form-field appearance="outline" class="buscador" subscriptSizing="dynamic">
+      <mat-label>Buscar por código, programa o actividad</mat-label>
+      <mat-icon matPrefix fontIcon="search" aria-hidden="true" />
+      <input
+        matInput
+        type="search"
+        autocomplete="off"
+        [value]="busqueda()"
+        (input)="onBusqueda($any($event.target).value)"
+        aria-label="Buscar estructura programática"
+      />
+    </mat-form-field>
+  }
+
+  @if (loading()) {
+    <div class="tab-section__loading" aria-live="polite" aria-label="Cargando estructura programática">
+      <mat-spinner diameter="36" />
+      <span>Cargando estructura programática…</span>
+    </div>
+  } @else if (error()) {
+    <div class="tab-section__error" role="alert">
+      <mat-icon fontIcon="error_outline" aria-hidden="true" />
+      <span>{{ error() }}</span>
+    </div>
+  } @else if (rows().length === 0) {
+    <div class="tab-section__empty">
+      <mat-icon fontIcon="account_tree" aria-hidden="true" />
+      @if (busqueda()) {
+        <span>No se encontraron resultados para "<strong>{{ busqueda() }}</strong>".</span>
+      } @else {
+        <span>No hay cadenas programáticas configuradas. Registre la primera.</span>
+      }
+    </div>
+  } @else {
+    <div class="tab-table-wrap" role="region" aria-label="Tabla de estructura programática">
+      <table mat-table [dataSource]="rows()" class="tab-table" aria-label="Estructura programática CAS">
+
+        <ng-container matColumnDef="codigo">
+          <th mat-header-cell *matHeaderCellDef>Código</th>
+          <td mat-cell *matCellDef="let row" class="col-mono">{{ row.codigo }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="categoria">
+          <th mat-header-cell *matHeaderCellDef class="col-center">Cat.</th>
+          <td mat-cell *matCellDef="let row" class="col-center">{{ row.categoria }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="funcion">
+          <th mat-header-cell *matHeaderCellDef class="col-center">Func.</th>
+          <td mat-cell *matCellDef="let row" class="col-center">{{ row.funcion }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="programa">
+          <th mat-header-cell *matHeaderCellDef class="col-center">Prog.</th>
+          <td mat-cell *matCellDef="let row" class="col-center">{{ row.programa }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="subPrograma">
+          <th mat-header-cell *matHeaderCellDef class="col-center">Sub-prog.</th>
+          <td mat-cell *matCellDef="let row" class="col-center">{{ row.subPrograma }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="actividad">
+          <th mat-header-cell *matHeaderCellDef>Actividad / Acción</th>
+          <td mat-cell *matCellDef="let row" class="col-actividad">{{ row.actividad }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="estado">
+          <th mat-header-cell *matHeaderCellDef>Estado</th>
+          <td mat-cell *matCellDef="let row">
+            <span class="badge" [class.badge--activo]="row.activo" [class.badge--inactivo]="!row.activo">
+              {{ row.activo ? 'Activa' : 'Inactiva' }}
+            </span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="acciones">
+          <th mat-header-cell *matHeaderCellDef class="col-actions">Acciones</th>
+          <td mat-cell *matCellDef="let row" class="col-actions">
+            <button
+              mat-icon-button
+              (click)="editar(row)"
+              matTooltip="Editar cadena {{ row.codigo }}"
+              [attr.aria-label]="'Editar cadena ' + row.codigo"
+            >
+              <mat-icon fontIcon="edit" />
+            </button>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="columns"></tr>
+        <tr mat-row *matRowDef="let row; columns: columns;" class="tab-table__row"></tr>
+      </table>
+    </div>
+    <p class="tab-section__note">
+      Base normativa: Ley 28411 (SGNP) · Clasificadores presupuestarios DNPP · D.Leg. 1057 Art. 8 CAS
+    </p>
+  }
+</div>

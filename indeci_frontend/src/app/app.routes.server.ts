@@ -33,6 +33,10 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Client,
   },
   {
+    path: 'legajo/**',
+    renderMode: RenderMode.Client,
+  },
+  {
     path: 'catalogos/**',
     renderMode: RenderMode.Client,
   },

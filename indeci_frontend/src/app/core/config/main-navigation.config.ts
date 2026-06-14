@@ -68,16 +68,12 @@ export const MAIN_NAV_ITEMS: readonly MainNavItem[] = [
   },
 
   {
-    label: 'Empleados',
+    label: 'Módulo Vinculación',
     route: '',
     icon: 'people',
     requiredAnyRole: [...EMPLEADOS_ACCESS_ROLES],
     children: [
       { label: 'Datos personales', route: '/empleados/personas', icon: 'person' },
-      { label: 'Cargo histórico', route: '/empleados/cargo-historico', icon: 'timeline' },
-      { label: 'Encargaturas', route: '/empleados/encargatura', icon: 'swap_horiz' },
-      { label: 'Préstamos', route: '/empleados/prestamos', icon: 'request_quote' },
-      { label: 'Vacaciones', route: '/empleados/vacaciones', icon: 'beach_access' },
       { label: 'Eventos del período', route: '/empleados/eventos', icon: 'event_note' },
       { label: 'Ficha 360', route: '/empleados/ficha', icon: 'manage_search' },
     ],
@@ -96,6 +92,26 @@ export const MAIN_NAV_ITEMS: readonly MainNavItem[] = [
   },
 
   {
+    label: 'Legajo Personal',
+    route: '',
+    icon: 'folder_shared',
+    requiredAnyRole: [...EMPLEADOS_ACCESS_ROLES],
+    children: [
+      { label: 'Datos Generales', route: '/legajo/datos-generales', icon: 'person' },
+      { label: 'Vinculación Laboral', route: '/legajo/vinculacion-laboral', icon: 'work' },
+      { label: 'Formación y Desarrollo', route: '/legajo/formacion-desarrollo', icon: 'school' },
+      { label: 'Trayectoria Laboral', route: '/legajo/trayectoria-laboral', icon: 'work_history' },
+      { label: 'Compensaciones y Beneficios', route: '/legajo/compensaciones-beneficios', icon: 'payments' },
+      { label: 'Evaluación y Desarrollo de Carrera', route: '/legajo/evaluacion-carrera', icon: 'trending_up' },
+      { label: 'Disciplina y Reconocimientos', route: '/legajo/disciplina-reconocimientos', icon: 'military_tech' },
+      { label: 'Relaciones Laborales', route: '/legajo/relaciones-laborales', icon: 'groups' },
+      { label: 'Seguridad, Salud y Bienestar', route: '/legajo/seguridad-salud-bienestar', icon: 'health_and_safety' },
+      { label: 'Desvinculación', route: '/legajo/desvinculacion', icon: 'logout' },
+      { label: 'Documentos Complementarios', route: '/legajo/documentos-complementarios', icon: 'description' },
+    ],
+  },
+
+  {
     label: 'Planilla',
     route: '',
     icon: 'calculate',
@@ -110,15 +126,11 @@ export const MAIN_NAV_ITEMS: readonly MainNavItem[] = [
       { label: 'Movimientos', route: '/planilla/movimientos', icon: 'list' },
       { label: 'Suspensiones / Licencias', route: '/planilla/suspensiones', icon: 'event_busy' },
       { label: 'MCPP', route: '/planilla/mcpp', icon: 'receipt' },
+      { label: 'Configuración Anual CAS', route: '/planilla/configuracion-cas', icon: 'settings' },
     ],
   },
 
-  {
-    label: 'Portal del empleado',
-    route: '/portal-empleado',
-    icon: 'person_pin',
-    requiredAnyRole: [...EMPLEADOS_ACCESS_ROLES],
-  },
+ 
 
   {
     label: 'Reportes',
@@ -147,6 +159,13 @@ export const MAIN_NAV_ITEMS: readonly MainNavItem[] = [
       { label: 'Permisos', route: '/admin/permisos', icon: 'key' },
       { label: 'Auditoría', route: '/admin/auditoria', icon: 'history' },
     ],
+  },
+
+  {
+    label: 'Portal del empleado',
+    route: '/portal-empleado',
+    icon: 'person_pin',
+    requiredAnyRole: [...EMPLEADOS_ACCESS_ROLES],
   },
 ];
 

@@ -1,0 +1,177 @@
+<section class="resolver-wrap" aria-label="Resolver parámetro previsional por empleado">
+
+  <!-- Header -->
+  <div class="resolver-header">
+    <div class="resolver-header__icon">
+      <mat-icon fontIcon="manage_search" aria-hidden="true" />
+    </div>
+    <div>
+      <h3 class="resolver-header__title">Resolver parámetro previsional</h3>
+      <p class="resolver-header__sub">
+        Ingrese el ID de empleado y el período para consultar qué parámetros usará el motor de planilla.
+      </p>
+    </div>
+  </div>
+
+  <!-- Form -->
+  <div class="resolver-form" role="form" aria-label="Formulario de resolución previsional">
+
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="form-field">
+      <mat-label>ID empleado</mat-label>
+      <mat-icon matPrefix fontIcon="person" aria-hidden="true" />
+      <input
+        matInput
+        type="number"
+        placeholder="ej. 1042"
+        [value]="empleadoId()"
+        (input)="empleadoId.set($any($event.target).value)"
+        aria-label="ID de empleado"
+      />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="form-field">
+      <mat-label>Período (YYYYMM)</mat-label>
+      <mat-icon matPrefix fontIcon="calendar_today" aria-hidden="true" />
+      <input
+        matInput
+        type="text"
+        placeholder="ej. 202606"
+        maxlength="6"
+        [value]="periodo()"
+        (input)="periodo.set($any($event.target).value)"
+        aria-label="Período en formato YYYYMM"
+      />
+      @if (periodoInvalido) {
+        <mat-error>Formato YYYYMM — mes 01 a 12 (ej. 202606).</mat-error>
+      } @else {
+        <mat-hint>Año + mes, 6 dígitos</mat-hint>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="form-field">
+      <mat-label>Sistema pensionario</mat-label>
+      <mat-select
+        [value]="sistema()"
+        (selectionChange)="sistema.set($event.value)"
+        aria-label="Sistema pensionario"
+      >
+        @for (op of sistemasOpciones; track op.valor) {
+          <mat-option [value]="op.valor">{{ op.etiqueta }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <div class="resolver-form__actions">
+      <button
+        mat-flat-button
+        color="primary"
+        (click)="resolver()"
+        [disabled]="!canResolve()"
+        aria-label="Resolver parámetro previsional"
+      >
+        @if (resolving()) {
+          <mat-spinner diameter="18" class="btn-spinner" />
+        } @else {
+          <mat-icon fontIcon="search" aria-hidden="true" />
+        }
+        {{ resolving() ? 'Resolviendo…' : 'Resolver' }}
+      </button>
+
+      @if (resultado() || error()) {
+        <button mat-stroked-button (click)="limpiar()" aria-label="Limpiar resultado">
+          <mat-icon fontIcon="clear" aria-hidden="true" />
+          Limpiar
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- Error -->
+  @if (error()) {
+    <div class="resolver-error" role="alert">
+      <mat-icon fontIcon="error_outline" aria-hidden="true" />
+      {{ error() }}
+    </div>
+  }
+
+  <!-- Resultado -->
+  @if (resultado(); as r) {
+    <div class="resolver-result" role="region" aria-label="Resultado de resolución previsional">
+      <div class="result-header">
+        <mat-icon fontIcon="check_circle" class="result-header__icon" aria-hidden="true" />
+        <div>
+          <span class="result-header__title">Parámetro resuelto</span>
+          <span class="result-header__badge" [class.badge--afp]="r.sistemaPensionario === 'AFP'" [class.badge--onp]="r.sistemaPensionario === 'ONP'">
+            {{ r.sistemaPensionario }}
+          </span>
+          @if (r.afpNombre) {
+            <span class="result-header__afp">— {{ r.afpNombre }}</span>
+          }
+        </div>
+      </div>
+
+      <div class="result-grid">
+        <!-- ONP -->
+        @if (r.sistemaPensionario === 'ONP') {
+          <div class="result-item">
+            <span class="result-item__label">Tasa ONP</span>
+            <span class="result-item__value">{{ r.aporteOnpPct | number:'1.2-2' }}%</span>
+          </div>
+        }
+
+        <!-- AFP -->
+        @if (r.sistemaPensionario === 'AFP') {
+          <div class="result-item">
+            <span class="result-item__label">Aporte obligatorio</span>
+            <span class="result-item__value">{{ r.aporteObligatorioPct | number:'1.2-2' }}%</span>
+          </div>
+          <div class="result-item">
+            <span class="result-item__label">Tipo comisión</span>
+            <span class="result-item__value">{{ r.tipoComision }}</span>
+          </div>
+          <div class="result-item">
+            <span class="result-item__label">Comisión flujo</span>
+            <span class="result-item__value">{{ r.comisionFlujoPct | number:'1.2-2' }}%</span>
+          </div>
+          <div class="result-item">
+            <span class="result-item__label">Comisión saldo anual</span>
+            <span class="result-item__value">{{ r.comisionSaldoAnualPct | number:'1.2-2' }}%</span>
+          </div>
+          <div class="result-item">
+            <span class="result-item__label">Prima seguro</span>
+            <span class="result-item__value">{{ r.primaSeguroPct | number:'1.2-2' }}%</span>
+          </div>
+          <div class="result-item">
+            <span class="result-item__label">Rem. máx. asegurable</span>
+            <span class="result-item__value">{{ r.remuneracionMaximaAsegurable | currency:'PEN':'symbol-narrow':'1.2-2' }}</span>
+          </div>
+        }
+
+        <div class="result-item">
+          <span class="result-item__label">Vigencia inicio</span>
+          <span class="result-item__value">{{ formatPeriodo(r.vigenciaInicio) }}</span>
+        </div>
+
+        @if (r.vigenciaFin) {
+          <div class="result-item">
+            <span class="result-item__label">Vigencia fin</span>
+            <span class="result-item__value">{{ formatPeriodo(r.vigenciaFin) }}</span>
+          </div>
+        }
+
+        <div class="result-item result-item--full">
+          <span class="result-item__label">Fuente oficial</span>
+          <span class="result-item__value">{{ r.fuente }}</span>
+        </div>
+
+        @if (r.mensaje) {
+          <div class="result-item result-item--full result-item--obs">
+            <span class="result-item__label">Observación</span>
+            <span class="result-item__value">{{ r.mensaje }}</span>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+</section>

@@ -14,13 +14,14 @@ describe('filterVisibleNavItems (Spec 009 — 5 módulos + Inicio)', () => {
     expect(r.map((i) => i.route)).toEqual(['/']);
   });
 
-  it('ADMIN ve todos los módulos (Inicio + Catálogos + Empleados + Gestiones del personal + Planilla + Portal + Reportes + Administración)', () => {
+  it('ADMIN ve todos los módulos (Inicio + Catálogos + Empleados + Gestiones del personal + Legajo Personal + Planilla + Portal + Reportes + Administración)', () => {
     const r = filterVisibleNavItems(MAIN_NAV_ITEMS, [], ['ADMIN']);
     expect(r.map((i) => i.label)).toEqual([
       'Inicio',
       'Catálogos',
       'Empleados',
       'Gestiones del personal',
+      'Legajo Personal',
       'Planilla',
       'Portal del empleado',
       'Reportes',
@@ -37,13 +38,14 @@ describe('filterVisibleNavItems (Spec 009 — 5 módulos + Inicio)', () => {
     expect(r.find((i) => i.label === 'Administración')).toBeTruthy();
   });
 
-  it('RRHH_ADMIN (legacy) ve Inicio + Catálogos + Empleados + Planilla + Portal, NO Reportes ni Administración', () => {
+  it('RRHH_ADMIN (legacy) ve Inicio + Catálogos + Empleados + Legajo Personal + Planilla + Portal, NO Reportes ni Administración', () => {
     const r = filterVisibleNavItems(MAIN_NAV_ITEMS, [], ['RRHH_ADMIN']);
     expect(r.map((i) => i.label)).toEqual([
       'Inicio',
       'Catálogos',
       'Empleados',
       'Gestiones del personal',
+      'Legajo Personal',
       'Planilla',
       'Portal del empleado',
     ]);
@@ -56,6 +58,7 @@ describe('filterVisibleNavItems (Spec 009 — 5 módulos + Inicio)', () => {
       'Catálogos',
       'Empleados',
       'Gestiones del personal',
+      'Legajo Personal',
       'Planilla',
       'Portal del empleado',
       'Reportes',
@@ -70,13 +73,14 @@ describe('filterVisibleNavItems (Spec 009 — 5 módulos + Inicio)', () => {
     expect(r.find((i) => i.label === 'Administración')).toBeUndefined();
   });
 
-  it('RRHH_CONSULTA ve Empleados + Planilla + Reportes (lectura), NO Administración', () => {
+  it('RRHH_CONSULTA ve Empleados + Legajo Personal + Planilla + Reportes (lectura), NO Administración', () => {
     const r = filterVisibleNavItems(MAIN_NAV_ITEMS, [], ['RRHH_CONSULTA']);
     expect(r.map((i) => i.label)).toEqual([
       'Inicio',
       'Catálogos',
       'Empleados',
       'Gestiones del personal',
+      'Legajo Personal',
       'Planilla',
       'Portal del empleado',
       'Reportes',
@@ -141,6 +145,17 @@ describe('filterVisibleNavItems (Spec 009 — 5 módulos + Inicio)', () => {
       '/gestiones-personal/jefe-inmediato',
       '/gestiones-personal/rrhh',
     ]);
+  });
+
+  it('Legajo Personal expone 11 sub-items navegables bajo /legajo/', () => {
+    const r = filterVisibleNavItems(MAIN_NAV_ITEMS, [], ['ADMIN']);
+    const legajo = r.find((i) => i.label === 'Legajo Personal');
+    expect(legajo?.children?.length).toBe(11);
+    expect(legajo?.children?.every((c) => !c.comingSoon)).toBe(true);
+    const routes = legajo?.children?.map((c) => c.route).filter((p): p is string => Boolean(p)) ?? [];
+    expect(routes.every((p) => p.startsWith('/legajo/'))).toBe(true);
+    expect(routes).toContain('/legajo/datos-generales');
+    expect(routes).toContain('/legajo/documentos-complementarios');
   });
 
   it('Empleados usa rutas bajo /empleados/ (T131)', () => {

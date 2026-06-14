@@ -1,0 +1,103 @@
+<h2 mat-dialog-title class="dlg-title">
+  <mat-icon [fontIcon]="iconoTitulo" class="dlg-title__icon" aria-hidden="true" />
+  {{ titulo }}
+</h2>
+
+<mat-dialog-content>
+
+  <div class="onp-nota" role="note">
+    <mat-icon fontIcon="info" aria-hidden="true" />
+    <span>
+      La tasa ONP (13%) es históricamente estable desde 1993 — Ley 19990 Art. 7.
+      Registre una nueva vigencia solo ante cambio normativo oficial publicado en el Diario El Peruano.
+    </span>
+  </div>
+
+  @if (errorMsg()) {
+    <div class="dlg-error" role="alert">
+      <mat-icon fontIcon="error_outline" aria-hidden="true" />
+      {{ errorMsg() }}
+    </div>
+  }
+
+  <form [formGroup]="form" novalidate class="dlg-form">
+
+    <!-- Períodos -->
+    <div class="dlg-row">
+      <mat-form-field appearance="outline" class="field-half">
+        <mat-label>Período inicio (YYYYMM)</mat-label>
+        <input matInput formControlName="periodoInicio" placeholder="ej. 202601" maxlength="6" />
+        @if (form.get('periodoInicio')?.errors?.['required'] && form.get('periodoInicio')?.touched) {
+          <mat-error>Campo obligatorio.</mat-error>
+        } @else if (form.get('periodoInicio')?.errors?.['pattern'] && form.get('periodoInicio')?.touched) {
+          <mat-error>Formato YYYYMM — mes 01 a 12.</mat-error>
+        }
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="field-half">
+        <mat-label>Período fin (YYYYMM)</mat-label>
+        <input matInput formControlName="periodoFin" placeholder="Vacío = sin fecha de cierre" maxlength="6" />
+        @if (form.get('periodoFin')?.errors?.['pattern'] && form.get('periodoFin')?.touched) {
+          <mat-error>Formato YYYYMM — mes 01 a 12.</mat-error>
+        }
+      </mat-form-field>
+    </div>
+
+    <!-- Tasa ONP -->
+    <mat-form-field appearance="outline" class="field-full">
+      <mat-label>Aporte ONP (%)</mat-label>
+      <input matInput type="number" step="0.0001" formControlName="aporteOnpPct" placeholder="ej. 13.0000" />
+      <mat-hint>Ley 19990 Art. 7 — tasa vigente: 13.0000%</mat-hint>
+      @if (form.get('aporteOnpPct')?.invalid && form.get('aporteOnpPct')?.touched) {
+        <mat-error>Valor numérico entre 0 y 100.</mat-error>
+      }
+    </mat-form-field>
+
+    <!-- Fuente oficial -->
+    <mat-form-field appearance="outline" class="field-full">
+      <mat-label>Fuente oficial</mat-label>
+      <input matInput formControlName="fuenteOficial" placeholder="ej. Ley 19990 Art. 7 — D.S. 011-74-TR" />
+      @if (form.get('fuenteOficial')?.invalid && form.get('fuenteOficial')?.touched) {
+        <mat-error>La fuente oficial es obligatoria.</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="field-full">
+      <mat-label>URL fuente oficial (opcional)</mat-label>
+      <input matInput formControlName="urlFuenteOficial" placeholder="https://www.onp.gob.pe/..." />
+    </mat-form-field>
+
+    <!-- Fecha y observación -->
+    <div class="dlg-row">
+      <mat-form-field appearance="outline" class="field-half">
+        <mat-label>Fecha de publicación (opcional)</mat-label>
+        <input matInput type="date" formControlName="fechaPublicacion" />
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="field-half">
+        <mat-label>Observación (opcional)</mat-label>
+        <input matInput formControlName="observacion" placeholder="Notas adicionales…" />
+      </mat-form-field>
+    </div>
+
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-stroked-button (click)="cancelar()" [disabled]="saving()">
+    {{ readonly ? 'Cerrar' : 'Cancelar' }}
+  </button>
+  @if (!readonly) {
+    <button
+      mat-flat-button
+      color="primary"
+      (click)="guardar()"
+      [disabled]="form.invalid || saving()"
+    >
+      @if (saving()) {
+        <mat-spinner diameter="18" />
+      } @else {
+        <mat-icon fontIcon="save" />
+      }
+      {{ saving() ? 'Guardando…' : 'Guardar' }}
+    </button>
+  }
+</mat-dialog-actions>

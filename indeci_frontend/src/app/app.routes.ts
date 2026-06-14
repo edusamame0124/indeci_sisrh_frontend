@@ -41,6 +41,11 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'legajo',
+        loadChildren: () =>
+          import('./features/legajo/legajo.routes').then((m) => m.LEGAJO_ROUTES),
+      },
+      {
         path: 'catalogos',
         loadChildren: () =>
           import('./features/catalogos/catalogos.routes').then((m) => m.CATALOGOS_ROUTES),

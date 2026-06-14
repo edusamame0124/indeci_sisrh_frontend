@@ -1,0 +1,64 @@
+<section class="cas-page">
+  <header class="cas-page__header">
+    <div>
+      <nav class="crumbs" aria-label="Ruta de navegación">
+        <span class="crumbs__item">Planilla</span>
+        <span class="crumbs__sep" aria-hidden="true">›</span>
+        <span class="crumbs__here">Configuración Anual CAS</span>
+      </nav>
+      <h1 class="cas-page__title">Configuración Anual CAS</h1>
+      <p class="cas-page__desc">
+        Parámetros anuales del régimen CAS: sistema pensionario, EsSalud,
+        retención de cuarta categoría y estructura programática presupuestal.
+      </p>
+    </div>
+  </header>
+
+  <mat-tab-group
+    class="cas-tabs"
+    [selectedIndex]="tabActivo()"
+    (selectedIndexChange)="onTabChange($event)"
+    animationDuration="200ms"
+    aria-label="Secciones de configuración CAS"
+  >
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <mat-icon class="cas-tab__icon" aria-hidden="true">account_balance_wallet</mat-icon>
+        ONP / AFP
+      </ng-template>
+      <div class="cas-tab__body">
+        <app-onp-afp-tab />
+      </div>
+    </mat-tab>
+
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <mat-icon class="cas-tab__icon" aria-hidden="true">local_hospital</mat-icon>
+        ESSALUD
+      </ng-template>
+      <div class="cas-tab__body">
+        <app-essalud-tab />
+      </div>
+    </mat-tab>
+
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <mat-icon class="cas-tab__icon" aria-hidden="true">receipt_long</mat-icon>
+        Rentas de 4ta
+      </ng-template>
+      <div class="cas-tab__body">
+        <app-rentas-4ta-tab />
+      </div>
+    </mat-tab>
+
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <mat-icon class="cas-tab__icon" aria-hidden="true">account_tree</mat-icon>
+        Estructura Programática
+      </ng-template>
+      <div class="cas-tab__body">
+        <app-estructura-programatica-tab />
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+</section>

@@ -1,0 +1,148 @@
+<h2 mat-dialog-title class="dlg-title">
+  <mat-icon [fontIcon]="iconoTitulo" class="dlg-title__icon" aria-hidden="true" />
+  {{ titulo }}
+</h2>
+
+<mat-dialog-content>
+
+  @if (errorMsg()) {
+    <div class="dlg-error" role="alert">
+      <mat-icon fontIcon="error_outline" aria-hidden="true" />
+      {{ errorMsg() }}
+    </div>
+  }
+
+  <form [formGroup]="form" novalidate class="dlg-form">
+
+    <!-- AFP -->
+    <mat-form-field appearance="outline" class="field-full">
+      <mat-label>AFP</mat-label>
+      <mat-select formControlName="afpId">
+        @for (a of data.catalog; track a.id) {
+          <mat-option [value]="a.id">{{ a.nombre }}</mat-option>
+        }
+      </mat-select>
+      @if (form.get('afpId')?.invalid && form.get('afpId')?.touched) {
+        <mat-error>Seleccione una AFP.</mat-error>
+      }
+    </mat-form-field>
+
+    <!-- Períodos -->
+    <div class="dlg-row">
+      <mat-form-field appearance="outline" class="field-half">
+        <mat-label>Período inicio (YYYYMM)</mat-label>
+        <input matInput formControlName="periodoInicio" placeholder="ej. 202601" maxlength="6" />
+        @if (form.get('periodoInicio')?.errors?.['required'] && form.get('periodoInicio')?.touched) {
+          <mat-error>Campo obligatorio.</mat-error>
+        } @else if (form.get('periodoInicio')?.errors?.['pattern'] && form.get('periodoInicio')?.touched) {
+          <mat-error>Formato YYYYMM — mes 01 a 12.</mat-error>
+        }
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="field-half">
+        <mat-label>Período fin (YYYYMM)</mat-label>
+        <input matInput formControlName="periodoFin" placeholder="Vacío = sin fecha de cierre" maxlength="6" />
+        @if (form.get('periodoFin')?.errors?.['pattern'] && form.get('periodoFin')?.touched) {
+          <mat-error>Formato YYYYMM — mes 01 a 12.</mat-error>
+        }
+      </mat-form-field>
+    </div>
+
+    <!-- Tasas principales -->
+    <div class="dlg-row">
+      <mat-form-field appearance="outline" class="field-half">
+        <mat-label>Aporte obligatorio (%)</mat-label>
+        <input matInput type="number" step="0.0001" formControlName="aporteObligatorioPct" />
+        <mat-hint>TUO SPP — Art. 30 (10%)</mat-hint>
+        @if (form.get('aporteObligatorioPct')?.invalid && form.get('aporteObligatorioPct')?.touched) {
+          <mat-error>Valor entre 0 y 100.</mat-error>
+        }
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="field-half">
+        <mat-label>Prima de seguro (%)</mat-label>
+        <input matInput type="number" step="0.0001" formControlName="primaSeguroPct" />
+        @if (form.get('primaSeguroPct')?.invalid && form.get('primaSeguroPct')?.touched) {
+          <mat-error>Valor entre 0 y 100.</mat-error>
+        }
+      </mat-form-field>
+    </div>
+
+    <!-- Comisiones -->
+    <div class="dlg-row">
+      <mat-form-field appearance="outline" class="field-half">
+        <mat-label>Comisión flujo (%)</mat-label>
+        <input matInput type="number" step="0.0001" formControlName="comisionFlujoPct" />
+        <mat-hint>0.00 si la AFP cobra por saldo</mat-hint>
+        @if (form.get('comisionFlujoPct')?.invalid && form.get('comisionFlujoPct')?.touched) {
+          <mat-error>Valor entre 0 y 100.</mat-error>
+        }
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="field-half">
+        <mat-label>Comisión saldo anual (%)</mat-label>
+        <input matInput type="number" step="0.0001" formControlName="comisionSaldoAnualPct" />
+        <mat-hint>0.00 si la AFP cobra por flujo</mat-hint>
+        @if (form.get('comisionSaldoAnualPct')?.invalid && form.get('comisionSaldoAnualPct')?.touched) {
+          <mat-error>Valor entre 0 y 100.</mat-error>
+        }
+      </mat-form-field>
+    </div>
+
+    <!-- Remuneración máxima asegurable -->
+    <mat-form-field appearance="outline" class="field-full">
+      <mat-label>Remuneración máxima asegurable (S/)</mat-label>
+      <span matTextPrefix>S/&nbsp;</span>
+      <input matInput type="number" step="0.01" formControlName="remuneracionMaximaAsegurable" />
+      <mat-hint>SBS Res. 8514-2012 — verificar circular vigente</mat-hint>
+      @if (form.get('remuneracionMaximaAsegurable')?.invalid && form.get('remuneracionMaximaAsegurable')?.touched) {
+        <mat-error>Ingrese un importe mayor a cero.</mat-error>
+      }
+    </mat-form-field>
+
+    <!-- Fuente oficial -->
+    <mat-form-field appearance="outline" class="field-full">
+      <mat-label>Fuente oficial</mat-label>
+      <input matInput formControlName="fuenteOficial" placeholder="ej. SBS — Circular AFP-163-2025" />
+      @if (form.get('fuenteOficial')?.invalid && form.get('fuenteOficial')?.touched) {
+        <mat-error>La fuente oficial es obligatoria.</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="field-full">
+      <mat-label>URL fuente oficial (opcional)</mat-label>
+      <input matInput formControlName="urlFuenteOficial" placeholder="https://www.sbs.gob.pe/..." />
+    </mat-form-field>
+
+    <!-- Fecha y observación -->
+    <div class="dlg-row">
+      <mat-form-field appearance="outline" class="field-half">
+        <mat-label>Fecha de publicación (opcional)</mat-label>
+        <input matInput type="date" formControlName="fechaPublicacion" />
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="field-half">
+        <mat-label>Observación (opcional)</mat-label>
+        <input matInput formControlName="observacion" placeholder="Notas adicionales…" />
+      </mat-form-field>
+    </div>
+
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-stroked-button (click)="cancelar()" [disabled]="saving()">
+    {{ readonly ? 'Cerrar' : 'Cancelar' }}
+  </button>
+  @if (!readonly) {
+    <button
+      mat-flat-button
+      color="primary"
+      (click)="guardar()"
+      [disabled]="form.invalid || saving()"
+    >
+      @if (saving()) {
+        <mat-spinner diameter="18" />
+      } @else {
+        <mat-icon fontIcon="save" />
+      }
+      {{ saving() ? 'Guardando…' : 'Guardar' }}
+    </button>
+  }
+</mat-dialog-actions>

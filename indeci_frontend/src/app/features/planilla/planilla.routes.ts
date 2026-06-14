@@ -141,6 +141,16 @@ export const PLANILLA_ROUTES: Routes = [
           ),
         title: 'Suspensiones y licencias — SISRH-INDECI',
       },
+
+      /* ——— Configuración Anual CAS ——— */
+      {
+        path: 'configuracion-cas',
+        loadComponent: () =>
+          import('./pages/configuracion-cas-page/configuracion-cas-page.component').then(
+            (m) => m.ConfiguracionCasPageComponent,
+          ),
+        title: 'Configuración Anual CAS — SISRH-INDECI',
+      },
     ],
   },
 ];

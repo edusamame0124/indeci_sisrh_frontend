@@ -1,0 +1,102 @@
+<div class="hist-section">
+
+  <div class="hist-header">
+    <div class="hist-header__info">
+      <h4 class="hist-header__title">Historial de cambios previsionales</h4>
+      <p class="hist-header__sub">Registro cronológico de altas, modificaciones y cierres en parámetros AFP/ONP.</p>
+    </div>
+    <button mat-icon-button (click)="refrescar()" matTooltip="Refrescar historial" aria-label="Refrescar historial">
+      <mat-icon fontIcon="refresh" />
+    </button>
+  </div>
+
+  @if (loading()) {
+    <div class="hist-state" aria-live="polite">
+      <mat-spinner diameter="32" />
+      <span>Cargando historial…</span>
+    </div>
+  } @else if (error()) {
+    <div class="hist-state hist-state--error" role="alert">
+      <mat-icon fontIcon="error_outline" aria-hidden="true" />
+      {{ error() }}
+    </div>
+  } @else if (isEmpty()) {
+    <div class="hist-state">
+      <mat-icon fontIcon="history" aria-hidden="true" />
+      <span>No hay registros en el historial.</span>
+    </div>
+  } @else {
+    <div class="hist-table-wrap" role="region" aria-label="Historial de cambios">
+      <table mat-table [dataSource]="pagedRows()" class="hist-table" aria-label="Historial de parámetros previsionales">
+
+        <ng-container matColumnDef="fecha">
+          <th mat-header-cell *matHeaderCellDef>Fecha</th>
+          <td mat-cell *matCellDef="let r" class="col-date">{{ r.fecha | date:'dd/MM/yyyy HH:mm' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="tipo">
+          <th mat-header-cell *matHeaderCellDef>Tipo</th>
+          <td mat-cell *matCellDef="let r">
+            <span class="badge" [class.badge--afp]="r.tipo === 'AFP'" [class.badge--onp]="r.tipo === 'ONP'">
+              {{ r.tipo }}
+            </span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="afpNombre">
+          <th mat-header-cell *matHeaderCellDef>AFP / Sistema</th>
+          <td mat-cell *matCellDef="let r">{{ r.afpNombre ?? '—' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="accion">
+          <th mat-header-cell *matHeaderCellDef>Acción</th>
+          <td mat-cell *matCellDef="let r">
+            <span
+              class="badge-accion"
+              [class.badge-accion--crear]="r.accion === 'CREAR'"
+              [class.badge-accion--editar]="r.accion === 'EDITAR'"
+              [class.badge-accion--cerrar]="r.accion === 'CERRAR'"
+              [class.badge-accion--duplicar]="r.accion === 'DUPLICAR'"
+            >
+              {{ r.accion | titlecase }}
+            </span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="descripcion">
+          <th mat-header-cell *matHeaderCellDef>Descripción</th>
+          <td mat-cell *matCellDef="let r" class="col-desc">{{ r.descripcion }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="periodoAfectado">
+          <th mat-header-cell *matHeaderCellDef>Período</th>
+          <td mat-cell *matCellDef="let r">{{ r.periodoAfectado ?? '—' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="usuario">
+          <th mat-header-cell *matHeaderCellDef>Usuario</th>
+          <td mat-cell *matCellDef="let r" class="col-usuario">{{ r.usuario }}</td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="columns"></tr>
+        <tr mat-row *matRowDef="let r; columns: columns;" class="hist-row"></tr>
+      </table>
+    </div>
+
+    <div class="hist-pag-row">
+      <span class="hist-count">
+        Mostrando {{ rangoMostrado().start }} a {{ rangoMostrado().end }} de {{ rangoMostrado().total }} registros
+      </span>
+      <mat-paginator
+        [length]="rangoMostrado().total"
+        [pageSize]="pageSize()"
+        [pageIndex]="pageIndex()"
+        [pageSizeOptions]="pageSizeOptions"
+        (page)="onPage($event)"
+        aria-label="Paginación de historial"
+      />
+    </div>
+  }
+
+  <p class="hist-note">Trazabilidad: D.L. 1451 — todos los cambios son registrados y no pueden eliminarse.</p>
+</div>

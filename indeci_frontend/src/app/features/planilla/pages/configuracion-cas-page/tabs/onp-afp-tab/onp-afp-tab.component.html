@@ -1,0 +1,156 @@
+<div class="prev-page">
+  <!-- KPI Cards -->
+  <div class="kpi-grid" aria-label="Resumen de parámetros previsionales">
+    <div class="kpi-card">
+      <div class="kpi-card__icon kpi-card__icon--blue">
+        <mat-icon fontIcon="people" aria-hidden="true" />
+      </div>
+      <div class="kpi-card__body">
+        <span class="kpi-card__value">{{ kpi()?.afpVigentes ?? '–' }}</span>
+        <span class="kpi-card__label">Parámetros AFP vigentes</span>
+        <span class="kpi-card__sub">Registros activos</span>
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-card__icon kpi-card__icon--teal">
+        <mat-icon fontIcon="security" aria-hidden="true" />
+      </div>
+      <div class="kpi-card__body">
+        <span class="kpi-card__value">{{ kpi()?.onpVigente ?? '–' }}</span>
+        <span class="kpi-card__label">Parámetro ONP vigente</span>
+        <span class="kpi-card__sub">Registro activo</span>
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-card__icon kpi-card__icon--amber">
+        <mat-icon fontIcon="calendar_today" aria-hidden="true" />
+      </div>
+      <div class="kpi-card__body">
+        <span class="kpi-card__value">{{ kpi()?.proximaVigencia ?? '–' }}</span>
+        <span class="kpi-card__label">Próxima vigencia por revisar</span>
+        <span class="kpi-card__sub">Programadas a futuro</span>
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-card__icon kpi-card__icon--green">
+        <mat-icon fontIcon="download" aria-hidden="true" />
+      </div>
+      <div class="kpi-card__body">
+        <span class="kpi-card__value">{{ kpi()?.ultimaActualizacionSbs ?? '–' }}</span>
+        <span class="kpi-card__label">Última actualización SBS</span>
+        <span class="kpi-card__sub">Repositorio oficial SBS</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main layout: content + aside -->
+  <div class="prev-layout">
+
+    <!-- Left: sub-tabs -->
+    <section class="prev-main" aria-label="Configuración previsional por sección">
+      <mat-tab-group
+        class="prev-tabs"
+        [selectedIndex]="tabActivo()"
+        (selectedIndexChange)="onTabChange($event)"
+        animationDuration="150ms"
+        aria-label="Secciones previsionales"
+      >
+        <mat-tab label="AFP">
+          <div class="prev-tab-body">
+            <app-afp-tab />
+          </div>
+        </mat-tab>
+
+        <mat-tab label="ONP">
+          <div class="prev-tab-body">
+            <app-onp-tab />
+          </div>
+        </mat-tab>
+
+        <mat-tab label="Historial">
+          <div class="prev-tab-body">
+            <app-historial-previsional />
+          </div>
+        </mat-tab>
+
+        <mat-tab label="Auditoría">
+          <div class="prev-tab-body">
+            <app-auditoria-previsional />
+          </div>
+        </mat-tab>
+      </mat-tab-group>
+    </section>
+
+    <!-- Right: info panels -->
+    <aside class="prev-aside" aria-label="Información del motor y fuente oficial">
+      <div class="info-card">
+        <div class="info-card__header">
+          <mat-icon fontIcon="receipt_long" aria-hidden="true" class="info-card__icon" />
+          <h3 class="info-card__title">Reglas del motor de planilla</h3>
+        </div>
+        <ul class="info-card__list" role="list">
+          <li>
+            <mat-icon fontIcon="check_circle" class="info-card__check" aria-hidden="true" />
+            ONP = 13% por vigencia.
+          </li>
+          <li>
+            <mat-icon fontIcon="check_circle" class="info-card__check" aria-hidden="true" />
+            AFP consulta aporte, comisión, prima y tope por vigencia.
+          </li>
+          <li>
+            <mat-icon fontIcon="check_circle" class="info-card__check" aria-hidden="true" />
+            No se permiten vigencias solapadas.
+          </li>
+          <li>
+            <mat-icon fontIcon="check_circle" class="info-card__check" aria-hidden="true" />
+            No se editan parámetros usados en planillas cerradas.
+          </li>
+          <li>
+            <mat-icon fontIcon="check_circle" class="info-card__check" aria-hidden="true" />
+            Tipo de comisión del trabajador: Flujo / Saldo / Mixta.
+          </li>
+        </ul>
+      </div>
+
+      <div class="info-card info-card--fuente">
+        <div class="info-card__header">
+          <mat-icon fontIcon="shield" aria-hidden="true" class="info-card__icon info-card__icon--fuente" />
+          <h3 class="info-card__title">Fuente oficial</h3>
+        </div>
+        <p class="info-card__text">
+          Los valores de AFP provienen de la Superintendencia de Banca, Seguros y AFP (SBS)
+          y son actualizados según sus publicaciones oficiales. Los valores de ONP
+          se parametrizan por vigencia conforme a la normativa aplicable.
+        </p>
+        <a
+          class="info-card__link"
+          href="https://www.sbs.gob.pe/app/spp/empleadores/comisiones_spp/paginas/comision_prima.aspx"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Sitio oficial SBS — abre en nueva pestaña"
+        >
+          <mat-icon fontIcon="open_in_new" aria-hidden="true" />
+          Sitio oficial SBS
+        </a>
+      </div>
+    </aside>
+  </div>
+
+  <!-- Resolver parámetro por empleado -->
+  <div class="prev-resolver">
+    <app-resolver-parametro />
+  </div>
+
+  <!-- Nota de trazabilidad -->
+  <footer class="prev-footer" role="contentinfo">
+    <mat-icon fontIcon="info" aria-hidden="true" />
+    <span>
+      <strong>Trazabilidad y control:</strong> todos los cambios de parámetros quedan registrados
+      en Historial y Auditoría. Los parámetros previsionales no pueden hardcodearse;
+      deben estar parametrizados por vigencia y fuente oficial.
+    </span>
+  </footer>
+</div>

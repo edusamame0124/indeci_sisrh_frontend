@@ -1,0 +1,112 @@
+<div class="tab-section">
+  <div class="tab-section__head">
+    <div>
+      <h2 class="tab-section__title">Rentas de Cuarta Categoría — CAS</h2>
+      <p class="tab-section__desc">
+        Parámetros anuales de retención IR4ta para trabajadores CAS: UIT vigente,
+        tasa de retención (8%), tope anual y habilitación de suspensión de retenciones.
+      </p>
+    </div>
+    <button
+      mat-flat-button
+      color="primary"
+      class="tab-section__action"
+      matTooltip="Agregar configuración de ejercicio"
+      aria-label="Agregar configuración de ejercicio"
+    >
+      <mat-icon fontIcon="add" aria-hidden="true" />
+      Nuevo ejercicio
+    </button>
+  </div>
+
+  @if (loading()) {
+    <div class="tab-section__loading" aria-live="polite" aria-label="Cargando parámetros IR4ta">
+      <mat-spinner diameter="36" />
+      <span>Cargando parámetros…</span>
+    </div>
+  } @else if (error()) {
+    <div class="tab-section__error" role="alert">
+      <mat-icon fontIcon="error_outline" aria-hidden="true" />
+      <span>{{ error() }}</span>
+    </div>
+  } @else if (rows().length === 0) {
+    <div class="tab-section__empty">
+      <mat-icon fontIcon="receipt_long" aria-hidden="true" />
+      <span>No hay parámetros IR4ta configurados. Registre el ejercicio vigente.</span>
+    </div>
+  } @else {
+    <div class="tab-table-wrap" role="region" aria-label="Tabla de parámetros Rentas 4ta">
+      <table mat-table [dataSource]="rows()" class="tab-table" aria-label="Parámetros IR4ta CAS por ejercicio">
+
+        <ng-container matColumnDef="ejercicio">
+          <th mat-header-cell *matHeaderCellDef>Ejercicio</th>
+          <td mat-cell *matCellDef="let row" class="col-ejercicio">{{ row.ejercicio }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="uit">
+          <th mat-header-cell *matHeaderCellDef class="col-num">UIT (S/)</th>
+          <td mat-cell *matCellDef="let row" class="col-num">{{ row.uit | currency:'PEN':'symbol-narrow':'1.2-2' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="tasaRetencion">
+          <th mat-header-cell *matHeaderCellDef class="col-num">Tasa (%)</th>
+          <td mat-cell *matCellDef="let row" class="col-num">{{ row.tasaRetencion | number:'1.2-2' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="topeAnualSoles">
+          <th mat-header-cell *matHeaderCellDef class="col-num">Tope anual (S/)</th>
+          <td mat-cell *matCellDef="let row" class="col-num">{{ row.topeAnualSoles | currency:'PEN':'symbol-narrow':'1.2-2' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="suspensionHabilitada">
+          <th mat-header-cell *matHeaderCellDef>Suspensión</th>
+          <td mat-cell *matCellDef="let row">
+            <span class="badge" [class.badge--si]="row.suspensionHabilitada" [class.badge--no]="!row.suspensionHabilitada">
+              {{ row.suspensionHabilitada ? 'Habilitada' : 'No habilitada' }}
+            </span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="estado">
+          <th mat-header-cell *matHeaderCellDef>Estado</th>
+          <td mat-cell *matCellDef="let row">
+            <span class="badge" [class.badge--activo]="row.activo" [class.badge--inactivo]="!row.activo">
+              {{ row.activo ? 'Vigente' : 'Histórico' }}
+            </span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="acciones">
+          <th mat-header-cell *matHeaderCellDef class="col-actions">Acciones</th>
+          <td mat-cell *matCellDef="let row" class="col-actions">
+            <button
+              mat-icon-button
+              (click)="editar(row)"
+              [disabled]="!row.activo"
+              [matTooltip]="row.activo ? 'Editar ejercicio ' + row.ejercicio : 'Solo se puede editar el ejercicio vigente'"
+              [attr.aria-label]="'Editar ejercicio ' + row.ejercicio"
+            >
+              <mat-icon fontIcon="edit" />
+            </button>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="columns"></tr>
+        <tr mat-row *matRowDef="let row; columns: columns;" class="tab-table__row"></tr>
+      </table>
+    </div>
+
+    <div class="alerta-info" role="note">
+      <mat-icon fontIcon="info_outline" aria-hidden="true" />
+      <span>
+        IR4ta aplica <strong>solo a CAS</strong>. Tasa 8% sobre el pago mensual.
+        Tope anual = 75% de la UIT vigente × meses. Si el trabajador presenta constancia de suspensión
+        (Form. 1609 SUNAT), se omite la retención del período.
+      </span>
+    </div>
+
+    <p class="tab-section__note">
+      Base normativa: TUO LIR Art. 33 inc. e) · D.S. 122-94-EF · R.S. 013-2007-SUNAT · SUNAT 3042
+    </p>
+  }
+</div>

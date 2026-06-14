@@ -1,0 +1,224 @@
+<div class="afp-section">
+
+  <!-- Filtros -->
+  <div class="afp-filters" role="search" aria-label="Filtros de parámetros AFP">
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="filter-field">
+      <mat-label>Período</mat-label>
+      <input
+        matInput
+        type="text"
+        placeholder="ej. 202601"
+        [value]="filtroPeriodo()"
+        (input)="filtroPeriodo.set($any($event.target).value)"
+      />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="filter-field">
+      <mat-label>AFP</mat-label>
+      <mat-select
+        [value]="filtroAfpId()"
+        (selectionChange)="filtroAfpId.set($event.value)"
+      >
+        <mat-option [value]="null">Todos</mat-option>
+        @for (afp of afpCatalog(); track afp.id) {
+          <mat-option [value]="afp.id">{{ afp.nombre }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="filter-field">
+      <mat-label>Estado</mat-label>
+      <mat-select
+        [value]="filtroEstado()"
+        (selectionChange)="filtroEstado.set($event.value)"
+      >
+        @for (op of estadosOpciones; track op.valor) {
+          <mat-option [value]="op.valor">{{ op.etiqueta }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="filter-search">
+      <mat-icon matPrefix fontIcon="search" aria-hidden="true" />
+      <input
+        matInput
+        type="search"
+        placeholder="Buscar por AFP, vigencia..."
+        [value]="busqueda()"
+        (input)="onBusqueda($any($event.target).value)"
+        aria-label="Buscar parámetros AFP"
+      />
+    </mat-form-field>
+
+    <button mat-flat-button color="primary" (click)="aplicarFiltros()" aria-label="Aplicar filtros">
+      Filtrar
+    </button>
+  </div>
+
+  <!-- Botones de acción -->
+  <div class="afp-actions" role="toolbar" aria-label="Acciones sobre parámetros AFP">
+    <button mat-flat-button color="primary" (click)="nuevaVigencia()">
+      <mat-icon fontIcon="add" aria-hidden="true" />
+      Nueva vigencia AFP
+    </button>
+    <button mat-stroked-button (click)="duplicarVigencia()">
+      <mat-icon fontIcon="content_copy" aria-hidden="true" />
+      Duplicar vigencia
+    </button>
+    <button mat-stroked-button (click)="exportar()">
+      <mat-icon fontIcon="download" aria-hidden="true" />
+      Exportar
+    </button>
+  </div>
+
+  <!-- Estado de carga / error / vacío / tabla -->
+  @if (loading()) {
+    <div class="afp-state afp-state--loading" aria-live="polite">
+      <mat-spinner diameter="36" />
+      <span>Cargando parámetros AFP…</span>
+    </div>
+  } @else if (error()) {
+    <div class="afp-state afp-state--error" role="alert">
+      <mat-icon fontIcon="error_outline" aria-hidden="true" />
+      {{ error() }}
+    </div>
+  } @else if (rowsFiltradas().length === 0) {
+    <div class="afp-state afp-state--empty">
+      <mat-icon fontIcon="account_balance_wallet" aria-hidden="true" />
+      <span>No se encontraron parámetros AFP con los filtros aplicados.</span>
+    </div>
+  } @else {
+    <div class="afp-table-wrap" role="region" aria-label="Tabla de parámetros AFP">
+      <table mat-table [dataSource]="pagedRows()" class="afp-table" aria-label="Parámetros AFP por vigencia">
+
+        <ng-container matColumnDef="afp">
+          <th mat-header-cell *matHeaderCellDef>AFP</th>
+          <td mat-cell *matCellDef="let r">
+            <span class="afp-name-badge">{{ r.afpNombre }}</span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="vigenciaInicio">
+          <th mat-header-cell *matHeaderCellDef>Vigencia inicio</th>
+          <td mat-cell *matCellDef="let r" class="col-date">{{ formatPeriodo(r.periodoInicio) }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="vigenciaFin">
+          <th mat-header-cell *matHeaderCellDef>Vigencia fin</th>
+          <td mat-cell *matCellDef="let r" class="col-date">{{ formatPeriodo(r.periodoFin) }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="aporteObligatorioPct">
+          <th mat-header-cell *matHeaderCellDef class="col-num">Aporte obligatorio %</th>
+          <td mat-cell *matCellDef="let r" class="col-num">{{ r.aporteObligatorioPct | number:'1.2-2' }}%</td>
+        </ng-container>
+
+        <ng-container matColumnDef="comisionFlujoPct">
+          <th mat-header-cell *matHeaderCellDef class="col-num">Comisión flujo %</th>
+          <td mat-cell *matCellDef="let r" class="col-num">{{ r.comisionFlujoPct | number:'1.2-2' }}%</td>
+        </ng-container>
+
+        <ng-container matColumnDef="comisionSaldoAnualPct">
+          <th mat-header-cell *matHeaderCellDef class="col-num">Comisión saldo anual %</th>
+          <td mat-cell *matCellDef="let r" class="col-num">{{ r.comisionSaldoAnualPct | number:'1.2-2' }}%</td>
+        </ng-container>
+
+        <ng-container matColumnDef="primaSeguroPct">
+          <th mat-header-cell *matHeaderCellDef class="col-num">Prima seguro %</th>
+          <td mat-cell *matCellDef="let r" class="col-num">{{ r.primaSeguroPct | number:'1.2-2' }}%</td>
+        </ng-container>
+
+        <ng-container matColumnDef="remuneracionMaximaAsegurable">
+          <th mat-header-cell *matHeaderCellDef class="col-num">Rem. máx. asegurable</th>
+          <td mat-cell *matCellDef="let r" class="col-num">
+            {{ r.remuneracionMaximaAsegurable | currency:'PEN':'symbol-narrow':'1.2-2' }}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="fuenteOficial">
+          <th mat-header-cell *matHeaderCellDef>Fuente oficial</th>
+          <td mat-cell *matCellDef="let r">
+            <span class="badge badge--fuente">{{ r.fuenteOficial }}</span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="estado">
+          <th mat-header-cell *matHeaderCellDef>Estado</th>
+          <td mat-cell *matCellDef="let r">
+            <span
+              class="badge"
+              [class.badge--vigente]="r.estado === 'VIGENTE'"
+              [class.badge--programado]="r.estado === 'PROGRAMADO'"
+              [class.badge--cerrado]="r.estado === 'CERRADO'"
+              [class.badge--inactivo]="r.estado === 'INACTIVO'"
+            >
+              @if (r.bloqueadoPorPlanilla) {
+                <mat-icon fontIcon="lock" class="badge__lock" aria-label="Bloqueado por planilla cerrada" />
+              }
+              {{ r.estado | titlecase }}
+            </span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="acciones">
+          <th mat-header-cell *matHeaderCellDef class="col-actions">Acciones</th>
+          <td mat-cell *matCellDef="let r" class="col-actions">
+            <button
+              mat-icon-button
+              (click)="verDetalle(r)"
+              matTooltip="Ver detalle"
+              [attr.aria-label]="'Ver detalle de ' + r.afpNombre"
+            >
+              <mat-icon fontIcon="visibility" />
+            </button>
+            <button
+              mat-icon-button
+              (click)="editar(r)"
+              [disabled]="r.bloqueadoPorPlanilla"
+              [matTooltip]="r.bloqueadoPorPlanilla ? 'Bloqueado: planilla cerrada' : 'Editar'"
+              [attr.aria-label]="'Editar vigencia ' + r.afpNombre"
+            >
+              <mat-icon fontIcon="edit" />
+            </button>
+            <button
+              mat-icon-button
+              (click)="duplicarFila(r)"
+              matTooltip="Duplicar vigencia"
+              [attr.aria-label]="'Duplicar vigencia ' + r.afpNombre"
+            >
+              <mat-icon fontIcon="content_copy" />
+            </button>
+            <button
+              mat-icon-button
+              (click)="cerrarVigencia(r)"
+              [disabled]="r.bloqueadoPorPlanilla || r.estado !== 'VIGENTE'"
+              matTooltip="Cerrar vigencia"
+              [attr.aria-label]="'Cerrar vigencia ' + r.afpNombre"
+            >
+              <mat-icon fontIcon="timer_off" />
+            </button>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="columns"></tr>
+        <tr mat-row *matRowDef="let r; columns: columns;" class="afp-row"></tr>
+      </table>
+    </div>
+
+    <div class="afp-pag-row">
+      <span class="afp-count">
+        Mostrando {{ rangoMostrado().start }} a {{ rangoMostrado().end }} de {{ rangoMostrado().total }} registros
+      </span>
+      <mat-paginator
+        [length]="rowsFiltradas().length"
+        [pageSize]="pageSize()"
+        [pageIndex]="pageIndex()"
+        [pageSizeOptions]="pageSizeOptions"
+        (page)="onPage($event)"
+        aria-label="Paginación de parámetros AFP"
+      />
+    </div>
+  }
+
+  <p class="afp-note">Base normativa: TUO SPP D.S. 054-97-EF · SBS Res. 8514-2012 · D.Leg. 1057 CAS</p>
+</div>
