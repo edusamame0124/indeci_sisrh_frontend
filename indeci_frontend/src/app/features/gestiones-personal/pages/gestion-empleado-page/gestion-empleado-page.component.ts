@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, OnInit, inject, signal, computed } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  inject,
+  signal,
+  computed,
+} from '@angular/core';
 import { DatePipe, NgClass, NgFor, NgIf } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -8,14 +15,22 @@ import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatMenuModule } from '@angular/material/menu';
 
 import { EnviarPapeletaDialogComponent } from '../../../../modules/gestiones-personal/dialogs/enviar-papeleta-dialog/enviar-papeleta-dialog';
-import { NuevaPapeletaDialogComponent } from '../../../../modules/gestiones-personal/dialogs/nueva-papeleta-dialog/nueva-papeleta-dialog';
 import { TrazabilidadPapeletaDialogComponent } from '../../../../modules/gestiones-personal/dialogs/trazabilidad-papeleta-dialog/trazabilidad-papeleta-dialog';
+
+import { PermisoComunDialog } from '../../../../modules/gestiones-personal/dialogs/permiso-comun-dialog/permiso-comun-dialog';
+import { LactanciaDialog } from '../../../../modules/gestiones-personal/dialogs/lactancia-dialog/lactancia-dialog';
+import { LicenciaDialog } from '../../../../modules/gestiones-personal/dialogs/licencia-dialog/licencia-dialog';
+import { DescansoMedicoDialog } from '../../../../modules/gestiones-personal/dialogs/descanso-medico-dialog/descanso-medico-dialog';
+import { VacacionesDialog } from '../../../../modules/gestiones-personal/dialogs/vacaciones-dialog/vacaciones-dialog';
+import { CompensacionDialog } from '../../../../modules/gestiones-personal/dialogs/compensacion-dialog/compensacion-dialog';
 
 import {
   SolicitudRrhh,
   SolicitudesRrhhService,
+  TipoSolicitudRrhh,
 } from '../../../../modules/gestiones-personal/services/solicitudes-rrhh';
 
 @Component({
@@ -33,6 +48,7 @@ import {
     MatIconModule,
     MatProgressSpinnerModule,
     MatDialogModule,
+    MatMenuModule,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './gestion-empleado-page.component.html',
@@ -41,6 +57,9 @@ import {
 export class GestionEmpleadoPageComponent implements OnInit {
   private readonly service = inject(SolicitudesRrhhService);
   private readonly dialog = inject(MatDialog);
+
+  tiposSolicitud = signal<TipoSolicitudRrhh[]>([]);
+  cargandoTiposSolicitud = signal(false);
 
   solicitudes = signal<SolicitudRrhh[]>([]);
   cargando = signal(false);
@@ -72,16 +91,25 @@ export class GestionEmpleadoPageComponent implements OnInit {
       .sort((a, b) => b.id - a.id);
   });
 
-  estados = computed(() =>
-    [...new Set(this.solicitudes().map((x) => x.estadoSolicitud).filter(Boolean))],
-  );
+  estados = computed(() => [
+    ...new Set(
+      this.solicitudes()
+        .map((x) => x.estadoSolicitud)
+        .filter(Boolean),
+    ),
+  ]);
 
-  tipos = computed(() =>
-    [...new Set(this.solicitudes().map((x) => x.tipoSolicitud).filter(Boolean))],
-  );
+  tipos = computed(() => [
+    ...new Set(
+      this.solicitudes()
+        .map((x) => x.tipoSolicitud)
+        .filter(Boolean),
+    ),
+  ]);
 
   ngOnInit(): void {
     this.cargarSolicitudes();
+    this.cargarTiposSolicitud();
   }
 
   cargarSolicitudes(): void {
@@ -100,19 +128,83 @@ export class GestionEmpleadoPageComponent implements OnInit {
     });
   }
 
-  abrirNuevaPapeleta(): void {
-  const ref = this.dialog.open(NuevaPapeletaDialogComponent, {
-    width: '720px',
-    maxWidth: '95vw',
-    disableClose: true,
-  });
+  cargarTiposSolicitud(): void {
+    this.cargandoTiposSolicitud.set(true);
 
-  ref.afterClosed().subscribe((actualizar: boolean) => {
-    if (actualizar) {
-      this.cargarSolicitudes();
+    this.service.listarTiposSolicitud().subscribe({
+      next: (resp) => {
+        const activos = (resp.data ?? []).filter((tipo) => Number(tipo.activo) === 1);
+        this.tiposSolicitud.set(activos);
+        this.cargandoTiposSolicitud.set(false);
+      },
+      error: () => {
+        this.cargandoTiposSolicitud.set(false);
+        this.error.set('No se pudo cargar el catálogo de tipos de solicitud.');
+      },
+    });
+  }
+
+  buscarTipoPorCodigo(codigo: string): TipoSolicitudRrhh | null {
+    const codigoNormalizado = String(codigo).padStart(3, '0');
+
+    return (
+      this.tiposSolicitud().find(
+        (tipo) => String(tipo.codigo).padStart(3, '0') === codigoNormalizado,
+      ) ?? null
+    );
+  }
+
+  abrirDialogoPorCodigo(codigo: string, componente: any, width: string): void {
+    const tipoSolicitud = this.buscarTipoPorCodigo(codigo);
+
+    if (!tipoSolicitud) {
+      this.error.set(`No se encontró el tipo de solicitud con código ${codigo}.`);
+      return;
     }
-  });
-}
+
+    const ref = this.dialog.open(componente, {
+      width,
+      maxWidth: '95vw',
+      disableClose: true,
+      data: tipoSolicitud,
+    });
+
+    ref.afterClosed().subscribe((actualizar: boolean) => {
+      if (actualizar) {
+        this.cargarSolicitudes();
+      }
+    });
+  }
+
+  // FORMATO 1: códigos 001 al 007
+  abrirPermisoComun(codigo: string): void {
+    this.abrirDialogoPorCodigo(codigo, PermisoComunDialog, '900px');
+  }
+
+  // FORMATO 2: códigos 008 y 009
+  abrirLactancia(codigo: '008' | '009'): void {
+    this.abrirDialogoPorCodigo(codigo, LactanciaDialog, '900px');
+  }
+
+  // FORMATO 4: código 010
+  abrirDescansoMedico(): void {
+    this.abrirDialogoPorCodigo('010', DescansoMedicoDialog, '900px');
+  }
+
+  // FORMATO 3: código 011
+  abrirLicencia(): void {
+    this.abrirDialogoPorCodigo('011', LicenciaDialog, '900px');
+  }
+
+  // FORMATO 5: código 012
+  abrirVacaciones(): void {
+    this.abrirDialogoPorCodigo('012', VacacionesDialog, '1100px');
+  }
+
+  // FORMATO 6: código 013
+  abrirCompensacion(): void {
+    this.abrirDialogoPorCodigo('013', CompensacionDialog, '1100px');
+  }
 
   limpiarFiltros(): void {
     this.filtroTexto.set('');
@@ -123,17 +215,7 @@ export class GestionEmpleadoPageComponent implements OnInit {
   descargarFormato(item: SolicitudRrhh): void {
     this.service.descargarFormatoPapeleta(item.id).subscribe({
       next: (blob) => {
-        const url = window.URL.createObjectURL(blob);
-
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `Papeleta_${item.id}.pdf`;
-
-        document.body.appendChild(a);
-        a.click();
-
-        document.body.removeChild(a);
-        window.URL.revokeObjectURL(url);
+        this.descargarBlob(blob, `Papeleta_${item.id}.pdf`);
       },
       error: (err) => {
         console.error(err);
@@ -153,28 +235,28 @@ export class GestionEmpleadoPageComponent implements OnInit {
     window.URL.revokeObjectURL(url);
   }
 
- abrirEnvio(item: SolicitudRrhh): void {
-  const ref = this.dialog.open(EnviarPapeletaDialogComponent, {
-    width: '560px',
-    maxWidth: '95vw',
-    disableClose: true,
-    data: item,
-  });
+  abrirEnvio(item: SolicitudRrhh): void {
+    const ref = this.dialog.open(EnviarPapeletaDialogComponent, {
+      width: '560px',
+      maxWidth: '95vw',
+      disableClose: true,
+      data: item,
+    });
 
-  ref.afterClosed().subscribe((actualizar: boolean) => {
-    if (actualizar) {
-      this.cargarSolicitudes();
-    }
-  });
-}
+    ref.afterClosed().subscribe((actualizar: boolean) => {
+      if (actualizar) {
+        this.cargarSolicitudes();
+      }
+    });
+  }
 
   abrirTrazabilidad(item: SolicitudRrhh): void {
-  this.dialog.open(TrazabilidadPapeletaDialogComponent, {
-    width: '960px',
-    maxWidth: '96vw',
-    data: item,
-  });
-}
+    this.dialog.open(TrazabilidadPapeletaDialogComponent, {
+      width: '960px',
+      maxWidth: '96vw',
+      data: item,
+    });
+  }
 
   getNombreEmpleado(): string {
     return this.solicitudes()[0]?.empleado ?? 'Empleado';

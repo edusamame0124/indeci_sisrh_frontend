@@ -1,0 +1,93 @@
+<h2 mat-dialog-title>{{ tituloDialog }}</h2>
+
+<mat-dialog-content class="dialog-body">
+  <div *ngIf="cargandoTipos()" class="loading">
+    Cargando tipos de descanso médico...
+  </div>
+
+  <div class="grid">
+    <label class="field field--full">
+      <span>Expedido por</span>
+      <select [(ngModel)]="tipoDescansoMedicoId" (ngModelChange)="onTipoDescansoChange($event)">
+        <option [ngValue]="null">Seleccione</option>
+        <option *ngFor="let tipo of tiposDescanso()" [ngValue]="tipo.id">
+          {{ tipo.nombre }}
+        </option>
+      </select>
+    </label>
+
+    <label class="field">
+      <span>Fecha inicio</span>
+      <input type="date" [(ngModel)]="fechaInicio" (change)="calcularDias()" />
+    </label>
+
+    <label class="field">
+      <span>Fecha fin</span>
+      <input type="date" [(ngModel)]="fechaFin" (change)="calcularDias()" />
+    </label>
+
+    <label class="field">
+      <span>Cantidad de días</span>
+      <input type="number" [ngModel]="cantidadDias" disabled />
+    </label>
+
+    <label class="field">
+      <span>Nombre del médico</span>
+      <input type="text" [(ngModel)]="nombreMedico" />
+    </label>
+
+    <label class="field">
+      <span>Número de colegiatura</span>
+      <input type="text" [(ngModel)]="numeroColegiatura" />
+    </label>
+
+    <label class="field field--full">
+      <span>Motivo</span>
+      <textarea rows="3" [(ngModel)]="motivo"></textarea>
+    </label>
+
+    <div class="field field--full" *ngIf="cargandoDocumentos()">
+      Cargando documentos requeridos...
+    </div>
+
+    <div class="field field--full" *ngIf="documentosRequeridos().length > 0">
+      <strong>Documentos requeridos</strong>
+    </div>
+
+    <div class="field field--full" *ngFor="let doc of documentosRequeridos()">
+      <span>
+        {{ doc.nombre }}
+        <strong *ngIf="esDocumentoObligatorio(doc)">*</strong>
+      </span>
+
+      <small *ngIf="doc.descripcion">
+        {{ doc.descripcion }}
+      </small>
+
+      <input type="file" (change)="onDocumentoSeleccionado($event, doc)" />
+    </div>
+
+    <label class="field field--full">
+      <span>
+        Observación
+        <strong *ngIf="requiereObservacion()">*</strong>
+      </span>
+      <textarea rows="3" [(ngModel)]="observacion"></textarea>
+    </label>
+  </div>
+
+  <div *ngIf="error()" class="error">
+    {{ error() }}
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-stroked-button type="button" (click)="cerrar()" [disabled]="guardando()">
+    Cancelar
+  </button>
+
+  <button mat-flat-button color="primary" type="button" (click)="guardar()" [disabled]="guardando()">
+    <mat-icon>save</mat-icon>
+    {{ guardando() ? 'Guardando...' : 'Guardar borrador' }}
+  </button>
+</mat-dialog-actions>

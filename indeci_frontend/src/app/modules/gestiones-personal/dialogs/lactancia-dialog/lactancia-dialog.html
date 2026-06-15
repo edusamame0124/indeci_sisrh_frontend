@@ -1,0 +1,99 @@
+<h2 mat-dialog-title>{{ tituloDialog }}</h2>
+
+<mat-dialog-content class="dialog-body">
+  <div class="grid">
+    <label class="field">
+      <span>Fecha de inicio del permiso de lactancia</span>
+      <input type="date" [(ngModel)]="fechaInicio" />
+    </label>
+
+    <label class="field">
+      <span>Fecha de nacimiento del hijo(a)</span>
+      <input
+        type="date"
+        [(ngModel)]="fechaNacimientoHijo"
+        (change)="calcularFechaPrimerAnio()"
+      />
+    </label>
+
+    <label class="field">
+      <span>Fecha en que el hijo(a) cumple 1 año</span>
+      <input type="date" [ngModel]="fechaFin" disabled />
+    </label>
+
+    <label class="field">
+      <span>Fecha fin de descanso postnatal</span>
+      <input type="date" [(ngModel)]="fechaFinPostnatal" />
+    </label>
+
+    <label class="field field--full">
+      <span>Modalidad de lactancia</span>
+      <select [(ngModel)]="modoLactancia" (ngModelChange)="onModoLactanciaChange()">
+        <option value="FRACCIONADO">Fraccionado</option>
+        <option value="NO_FRACCIONADO">No fraccionado</option>
+      </select>
+    </label>
+
+    <ng-container *ngIf="usarFraccionado()">
+      <label class="field">
+        <span>Ingreso: minutos después</span>
+        <input type="number" min="0" max="60" [(ngModel)]="minutosIngreso" />
+      </label>
+
+      <label class="field">
+        <span>Salida: minutos antes</span>
+        <input type="number" min="0" max="60" [(ngModel)]="minutosSalida" />
+      </label>
+    </ng-container>
+
+    <ng-container *ngIf="usarNoFraccionado()">
+      <label class="field">
+        <span>Hora desde</span>
+        <input type="time" [(ngModel)]="horaInicio" (change)="calcularHoras()" />
+      </label>
+
+      <label class="field">
+        <span>Hora hasta</span>
+        <input type="time" [(ngModel)]="horaFin" (change)="calcularHoras()" />
+      </label>
+
+      <label class="field">
+        <span>Horas diarias</span>
+        <input type="text" [value]="cantidadHorasTexto" disabled />
+      </label>
+    </ng-container>
+
+    <label class="field field--full">
+      <span>Motivo</span>
+      <textarea rows="3" [(ngModel)]="motivo"></textarea>
+    </label>
+
+    <label class="field field--full" *ngIf="requiereSustento()">
+      <span>Documento de sustento</span>
+      <input type="file" (change)="onArchivoSeleccionado($event)" />
+    </label>
+
+    <label class="field field--full">
+      <span>
+        Observación
+        <strong *ngIf="requiereObservacion()">*</strong>
+      </span>
+      <textarea rows="3" [(ngModel)]="observacion"></textarea>
+    </label>
+  </div>
+
+  <div *ngIf="error()" class="error">
+    {{ error() }}
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-stroked-button type="button" (click)="cerrar()" [disabled]="guardando()">
+    Cancelar
+  </button>
+
+  <button mat-flat-button color="primary" type="button" (click)="guardar()" [disabled]="guardando()">
+    <mat-icon>save</mat-icon>
+    {{ guardando() ? 'Guardando...' : 'Guardar borrador' }}
+  </button>
+</mat-dialog-actions>

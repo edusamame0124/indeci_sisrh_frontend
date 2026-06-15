@@ -53,6 +53,57 @@ export interface TipoSolicitudRrhh {
   requiereSustento?: number;
   requiereLugar?: number;
   requiereObservacion?: number;
+  mostrarLactancia?: number;
+  mostrarLicencia?: number;
+  mostrarDescansoMedico?: number;
+  mostrarVacacion?: number;
+  mostrarCompensacion?: number;
+}
+
+export interface TipoLicencia {
+  id: number;
+  nombre: string;
+  activo?: number;
+}
+
+export interface TipoVacacion {
+  id: number;
+  nombre: string;
+  codigo?: string;
+  activo?: number;
+}
+
+export interface TipoDescansoMedico {
+  id: number;
+  nombre: string;
+  activo?: number;
+}
+
+export interface DocumentoRequeridoDescansoMedico {
+  id?: number;
+  documentoRequeridoId?: number;
+  nombre: string;
+  descripcion?: string | null;
+  obligatorio?: number | boolean;
+  activo?: number;
+}
+
+export interface DocumentoAdjuntoRequest {
+  documentoRequeridoId: number;
+}
+
+export interface DetalleVacacionRequest {
+  tipo: string;
+  fechaInicio: string;
+  fechaFin: string;
+  totalDias: number;
+}
+
+export interface DetalleCompensacionRequest {
+  fechaCompensacion: string;
+  horaInicio: string;
+  horaFin: string;
+  cantidadHoras: number;
 }
 
 export interface CrearSolicitudRrhhRequest {
@@ -66,6 +117,26 @@ export interface CrearSolicitudRrhhRequest {
   horaFin?: string | null;
   cantidadHoras?: number | null;
   lugarComision?: string | null;
+
+  fechaNacimientoHijo?: string | null;
+  fechaFinPostnatal?: string | null;
+  minutosIngreso?: number | null;
+  minutosSalida?: number | null;
+
+  tipoLicenciaId?: number | null;
+  documento1?: string | null;
+  documento2?: string | null;
+  totalFolios?: number | null;
+
+  tipoDescansoMedicoId?: number | null;
+  nombreMedico?: string | null;
+  numeroColegiatura?: string | null;
+  documentosAdjuntos?: DocumentoAdjuntoRequest[] | null;
+
+  tipoVacacionId?: number | null;
+  detallesVacacion?: DetalleVacacionRequest[] | null;
+
+  detallesCompensacion?: DetalleCompensacionRequest[] | null;
 }
 
 @Injectable({
@@ -75,30 +146,40 @@ export class SolicitudesRrhhService {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = environment.apiUrl;
 
-  /**
-   * Mis solicitudes
-   */
   listarMisSolicitudes(): Observable<ApiResponse<SolicitudRrhh[]>> {
     return this.http.get<ApiResponse<SolicitudRrhh[]>>(
       `${this.apiUrl}/rrhh/solicitudes/mis-solicitudes`,
     );
   }
 
-  /**
-   * Catálogo de tipos de solicitud
-   */
   listarTiposSolicitud(): Observable<ApiResponse<TipoSolicitudRrhh[]>> {
     return this.http.get<ApiResponse<TipoSolicitudRrhh[]>>(
       `${this.apiUrl}/catalogos/tipos-solicitud-rrhh`,
     );
   }
 
-  /**
-   * Crear nueva solicitud
-   */
-  /**crearSolicitud(payload: CrearSolicitudRrhhRequest): Observable<ApiResponse<SolicitudRrhh>> {
-    return this.http.post<ApiResponse<SolicitudRrhh>>(`${this.apiUrl}/rrhh/solicitudes`, payload);
-  }*/
+  listarTiposLicencia(): Observable<ApiResponse<TipoLicencia[]>> {
+    return this.http.get<ApiResponse<TipoLicencia[]>>(`${this.apiUrl}/catalogos/tipos-licencia`);
+  }
+
+  listarTiposVacacion(): Observable<ApiResponse<TipoVacacion[]>> {
+    return this.http.get<ApiResponse<TipoVacacion[]>>(`${this.apiUrl}/catalogos/tipos-vacacion`);
+  }
+
+  listarTiposDescansoMedico(): Observable<ApiResponse<TipoDescansoMedico[]>> {
+    return this.http.get<ApiResponse<TipoDescansoMedico[]>>(
+      `${this.apiUrl}/catalogos/tipos-descanso-medico`,
+    );
+  }
+
+  listarDocumentosDescansoMedico(
+    tipoDescansoMedicoId: number,
+  ): Observable<ApiResponse<DocumentoRequeridoDescansoMedico[]>> {
+    return this.http.get<ApiResponse<DocumentoRequeridoDescansoMedico[]>>(
+      `${this.apiUrl}/catalogos/tipo-descanso/${tipoDescansoMedicoId}/documentos`,
+    );
+  }
+
   crearSolicitud(
     payload: CrearSolicitudRrhhRequest,
     sustento?: File | null,
@@ -122,10 +203,28 @@ export class SolicitudesRrhhService {
     );
   }
 
-  /**
-   * Lista solicitudes para ser aprobadas RRHH
-   *
-   */
+  crearSolicitudConDocumentos(
+    payload: CrearSolicitudRrhhRequest,
+    documentos: File[],
+  ): Observable<ApiResponse<SolicitudRrhh>> {
+    const formData = new FormData();
+
+    formData.append(
+      'datos',
+      new Blob([JSON.stringify(payload)], {
+        type: 'application/json',
+      }),
+    );
+
+    documentos.forEach((file) => {
+      formData.append('documentos', file, file.name);
+    });
+
+    return this.http.post<ApiResponse<SolicitudRrhh>>(
+      `${this.apiUrl}/rrhh/solicitudes/registrar`,
+      formData,
+    );
+  }
 
   listarTodasSolicitudes(): Observable<ApiResponse<SolicitudRrhh[]>> {
     return this.http.get<ApiResponse<SolicitudRrhh[]>>(`${this.apiUrl}/rrhh/solicitudes/todas`);
@@ -146,10 +245,6 @@ export class SolicitudesRrhhService {
       formData,
     );
   }
-
-  /**
-   * Lista solicitudes para ser aprobadas por el jefe
-   */
 
   listarSolicitudesColaboradores(): Observable<ApiResponse<SolicitudRrhh[]>> {
     return this.http.get<ApiResponse<SolicitudRrhh[]>>(
@@ -173,17 +268,12 @@ export class SolicitudesRrhhService {
     );
   }
 
-  /**
-   * Descargar formato PDF de la papeleta
-   */
   descargarFormatoPapeleta(idPapeleta: number): Observable<Blob> {
     return this.http.post(`${this.apiUrl}/rrhh/reportes/papeleta/${idPapeleta}`, null, {
       responseType: 'blob',
     });
   }
-  /**
-   * Enviar papeleta firmada al jefe
-   */
+
   enviarPapeletaFirmada(
     idPapeleta: number,
     file: File,
@@ -200,18 +290,12 @@ export class SolicitudesRrhhService {
     );
   }
 
-  /**
-   * Historial documental de una solicitud
-   */
   listarDocumentosSolicitud(idPapeleta: number): Observable<ApiResponse<DocumentoSolicitud[]>> {
     return this.http.get<ApiResponse<DocumentoSolicitud[]>>(
       `${this.apiUrl}/rrhh/solicitudes-doc/${idPapeleta}`,
     );
   }
 
-  /**
-   * Descargar documento desde FTP
-   */
   descargarDocumento(rutaArchivo: string): Observable<Blob> {
     const params = new HttpParams().set('rutaArchivo', rutaArchivo);
 

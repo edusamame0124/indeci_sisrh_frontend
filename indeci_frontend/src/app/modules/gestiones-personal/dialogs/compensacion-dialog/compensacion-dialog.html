@@ -1,0 +1,175 @@
+<h2 mat-dialog-title>{{ tituloDialog }}</h2>
+
+<mat-dialog-content class="dialog-body">
+  <div class="grid">
+    <!-- DATOS DEL PERMISO -->
+    <label class="field">
+      <span>Fecha del permiso</span>
+      <input
+        type="date"
+        [(ngModel)]="fechaInicio"
+        (ngModelChange)="onFechaInicioChange()"
+      />
+    </label>
+
+    <label class="field">
+      <span>Hora de salida</span>
+      <input
+        type="time"
+        [(ngModel)]="horaInicio"
+        (change)="calcularHorasPermiso()"
+      />
+    </label>
+
+    <label class="field">
+      <span>Hora de ingreso</span>
+      <input
+        type="time"
+        [(ngModel)]="horaFin"
+        (change)="calcularHorasPermiso()"
+      />
+    </label>
+
+    <label class="field">
+      <span>Horas solicitadas</span>
+      <input
+        type="text"
+        [value]="cantidadHorasTexto"
+        disabled
+      />
+    </label>
+
+    <label class="field field--full">
+      <span>Motivo</span>
+      <textarea
+        rows="3"
+        [(ngModel)]="motivo">
+      </textarea>
+    </label>
+
+    <!-- CRONOGRAMA DE COMPENSACIÓN -->
+    <div class="field field--full">
+      <strong>Cronograma de compensación</strong>
+    </div>
+
+    <div
+      class="field field--full"
+      *ngFor="let detalle of detallesCompensacion; let i = index"
+    >
+      <strong>Compensación {{ i + 1 }}</strong>
+
+      <div class="grid">
+        <label class="field">
+          <span>Fecha de compensación</span>
+          <input
+            type="date"
+            [(ngModel)]="detalle.fechaCompensacion"
+          />
+        </label>
+
+        <label class="field">
+          <span>Hora inicio</span>
+          <input
+            type="time"
+            [(ngModel)]="detalle.horaInicio"
+            (change)="calcularHorasDetalle(detalle)"
+          />
+        </label>
+
+        <label class="field">
+          <span>Hora fin</span>
+          <input
+            type="time"
+            [(ngModel)]="detalle.horaFin"
+            (change)="calcularHorasDetalle(detalle)"
+          />
+        </label>
+
+        <label class="field">
+          <span>Horas compensadas</span>
+          <input
+            type="text"
+            [value]="detalle.cantidadHorasTexto"
+            disabled
+          />
+        </label>
+      </div>
+
+      <button
+        mat-stroked-button
+        type="button"
+        (click)="quitarCompensacion(i)"
+        *ngIf="detallesCompensacion.length > 1"
+      >
+        <mat-icon>remove</mat-icon>
+        Quitar compensación
+      </button>
+    </div>
+
+    <div class="field field--full">
+      <button
+        mat-stroked-button
+        type="button"
+        (click)="agregarCompensacion()"
+      >
+        <mat-icon>add</mat-icon>
+        Agregar compensación
+      </button>
+    </div>
+
+    <label class="field">
+      <span>Total compensado</span>
+      <input
+        type="text"
+        [value]="totalHorasCompensadasTexto()"
+        disabled
+      />
+    </label>
+
+    <label class="field field--full" *ngIf="requiereSustento()">
+      <span>Documento de sustento</span>
+      <input
+        type="file"
+        (change)="onArchivoSeleccionado($event)"
+      />
+    </label>
+
+    <label class="field field--full">
+      <span>
+        Observación
+        <strong *ngIf="requiereObservacion()">*</strong>
+      </span>
+
+      <textarea
+        rows="3"
+        [(ngModel)]="observacion">
+      </textarea>
+    </label>
+  </div>
+
+  <div *ngIf="error()" class="error">
+    {{ error() }}
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button
+    mat-stroked-button
+    type="button"
+    (click)="cerrar()"
+    [disabled]="guardando()"
+  >
+    Cancelar
+  </button>
+
+  <button
+    mat-flat-button
+    color="primary"
+    type="button"
+    (click)="guardar()"
+    [disabled]="guardando()"
+  >
+    <mat-icon>save</mat-icon>
+    {{ guardando() ? 'Guardando...' : 'Guardar borrador' }}
+  </button>
+</mat-dialog-actions>

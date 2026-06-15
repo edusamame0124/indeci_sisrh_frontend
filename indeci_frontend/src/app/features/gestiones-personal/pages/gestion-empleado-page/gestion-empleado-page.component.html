@@ -46,16 +46,88 @@
         </div>
 
         <div class="toolbar__actions">
-          <button mat-flat-button color="primary" type="button" (click)="abrirNuevaPapeleta()">
-            <mat-icon>add</mat-icon>
-            Nueva papeleta
-          </button>
+            <button mat-flat-button color="primary" [matMenuTriggerFor]="menuPapeletas">
+              <mat-icon>add</mat-icon>
+              Nueva papeleta
+            </button>
 
-          <button mat-stroked-button routerLink="/">
-            <mat-icon>arrow_back</mat-icon>
-            Regresar
-          </button>
-        </div>
+            <mat-menu #menuPapeletas="matMenu">
+              <button mat-menu-item [matMenuTriggerFor]="menuPermisos">
+                <mat-icon>description</mat-icon>
+                <span>Permisos</span>
+              </button>
+
+              <button mat-menu-item [matMenuTriggerFor]="menuLactancia">
+                <mat-icon>child_care</mat-icon>
+                <span>Lactancia</span>
+              </button>
+
+              <button mat-menu-item (click)="abrirDescansoMedico()">
+                <mat-icon>medical_services</mat-icon>
+                <span>Descanso médico</span>
+              </button>
+
+              <button mat-menu-item (click)="abrirLicencia()">
+                <mat-icon>assignment</mat-icon>
+                <span>Licencia</span>
+              </button>
+
+              <button mat-menu-item (click)="abrirVacaciones()">
+                <mat-icon>beach_access</mat-icon>
+                <span>Vacaciones</span>
+              </button>
+
+              <button mat-menu-item (click)="abrirCompensacion()">
+                <mat-icon>schedule</mat-icon>
+                <span>Permiso compensable</span>
+              </button>
+            </mat-menu>
+
+            <mat-menu #menuPermisos="matMenu">
+              <button mat-menu-item (click)="abrirPermisoComun('001')">
+                <span>Permiso por asuntos personales</span>
+              </button>
+
+              <button mat-menu-item (click)="abrirPermisoComun('002')">
+                <span>Permiso por cita médica</span>
+              </button>
+
+              <button mat-menu-item (click)="abrirPermisoComun('003')">
+                <span>Citación judicial/militar</span>
+              </button>
+
+              <button mat-menu-item (click)="abrirPermisoComun('004')">
+                <span>Omisión de registro de asistencia</span>
+              </button>
+
+              <button mat-menu-item (click)="abrirPermisoComun('005')">
+                <span>Ingreso por tardanza</span>
+              </button>
+
+              <button mat-menu-item (click)="abrirPermisoComun('006')">
+                <span>Comisión de servicio</span>
+              </button>
+
+              <button mat-menu-item (click)="abrirPermisoComun('007')">
+                <span>Otros permisos por horas</span>
+              </button>
+            </mat-menu>
+
+            <mat-menu #menuLactancia="matMenu">
+              <button mat-menu-item (click)="abrirLactancia('008')">
+                <span>Primera solicitud</span>
+              </button>
+
+              <button mat-menu-item (click)="abrirLactancia('009')">
+                <span>Modificación de horario</span>
+              </button>
+            </mat-menu>
+
+            <button mat-stroked-button routerLink="/">
+              <mat-icon>arrow_back</mat-icon>
+              Regresar
+            </button>
+          </div>
       </section>
 
       <div *ngIf="cargando()" class="loading">
@@ -106,11 +178,7 @@
               <td>{{ item.motivo }}</td>
               <td>{{ item.observacion }}</td>
               <td class="acciones">
-                <button
-                  mat-icon-button
-                  title="Descargar papeleta"
-                  (click)="descargarFormato(item)"
-                >
+                <button mat-icon-button title="Descargar papeleta" (click)="descargarFormato(item)">
                   <mat-icon>picture_as_pdf</mat-icon>
                 </button>
 
@@ -118,7 +186,11 @@
                   <mat-icon>upload_file</mat-icon>
                 </button>
 
-                <button mat-icon-button title="Trazabilidad documental" (click)="abrirTrazabilidad(item)">
+                <button
+                  mat-icon-button
+                  title="Trazabilidad documental"
+                  (click)="abrirTrazabilidad(item)"
+                >
                   <mat-icon>history</mat-icon>
                 </button>
               </td>

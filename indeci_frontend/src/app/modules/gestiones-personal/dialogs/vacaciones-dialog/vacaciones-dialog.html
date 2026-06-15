@@ -1,0 +1,105 @@
+<h2 mat-dialog-title>{{ tituloDialog }}</h2>
+
+<mat-dialog-content class="dialog-body">
+  <div *ngIf="cargandoTipos()" class="loading">
+    Cargando tipos de vacación...
+  </div>
+
+  <div class="grid">
+    <label class="field field--full">
+      <span>Tipo de vacación</span>
+      <select [(ngModel)]="tipoVacacionId" (ngModelChange)="onTipoVacacionChange()">
+        <option [ngValue]="null">Seleccione</option>
+        <option *ngFor="let tipo of tiposVacacion()" [ngValue]="tipo.id">
+          {{ tipo.nombre }}
+        </option>
+      </select>
+    </label>
+
+    <div class="field field--full" *ngFor="let detalle of detallesVacacion">
+      <strong>{{ detalle.titulo }}</strong>
+
+      <div class="grid">
+        <label class="field">
+          <span>Desde</span>
+          <input
+            type="date"
+            [(ngModel)]="detalle.fechaInicio"
+            (change)="calcularDias(detalle)"
+          />
+        </label>
+
+        <label class="field">
+          <span>Hasta</span>
+          <input
+            type="date"
+            [(ngModel)]="detalle.fechaFin"
+            (change)="calcularDias(detalle)"
+          />
+        </label>
+
+        <label class="field">
+          <span>Días</span>
+          <input type="number" [ngModel]="detalle.totalDias" disabled />
+        </label>
+      </div>
+    </div>
+
+    <div class="field field--full" *ngIf="puedeAgregarReprogramacion()">
+      <button mat-stroked-button type="button" (click)="agregarReprogramacion()">
+        <mat-icon>add</mat-icon>
+        Agregar segundo nuevo periodo
+      </button>
+    </div>
+
+    <div class="field field--full" *ngIf="puedeAgregarFraccion()">
+      <button mat-stroked-button type="button" (click)="agregarFraccion()">
+        <mat-icon>add</mat-icon>
+        Agregar fracción
+      </button>
+    </div>
+
+    <div
+      class="field field--full"
+      *ngIf="detallesVacacion.length > 2"
+    >
+      <button mat-stroked-button type="button" (click)="quitarUltimoDetalle()">
+        <mat-icon>remove</mat-icon>
+        Quitar último periodo
+      </button>
+    </div>
+
+    <label class="field field--full">
+      <span>Motivo</span>
+      <textarea rows="3" [(ngModel)]="motivo"></textarea>
+    </label>
+
+    <label class="field field--full" *ngIf="requiereSustento()">
+      <span>Documento de sustento</span>
+      <input type="file" (change)="onArchivoSeleccionado($event)" />
+    </label>
+
+    <label class="field field--full">
+      <span>
+        Observación
+        <strong *ngIf="requiereObservacion()">*</strong>
+      </span>
+      <textarea rows="3" [(ngModel)]="observacion"></textarea>
+    </label>
+  </div>
+
+  <div *ngIf="error()" class="error">
+    {{ error() }}
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-stroked-button type="button" (click)="cerrar()" [disabled]="guardando()">
+    Cancelar
+  </button>
+
+  <button mat-flat-button color="primary" type="button" (click)="guardar()" [disabled]="guardando()">
+    <mat-icon>save</mat-icon>
+    {{ guardando() ? 'Guardando...' : 'Guardar borrador' }}
+  </button>
+</mat-dialog-actions>
