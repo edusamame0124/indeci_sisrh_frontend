@@ -1,0 +1,149 @@
+/* ── Dialog layout ─────────────────────────────────────────── */
+.dlg-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--sisrh-danger, #b42318);
+  margin-bottom: 0;
+}
+
+.dlg-title__icon {
+  color: var(--sisrh-danger, #b42318);
+}
+
+/* ── Aviso de anulación lógica ─────────────────────────────── */
+.dlg-warn-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: var(--sisrh-warning-100, #fff4db);
+  border: 1px solid var(--sisrh-warning, #b7791f);
+  border-radius: 6px;
+  padding: 12px 14px;
+  margin-bottom: 16px;
+  color: var(--sisrh-text, #1f2937);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.dlg-warn-banner mat-icon {
+  color: var(--sisrh-warning, #b7791f);
+  font-size: 20px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.dlg-warn-banner p {
+  margin: 0;
+}
+
+/* ── Resumen vigencia ──────────────────────────────────────── */
+.dlg-origin {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 16px;
+  background: var(--sisrh-surface-muted, #f8fafc);
+  border: 1px solid var(--sisrh-border-soft, #e7ecf2);
+  border-radius: 6px;
+  padding: 12px 14px;
+  margin-bottom: 16px;
+  font-size: 13px;
+}
+
+.dlg-origin__field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dlg-origin__label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--sisrh-text-muted, #64748b);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.dlg-origin__value {
+  font-size: 13px;
+  color: var(--sisrh-text, #1f2937);
+  font-weight: 500;
+}
+
+/* ── Motivos sugeridos ─────────────────────────────────────── */
+.dlg-sugerencias-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--sisrh-text-muted, #64748b);
+  margin: 0 0 6px 0;
+}
+
+.dlg-sugerencias {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.dlg-sugerencia-chip {
+  background: var(--sisrh-primary-100, #e8eef6);
+  border: 1px solid var(--sisrh-border, #d9e1ea);
+  border-radius: 20px;
+  padding: 4px 12px;
+  font-size: 12px;
+  color: var(--sisrh-primary, #1f3a5f);
+  cursor: pointer;
+  transition: background 150ms ease, border-color 150ms ease;
+  white-space: nowrap;
+}
+
+.dlg-sugerencia-chip:hover {
+  background: var(--sisrh-primary-100, #e8eef6);
+  border-color: var(--sisrh-primary, #1f3a5f);
+}
+
+/* ── Campo motivo ──────────────────────────────────────────── */
+.dlg-field-full {
+  width: 100%;
+}
+
+.required-asterisk {
+  color: var(--sisrh-danger, #b42318);
+}
+
+/* ── Error de backend ──────────────────────────────────────── */
+.dlg-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: var(--sisrh-danger-100, #fdecec);
+  border: 1px solid var(--sisrh-danger, #b42318);
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--sisrh-danger, #b42318);
+}
+
+.dlg-error mat-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* ── Botón Eliminar (destructivo visual) ───────────────────── */
+.btn-eliminar {
+  background-color: var(--sisrh-danger, #b42318) !important;
+  color: #fff !important;
+  min-width: 120px;
+}
+
+.btn-eliminar:disabled {
+  opacity: 0.6;
+}
+
+.btn-eliminar mat-spinner {
+  display: inline-block;
+}

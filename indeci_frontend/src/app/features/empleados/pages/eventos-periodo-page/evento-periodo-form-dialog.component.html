@@ -7,7 +7,6 @@
   novalidate
 >
   <mat-dialog-content class="evento-form__content">
-    <!-- Sección 0: Empleado -->
     <section class="form-section" aria-labelledby="evt-sec-empleado">
       <h3 id="evt-sec-empleado" class="form-section__title">Empleado</h3>
       @if (modoEdicion()) {
@@ -49,7 +48,6 @@
       }
     </section>
 
-    <!-- Sección 1: Tipo de evento -->
     <section class="form-section" aria-labelledby="evt-sec-tipo">
       <h3 id="evt-sec-tipo" class="form-section__title">Tipo de evento</h3>
       <mat-form-field appearance="outline" class="evento-form__field">
@@ -64,234 +62,45 @@
           Seleccione un tipo de evento.
         </mat-error>
       </mat-form-field>
+      <p class="evento-form__nota-periodo">
+        Los subsidios por enfermedad y maternidad se registran en
+        <strong>Asistencia → Subsidios</strong>, no como eventos del período.
+      </p>
     </section>
 
-    @if (esMaternidad()) {
-      <div class="evento-form__aviso evento-form__aviso--info" role="note">
-        <mat-icon aria-hidden="true">info</mat-icon>
-        <div class="evento-form__aviso-texto">
-          El subsidio por maternidad se otorga por <strong>98 días naturales</strong>.
-          Puede extenderse a <strong>128 días</strong> en caso de nacimiento múltiple
-          o niño con discapacidad.
-        </div>
-      </div>
-
-      <!-- Sección 2: Datos del descanso -->
-      <section class="form-section" aria-labelledby="evt-sec-descanso">
-        <h3 id="evt-sec-descanso" class="form-section__title">Datos del descanso</h3>
-
-        <div class="evento-form__row">
-          <mat-form-field appearance="outline" class="evento-form__field">
-            <mat-label>Fecha probable de parto</mat-label>
-            <input matInput [matDatepicker]="dpFpp" formControlName="fechaProbableParto" required />
-            <mat-datepicker-toggle matIconSuffix [for]="dpFpp"></mat-datepicker-toggle>
-            <mat-datepicker #dpFpp></mat-datepicker>
-            <mat-error>La fecha probable de parto es obligatoria.</mat-error>
-          </mat-form-field>
-
-          <mat-form-field appearance="outline" class="evento-form__field">
-            <mat-label>Fecha de inicio del descanso</mat-label>
-            <input
-              matInput
-              [matDatepicker]="dpInicio"
-              formControlName="fechaInicio"
-              required
-              (dateChange)="onFechaDescansoChange()"
-            />
-            <mat-datepicker-toggle matIconSuffix [for]="dpInicio"></mat-datepicker-toggle>
-            <mat-datepicker #dpInicio></mat-datepicker>
-            <mat-error>La fecha de inicio es obligatoria.</mat-error>
-          </mat-form-field>
-        </div>
-
-        <div class="evento-form__radio-group" role="radiogroup" aria-label="Duración legal">
-          <span class="evento-form__radio-label">Duración legal *</span>
-          <mat-radio-group formControlName="duracionLegal" class="evento-form__radios">
-            <mat-radio-button [value]="98">98 días — maternidad ordinaria</mat-radio-button>
-            <mat-radio-button [value]="128">128 días — nacimiento múltiple o niño con discapacidad</mat-radio-button>
-          </mat-radio-group>
-        </div>
-
-        @if (form.controls.duracionLegal.value === 128) {
-          <mat-form-field appearance="outline" class="evento-form__field">
-            <mat-label>Motivo de extensión</mat-label>
-            <mat-select formControlName="motivoExtension" required>
-              <mat-option value="NACIMIENTO_MULTIPLE">Nacimiento múltiple</mat-option>
-              <mat-option value="NINO_DISCAPACIDAD">Niño con discapacidad</mat-option>
-            </mat-select>
-            <mat-error>Indique el motivo de extensión.</mat-error>
-          </mat-form-field>
-        }
-
-        <mat-form-field appearance="outline" class="evento-form__field">
-          <mat-label>¿Difiere descanso prenatal al postnatal?</mat-label>
-          <mat-select formControlName="difierePrenatalPostnatal" required>
-            <mat-option value="NO">No</mat-option>
-            <mat-option value="PARCIAL">Sí, difiere parcialmente</mat-option>
-            <mat-option value="TOTAL">Sí, difiere totalmente</mat-option>
-          </mat-select>
-        </mat-form-field>
-
-        <div class="evento-form__row">
-          <mat-form-field appearance="outline" class="evento-form__field">
-            <mat-label>Fecha de fin calculada</mat-label>
-            <input matInput [value]="maternidadResumen().fechaFinTexto" readonly aria-readonly="true" />
-          </mat-form-field>
-          <mat-form-field appearance="outline" class="evento-form__field">
-            <mat-label>Total días naturales</mat-label>
-            <input matInput [value]="maternidadResumen().totalDias ?? ''" readonly aria-readonly="true" />
-          </mat-form-field>
-        </div>
-      </section>
-
-      <!-- Sección 3: Distribución -->
-      <section class="form-section" aria-labelledby="evt-sec-distribucion">
-        <h3 id="evt-sec-distribucion" class="form-section__title">Distribución por periodo de planilla</h3>
-
-        @if (preview()?.cruzaMeses) {
-          <div class="evento-form__aviso evento-form__aviso--warn" role="note" aria-live="polite">
-            <mat-icon aria-hidden="true">warning_amber</mat-icon>
-            <span>{{ preview()?.mensajeGuardrail }}</span>
-          </div>
-        } @else if (preview()) {
-          <div class="evento-form__aviso evento-form__aviso--info" role="note">
-            <mat-icon aria-hidden="true">check_circle</mat-icon>
-            <span>{{ preview()?.mensajeGuardrail }}</span>
-          </div>
-        }
-
-        <table
-          mat-table
-          [dataSource]="distribucion()"
-          class="evento-form__table"
-          aria-describedby="evt-sec-distribucion"
-        >
-          <caption class="sr-only">Distribución mensual del subsidio por maternidad</caption>
-          <ng-container matColumnDef="periodo">
-            <th mat-header-cell *matHeaderCellDef>Periodo</th>
-            <td mat-cell *matCellDef="let row">{{ formatearPeriodo(row.periodo) }}</td>
-          </ng-container>
-          <ng-container matColumnDef="desde">
-            <th mat-header-cell *matHeaderCellDef>Desde</th>
-            <td mat-cell *matCellDef="let row">{{ formatearFechaEs(row.fechaDesde) }}</td>
-          </ng-container>
-          <ng-container matColumnDef="hasta">
-            <th mat-header-cell *matHeaderCellDef>Hasta</th>
-            <td mat-cell *matCellDef="let row">{{ formatearFechaEs(row.fechaHasta) }}</td>
-          </ng-container>
-          <ng-container matColumnDef="dias">
-            <th mat-header-cell *matHeaderCellDef>Días subsidio</th>
-            <td mat-cell *matCellDef="let row">{{ row.diasSubsidio }}</td>
-          </ng-container>
-          <ng-container matColumnDef="afectaDias">
-            <th mat-header-cell *matHeaderCellDef>Afecta días laborados</th>
-            <td mat-cell *matCellDef="let row">{{ row.afectaDiasLaborados === 'S' ? 'Sí' : 'No' }}</td>
-          </ng-container>
-          <ng-container matColumnDef="estado">
-            <th mat-header-cell *matHeaderCellDef>Estado</th>
-            <td mat-cell *matCellDef="let row">
-              Se calculará en {{ formatearPeriodo(row.periodo).slice(5) }}
-            </td>
-          </ng-container>
-          <tr mat-header-row *matHeaderRowDef="distribucionColumns"></tr>
-          <tr mat-row *matRowDef="let row; columns: distribucionColumns"></tr>
-        </table>
-      </section>
-
-      <!-- Sección 4: Efecto en planilla -->
-      <section class="form-section" aria-labelledby="evt-sec-planilla">
-        <h3 id="evt-sec-planilla" class="form-section__title">Efecto en planilla</h3>
-        <dl class="evento-form__dl">
-          <div><dt>Código PLAME/SUNAT</dt><dd>0915 — Subsidios por maternidad</dd></div>
-          <div><dt>Afecta días laborados</dt><dd>Sí</dd></div>
-          <div><dt>Genera subsidio</dt><dd>Sí</dd></div>
-          <div><dt>Naturaleza</dt><dd>Subsidio por maternidad</dd></div>
-          <div><dt>Suma al neto</dt><dd>Sí, como subsidio no remunerativo si la entidad lo paga por planilla</dd></div>
-          <div><dt>Afecta EsSalud</dt><dd>No (costo empleador separado)</dd></div>
-          <div><dt>Afecta IR4ta/IR5ta</dt><dd>No</dd></div>
-          <div><dt>Aparece en boleta</dt><dd>Sí, si se paga por planilla</dd></div>
-        </dl>
-        <p class="evento-form__nota-periodo">
-          Durante los días subsidiados no debe declararse trabajo remunerado. El sistema reducirá
-          días laborados del periodo y registrará el subsidio según corresponda.
-        </p>
-      </section>
-    } @else {
-      <div
-        *ngIf="tipoSeleccionado()?.generaSubsidio === 'S'"
-        class="evento-form__aviso evento-form__aviso--info"
-        role="note"
-      >
-        <mat-icon aria-hidden="true">health_and_safety</mat-icon>
-        <div class="evento-form__aviso-texto">
-          <strong>Subsidio EsSalud.</strong> Solo aplican <strong>maternidad</strong> (PLAME 0915)
-          e <strong>incapacidad temporal por enfermedad</strong> (PLAME 0916).
-        </div>
-      </div>
-
+    <section class="form-section" aria-labelledby="evt-sec-fechas">
+      <h3 id="evt-sec-fechas" class="form-section__title">Fechas del evento</h3>
       <div class="evento-form__row">
         <mat-form-field appearance="outline" class="evento-form__field">
           <mat-label>Fecha de inicio</mat-label>
-          <input matInput [matDatepicker]="dpInicioGen" formControlName="fechaInicio" required />
-          <mat-datepicker-toggle matIconSuffix [for]="dpInicioGen"></mat-datepicker-toggle>
-          <mat-datepicker #dpInicioGen></mat-datepicker>
+          <input matInput [matDatepicker]="dpInicio" formControlName="fechaInicio" required />
+          <mat-datepicker-toggle matIconSuffix [for]="dpInicio"></mat-datepicker-toggle>
+          <mat-datepicker #dpInicio></mat-datepicker>
           <mat-error>La fecha de inicio es obligatoria.</mat-error>
         </mat-form-field>
         <mat-form-field appearance="outline" class="evento-form__field">
           <mat-label>Fecha de fin</mat-label>
-          <input matInput [matDatepicker]="dpFinGen" formControlName="fechaFin" required />
-          <mat-datepicker-toggle matIconSuffix [for]="dpFinGen"></mat-datepicker-toggle>
-          <mat-datepicker #dpFinGen></mat-datepicker>
+          <input matInput [matDatepicker]="dpFin" formControlName="fechaFin" required />
+          <mat-datepicker-toggle matIconSuffix [for]="dpFin"></mat-datepicker-toggle>
+          <mat-datepicker #dpFin></mat-datepicker>
           <mat-error>La fecha de fin es obligatoria.</mat-error>
         </mat-form-field>
       </div>
-
       <p class="evento-form__nota-periodo">
         El período de planilla se determina por el mes de las fechas del evento.
       </p>
-
       <mat-form-field appearance="outline" class="evento-form__field">
         <mat-label>Días afectos (opcional)</mat-label>
         <input matInput type="number" min="0" max="31" formControlName="diasAfectos" />
         <mat-hint>Si lo deja vacío, el backend derivará de fecha fin − inicio + 1.</mat-hint>
       </mat-form-field>
-    }
+    </section>
 
-    <!-- Sección 5: Sustento documental -->
     <section class="form-section" aria-labelledby="evt-sec-sustento">
       <h3 id="evt-sec-sustento" class="form-section__title">
         Sustento documental
         <span *ngIf="tipoSeleccionado()?.requiereAdjunto === 'S'" class="evento-form__adjunto-req">*</span>
       </h3>
-
-      @if (esMaternidad()) {
-        <p class="evento-form__nota-periodo">
-          El subsidio por maternidad requiere sustento documental. Adjunte el CITT, certificado médico
-          o documento equivalente que sustente el descanso.
-        </p>
-        <div class="evento-form__row">
-          <mat-form-field appearance="outline" class="evento-form__field">
-            <mat-label>Tipo de documento</mat-label>
-            <mat-select formControlName="tipoDocumento" required>
-              <mat-option value="CITT">CITT</mat-option>
-              <mat-option value="CERT_MEDICO">Certificado médico</mat-option>
-              <mat-option value="RESOLUCION">Resolución</mat-option>
-              <mat-option value="OTRO">Otro</mat-option>
-            </mat-select>
-          </mat-form-field>
-          <mat-form-field appearance="outline" class="evento-form__field">
-            <mat-label>Número de CITT o documento</mat-label>
-            <input matInput formControlName="nroCitt" required />
-          </mat-form-field>
-        </div>
-        <mat-form-field appearance="outline" class="evento-form__field">
-          <mat-label>Fecha de emisión</mat-label>
-          <input matInput [matDatepicker]="dpEmision" formControlName="fechaEmisionDoc" required />
-          <mat-datepicker-toggle matIconSuffix [for]="dpEmision"></mat-datepicker-toggle>
-          <mat-datepicker #dpEmision></mat-datepicker>
-        </mat-form-field>
-      }
-
       <div class="evento-form__adjunto">
         @if (!archivoSeleccionado()) {
           <div class="evento-form__drop">
@@ -323,51 +132,19 @@
       </div>
     </section>
 
-    <!-- Sección 6: Observación -->
     <section class="form-section" aria-labelledby="evt-sec-obs">
       <h3 id="evt-sec-obs" class="form-section__title">Observación RR. HH.</h3>
       <mat-form-field appearance="outline" class="evento-form__field">
         <mat-label>Observación</mat-label>
-        <textarea
-          matInput
-          rows="2"
-          formControlName="observacion"
-          maxlength="500"
-          [placeholder]="esMaternidad()
-            ? 'Ejemplo: Descanso por maternidad ordinaria. Se distribuye automáticamente por periodo.'
-            : ''"
-        ></textarea>
+        <textarea matInput rows="2" formControlName="observacion" maxlength="500"></textarea>
       </mat-form-field>
     </section>
-
-    @if (previewVisible() && preview(); as p) {
-      <section class="evento-form__preview" aria-live="polite">
-        <h3 class="form-section__title">Resumen de impacto</h3>
-        <ul class="evento-form__preview-list">
-          <li>Periodos afectados: {{ p.cantidadPeriodos }}</li>
-          <li>PLAME/SUNAT: {{ p.codigoPlameSunat }}</li>
-          <li>Afecta días laborados: {{ p.afectaDiasLaborados ? 'Sí' : 'No' }}</li>
-          <li>Genera subsidio: {{ p.generaSubsidio ? 'Sí' : 'No' }}</li>
-          <li>Suma al neto (P0): {{ p.sumaAlNeto ? 'Sí, en este periodo' : 'Diferido (cruza meses)' }}</li>
-        </ul>
-      </section>
-    }
   </mat-dialog-content>
 
   <mat-dialog-actions align="end">
     <button mat-button type="button" (click)="cancelar()" [disabled]="submitting()">
       Cancelar
     </button>
-    @if (esMaternidad()) {
-      <button
-        mat-stroked-button
-        type="button"
-        (click)="previsualizarImpacto()"
-        [disabled]="submitting() || previewing()"
-      >
-        Previsualizar impacto
-      </button>
-    }
     <button
       mat-flat-button
       color="primary"

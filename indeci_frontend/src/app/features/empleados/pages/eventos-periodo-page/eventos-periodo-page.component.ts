@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   DestroyRef,
   OnInit,
   inject,
@@ -108,6 +109,16 @@ export class EventosPeriodoPageComponent implements OnInit {
     'acciones',
   ] as const;
 
+  /** P0-F0: excluye tipos que generan subsidio (flujo en Asistencia → Subsidios). */
+  readonly tiposOperativos = computed(() =>
+    this.tipos().filter(
+      (t) =>
+        t.generaSubsidio !== 'S'
+        && t.codigo !== 'MATERNIDAD'
+        && t.codigo !== 'ENFERMEDAD',
+    ),
+  );
+
   ngOnInit(): void {
     this.eventoApi.listarTipos().subscribe({
       next: (t) => {
@@ -190,7 +201,7 @@ export class EventosPeriodoPageComponent implements OnInit {
   abrirFormCrear(): void {
     this.abrirDialog({
       empleadoId: null,
-      tipos: this.tipos(),
+      tipos: this.tiposOperativos(),
       categoriasLegajo: this.categoriasLegajo(),
       evento: null,
     });
@@ -201,7 +212,7 @@ export class EventosPeriodoPageComponent implements OnInit {
       empleadoId: evento.empleadoId,
       empleadoNombre: evento.empleadoNombre ?? null,
       empleadoDni: evento.empleadoDni ?? null,
-      tipos: this.tipos(),
+      tipos: this.tiposOperativos(),
       categoriasLegajo: this.categoriasLegajo(),
       evento,
     });
@@ -284,6 +295,13 @@ export class EventosPeriodoPageComponent implements OnInit {
       : estado === 'RECHAZADO'
         ? 'cancel'
         : 'pending';
+  }
+
+  /** P0-F0: eventos MATERNIDAD/ENFERMEDAD legacy — solo lectura operativa. */
+  esEventoSubsidioLegacy(e: EventoPeriodoResponse): boolean {
+    return e.generaSubsidio === 'S'
+      || e.tipoEventoCodigo === 'MATERNIDAD'
+      || e.tipoEventoCodigo === 'ENFERMEDAD';
   }
 
   private cargarEventos(): void {

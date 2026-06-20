@@ -30,20 +30,25 @@
     <!-- Períodos -->
     <div class="dlg-row">
       <mat-form-field appearance="outline" class="field-half">
-        <mat-label>Período inicio (YYYYMM)</mat-label>
-        <input matInput formControlName="periodoInicio" placeholder="ej. 202601" maxlength="6" />
+        <mat-label>Período inicio <span class="req-star">*</span></mat-label>
+        <mat-select formControlName="periodoInicio" placeholder="Seleccione período">
+          @for (p of periodos; track p) {
+            <mat-option [value]="p">{{ formatLabel(p) }}</mat-option>
+          }
+        </mat-select>
         @if (form.get('periodoInicio')?.errors?.['required'] && form.get('periodoInicio')?.touched) {
-          <mat-error>Campo obligatorio.</mat-error>
-        } @else if (form.get('periodoInicio')?.errors?.['pattern'] && form.get('periodoInicio')?.touched) {
-          <mat-error>Formato YYYYMM — mes 01 a 12.</mat-error>
+          <mat-error>Seleccione el período de inicio.</mat-error>
         }
       </mat-form-field>
+
       <mat-form-field appearance="outline" class="field-half">
-        <mat-label>Período fin (YYYYMM)</mat-label>
-        <input matInput formControlName="periodoFin" placeholder="Vacío = sin fecha de cierre" maxlength="6" />
-        @if (form.get('periodoFin')?.errors?.['pattern'] && form.get('periodoFin')?.touched) {
-          <mat-error>Formato YYYYMM — mes 01 a 12.</mat-error>
-        }
+        <mat-label>Período fin</mat-label>
+        <mat-select formControlName="periodoFin" placeholder="Sin fecha de cierre">
+          <mat-option [value]="null">— Sin fecha de cierre</mat-option>
+          @for (p of periodos; track p) {
+            <mat-option [value]="p">{{ formatLabel(p) }}</mat-option>
+          }
+        </mat-select>
       </mat-form-field>
     </div>
 
@@ -106,22 +111,11 @@
       }
     </mat-form-field>
 
+    <!-- Observación -->
     <mat-form-field appearance="outline" class="field-full">
-      <mat-label>URL fuente oficial (opcional)</mat-label>
-      <input matInput formControlName="urlFuenteOficial" placeholder="https://www.sbs.gob.pe/..." />
+      <mat-label>Observación (opcional)</mat-label>
+      <input matInput formControlName="observacion" placeholder="Notas adicionales…" />
     </mat-form-field>
-
-    <!-- Fecha y observación -->
-    <div class="dlg-row">
-      <mat-form-field appearance="outline" class="field-half">
-        <mat-label>Fecha de publicación (opcional)</mat-label>
-        <input matInput type="date" formControlName="fechaPublicacion" />
-      </mat-form-field>
-      <mat-form-field appearance="outline" class="field-half">
-        <mat-label>Observación (opcional)</mat-label>
-        <input matInput formControlName="observacion" placeholder="Notas adicionales…" />
-      </mat-form-field>
-    </div>
 
   </form>
 </mat-dialog-content>

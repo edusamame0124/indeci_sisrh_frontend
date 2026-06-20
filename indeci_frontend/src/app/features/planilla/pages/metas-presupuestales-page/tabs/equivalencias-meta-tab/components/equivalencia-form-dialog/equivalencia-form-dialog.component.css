@@ -1,0 +1,49 @@
+.dialog-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--sisrh-primary, #1f3a5f);
+  margin: 0 0 2px;
+}
+.dialog-title mat-icon { font-size: 20px; width: 20px; height: 20px; }
+
+.dialog-subtitle {
+  margin: 0 0 4px;
+  font-size: 12px;
+  color: var(--sisrh-text-muted, #64748b);
+}
+
+.dialog-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 0 0;
+  min-width: 460px;
+  max-width: 560px;
+}
+
+.field-full { width: 100%; }
+.req { color: var(--sisrh-danger, #b42318); }
+
+.arrow-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px;
+  color: var(--sisrh-text-muted, #64748b);
+  font-size: 12px;
+}
+
+.arrow-icon {
+  color: var(--sisrh-primary, #1f3a5f);
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+}
+
+.dialog-actions {
+  padding: 12px 0 4px;
+  gap: 8px;
+}

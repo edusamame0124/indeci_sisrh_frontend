@@ -1,0 +1,173 @@
+<div class="r4ta-section">
+
+  <!-- Encabezado -->
+  <div class="r4ta-head">
+    <div>
+      <h2 class="r4ta-head__title">Vigencias anuales de 4ta categoría</h2>
+      <p class="r4ta-head__desc">
+        Gestione vigencias anuales para el cálculo y control operativo de retenciones de 4ta categoría.
+      </p>
+    </div>
+    <button mat-flat-button color="primary" (click)="nuevaVigencia()" aria-label="Nueva vigencia">
+      <mat-icon fontIcon="add" aria-hidden="true" />
+      Nueva vigencia
+    </button>
+  </div>
+
+  <!-- Filtros -->
+  <div class="r4ta-filters" role="search" aria-label="Filtros de vigencias IR4ta">
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="filter-field">
+      <mat-label>Estado</mat-label>
+      <mat-select [value]="filtroEstado()" (selectionChange)="filtroEstado.set($event.value)">
+        @for (op of estadosOpciones; track op.valor) {
+          <mat-option [value]="op.valor">{{ op.etiqueta }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="filter-search">
+      <mat-icon matPrefix fontIcon="search" aria-hidden="true" />
+      <input matInput type="search"
+        placeholder="Buscar por año, fuente normativa..."
+        [value]="busqueda()"
+        (input)="onBusqueda($any($event.target).value)"
+        aria-label="Buscar vigencias IR4ta" />
+    </mat-form-field>
+
+    <button mat-flat-button color="primary" (click)="aplicarFiltros()">Filtrar</button>
+  </div>
+
+  <!-- Estados: carga / error / vacío / tabla -->
+  @if (loading()) {
+    <div class="r4ta-state r4ta-state--loading" aria-live="polite">
+      <mat-spinner diameter="36" />
+      <span>Cargando configuraciones IR4ta…</span>
+    </div>
+  } @else if (error()) {
+    <div class="r4ta-state r4ta-state--error" role="alert">
+      <mat-icon fontIcon="error_outline" aria-hidden="true" />
+      {{ error() }}
+    </div>
+  } @else if (rowsFiltradas().length === 0) {
+    <div class="r4ta-state r4ta-state--empty">
+      <mat-icon fontIcon="receipt_long" aria-hidden="true" />
+      <div>
+        <strong>No se encontraron vigencias.</strong>
+        <span>Ajuste los filtros o registre una nueva vigencia anual.</span>
+      </div>
+    </div>
+  } @else {
+
+    <div class="r4ta-table-header">
+      <span class="r4ta-table-title">
+        <mat-icon fontIcon="list_alt" aria-hidden="true" />
+        Vigencias registradas
+      </span>
+      <span class="r4ta-count">{{ rangoMostrado().total }} registro(s)</span>
+    </div>
+
+    <div class="r4ta-table-wrap" role="region" aria-label="Tabla de vigencias IR4ta">
+      <table mat-table [dataSource]="pagedRows()" class="r4ta-table">
+
+        <ng-container matColumnDef="anioFiscal">
+          <th mat-header-cell *matHeaderCellDef>Año fiscal</th>
+          <td mat-cell *matCellDef="let r" class="col-anio">{{ r.anioFiscal }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="vigenciaInicio">
+          <th mat-header-cell *matHeaderCellDef>Vigencia inicio</th>
+          <td mat-cell *matCellDef="let r" class="col-date">{{ r.vigenciaInicio | date:'dd/MM/yyyy' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="vigenciaFin">
+          <th mat-header-cell *matHeaderCellDef>Vigencia fin</th>
+          <td mat-cell *matCellDef="let r" class="col-date">
+            {{ r.vigenciaFin ? (r.vigenciaFin | date:'dd/MM/yyyy') : '—' }}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="uitVigente">
+          <th mat-header-cell *matHeaderCellDef class="col-num">UIT vigente (S/)</th>
+          <td mat-cell *matCellDef="let r" class="col-num">S/ {{ r.uitVigente | number:'1.2-2' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="estado">
+          <th mat-header-cell *matHeaderCellDef>Estado</th>
+          <td mat-cell *matCellDef="let r">
+            <span class="badge"
+              [class.badge--vigente]="r.estado === 'VIGENTE'"
+              [class.badge--borrador]="r.estado === 'BORRADOR'"
+              [class.badge--cerrado]="r.estado === 'CERRADO'"
+              [class.badge--anulado]="r.estado === 'ANULADO'">
+              @if (r.bloqueadoPorPlanilla) {
+                <mat-icon fontIcon="lock" class="badge__lock" aria-label="Bloqueado" />
+              }
+              {{ r.estado | titlecase }}
+            </span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="fuenteOficial">
+          <th mat-header-cell *matHeaderCellDef>Fuente normativa</th>
+          <td mat-cell *matCellDef="let r" class="col-fuente">{{ r.fuenteOficial }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="acciones">
+          <th mat-header-cell *matHeaderCellDef class="col-actions">Acciones</th>
+          <td mat-cell *matCellDef="let r" class="col-actions">
+            <button mat-icon-button (click)="verDetalle(r)" matTooltip="Ver detalle" [attr.aria-label]="'Ver ' + r.anioFiscal">
+              <mat-icon fontIcon="visibility" />
+            </button>
+            <button mat-icon-button (click)="editar(r)" [disabled]="!canEditar(r)"
+              [matTooltip]="r.bloqueadoPorPlanilla ? 'Bloqueado: planilla cerrada' : 'Editar'">
+              <mat-icon fontIcon="edit" />
+            </button>
+            <button mat-icon-button (click)="duplicar(r)" [disabled]="!canDuplicar(r)" matTooltip="Duplicar">
+              <mat-icon fontIcon="content_copy" />
+            </button>
+            <button mat-icon-button (click)="publicar(r)" [disabled]="!canPublicar(r)" matTooltip="Publicar (BORRADOR → VIGENTE)">
+              <mat-icon fontIcon="publish" />
+            </button>
+            <button mat-icon-button (click)="cerrarVigencia(r)" [disabled]="!canCerrar(r)" matTooltip="Cerrar vigencia">
+              <mat-icon fontIcon="timer_off" />
+            </button>
+            <button mat-icon-button (click)="eliminar(r)" [disabled]="!canEliminar(r)"
+              [matTooltip]="tooltipEliminar(r)" class="btn-icon-danger">
+              <mat-icon fontIcon="delete_outline" />
+            </button>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="columns"></tr>
+        <tr mat-row *matRowDef="let r; columns: columns;" class="r4ta-row"></tr>
+      </table>
+    </div>
+
+    <div class="r4ta-pag-row">
+      <span class="r4ta-count-text">
+        Mostrando {{ rangoMostrado().start }} a {{ rangoMostrado().end }} de {{ rangoMostrado().total }} registros
+      </span>
+      <mat-paginator
+        [length]="rowsFiltradas().length"
+        [pageSize]="pageSize()"
+        [pageIndex]="pageIndex()"
+        [pageSizeOptions]="pageSizeOptions"
+        (page)="onPage($event)"
+        aria-label="Paginación de vigencias IR4ta" />
+    </div>
+  }
+
+  <!-- Alerta informativa -->
+  <div class="r4ta-alert" role="note">
+    <mat-icon fontIcon="info_outline" aria-hidden="true" />
+    <span>
+      Las reglas tributarias y referencias SUNAT se consultan como apoyo normativo;
+      esta pantalla mantiene únicamente la configuración operativa anual.
+    </span>
+  </div>
+
+  <p class="r4ta-note">
+    Base normativa: TUO LIR Art. 33 inc. e) · D.S. 122-94-EF · R.S. 013-2007-SUNAT · SUNAT 3042
+  </p>
+
+</div>

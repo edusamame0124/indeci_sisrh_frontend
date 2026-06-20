@@ -1,0 +1,56 @@
+:host { display: block; }
+
+/* ── Cabecera ─────────────────────────────────────────────────────────────── */
+.dlg-head {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  padding: 1.125rem 1.5rem 0.875rem;
+  border-bottom: 1px solid var(--sisrh-border, #d9e1ea);
+  margin: 0;
+}
+.dlg-head__main { display: flex; align-items: flex-start; gap: 0.875rem; }
+
+.dlg-head__icon-wrap {
+  display: flex; align-items: center; justify-content: center;
+  width: 40px; height: 40px; border-radius: 50%;
+  background: var(--sisrh-primary-100, #e8eef6);
+  flex-shrink: 0;
+}
+.dlg-head__icon-wrap mat-icon { color: var(--sisrh-primary, #1f3a5f); }
+
+.dlg-head__title {
+  margin: 0 0 0.25rem; font-size: 1rem; font-weight: 700;
+  color: var(--sisrh-primary, #1f3a5f);
+}
+.dlg-head__sub {
+  margin: 0; font-size: 0.8125rem;
+  color: var(--sisrh-text-muted, #64748b);
+}
+.dlg-close { flex-shrink: 0; }
+
+/* ── Cuerpo ───────────────────────────────────────────────────────────────── */
+.dlg-body {
+  padding: 0;
+  max-height: calc(90vh - 80px);
+}
+
+/* ── Loading / Error ──────────────────────────────────────────────────────── */
+.dlg-loading {
+  display: flex; justify-content: center; align-items: center;
+  padding: 3rem 1rem;
+}
+.dlg-error {
+  display: flex; gap: 0.5rem; align-items: center;
+  margin: 1.5rem; padding: 1rem;
+  background: var(--sisrh-danger-100, #fdecec);
+  color: var(--sisrh-danger, #b42318);
+  border-radius: 8px; font-size: 0.875rem;
+}
+
+/* ── Tabs ─────────────────────────────────────────────────────────────────── */
+:host ::ng-deep .dlg-tabs .mat-mdc-tab-body-content {
+  overflow: auto;
+}
+:host ::ng-deep .dlg-tabs .mat-mdc-tab-header {
+  border-bottom: 1px solid var(--sisrh-border, #d9e1ea);
+  background: var(--sisrh-surface-muted, #f8fafc);
+}

@@ -1,0 +1,242 @@
+<!-- ─── Cabecera ─────────────────────────────────────────────────────────── -->
+<div mat-dialog-title class="dlg-head">
+  <div class="dlg-head__left">
+    <h2 class="dlg-head__title">
+      <mat-icon [fontIcon]="iconoTitulo" aria-hidden="true" />
+      {{ titulo }}
+    </h2>
+    <p class="dlg-head__sub">
+      Configure la vigencia normativa de EsSalud y, si corresponde, la distribución
+      aplicable para trabajadores con EPS activa.
+    </p>
+  </div>
+  <div class="dlg-legend" aria-hidden="true">
+    <span class="dlg-legend__req"><span class="req-star">*</span> Obligatorio</span>
+    <span class="dlg-legend__opt">(Opcional)</span>
+  </div>
+</div>
+
+<!-- ─── Contenido ─────────────────────────────────────────────────────────── -->
+<mat-dialog-content>
+
+  @if (errorMsg()) {
+    <div class="dlg-alert dlg-alert--error" role="alert">
+      <mat-icon fontIcon="error_outline" aria-hidden="true" />
+      {{ errorMsg() }}
+    </div>
+  }
+
+  <form [formGroup]="form" novalidate class="dlg-form">
+
+    <!-- ── 1. Período de vigencia ──────────────────────────────────────── -->
+    <section class="dlg-section">
+      <h3 class="dlg-section-title">
+        <span class="dlg-num">1.</span> Período de vigencia
+      </h3>
+      <div class="dlg-row">
+        <mat-form-field appearance="outline" class="dlg-field">
+          <mat-label>Vigencia inicio <span class="req-star">*</span></mat-label>
+          <input matInput type="date" formControlName="vigenciaInicio" />
+          @if (form.get('vigenciaInicio')?.errors?.['required'] && form.get('vigenciaInicio')?.touched) {
+            <mat-error>La fecha de inicio es obligatoria.</mat-error>
+          }
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="dlg-field">
+          <mat-label>Vigencia fin <span class="opt-label">(opcional)</span></mat-label>
+          <input matInput type="date" formControlName="vigenciaFin" />
+          <mat-hint>Dejar en blanco si no tiene cierre definido.</mat-hint>
+        </mat-form-field>
+      </div>
+    </section>
+
+    <!-- ── 2. Parámetros base EsSalud ─────────────────────────────────── -->
+    <section class="dlg-section">
+      <h3 class="dlg-section-title">
+        <span class="dlg-num">2.</span> Parámetros base EsSalud
+      </h3>
+      <div class="dlg-info-box">
+        <mat-icon fontIcon="info" aria-hidden="true" />
+        Estos parámetros aplican a toda la vigencia y sirven como base para el cálculo del aporte EsSalud.
+      </div>
+
+      <mat-form-field appearance="outline" class="dlg-field-full">
+        <mat-label>UIT vigente (S/) <span class="req-star">*</span></mat-label>
+        <input matInput type="number" step="0.01" formControlName="uitVigente"
+               placeholder="ej. 5500.00" />
+        @if (form.get('uitVigente')?.errors?.['required'] && form.get('uitVigente')?.touched) {
+          <mat-error>La UIT vigente es obligatoria.</mat-error>
+        }
+        @if (form.get('uitVigente')?.errors?.['min'] && form.get('uitVigente')?.touched) {
+          <mat-error>La UIT debe ser mayor que cero.</mat-error>
+        }
+      </mat-form-field>
+
+      <div class="dlg-row">
+        <mat-form-field appearance="outline" class="dlg-field">
+          <mat-label>% Base CAS <span class="req-star">*</span></mat-label>
+          <input matInput type="number" step="0.01" formControlName="pctBaseCas" />
+          @if (form.get('pctBaseCas')?.errors?.['required'] && form.get('pctBaseCas')?.touched) {
+            <mat-error>Campo obligatorio.</mat-error>
+          }
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="dlg-field">
+          <mat-label>% EsSalud total <span class="req-star">*</span></mat-label>
+          <input matInput type="number" step="0.01" formControlName="pctEssalud" />
+          @if (form.get('pctEssalud')?.errors?.['required'] && form.get('pctEssalud')?.touched) {
+            <mat-error>Campo obligatorio.</mat-error>
+          }
+        </mat-form-field>
+      </div>
+
+      <div class="dlg-calc-card" role="note" aria-label="Vista previa del cálculo base">
+        <div class="dlg-calc-item">
+          <mat-icon fontIcon="calculate" aria-hidden="true" />
+          <span>
+            Base máxima CAS
+            @if (previewBase() != null) {
+              = <strong>S/ {{ previewBase() | number:'1.2-2' }}</strong>
+            } @else {
+              = <span class="dlg-calc-formula">{{ formVal().pctBaseCas }}% de la UIT</span>
+            }
+          </span>
+        </div>
+        <div class="dlg-calc-sep" aria-hidden="true"></div>
+        <div class="dlg-calc-item">
+          <mat-icon fontIcon="favorite" aria-hidden="true" />
+          <span>
+            Aporte EsSalud
+            @if (previewEssalud() != null) {
+              = <strong>S/ {{ previewEssalud() | number:'1.2-2' }}</strong>
+            } @else {
+              = <span class="dlg-calc-formula">{{ formVal().pctEssalud }}% de la base</span>
+            }
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── 3. Configuración EPS ───────────────────────────────────────── -->
+    <section class="dlg-section">
+      <h3 class="dlg-section-title">
+        <span class="dlg-num">3.</span> Configuración EPS
+      </h3>
+
+      <div class="dlg-toggle-row">
+        <mat-slide-toggle formControlName="aplicaEps" color="primary"
+                          aria-label="Aplicar configuración EPS en esta vigencia" />
+        <div class="dlg-toggle-text">
+          <span class="dlg-toggle-label">Aplicar configuración EPS en esta vigencia</span>
+          <span class="dlg-toggle-hint">
+            Usar solo para trabajadores que tengan EPS activa en su configuración individual.
+          </span>
+        </div>
+      </div>
+
+      @if (epsActivo()) {
+        <div class="dlg-row">
+          <mat-form-field appearance="outline" class="dlg-field">
+            <mat-label>% EsSalud con EPS <span class="req-star">*</span></mat-label>
+            <input matInput type="number" step="0.01" formControlName="pctEssaludEps" />
+            @if (form.get('pctEssaludEps')?.errors?.['required'] && form.get('pctEssaludEps')?.touched) {
+              <mat-error>Campo obligatorio cuando EPS está activo.</mat-error>
+            }
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="dlg-field">
+            <mat-label>% Crédito EPS <span class="req-star">*</span></mat-label>
+            <input matInput type="number" step="0.01" formControlName="pctCreditoEps" />
+            @if (form.get('pctCreditoEps')?.errors?.['required'] && form.get('pctCreditoEps')?.touched) {
+              <mat-error>Campo obligatorio cuando EPS está activo.</mat-error>
+            }
+          </mat-form-field>
+        </div>
+
+        @if (previewDistribucion()) {
+          <div class="dlg-calc-card dlg-calc-card--single" role="note" aria-label="Distribución EPS">
+            <div class="dlg-calc-item">
+              <mat-icon fontIcon="pie_chart" aria-hidden="true" />
+              <span>
+                Distribución total:
+                <strong>
+                  {{ previewDistribucion()!.total | number:'1.2-2' }}% =
+                  {{ previewDistribucion()!.eps | number:'1.2-2' }}% EsSalud +
+                  {{ previewDistribucion()!.credito | number:'1.2-2' }}% Crédito EPS
+                </strong>
+              </span>
+            </div>
+          </div>
+        }
+
+        @if (form.errors?.['epsDistribucionInvalida'] &&
+             (form.get('pctEssaludEps')?.touched || form.get('pctCreditoEps')?.touched)) {
+          <div class="dlg-alert dlg-alert--warning" role="alert">
+            <mat-icon fontIcon="warning_amber" aria-hidden="true" />
+            La suma de EsSalud con EPS y Crédito EPS debe coincidir con el % EsSalud total
+            ({{ formVal().pctEssalud }}%).
+          </div>
+        }
+      }
+
+      <div class="dlg-info-box">
+        <mat-icon fontIcon="info" aria-hidden="true" />
+        La condición EPS se define en la ficha del trabajador. Esta vigencia solo parametriza
+        las tasas aplicables.
+      </div>
+    </section>
+
+    <!-- ── 4. Fuente oficial y sustento ──────────────────────────────── -->
+    <section class="dlg-section">
+      <h3 class="dlg-section-title">
+        <span class="dlg-num">4.</span> Fuente oficial y sustento
+      </h3>
+
+      <mat-form-field appearance="outline" class="dlg-field-full">
+        <mat-label>Fuente oficial <span class="req-star">*</span></mat-label>
+        <input matInput formControlName="fuenteOficial"
+               placeholder="Ej. D.S. 009-97-SA / norma interna / publicación oficial" />
+        @if (form.get('fuenteOficial')?.errors?.['required'] && form.get('fuenteOficial')?.touched) {
+          <mat-error>La fuente oficial es obligatoria.</mat-error>
+        }
+      </mat-form-field>
+
+      <div class="dlg-row">
+        <mat-form-field appearance="outline" class="dlg-field">
+          <mat-label>Fecha de publicación <span class="opt-label">(opcional)</span></mat-label>
+          <input matInput type="date" formControlName="fechaPublicacion" />
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="dlg-field">
+          <mat-label>Observación <span class="opt-label">(opcional)</span></mat-label>
+          <input matInput formControlName="observacion" placeholder="Detalle adicional" />
+        </mat-form-field>
+      </div>
+    </section>
+
+  </form>
+</mat-dialog-content>
+
+<!-- ─── Acciones ─────────────────────────────────────────────────────────── -->
+<mat-dialog-actions class="dlg-actions">
+  <p class="dlg-actions__note" aria-live="polite">
+    <mat-icon fontIcon="info" aria-hidden="true" />
+    Valores sugeridos: Base CAS 45%, EsSalud 9%, EsSalud con EPS 6.75%, Crédito EPS 2.25%.
+  </p>
+  <div class="dlg-actions__btns">
+    <button mat-stroked-button (click)="cancelar()" [disabled]="saving()">
+      {{ readonly ? 'Cerrar' : 'Cancelar' }}
+    </button>
+    @if (!readonly) {
+      <button
+        mat-flat-button
+        class="btn-guardar"
+        (click)="guardar()"
+        [disabled]="form.invalid || saving()"
+      >
+        @if (saving()) {
+          <mat-spinner diameter="18" />
+        } @else {
+          <mat-icon fontIcon="shield" />
+        }
+        {{ saving() ? 'Guardando…' : 'Guardar vigencia' }}
+      </button>
+    }
+  </div>
+</mat-dialog-actions>

@@ -1,0 +1,136 @@
+<h2 mat-dialog-title class="dlg-title">
+  <mat-icon fontIcon="content_copy" aria-hidden="true" />
+  Duplicar vigencia {{ data.tipo }}
+</h2>
+
+<mat-dialog-content class="dlg-content">
+
+  <!-- Banner informativo -->
+  <div class="dlg-info-banner" role="note">
+    <mat-icon fontIcon="info" aria-hidden="true" />
+    <span>
+      Se creará una nueva vigencia copiando los valores actuales.
+      La vigencia original no será modificada.
+    </span>
+  </div>
+
+  <!-- Resumen origen (readonly) -->
+  <div class="dlg-origin">
+    <p class="dlg-origin__label">Vigencia origen</p>
+    <div class="dlg-origin__grid">
+      @if (isAfp) {
+        <div class="dlg-origin__item">
+          <span class="dlg-origin__key">AFP</span>
+          <span class="dlg-origin__val">{{ afpRow.afpNombre }}</span>
+        </div>
+        <div class="dlg-origin__item">
+          <span class="dlg-origin__key">Período</span>
+          <span class="dlg-origin__val">{{ afpRow.periodoInicio }}</span>
+        </div>
+        <div class="dlg-origin__item">
+          <span class="dlg-origin__key">Aporte oblig.</span>
+          <span class="dlg-origin__val">{{ afpRow.aporteObligatorioPct | number:'1.2-2' }}%</span>
+        </div>
+        <div class="dlg-origin__item">
+          <span class="dlg-origin__key">Comisión flujo</span>
+          <span class="dlg-origin__val">{{ afpRow.comisionFlujoPct | number:'1.2-2' }}%</span>
+        </div>
+      } @else {
+        <div class="dlg-origin__item">
+          <span class="dlg-origin__key">Sistema</span>
+          <span class="dlg-origin__val">ONP — Ley 19990</span>
+        </div>
+        <div class="dlg-origin__item">
+          <span class="dlg-origin__key">Período</span>
+          <span class="dlg-origin__val">{{ onpRow.periodoInicio }}</span>
+        </div>
+        <div class="dlg-origin__item">
+          <span class="dlg-origin__key">Aporte ONP</span>
+          <span class="dlg-origin__val">{{ onpRow.aporteOnpPct | number:'1.2-2' }}%</span>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Error de backend -->
+  @if (errorMsg()) {
+    <div class="dlg-error" role="alert">
+      <mat-icon fontIcon="error_outline" aria-hidden="true" />
+      {{ errorMsg() }}
+    </div>
+  }
+
+  <!-- Formulario -->
+  <form [formGroup]="form" class="dlg-form" autocomplete="off" novalidate>
+
+    <mat-form-field appearance="outline" class="dlg-full-field">
+      <mat-label>Período de inicio de la nueva vigencia *</mat-label>
+      <input
+        matInput
+        formControlName="periodoInicio"
+        type="text"
+        placeholder="YYYYMM — ej. 202607"
+        maxlength="6"
+        aria-required="true"
+      />
+      <mat-hint>Formato YYYYMM. Debe ser posterior al período origen ({{ data.row.periodoInicio }}).</mat-hint>
+      @if (form.get('periodoInicio')?.invalid && form.get('periodoInicio')?.touched) {
+        <mat-error>Ingrese un período YYYYMM válido (mes 01–12) posterior al origen.</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="dlg-full-field">
+      <mat-label>Fuente oficial *</mat-label>
+      <input
+        matInput
+        formControlName="fuenteOficial"
+        type="text"
+        placeholder="ej. SBS Res. 3274-2026"
+        maxlength="200"
+        aria-required="true"
+      />
+      <mat-hint>Circular, resolución o norma que ampara los nuevos valores.</mat-hint>
+      @if (form.get('fuenteOficial')?.invalid && form.get('fuenteOficial')?.touched) {
+        <mat-error>La fuente oficial es obligatoria para trazabilidad normativa.</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="dlg-full-field">
+      <mat-label>Motivo de la duplicación *</mat-label>
+      <textarea
+        matInput
+        formControlName="observacion"
+        rows="3"
+        placeholder="Describa el motivo del cambio regulatorio..."
+        maxlength="400"
+        aria-required="true"
+      ></textarea>
+      <mat-hint align="end">{{ form.get('observacion')?.value?.length ?? 0 }} / 400</mat-hint>
+      @if (form.get('observacion')?.invalid && form.get('observacion')?.touched) {
+        <mat-error>Indique el motivo de la duplicación para mantener trazabilidad.</mat-error>
+      }
+    </mat-form-field>
+
+  </form>
+
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-stroked-button [mat-dialog-close]="null" [disabled]="saving()">
+    Cancelar
+  </button>
+  <button
+    mat-flat-button
+    color="primary"
+    (click)="guardar()"
+    [disabled]="saving()"
+    aria-label="Duplicar vigencia"
+  >
+    @if (saving()) {
+      <mat-spinner diameter="18" class="btn-spinner" />
+    } @else {
+      <mat-icon fontIcon="content_copy" aria-hidden="true" />
+    }
+    Duplicar vigencia
+  </button>
+</mat-dialog-actions>

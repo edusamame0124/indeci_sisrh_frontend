@@ -7,6 +7,8 @@ import type {
   AfpCatalogRow,
   AfpParametroInput,
   AfpParametroRow,
+  AnularVigenciaRequest,
+  DuplicarVigenciaRequest,
   HistorialPrevisionalRow,
   OnpParametroInput,
   OnpParametroRow,
@@ -32,15 +34,16 @@ export class ParametroPrevisionalApiService {
 
   afpCatalog(): Observable<readonly AfpCatalogRow[]> {
     return this.http
-      .get<ApiResponse<AfpCatalogRow[]>>(`${BASE}/afp`)
+      .get<ApiResponse<AfpCatalogRow[]>>(`${BASE}/afp/catalogo`)
       .pipe(map((r) => [...extractApiData(r)]));
   }
 
-  afpParametros(filtros?: { periodo?: string; afpId?: number; estado?: string }): Observable<readonly AfpParametroRow[]> {
+  afpParametros(filtros?: { periodo?: string; afpId?: number; estado?: string; incluirAnulados?: boolean }): Observable<readonly AfpParametroRow[]> {
     let params = new HttpParams();
-    if (filtros?.periodo) params = params.set('periodo', filtros.periodo);
-    if (filtros?.afpId)   params = params.set('afpId', String(filtros.afpId));
-    if (filtros?.estado)  params = params.set('estado', filtros.estado);
+    if (filtros?.periodo)                params = params.set('periodo', filtros.periodo);
+    if (filtros?.afpId)                  params = params.set('afpId', String(filtros.afpId));
+    if (filtros?.estado)                 params = params.set('estado', filtros.estado);
+    if (filtros?.incluirAnulados)        params = params.set('incluirAnulados', 'true');
     return this.http
       .get<ApiResponse<AfpParametroRow[]>>(`${BASE}/afp/parametros`, { params })
       .pipe(map((r) => [...extractApiData(r)]));
@@ -64,16 +67,29 @@ export class ParametroPrevisionalApiService {
       .pipe(map(extractApiData));
   }
 
-  duplicarAfpVigencia(id: number): Observable<AfpParametroRow> {
+  duplicarAfpVigencia(id: number, body: DuplicarVigenciaRequest): Observable<AfpParametroRow> {
     return this.http
-      .post<ApiResponse<AfpParametroRow>>(`${BASE}/afp/parametros/${id}/duplicar`, {})
+      .post<ApiResponse<AfpParametroRow>>(`${BASE}/afp/parametros/${id}/duplicar`, body)
       .pipe(map(extractApiData));
   }
 
-  onpParametros(filtros?: { periodo?: string; estado?: string }): Observable<readonly OnpParametroRow[]> {
+  eliminarAfpVigencia(id: number, body: AnularVigenciaRequest): Observable<null> {
+    return this.http
+      .post<ApiResponse<null>>(`${BASE}/afp/parametros/${id}/eliminar`, body)
+      .pipe(map(extractApiData));
+  }
+
+  duplicarOnpVigencia(id: number, body: DuplicarVigenciaRequest): Observable<OnpParametroRow> {
+    return this.http
+      .post<ApiResponse<OnpParametroRow>>(`${BASE}/onp/parametros/${id}/duplicar`, body)
+      .pipe(map(extractApiData));
+  }
+
+  onpParametros(filtros?: { periodo?: string; estado?: string; incluirAnulados?: boolean }): Observable<readonly OnpParametroRow[]> {
     let params = new HttpParams();
-    if (filtros?.periodo) params = params.set('periodo', filtros.periodo);
-    if (filtros?.estado)  params = params.set('estado', filtros.estado);
+    if (filtros?.periodo)         params = params.set('periodo', filtros.periodo);
+    if (filtros?.estado)          params = params.set('estado', filtros.estado);
+    if (filtros?.incluirAnulados) params = params.set('incluirAnulados', 'true');
     return this.http
       .get<ApiResponse<OnpParametroRow[]>>(`${BASE}/onp/parametros`, { params })
       .pipe(map((r) => [...extractApiData(r)]));
@@ -94,6 +110,12 @@ export class ParametroPrevisionalApiService {
   cerrarOnpVigencia(id: number): Observable<null> {
     return this.http
       .post<ApiResponse<null>>(`${BASE}/onp/parametros/${id}/cerrar`, {})
+      .pipe(map(extractApiData));
+  }
+
+  eliminarOnpVigencia(id: number, body: AnularVigenciaRequest): Observable<null> {
+    return this.http
+      .post<ApiResponse<null>>(`${BASE}/onp/parametros/${id}/eliminar`, body)
       .pipe(map(extractApiData));
   }
 

@@ -1,0 +1,88 @@
+<div class="hist-section">
+  <p class="hist-desc">
+    Historial completo de vigencias EsSalud / EPS — incluye registros cerrados y anulados para trazabilidad normativa.
+  </p>
+
+  @if (loading()) {
+    <div class="hist-state" aria-live="polite">
+      <mat-spinner diameter="32" />
+      <span>Cargando historial…</span>
+    </div>
+  } @else if (error()) {
+    <div class="hist-state hist-state--error" role="alert">
+      <mat-icon fontIcon="error_outline" aria-hidden="true" />
+      {{ error() }}
+    </div>
+  } @else if (rows().length === 0) {
+    <div class="hist-state">
+      <mat-icon fontIcon="history" aria-hidden="true" />
+      <span>No hay registros históricos disponibles.</span>
+    </div>
+  } @else {
+    <div class="hist-table-wrap">
+      <table mat-table [dataSource]="rows()" [trackBy]="trackByRow" class="hist-table" aria-label="Historial vigencias EsSalud">
+
+        <ng-container matColumnDef="vigenciaInicio">
+          <th mat-header-cell *matHeaderCellDef>Vigencia inicio</th>
+          <td mat-cell *matCellDef="let r" class="col-date">{{ r.vigenciaInicio | slice:0:10 }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="vigenciaFin">
+          <th mat-header-cell *matHeaderCellDef>Vigencia fin</th>
+          <td mat-cell *matCellDef="let r" class="col-date">{{ r.vigenciaFin ? (r.vigenciaFin | slice:0:10) : '—' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="uitVigente">
+          <th mat-header-cell *matHeaderCellDef class="col-num">UIT (S/)</th>
+          <td mat-cell *matCellDef="let r" class="col-num">{{ r.uitVigente | number:'1.2-2' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="pctEssalud">
+          <th mat-header-cell *matHeaderCellDef class="col-num">% EsSalud</th>
+          <td mat-cell *matCellDef="let r" class="col-num">{{ r.pctEssalud | number:'1.2-2' }}%</td>
+        </ng-container>
+
+        <ng-container matColumnDef="baseMaximaCas">
+          <th mat-header-cell *matHeaderCellDef class="col-num">Base máx. (S/)</th>
+          <td mat-cell *matCellDef="let r" class="col-num">{{ r.baseMaximaCas | number:'1.2-2' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="essaludMaximoCas">
+          <th mat-header-cell *matHeaderCellDef class="col-num">EsSalud máx. (S/)</th>
+          <td mat-cell *matCellDef="let r" class="col-num col-hl">{{ r.essaludMaximoCas | number:'1.2-2' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="fuenteOficial">
+          <th mat-header-cell *matHeaderCellDef>Fuente</th>
+          <td mat-cell *matCellDef="let r" class="col-fuente">{{ r.fuenteOficial }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="estado">
+          <th mat-header-cell *matHeaderCellDef>Estado</th>
+          <td mat-cell *matCellDef="let r">
+            <span class="badge"
+              [class.badge--vigente]="r.estado === 'VIGENTE'"
+              [class.badge--programado]="r.estado === 'PROGRAMADO'"
+              [class.badge--cerrado]="r.estado === 'CERRADO'"
+              [class.badge--anulado]="r.estado === 'ANULADO'"
+            >{{ r.estado }}</span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="creadoPor">
+          <th mat-header-cell *matHeaderCellDef>Creado por</th>
+          <td mat-cell *matCellDef="let r" class="col-muted">{{ r.creadoPor }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="creadoEn">
+          <th mat-header-cell *matHeaderCellDef>Creado en</th>
+          <td mat-cell *matCellDef="let r" class="col-date col-muted">{{ r.creadoEn | slice:0:10 }}</td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="columns; sticky: true"></tr>
+        <tr mat-row *matRowDef="let r; columns: columns;"></tr>
+      </table>
+    </div>
+    <p class="hist-count">{{ rows().length }} registro(s)</p>
+  }
+</div>

@@ -186,20 +186,24 @@ describe('filterVisibleNavItems (Spec 009 — 5 módulos + Inicio)', () => {
     expect(conceptos?.comingSoon).toBeFalsy();
   });
 
-  it('Planilla expone 7 sub-items navegables (Detalle/Resumen/Cierre se acceden desde Movimientos y Periodos, no desde sidebar; F3.3 agrega Centro de Validaciones, F3.4 agrega Asistente de Recálculo)', () => {
+  it('Planilla expone sus sub-items navegables (incluye Configuración Anual CAS, Carga de asistencia + subrama Subsidios, Suspensiones/Licencias y MCPP)', () => {
     const r = filterVisibleNavItems(MAIN_NAV_ITEMS, [], ['ADMIN']);
     const pla = r.find((i) => i.label === 'Planilla');
-    expect(pla?.children?.length).toBe(7);
+    expect(pla?.children?.length).toBe(11);
     expect(pla?.children?.every((c) => !c.comingSoon)).toBe(true);
     expect(pla?.children?.map((c) => c.route).sort()).toEqual(
       [
+        '/planilla/configuracion-cas',
         '/planilla/periodos',
         '/asistencia/carga',
+        '/asistencia/subsidios',
         '/planilla/validaciones',
         '/planilla/recalculo',
         '/planilla/generacion-masiva',
         '/planilla/generacion-individual',
         '/planilla/movimientos',
+        '/planilla/suspensiones',
+        '/planilla/mcpp',
       ].sort(),
     );
   });

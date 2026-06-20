@@ -1,0 +1,108 @@
+<h2 mat-dialog-title class="dialog-titulo">
+  <mat-icon class="dialog-titulo-icon">info_outline</mat-icon>
+  Detalle de meta presupuestal
+</h2>
+
+<mat-dialog-content class="dialog-body">
+  <div class="detalle-grid">
+
+    <!-- Estado -->
+    <div class="campo campo--full">
+      <span class="campo-label">Estado</span>
+      <span class="badge" [ngClass]="estadoClass(data.meta.estado)">
+        {{ estadoLabel(data.meta.estado) }}
+      </span>
+    </div>
+
+    <!-- Año fiscal -->
+    <div class="campo">
+      <span class="campo-label">Año fiscal</span>
+      <span class="campo-valor campo-valor--mono">{{ data.meta.anioFiscal }}</span>
+    </div>
+
+    <!-- Código de meta -->
+    <div class="campo">
+      <span class="campo-label">Código de meta</span>
+      <span class="campo-valor campo-valor--mono campo-valor--destacado">{{ data.meta.metaCodigo }}</span>
+    </div>
+
+    <!-- Centro de costo -->
+    <div class="campo campo--full">
+      <span class="campo-label">Centro de costo</span>
+      <span class="campo-valor">{{ data.meta.centroCosto }}</span>
+    </div>
+
+    <!-- Categoría presupuestal -->
+    <div class="campo campo--full">
+      <span class="campo-label">Categoría presupuestal</span>
+      <span class="campo-valor">{{ data.meta.categoriaPresupuestal }}</span>
+    </div>
+
+    <!-- Producto -->
+    <div class="campo campo--full">
+      <span class="campo-label">Producto</span>
+      <span class="campo-valor">{{ data.meta.producto }}</span>
+    </div>
+
+    <!-- Actividad -->
+    <div class="campo campo--full">
+      <span class="campo-label">Actividad</span>
+      <span class="campo-valor">{{ data.meta.actividad }}</span>
+    </div>
+
+    <!-- Finalidad -->
+    <div class="campo campo--full">
+      <span class="campo-label">Finalidad</span>
+      <span class="campo-valor">{{ data.meta.finalidad }}</span>
+    </div>
+
+    @if (data.meta.fuente) {
+      <div class="campo campo--full">
+        <span class="campo-label">Fuente</span>
+        <span class="campo-valor">{{ data.meta.fuente }}</span>
+      </div>
+    }
+
+    @if (data.meta.observacion) {
+      <div class="campo campo--full">
+        <span class="campo-label">Observación</span>
+        <span class="campo-valor campo-valor--obs">{{ data.meta.observacion }}</span>
+      </div>
+    }
+
+    @if (data.meta.motivoAnulacion) {
+      <div class="campo campo--full campo--alerta">
+        <span class="campo-label">Motivo de anulación</span>
+        <span class="campo-valor">{{ data.meta.motivoAnulacion }}</span>
+      </div>
+    }
+
+    <div class="campo-divider campo--full"></div>
+
+    <!-- Auditoría -->
+    <div class="campo">
+      <span class="campo-label">Creado por</span>
+      <span class="campo-valor campo-valor--meta">{{ data.meta.creadoPor }}</span>
+    </div>
+    <div class="campo">
+      <span class="campo-label">Fecha de creación</span>
+      <span class="campo-valor campo-valor--meta">{{ data.meta.creadoEn | date:'dd/MM/yyyy HH:mm' }}</span>
+    </div>
+
+    @if (data.meta.modificadoPor) {
+      <div class="campo">
+        <span class="campo-label">Modificado por</span>
+        <span class="campo-valor campo-valor--meta">{{ data.meta.modificadoPor }}</span>
+      </div>
+      <div class="campo">
+        <span class="campo-label">Última modificación</span>
+        <span class="campo-valor campo-valor--meta">{{ data.meta.modificadoEn | date:'dd/MM/yyyy HH:mm' }}</span>
+      </div>
+    }
+
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-flat-button color="primary" mat-dialog-close>Cerrar</button>
+</mat-dialog-actions>

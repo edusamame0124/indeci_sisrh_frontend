@@ -5,8 +5,14 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { ErrorMessageService } from '../../../../core/services/error-message.service';
 import { PeriodoPlanillaApiService } from '../../../planilla/services/periodo-planilla-api.service';
 import { AsistenciaImportApiService } from '../../services/asistencia-import-api.service';
+import { AsistenciaTabService } from '../../services/asistencia-tab.service';
 import type { PeriodoPlanillaRow } from '../../../planilla/models/periodo-planilla.model';
-import type { AsistenciaImportPreview } from '../../models/asistencia-import.model';
+import type {
+  AsistenciaImportFilaDetalle,
+  AsistenciaImportPreview,
+  AsistenciaImportResumen,
+  SpringPage,
+} from '../../models/asistencia-import.model';
 import { CargaMasivaCsvPageComponent } from './carga-masiva-csv-page.component';
 
 describe('CargaMasivaCsvPageComponent', () => {
@@ -75,49 +81,66 @@ describe('CargaMasivaCsvPageComponent', () => {
     ],
   };
 
-  const previewConIncidencias: AsistenciaImportPreview = {
-    ...preview,
-    filasTotal: 4,
+  const detalleRow: AsistenciaImportFilaDetalle = {
+    id: 1,
+    numeroFila: 2,
+    empleadoId: 7,
+    estado: 'OBSERVADA',
+    dni: '12345678',
+    empleadoSistema: 'Servidor Publico',
+    nombreCsv: 'Servidor Publico',
+    fecha: '2026-06-01',
+    dia: 'Lun',
+    entradaProg: '08:00',
+    salidaProg: '17:00',
+    marca1: '08:05',
+    marca2: '17:00',
+    marca3: null,
+    marca4: null,
+    tardanzaMin: 5,
+    refrigerioMin: 60,
+    excesoRefrigMin: 0,
+    tiempoRefrigMin: 60,
+    tiempoAntesSalMin: 0,
+    horasTrabMin: 480,
+    horasExtra25Min: 0,
+    horasExtra35Min: 0,
+    horasExtra100Min: 0,
+    horasExtraTotalMin: 0,
+    observaciones: 'Marca incompleta',
+    mensajeValidacion: 'Fila observada: requiere revision de RR. HH.',
+    aceptadaObservada: false,
+  };
+
+  const detallePage: SpringPage<AsistenciaImportFilaDetalle> = {
+    content: [detalleRow],
+    totalElements: 1,
+    totalPages: 1,
+    number: 0,
+    size: 25,
+  };
+
+  const resumenMock: AsistenciaImportResumen = {
+    importacionId: 91,
+    nombreArchivo: 'marcador.csv',
+    periodo: '2026-06',
+    periodoDetectadoIni: '2026-06-01',
+    periodoDetectadoFin: '2026-06-02',
+    filasLeidas: 2,
     filasValidas: 2,
-    filasValidasLimpias: 1,
-    filasAdvertencia: 1,
-    filasError: 1,
-    filasObservadas: 1,
-    empleadosConError: 1,
-    errores: [
-      {
-        linea: 2,
-        dni: '12345678',
-        fecha: '2026-06-01',
-        severidad: 'VALIDA',
-        mensaje: 'Fila valida: DNI encontrado, empleado activo, fecha dentro del periodo y sin incidencias detectadas.',
-        contenido: null,
-      },
-      {
-        linea: 3,
-        dni: '12345678',
-        fecha: '2026-06-02',
-        severidad: 'WARN',
-        mensaje: 'El nombre del marcador difiere del registrado en el sistema. No bloquea la carga porque la identificacion principal es el DNI.',
-        contenido: null,
-      },
-      {
-        linea: 4,
-        dni: '12345678',
-        fecha: '2026-06-03',
-        severidad: 'OBSERVADA',
-        mensaje: 'Fila observada: no registra marcas de entrada ni salida. Requiere revision de RR. HH.',
-        contenido: null,
-      },
-      {
-        linea: 5,
-        dni: '00000000',
-        fecha: '2026-06-04',
-        severidad: 'ERROR',
-        mensaje: 'Empleado no registrado en el sistema (DNI no encontrado).',
-        contenido: null,
-      },
-    ],
+    filasObservadas: 0,
+    filasError: 0,
+    empleadosDetectados: 1,
+    estado: 'BORRADOR_PREVIEW',
+    hashArchivo: 'abc123def456',
+    tamanoBytes: 2048,
+    duplicadoHashPrevio: true,
+    usuario: 'rrhh',
+    fechaImportacion: '2026-06-10T10:00:00',
+    usuarioValidacion: null,
+    fechaValidacion: null,
+    usuarioConfirmacion: null,
+    fechaConfirmacion: null,
   };
 
   const periodoApi = {
@@ -126,6 +149,8 @@ describe('CargaMasivaCsvPageComponent', () => {
   const importApi = {
     preview: vi.fn(() => of(preview)),
     confirmar: vi.fn(() => of({ ...preview, estadoImportacion: 'CONFIRMADA' as const })),
+    detalles: vi.fn(() => of(detallePage)),
+    resumen: vi.fn(() => of(resumenMock)),
   };
   const snack = {
     open: vi.fn(),
@@ -138,6 +163,8 @@ describe('CargaMasivaCsvPageComponent', () => {
     periodoApi.listar.mockClear();
     importApi.preview.mockClear();
     importApi.confirmar.mockClear();
+    importApi.detalles.mockClear();
+    importApi.resumen.mockClear();
     snack.open.mockClear();
     errors.translate.mockClear();
 
@@ -187,30 +214,67 @@ describe('CargaMasivaCsvPageComponent', () => {
     component.confirmar();
 
     expect(importApi.preview).toHaveBeenCalledWith('2026-06', component.archivo());
-    expect(importApi.confirmar).toHaveBeenCalledWith(91, 'REEMPLAZAR_PERIODO_COMPLETO');
+    expect(importApi.confirmar).toHaveBeenCalledWith(91, 'REEMPLAZAR_PERIODO_COMPLETO', undefined);
     expect(component.preview()?.estadoImportacion).toBe('CONFIRMADA');
   });
 
-  it('filtra filas del preview por estado y pagina sin renderizar toda la lista', () => {
+  it('carga resumen y detalle server-side al validar, y recarga al cambiar filtros', () => {
     const fixture = TestBed.createComponent(CargaMasivaCsvPageComponent);
     fixture.detectChanges();
     const component = fixture.componentInstance;
 
-    component.preview.set(previewConIncidencias);
-    component.pageSize.set(2);
+    component.archivo.set(new File(['csv'], 'marcador.csv', { type: 'text/csv' }));
+    component.generarPreview();
+
+    expect(importApi.resumen).toHaveBeenCalledWith(91);
+    expect(importApi.detalles).toHaveBeenCalledWith(91, expect.any(Object), 0, 25);
+    expect(component.detalleRows()).toHaveLength(1);
+    expect(component.detalleTotal()).toBe(1);
+    expect(component.resumen()?.duplicadoHashPrevio).toBe(true);
+
+    importApi.detalles.mockClear();
+    component.onFiltroEstadoChange('OBSERVADA');
+
+    expect(importApi.detalles).toHaveBeenCalledWith(
+      91,
+      expect.objectContaining({ estado: 'OBSERVADA' }),
+      0,
+      25,
+    );
+  });
+
+  it('al filtrar solo errores/observados envia el flag al backend', () => {
+    const fixture = TestBed.createComponent(CargaMasivaCsvPageComponent);
     fixture.detectChanges();
+    const component = fixture.componentInstance;
 
-    expect(component.totalFiltro('TODOS')).toBe(4);
-    expect(component.totalFiltro('VALIDA')).toBe(1);
-    expect(component.totalFiltro('WARN')).toBe(1);
-    expect(component.totalFiltro('OBSERVADA')).toBe(1);
-    expect(component.totalFiltro('ERROR')).toBe(1);
-    expect(component.filasPaginadas().length).toBe(2);
+    component.archivo.set(new File(['csv'], 'marcador.csv', { type: 'text/csv' }));
+    component.generarPreview();
 
-    component.cambiarFiltro('OBSERVADA');
+    importApi.detalles.mockClear();
+    component.onSoloErroresChange(true);
 
-    expect(component.filasFiltradas()).toHaveLength(1);
-    expect(component.filasFiltradas()[0]?.mensaje).toContain('Requiere revision de RR. HH.');
+    expect(importApi.detalles).toHaveBeenCalledWith(
+      91,
+      expect.objectContaining({ soloErrores: true }),
+      0,
+      25,
+    );
+  });
+
+  it('verRegistroDiario navega a consulta diaria con DNI único', () => {
+    const tabs = TestBed.inject(AsistenciaTabService);
+    const fixture = TestBed.createComponent(CargaMasivaCsvPageComponent);
+    fixture.detectChanges();
+    const component = fixture.componentInstance;
+
+    component.archivo.set(new File(['csv'], 'marcador.csv', { type: 'text/csv' }));
+    component.generarPreview();
+    component.verRegistroDiario();
+
+    expect(tabs.selectedTab()).toBe(2);
+    expect(tabs.preselectDni()).toBe('12345678');
+    expect(tabs.preselectFecha()).toMatch(/^2026-06-/);
   });
 });
 

@@ -1,0 +1,172 @@
+.tab-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+}
+
+/* ─── Cabecera ─── */
+.tab-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.tab-title {
+  margin: 0 0 4px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--sisrh-primary, #1f3a5f);
+}
+
+.tab-desc {
+  margin: 0;
+  font-size: 13px;
+  color: var(--sisrh-text-muted, #64748b);
+}
+
+.tab-head-actions { display: flex; gap: 8px; }
+
+/* ─── KPI Row ─── */
+.kpi-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.kpi-mini {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 20px;
+  border: 1px solid var(--sisrh-border, #d9e1ea);
+  border-radius: 8px;
+  background: var(--sisrh-surface, #fff);
+  min-width: 110px;
+}
+
+.kpi-mini-valor {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--sisrh-text, #1f2937);
+  line-height: 1.1;
+}
+
+.kpi-mini-label {
+  font-size: 12px;
+  color: var(--sisrh-text-muted, #64748b);
+  margin-top: 2px;
+}
+
+.kpi-mini--ok   { border-color: var(--sisrh-success, #157347); }
+.kpi-mini--ok .kpi-mini-valor   { color: var(--sisrh-success, #157347); }
+.kpi-mini--warn { border-color: var(--sisrh-warning, #b7791f); }
+.kpi-mini--warn .kpi-mini-valor { color: var(--sisrh-warning, #b7791f); }
+.kpi-mini--err  { border-color: var(--sisrh-danger, #b42318); }
+.kpi-mini--err .kpi-mini-valor  { color: var(--sisrh-danger, #b42318); }
+
+/* ─── Filtros ─── */
+.filtros-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.filtro-busqueda { flex: 1 1 260px; max-width: 380px; }
+.filtro-estado   { width: 160px; }
+.filtro-origen   { width: 140px; }
+
+.filtros-conteo {
+  font-size: 12px;
+  color: var(--sisrh-text-muted, #64748b);
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+/* ─── Loading / Empty ─── */
+.tab-loading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 48px 0;
+  color: var(--sisrh-text-muted, #64748b);
+  font-size: 14px;
+}
+
+.tab-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 48px 24px;
+  border: 1px dashed var(--sisrh-border, #d9e1ea);
+  border-radius: 8px;
+  background: var(--sisrh-surface-muted, #f8fafc);
+  color: var(--sisrh-text-soft, #94a3b8);
+  font-size: 14px;
+  text-align: center;
+}
+.tab-empty mat-icon { font-size: 40px; width: 40px; height: 40px; }
+.tab-empty-hint { font-size: 12px; margin: 0; color: var(--sisrh-text-muted, #64748b); }
+
+/* ─── Tabla ─── */
+.tabla-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--sisrh-border, #d9e1ea);
+  border-radius: 8px;
+}
+
+.asig-table {
+  width: 100%;
+  min-width: 1100px;
+  font-size: 13px;
+}
+
+.fila-tabla:hover { background: var(--sisrh-surface-muted, #f8fafc); }
+
+.col-mono   { font-family: 'Courier New', monospace; font-size: 12px; color: var(--sisrh-text-muted, #64748b); }
+.col-nombre { font-weight: 500; min-width: 160px; }
+.col-codigo { font-weight: 700; color: var(--sisrh-primary, #1f3a5f); font-family: 'Courier New', monospace; font-size: 12px; }
+.col-long   { max-width: 180px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.col-origen { font-size: 11px; color: var(--sisrh-text-muted, #64748b); white-space: nowrap; }
+
+.col-acciones {
+  text-align: center !important;
+  width: 60px;
+}
+
+.accion-anular { color: var(--sisrh-danger, #b42318) !important; }
+
+.icon-lock {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  color: var(--sisrh-text-soft, #94a3b8);
+  cursor: help;
+}
+
+/* ─── Badges ─── */
+.badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 12px;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+.badge-ok   { background: var(--sisrh-success-100, #e7f5ee); color: var(--sisrh-success, #157347); }
+.badge-warn { background: var(--sisrh-warning-100, #fff4db); color: var(--sisrh-warning, #b7791f); }
+.badge-err  { background: var(--sisrh-danger-100,  #fdecec); color: var(--sisrh-danger,  #b42318); }
+.badge-info { background: var(--sisrh-info-100,    #eaf2fb); color: var(--sisrh-info,    #2563a6); }
+.badge-gray { background: #f1f5f9; color: #64748b; }
+
+/* ─── Pie ─── */
+.normativa-note {
+  margin: 4px 0 0;
+  font-size: 11px;
+  color: var(--sisrh-text-soft, #94a3b8);
+}

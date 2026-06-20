@@ -1,0 +1,130 @@
+h2.dlg-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--sisrh-primary, #1f3a5f);
+}
+
+.dlg-content {
+  min-width: 480px;
+  padding-top: 12px;
+  padding-bottom: 4px;
+}
+
+.dlg-info-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  background: var(--sisrh-info-100, #eaf2fb);
+  border-left: 3px solid var(--sisrh-info, #2563a6);
+  border-radius: 4px;
+  margin-bottom: 16px;
+  font-size: 13px;
+  color: var(--sisrh-text, #1f2937);
+  line-height: 1.5;
+}
+
+.dlg-info-banner mat-icon {
+  flex-shrink: 0;
+  color: var(--sisrh-info, #2563a6);
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+}
+
+.dlg-origin {
+  background: var(--sisrh-surface-muted, #f8fafc);
+  border: 1px solid var(--sisrh-border-soft, #e7ecf2);
+  border-radius: 6px;
+  padding: 12px 14px;
+  margin-bottom: 20px;
+}
+
+.dlg-origin__label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--sisrh-text-muted, #64748b);
+  margin: 0 0 8px;
+}
+
+.dlg-origin__grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 24px;
+}
+
+.dlg-origin__item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dlg-origin__key {
+  font-size: 11px;
+  color: var(--sisrh-text-muted, #64748b);
+}
+
+.dlg-origin__val {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--sisrh-text, #1f2937);
+}
+
+.dlg-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--sisrh-danger-100, #fdecec);
+  border-left: 3px solid var(--sisrh-danger, #b42318);
+  border-radius: 4px;
+  margin-bottom: 16px;
+  font-size: 13px;
+  color: var(--sisrh-danger, #b42318);
+  line-height: 1.5;
+}
+
+.dlg-error mat-icon {
+  flex-shrink: 0;
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+}
+
+.dlg-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.dlg-full-field {
+  width: 100%;
+}
+
+.btn-spinner {
+  display: inline-flex;
+  margin-right: 4px;
+}
+
+mat-dialog-actions {
+  padding: 12px 24px 16px;
+  gap: 8px;
+}
+
+@media (max-width: 560px) {
+  .dlg-content {
+    min-width: 0;
+  }
+
+  .dlg-origin__grid {
+    flex-direction: column;
+    gap: 8px;
+  }
+}

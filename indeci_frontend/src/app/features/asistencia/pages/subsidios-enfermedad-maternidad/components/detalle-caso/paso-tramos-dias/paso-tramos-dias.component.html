@@ -1,0 +1,144 @@
+@if (caso(); as c) {
+  <div class="paso-tramos">
+    @if (puedeEscribir()) {
+      <mat-card class="paso-seccion page-card sisrh-elevated paso-accion" appearance="outlined">
+        <mat-card-content>
+          <div class="paso-accion__inner">
+            <div>
+              <h3 class="paso-accion__titulo">Generar tramos mensuales</h3>
+              <p class="paso-accion__desc">
+                Distribuye el descanso por período de planilla antes de calcular el subsidio.
+              </p>
+            </div>
+            <button
+              mat-flat-button
+              color="primary"
+              type="button"
+              (click)="generarTramos()"
+              [disabled]="generando()"
+            >
+              @if (generando()) {
+                <mat-spinner diameter="18" />
+              } @else {
+                <ng-container>
+                  <mat-icon>calendar_month</mat-icon>
+                  <span>Generar tramos</span>
+                </ng-container>
+              }
+            </button>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    }
+
+    <div class="kpi-strip" aria-label="Resumen de días">
+      <article class="kpi-strip__item">
+        <mat-icon aria-hidden="true">event_busy</mat-icon>
+        <div>
+          <span class="kpi-strip__label">Días de descanso</span>
+          <strong class="kpi-strip__value">{{ c.diasContingencia ?? '—' }}</strong>
+        </div>
+      </article>
+      <article class="kpi-strip__item">
+        <mat-icon aria-hidden="true">view_week</mat-icon>
+        <div>
+          <span class="kpi-strip__label">Tramos generados</span>
+          <strong class="kpi-strip__value">{{ c.tramos.length }}</strong>
+        </div>
+      </article>
+      <article class="kpi-strip__item kpi-strip__item--accent">
+        <mat-icon aria-hidden="true">paid</mat-icon>
+        <div>
+          <span class="kpi-strip__label">Días subsidiables</span>
+          <strong class="kpi-strip__value">{{ totalDiasSubsidio() }}</strong>
+        </div>
+      </article>
+      <article class="kpi-strip__item">
+        <mat-icon aria-hidden="true">work</mat-icon>
+        <div>
+          <span class="kpi-strip__label">Días laborados</span>
+          <strong class="kpi-strip__value">{{ totalDiasLaborados() }}</strong>
+        </div>
+      </article>
+    </div>
+
+    <mat-card class="paso-seccion page-card sisrh-elevated" appearance="outlined">
+      <mat-card-header class="paso-seccion__header">
+        <div mat-card-avatar class="paso-seccion__avatar" aria-hidden="true">
+          <mat-icon>calendar_month</mat-icon>
+        </div>
+        <mat-card-title>Tramos y línea de tiempo</mat-card-title>
+        <mat-card-subtitle>Distribución del descanso por período de planilla</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        @if (c.tramos.length === 0) {
+          <div class="paso-empty">
+            <mat-icon fontIcon="calendar_month" aria-hidden="true" />
+            <p>Genere tramos mensuales para distribuir el descanso por período de planilla.</p>
+          </div>
+        } @else {
+          <div class="tramos-timeline" aria-label="Línea de tiempo del descanso por tramo">
+            @for (t of c.tramos; track t.id) {
+              <div class="tramos-timeline__segment">
+                <span class="tramos-timeline__periodo sisrh-tabular">{{ t.periodo }}</span>
+                <span class="tramos-timeline__bar" aria-hidden="true"></span>
+                <small>{{ formatFecha(t.fechaDesde) }} — {{ formatFecha(t.fechaHasta) }}</small>
+                <span class="tramos-timeline__dias">{{ t.diasSubsidio }} d. subsidio</span>
+              </div>
+            }
+          </div>
+
+          <div class="data-table-wrap">
+            <table mat-table [dataSource]="c.tramos" class="tab-panel__table" aria-label="Tramos mensuales">
+              <ng-container matColumnDef="periodo">
+                <th mat-header-cell *matHeaderCellDef>Período</th>
+                <td mat-cell *matCellDef="let row"><strong class="sisrh-tabular">{{ row.periodo }}</strong></td>
+              </ng-container>
+              <ng-container matColumnDef="fechas">
+                <th mat-header-cell *matHeaderCellDef>Vigencia</th>
+                <td mat-cell *matCellDef="let row">
+                  {{ formatFecha(row.fechaDesde) }} — {{ formatFecha(row.fechaHasta) }}
+                </td>
+              </ng-container>
+              <ng-container matColumnDef="subsidio">
+                <th mat-header-cell *matHeaderCellDef>Días subsidio</th>
+                <td mat-cell *matCellDef="let row">{{ row.diasSubsidio }}</td>
+              </ng-container>
+              <ng-container matColumnDef="laborados">
+                <th mat-header-cell *matHeaderCellDef>Días laborados</th>
+                <td mat-cell *matCellDef="let row">{{ row.diasLaborados }}</td>
+              </ng-container>
+              <ng-container matColumnDef="estado">
+                <th mat-header-cell *matHeaderCellDef>Estado</th>
+                <td mat-cell *matCellDef="let row">
+                  <span class="estado-badge">{{ labelEstado(row.estadoTramo) }}</span>
+                </td>
+              </ng-container>
+              <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+              <tr mat-row *matRowDef="let row; columns: columnas"></tr>
+            </table>
+          </div>
+        }
+      </mat-card-content>
+    </mat-card>
+
+    @if (alertasTramo().length > 0) {
+      <mat-card class="paso-seccion page-card sisrh-elevated paso-alerta" appearance="outlined">
+        <mat-card-header class="paso-seccion__header">
+          <div mat-card-avatar class="paso-seccion__avatar paso-seccion__avatar--alerta" aria-hidden="true">
+            <mat-icon>warning_amber</mat-icon>
+          </div>
+          <mat-card-title>Alertas de tramos</mat-card-title>
+          <mat-card-subtitle>Superposición o inconsistencias detectadas</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <ul class="paso-alerta__lista" role="alert">
+            @for (a of alertasTramo(); track a) {
+              <li>{{ a }}</li>
+            }
+          </ul>
+        </mat-card-content>
+      </mat-card>
+    }
+  </div>
+}

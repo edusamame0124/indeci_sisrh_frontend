@@ -1,0 +1,279 @@
+<section class="detalle" aria-labelledby="detalle-titulo">
+
+  <header class="detalle__header">
+
+    <button type="button" mat-button (click)="volver.emit()" aria-label="Volver a la bandeja">
+
+      <mat-icon>arrow_back</mat-icon>
+
+      Volver a bandeja
+
+    </button>
+
+    <div class="detalle__acciones">
+
+      <button type="button" mat-stroked-button (click)="recargar()" aria-label="Actualizar caso">
+
+        <mat-icon>refresh</mat-icon>
+
+        Actualizar
+
+      </button>
+
+      @if (puedeValidar() && caso()?.estado === 'BORRADOR') {
+
+        <button type="button" mat-stroked-button (click)="enviarValidacion()">
+
+          <mat-icon>send</mat-icon>
+
+          Enviar a validación
+
+        </button>
+
+      }
+
+    </div>
+
+  </header>
+
+
+
+  @if (loading()) {
+
+    <div class="detalle__loading" aria-live="polite">
+
+      <mat-spinner diameter="40" />
+
+      <span>Cargando detalle del caso…</span>
+
+    </div>
+
+  } @else if (caso(); as c) {
+
+    <div class="detalle__hero">
+
+      <div>
+
+        <h2 id="detalle-titulo" class="detalle__titulo">
+
+          Caso {{ c.codigoCaso }}
+
+        </h2>
+
+        <p class="detalle__sub">
+
+          {{ c.nombreEmpleado ?? '—' }} · DNI {{ c.dniEmpleado ?? '—' }} ·
+
+          {{ labelTipo(c.tipoCaso) }}
+
+        </p>
+
+      </div>
+
+      <div class="detalle__chips" aria-label="Metadatos del cálculo">
+
+        <mat-chip-set>
+
+          <mat-chip>{{ labelEstado(c.estado) }}</mat-chip>
+
+          <mat-chip>{{ chipRegla() }}</mat-chip>
+
+          <mat-chip [class.detalle__chip--sim]="c.modoCalculo === 'SIMULACION'">
+
+            {{ chipModo() }}
+
+          </mat-chip>
+
+        </mat-chip-set>
+
+      </div>
+
+    </div>
+
+
+
+    <app-subsidio-flujo-stepper
+
+      [tabIndex]="tabIndex()"
+
+      [completitud]="completitud()"
+
+    />
+
+
+
+    <app-subsidio-requisitos-banner
+
+      [pasoActualLabel]="pasoActualLabel()"
+
+      [accionLabel]="bannerAccion().label"
+
+      [requisitos]="bannerRequisitos()"
+
+      [montoPlanilla]="montoPlanilla()"
+
+      [mostrarMonto]="mostrarMontoPlanilla()"
+
+      (accionClick)="onBannerAccion()"
+
+    />
+
+
+
+    <mat-tab-group
+
+      [selectedIndex]="tabIndex()"
+
+      (selectedIndexChange)="onTabChange($event)"
+
+      dynamicHeight
+
+      class="detalle__tabs"
+
+      aria-label="Flujo operativo del caso de subsidio"
+
+    >
+
+      <mat-tab label="Paso 1 — Datos">
+        <div class="detalle__paso detalle__paso--datos">
+          <app-subsidio-tab-resumen [caso]="c" modo="operativo" />
+
+          <mat-card class="paso-seccion page-card sisrh-elevated" appearance="outlined">
+            <mat-card-header class="paso-seccion__header">
+              <div mat-card-avatar class="paso-seccion__avatar" aria-hidden="true">
+                <mat-icon>description</mat-icon>
+              </div>
+              <mat-card-title>CITT o sustento</mat-card-title>
+              <mat-card-subtitle>Certificado que respalda el descanso médico</mat-card-subtitle>
+            </mat-card-header>
+            <mat-card-content>
+              <app-subsidio-tab-citt
+                [casoId]="casoId()"
+                [caso]="c"
+                modo="operativo"
+                (casoActualizado)="onCasoRefrescado($event)"
+              />
+            </mat-card-content>
+          </mat-card>
+
+          <mat-card class="paso-seccion page-card sisrh-elevated" appearance="outlined">
+            <mat-card-header class="paso-seccion__header">
+              <div mat-card-avatar class="paso-seccion__avatar paso-seccion__avatar--alerta" aria-hidden="true">
+                <mat-icon>warning_amber</mat-icon>
+              </div>
+              <mat-card-title>Alertas críticas</mat-card-title>
+              <mat-card-subtitle>Validaciones que pueden bloquear el avance del caso</mat-card-subtitle>
+            </mat-card-header>
+            <mat-card-content>
+              <app-subsidio-tab-historial
+                [casoId]="casoId()"
+                modo="compacto"
+                [validacionesExternas]="validaciones()"
+              />
+            </mat-card-content>
+          </mat-card>
+        </div>
+      </mat-tab>
+
+
+
+      <mat-tab label="Paso 2 — Tramos">
+
+        <app-subsidio-paso-tramos-dias
+
+          [caso]="c"
+
+          [validaciones]="validaciones()"
+
+          (casoActualizado)="onCasoRefrescado($event)"
+
+        />
+
+      </mat-tab>
+
+
+
+      <mat-tab label="Paso 3 — Cálculo">
+        <div class="detalle__paso detalle__paso--calculo">
+          <mat-card class="paso-seccion page-card sisrh-elevated" appearance="outlined">
+            <mat-card-header class="paso-seccion__header">
+              <div mat-card-avatar class="paso-seccion__avatar" aria-hidden="true">
+                <mat-icon>analytics</mat-icon>
+              </div>
+              <mat-card-title>Base histórica resumida</mat-card-title>
+              <mat-card-subtitle>Promedio de remuneraciones para el subsidio diario</mat-card-subtitle>
+            </mat-card-header>
+            <mat-card-content>
+              <app-subsidio-tab-base
+                [casoId]="casoId()"
+                modo="resumen"
+                (casoActualizado)="onCasoRefrescado($event)"
+                (baseCargada)="onBaseCargada($event != null)"
+              />
+            </mat-card-content>
+          </mat-card>
+
+          <mat-card class="paso-seccion page-card sisrh-elevated" appearance="outlined">
+            <mat-card-header class="paso-seccion__header">
+              <div mat-card-avatar class="paso-seccion__avatar paso-seccion__avatar--calculo" aria-hidden="true">
+                <mat-icon>calculate</mat-icon>
+              </div>
+              <mat-card-title>Cálculo y validación</mat-card-title>
+              <mat-card-subtitle>Liquidación del tramo y conciliación normativa</mat-card-subtitle>
+            </mat-card-header>
+            <mat-card-content>
+              <app-subsidio-tab-calculo
+                [caso]="c"
+                (liquidacionCargada)="onLiquidacionCargada($event)"
+              />
+            </mat-card-content>
+          </mat-card>
+        </div>
+      </mat-tab>
+
+      <mat-tab label="Paso 4 — Planilla">
+        <div class="detalle__paso detalle__paso--planilla">
+          <mat-card class="paso-seccion page-card sisrh-elevated" appearance="outlined">
+            <mat-card-header class="paso-seccion__header">
+              <div mat-card-avatar class="paso-seccion__avatar paso-seccion__avatar--planilla" aria-hidden="true">
+                <mat-icon>account_balance</mat-icon>
+              </div>
+              <mat-card-title>Aplicación a planilla</mat-card-title>
+              <mat-card-subtitle>Imputación de conceptos de subsidio al movimiento de planilla</mat-card-subtitle>
+            </mat-card-header>
+            <mat-card-content>
+              <app-subsidio-tab-planilla
+                [caso]="c"
+                [motivosBloqueo]="motivosBloqueoPlanilla()"
+                (casoActualizado)="onCasoRefrescado($event)"
+                (liquidacionCargada)="onLiquidacionCargada($event)"
+              />
+            </mat-card-content>
+          </mat-card>
+        </div>
+      </mat-tab>
+
+
+
+      <mat-tab label="Información complementaria">
+
+        <app-subsidio-paso-informacion-complementaria
+
+          [casoId]="casoId()"
+
+          [caso]="c"
+
+          [reglaLabel]="chipRegla()"
+
+          (casoActualizado)="onCasoRefrescado($event)"
+
+        />
+
+      </mat-tab>
+
+    </mat-tab-group>
+
+  }
+
+</section>
+

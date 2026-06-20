@@ -10,6 +10,7 @@ import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/materia
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ParametroPrevisionalApiService } from '../../../../../../services/parametro-previsional-api.service';
@@ -25,8 +26,23 @@ export interface OnpDialogData {
   row?: OnpParametroRow;
 }
 
-// YYYYMM con mes 01–12
-const PERIODO_PATTERN = /^[0-9]{4}(0[1-9]|1[0-2])$/;
+/** Genera períodos en formato "YYYYMM" desde anioFin/12 hasta 1990/01, descendente. */
+function generarPeriodos(): string[] {
+  const periodos: string[] = [];
+  const hoy    = new Date();
+  const anioFin = hoy.getFullYear() + 2;
+  for (let a = anioFin; a >= 1990; a--) {
+    for (let m = 12; m >= 1; m--) {
+      periodos.push(`${a}${String(m).padStart(2, '0')}`);
+    }
+  }
+  return periodos;
+}
+
+/** "202601" → "2026-01" para display */
+function formatPeriodo(p: string): string {
+  return `${p.slice(0, 4)}-${p.slice(4, 6)}`;
+}
 
 @Component({
   selector: 'app-onp-vigencia-dialog',
@@ -37,6 +53,7 @@ const PERIODO_PATTERN = /^[0-9]{4}(0[1-9]|1[0-2])$/;
     MatButtonModule,
     MatFormFieldModule,
     MatInputModule,
+    MatSelectModule,
     MatIconModule,
     MatProgressSpinnerModule,
   ],
@@ -53,14 +70,15 @@ export class OnpVigenciaDialogComponent implements OnInit {
   readonly saving   = signal(false);
   readonly errorMsg = signal<string | null>(null);
 
+  readonly periodos    = generarPeriodos();
+  readonly formatLabel = formatPeriodo;
+
   readonly form = this.fb.group({
-    periodoInicio:   ['', [Validators.required, Validators.pattern(PERIODO_PATTERN)]],
-    periodoFin:      [null as string | null, [Validators.pattern(PERIODO_PATTERN)]],
-    aporteOnpPct:    [null as number | null, [Validators.required, Validators.min(0), Validators.max(100)]],
-    fuenteOficial:   ['', [Validators.required]],
-    urlFuenteOficial:[null as string | null],
-    fechaPublicacion:[null as string | null],
-    observacion:     [null as string | null],
+    periodoInicio: [null as string | null, [Validators.required]],
+    periodoFin:    [null as string | null],
+    aporteOnpPct:  [null as number | null, [Validators.required, Validators.min(0), Validators.max(100)]],
+    fuenteOficial: [''  , [Validators.required]],
+    observacion:   [null as string | null],
   });
 
   get readonly()    { return this.data.modo === 'ver'; }
@@ -71,13 +89,11 @@ export class OnpVigenciaDialogComponent implements OnInit {
     const r = this.data.row;
     if (r) {
       this.form.patchValue({
-        periodoInicio:   r.periodoInicio,
-        periodoFin:      r.periodoFin,
-        aporteOnpPct:    r.aporteOnpPct,
-        fuenteOficial:   r.fuenteOficial,
-        urlFuenteOficial:r.urlFuenteOficial,
-        fechaPublicacion:r.fechaPublicacion,
-        observacion:     r.observacion,
+        periodoInicio: r.periodoInicio ?? null,
+        periodoFin:    r.periodoFin   ?? null,
+        aporteOnpPct:  r.aporteOnpPct,
+        fuenteOficial: r.fuenteOficial,
+        observacion:   r.observacion,
       });
     }
     if (this.readonly) this.form.disable();
@@ -87,13 +103,13 @@ export class OnpVigenciaDialogComponent implements OnInit {
     if (this.form.invalid || this.saving()) return;
     const v = this.form.getRawValue();
     const body: OnpParametroInput = {
-      periodoInicio:   v.periodoInicio!,
-      periodoFin:      v.periodoFin || null,
-      aporteOnpPct:    Number(v.aporteOnpPct),
-      fuenteOficial:   v.fuenteOficial!,
-      urlFuenteOficial:v.urlFuenteOficial || null,
-      fechaPublicacion:v.fechaPublicacion || null,
-      observacion:     v.observacion || null,
+      periodoInicio:    v.periodoInicio!,
+      periodoFin:       v.periodoFin || null,
+      aporteOnpPct:     Number(v.aporteOnpPct),
+      fuenteOficial:    v.fuenteOficial!,
+      urlFuenteOficial: null,
+      fechaPublicacion: null,
+      observacion:      v.observacion || null,
     };
     this.saving.set(true);
     this.errorMsg.set(null);
@@ -101,7 +117,7 @@ export class OnpVigenciaDialogComponent implements OnInit {
       ? this.api.crearOnpParametro(body)
       : this.api.editarOnpParametro(this.data.row!.id, body);
     obs$.subscribe({
-      next: () => { this.saving.set(false); this.dialogRef.close(true); },
+      next:  () => { this.saving.set(false); this.dialogRef.close(true); },
       error: (err) => {
         this.saving.set(false);
         this.errorMsg.set(err?.error?.message ?? 'Error al guardar. Verifique los datos e intente nuevamente.');

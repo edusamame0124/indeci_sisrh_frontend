@@ -1,0 +1,46 @@
+:host { display: block; }
+
+.hist-section { display: flex; flex-direction: column; gap: 0.75rem; }
+
+.hist-state {
+  display: flex; align-items: center; gap: 0.75rem;
+  padding: 2rem 1rem; font-size: 0.875rem;
+}
+.hist-state--loading { color: var(--sisrh-text-muted, #64748b); }
+.hist-state--error   { background: var(--sisrh-danger-100, #fdecec); color: var(--sisrh-danger, #b42318); border-radius: 6px; padding: 1rem; }
+.hist-state--empty   { color: var(--sisrh-text-muted, #64748b); }
+
+.hist-rango { font-size: 0.75rem; color: var(--sisrh-text-muted, #64748b); margin: 0; }
+
+.hist-table-wrap { overflow-x: auto; border: 1px solid var(--sisrh-border-soft, #e7ecf2); border-radius: 6px; }
+
+.hist-table { width: 100%; min-width: 900px; font-size: 0.8125rem; }
+
+.hist-table th {
+  background: var(--sisrh-surface-muted, #f8fafc);
+  color: var(--sisrh-text-muted, #64748b);
+  font-size: 0.75rem; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.03em;
+  padding: 10px 12px; white-space: nowrap;
+}
+.hist-table td {
+  font-size: 0.8125rem; color: var(--sisrh-text, #1f2937);
+  padding: 8px 12px; border-bottom: 1px solid var(--sisrh-border-soft, #e7ecf2);
+}
+.hist-table tr.row--anulado td { opacity: 0.55; text-decoration: line-through; }
+
+.col-num    { text-align: right !important; }
+.col-fuente { max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.badge {
+  display: inline-flex; align-items: center;
+  padding: 2px 8px; border-radius: 999px;
+  font-size: 0.7rem; font-weight: 600;
+  letter-spacing: 0.04em; white-space: nowrap;
+}
+.badge--borrador { background: var(--sisrh-info-100, #eaf2fb);    color: var(--sisrh-info, #2563a6); }
+.badge--vigente  { background: var(--sisrh-success-100, #e7f5ee); color: var(--sisrh-success, #157347); }
+.badge--cerrado  { background: #f1f5f9; color: #475569; }
+.badge--anulado  { background: var(--sisrh-danger-100, #fdecec);  color: var(--sisrh-danger, #b42318); }
+
+mat-paginator { border-top: 1px solid var(--sisrh-border-soft, #e7ecf2); }

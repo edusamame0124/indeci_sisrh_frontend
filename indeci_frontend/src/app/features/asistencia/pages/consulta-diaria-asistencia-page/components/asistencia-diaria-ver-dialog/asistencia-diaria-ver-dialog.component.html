@@ -1,0 +1,30 @@
+<h2 mat-dialog-title>
+  <mat-icon fontIcon="visibility" aria-hidden="true" />
+  Detalle de asistencia del día
+</h2>
+
+<mat-dialog-content class="ver-dialog">
+  <dl class="ver-dialog__grid">
+    <div><dt>DNI</dt><dd>{{ data.row.dni || '—' }}</dd></div>
+    <div><dt>Nombre</dt><dd>{{ data.row.nombreCompleto || '—' }}</dd></div>
+    <div><dt>Fecha</dt><dd>{{ data.row.fecha }}</dd></div>
+    <div><dt>Condición</dt><dd>{{ condicionLabel(data.row.tipoDia) }}</dd></div>
+    <div><dt>Hora ingreso</dt><dd>{{ data.row.marcaEntrada || '—' }}</dd></div>
+    <div><dt>Hora salida</dt><dd>{{ data.row.marcaSalida || '—' }}</dd></div>
+    <div><dt>Entrada esperada</dt><dd>{{ data.row.horaEntradaEsperada || '—' }}</dd></div>
+    <div><dt>Marca 3</dt><dd>{{ data.row.marca3 || '—' }}</dd></div>
+    <div><dt>Marca 4</dt><dd>{{ data.row.marca4 || '—' }}</dd></div>
+    <div><dt>T. real</dt><dd>{{ fmtMin(data.row.horasTrabajadasMin) }}</dd></div>
+    <div><dt>T. económico</dt><dd>{{ fmtMin(data.row.minutosSalidaAnticipada) }}</dd></div>
+    <div><dt>Tardanza</dt><dd>{{ fmtMin(data.row.minutosTardanza) }}</dd></div>
+    <div><dt>H. extra 25%</dt><dd>{{ fmtMin(data.row.horasExtra25Min) }}</dd></div>
+    <div><dt>H. extra 35%</dt><dd>{{ fmtMin(data.row.horasExtra35Min) }}</dd></div>
+    <div><dt>H. extra 100%</dt><dd>{{ fmtMin(data.row.horasExtra100Min) }}</dd></div>
+    <div><dt>Origen</dt><dd>{{ data.row.origen || '—' }}</dd></div>
+    <div class="ver-dialog__full"><dt>Observación</dt><dd>{{ data.row.observacion || '—' }}</dd></div>
+  </dl>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-stroked-button type="button" (click)="cerrar()">Cerrar</button>
+</mat-dialog-actions>

@@ -1,0 +1,121 @@
+<h2 mat-dialog-title class="dlg-title">
+  <mat-icon fontIcon="delete_outline" class="dlg-title__icon" aria-hidden="true" />
+  Eliminar vigencia previsional
+</h2>
+
+<mat-dialog-content>
+
+  <!-- Aviso institucional -->
+  <div class="dlg-warn-banner" role="note">
+    <mat-icon fontIcon="warning_amber" aria-hidden="true" />
+    <p>
+      Esta acción <strong>no eliminará físicamente el registro</strong>.
+      La vigencia será anulada, dejará de mostrarse en la lista principal
+      y quedará registrada en historial y auditoría.
+    </p>
+  </div>
+
+  <!-- Resumen de la vigencia a anular -->
+  <div class="dlg-origin">
+    <div class="dlg-origin__field">
+      <span class="dlg-origin__label">Tipo</span>
+      <span class="dlg-origin__value">{{ data.tipo }}</span>
+    </div>
+
+    @if (isAfp) {
+      <div class="dlg-origin__field">
+        <span class="dlg-origin__label">AFP</span>
+        <span class="dlg-origin__value">{{ afpRow.afpNombre }}</span>
+      </div>
+    }
+
+    <div class="dlg-origin__field">
+      <span class="dlg-origin__label">Vigencia inicio</span>
+      <span class="dlg-origin__value">
+        {{ data.row.periodoInicio.slice(4,6) }}/{{ data.row.periodoInicio.slice(0,4) }}
+      </span>
+    </div>
+
+    <div class="dlg-origin__field">
+      <span class="dlg-origin__label">Vigencia fin</span>
+      <span class="dlg-origin__value">
+        {{ data.row.periodoFin
+            ? data.row.periodoFin.slice(4,6) + '/' + data.row.periodoFin.slice(0,4)
+            : 'Abierta' }}
+      </span>
+    </div>
+
+    <div class="dlg-origin__field">
+      <span class="dlg-origin__label">Estado actual</span>
+      <span class="dlg-origin__value">{{ data.row.estado | titlecase }}</span>
+    </div>
+
+    <div class="dlg-origin__field">
+      <span class="dlg-origin__label">Fuente oficial</span>
+      <span class="dlg-origin__value">{{ data.row.fuenteOficial }}</span>
+    </div>
+  </div>
+
+  <!-- Motivos sugeridos -->
+  <p class="dlg-sugerencias-label">Motivos frecuentes:</p>
+  <div class="dlg-sugerencias" role="list">
+    @for (s of motivosSugeridos; track s) {
+      <button
+        type="button"
+        class="dlg-sugerencia-chip"
+        (click)="aplicarSugerencia(s)"
+        role="listitem"
+        [attr.aria-label]="'Usar motivo: ' + s"
+      >{{ s }}</button>
+    }
+  </div>
+
+  <!-- Campo obligatorio: motivo -->
+  <form [formGroup]="form" novalidate>
+    <mat-form-field appearance="outline" class="dlg-field-full">
+      <mat-label>Motivo de eliminación <span class="required-asterisk">*</span></mat-label>
+      <textarea
+        matInput
+        formControlName="motivo"
+        rows="3"
+        maxlength="1000"
+        placeholder="Describa el motivo con al menos 10 caracteres."
+        aria-required="true"
+      ></textarea>
+      @if (form.get('motivo')?.hasError('required') && form.get('motivo')?.touched) {
+        <mat-error>Debe ingresar el motivo de eliminación/anulación de la vigencia.</mat-error>
+      } @else if (form.get('motivo')?.hasError('minlength') && form.get('motivo')?.touched) {
+        <mat-error>El motivo debe tener al menos 10 caracteres.</mat-error>
+      }
+    </mat-form-field>
+  </form>
+
+  <!-- Error de backend -->
+  @if (errorMsg()) {
+    <div class="dlg-error" role="alert">
+      <mat-icon fontIcon="error_outline" aria-hidden="true" />
+      {{ errorMsg() }}
+    </div>
+  }
+
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-stroked-button mat-dialog-close [disabled]="saving()">
+    Cancelar
+  </button>
+  <button
+    mat-flat-button
+    class="btn-eliminar"
+    [disabled]="saving()"
+    (click)="confirmarEliminar()"
+    aria-label="Confirmar eliminación lógica de la vigencia"
+  >
+    @if (saving()) {
+      <mat-spinner diameter="18" />
+    } @else {
+      <mat-icon fontIcon="delete_outline" aria-hidden="true" />
+    }
+    Eliminar
+  </button>
+</mat-dialog-actions>

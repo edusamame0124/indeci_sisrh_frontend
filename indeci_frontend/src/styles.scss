@@ -828,6 +828,30 @@ mat-icon.material-symbols-outlined {
   --mdc-snackbar-supporting-text-color: #fff;
 }
 
+// ----- Toast de éxito (SuccessToastComponent / NotificacionService.exito) -----
+// El componente ya trae su propia tarjeta (blanca, borde verde, sombra suave).
+// Anulamos TODA la cadena del snackbar de Material (contenedor + superficie +
+// label) para que no asome el marco oscuro/elevación alrededor del toast.
+// Se usa !important porque la superficie MDC fija fondo/sombra con alta especificidad.
+.sisrh-snack-success.mat-mdc-snack-bar-container {
+  --mdc-snackbar-container-color: transparent;
+  --mdc-snackbar-container-elevation-shadow: none;
+
+  .mdc-snackbar__surface,
+  .mat-mdc-snackbar-surface {
+    background-color: transparent !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    min-width: 0 !important;
+  }
+
+  .mdc-snackbar__label,
+  .mat-mdc-snack-bar-label {
+    padding: 0 !important;
+  }
+}
+
 // =====================================================
 // Density overrides Material 21 — escala 90%
 // Punto único de control: bajar paddings y heights de

@@ -1,0 +1,185 @@
+<div class="dashboard">
+
+  <!-- KPI Cards -->
+  <section class="kpi-section">
+    @if (loadingResumen()) {
+      <div class="kpi-loading">
+        <mat-spinner diameter="28"></mat-spinner>
+        <span>Cargando resumen año {{ anioFiscal }}…</span>
+      </div>
+    } @else if (resumen(); as r) {
+      <div class="kpi-grid">
+
+        <div class="kpi-card">
+          <div class="kpi-icon-wrap kpi-icon--blue">
+            <mat-icon>menu_book</mat-icon>
+          </div>
+          <div class="kpi-body">
+            <span class="kpi-valor">{{ r.totalMetasCatalogo }}</span>
+            <span class="kpi-label">Catálogo de metas</span>
+            <span class="kpi-sub">Metas registradas para {{ anioFiscal }}</span>
+          </div>
+          <button mat-button class="kpi-link" (click)="ir(2)">Ver detalle →</button>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-icon-wrap kpi-icon--green">
+            <mat-icon>verified</mat-icon>
+          </div>
+          <div class="kpi-body">
+            <span class="kpi-valor">{{ r.totalMetasPublicadas }}</span>
+            <span class="kpi-label">Metas publicadas</span>
+            <span class="kpi-sub">Vigentes y disponibles</span>
+          </div>
+          <button mat-button class="kpi-link" (click)="ir(2)">Ver detalle →</button>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-icon-wrap kpi-icon--green">
+            <mat-icon>group</mat-icon>
+          </div>
+          <div class="kpi-body">
+            <span class="kpi-valor">{{ r.totalEmpleadosPublicados }}</span>
+            <span class="kpi-label">Asignaciones publicadas</span>
+            <span class="kpi-sub">Empleados con meta vigente</span>
+          </div>
+          <button mat-button class="kpi-link" (click)="ir(5)">Ver detalle →</button>
+        </div>
+
+        <div class="kpi-card" [class.kpi-card--alerta]="r.totalEmpleadosSinMeta > 0">
+          <div class="kpi-icon-wrap" [class.kpi-icon--amber]="r.totalEmpleadosSinMeta > 0" [class.kpi-icon--gray]="r.totalEmpleadosSinMeta === 0">
+            <mat-icon>person_off</mat-icon>
+          </div>
+          <div class="kpi-body">
+            <span class="kpi-valor" [class.kpi-valor--alerta]="r.totalEmpleadosSinMeta > 0">{{ r.totalEmpleadosSinMeta }}</span>
+            <span class="kpi-label">Empleados sin meta</span>
+            <span class="kpi-sub">Pendientes de asignación</span>
+          </div>
+          <button mat-button class="kpi-link" (click)="ir(5)">Ver detalle →</button>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-icon-wrap kpi-icon--purple">
+            <mat-icon>swap_horiz</mat-icon>
+          </div>
+          <div class="kpi-body">
+            <span class="kpi-valor">{{ r.totalEquivalencias }}</span>
+            <span class="kpi-label">Equivalencias configuradas</span>
+            <span class="kpi-sub">Entre clasificadores y catálogos</span>
+          </div>
+          <button mat-button class="kpi-link" (click)="ir(3)">Ver detalle →</button>
+        </div>
+
+      </div>
+    } @else {
+      <div class="kpi-empty">
+        <mat-icon>bar_chart</mat-icon>
+        <p>No hay datos de resumen disponibles para {{ anioFiscal }}.</p>
+      </div>
+    }
+  </section>
+
+  <div class="dashboard-body">
+
+    <!-- Acciones principales en el orden del flujo -->
+    <section class="acciones-section">
+      <h3 class="section-title">Flujo de trabajo recomendado</h3>
+      <div class="acciones-grid">
+
+        <button class="accion-card" (click)="ir(2)">
+          <div class="accion-paso">Paso 1</div>
+          <div class="accion-icon accion-icon--blue"><mat-icon>menu_book</mat-icon></div>
+          <strong>Catálogo anual</strong>
+          <span>Cargue o importe el catálogo oficial de metas presupuestales para el año fiscal destino.</span>
+          <span class="accion-link">→</span>
+        </button>
+
+        <button class="accion-card" (click)="ir(3)">
+          <div class="accion-paso">Paso 2</div>
+          <div class="accion-icon accion-icon--amber"><mat-icon>swap_horiz</mat-icon></div>
+          <strong>Equivalencias</strong>
+          <span>Configure las equivalencias entre metas del año anterior y el nuevo catálogo destino.</span>
+          <span class="accion-link">→</span>
+        </button>
+
+        <button class="accion-card" (click)="ir(4)">
+          <div class="accion-paso">Pasos 3–6</div>
+          <div class="accion-icon accion-icon--purple"><mat-icon>autorenew</mat-icon></div>
+          <strong>Proceso masivo</strong>
+          <span>Aplique la asignación masiva, revise la vista previa y corrija excepciones antes de publicar.</span>
+          <span class="accion-link">→</span>
+        </button>
+
+        <button class="accion-card" (click)="ir(5)">
+          <div class="accion-paso">Pasos 7–10</div>
+          <div class="accion-icon accion-icon--green"><mat-icon>assignment_ind</mat-icon></div>
+          <strong>Asignación anual</strong>
+          <span>Valide, publique y administre las asignaciones individuales. Bloqueo automático al usarse en planilla.</span>
+          <span class="accion-link">→</span>
+        </button>
+
+      </div>
+    </section>
+
+    <!-- Vista previa catálogo -->
+    <section class="preview-section">
+      <div class="preview-header">
+        <h3 class="section-title">Vista previa del catálogo (año {{ anioFiscal }})</h3>
+        <button mat-button color="primary" (click)="ir(2)">
+          Ver catálogo completo <mat-icon>arrow_forward</mat-icon>
+        </button>
+      </div>
+
+      @if (loadingPreview()) {
+        <div class="preview-loading"><mat-spinner diameter="22"></mat-spinner><span>Cargando catálogo…</span></div>
+      } @else if (previewCatalogo().length === 0) {
+        <div class="preview-empty">
+          <mat-icon>folder_open</mat-icon>
+          <p>No hay metas en el catálogo {{ anioFiscal }}.</p>
+          <button mat-stroked-button color="primary" (click)="ir(2)">Ir al catálogo</button>
+        </div>
+      } @else {
+        <div class="preview-tabla-wrap">
+          <table mat-table [dataSource]="previewCatalogo()" class="preview-table">
+
+            <ng-container matColumnDef="metaCodigo">
+              <th mat-header-cell *matHeaderCellDef>META</th>
+              <td mat-cell *matCellDef="let m"><strong class="col-codigo">{{ m.metaCodigo }}</strong></td>
+            </ng-container>
+
+            <ng-container matColumnDef="centroCosto">
+              <th mat-header-cell *matHeaderCellDef>CENTRO DE COSTO</th>
+              <td mat-cell *matCellDef="let m" class="col-long">{{ m.centroCosto }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="actividad">
+              <th mat-header-cell *matHeaderCellDef>ACTIVIDAD</th>
+              <td mat-cell *matCellDef="let m" class="col-long">{{ m.actividad }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="estado">
+              <th mat-header-cell *matHeaderCellDef>ESTADO</th>
+              <td mat-cell *matCellDef="let m">
+                <span class="badge" [ngClass]="estadoClass(m.estado)">{{ estadoLabel(m.estado) }}</span>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="columnasCat"></tr>
+            <tr mat-row *matRowDef="let row; columns: columnasCat;"></tr>
+          </table>
+        </div>
+        <p class="preview-footer">
+          Mostrando {{ previewCatalogo().length }} primeras metas · Actualizado hace instantes
+          <button mat-icon-button class="refresh-btn" (click)="cargarPreview()" matTooltip="Actualizar">
+            <mat-icon>refresh</mat-icon>
+          </button>
+        </p>
+      }
+    </section>
+
+  </div>
+
+  <p class="normativa-note">
+    Base normativa: Ley 28411 SGNP · Clasificadores DNPP · D.Leg. 1057 Art. 8 CAS — V010_77
+  </p>
+</div>

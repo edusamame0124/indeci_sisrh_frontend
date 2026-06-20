@@ -1,0 +1,81 @@
+:host { display: block; }
+
+.aud-section { display: flex; flex-direction: column; gap: 0.75rem; }
+
+.aud-nota {
+  font-size: 0.75rem; color: var(--sisrh-text-muted, #64748b);
+  border-left: 3px solid var(--sisrh-border, #d9e1ea);
+  padding-left: 0.75rem; margin: 0; line-height: 1.6;
+}
+
+.aud-state {
+  display: flex; align-items: center; gap: 0.75rem;
+  padding: 2rem 1rem; color: var(--sisrh-text-muted, #64748b); font-size: 0.875rem;
+}
+
+.aud-error {
+  display: flex; align-items: center; gap: 0.5rem;
+  padding: 0.875rem 1rem; background: var(--sisrh-danger-100, #fdecec);
+  color: var(--sisrh-danger, #b42318); border-radius: 6px; font-size: 0.8125rem;
+}
+
+.aud-rango { font-size: 0.75rem; color: var(--sisrh-text-muted, #64748b); margin: 0; }
+
+/* Timeline */
+.timeline { display: flex; flex-direction: column; }
+
+.timeline__item {
+  display: flex; gap: 0.875rem;
+  padding: 0.875rem 0;
+  border-bottom: 1px solid var(--sisrh-border-soft, #e7ecf2);
+}
+.timeline__item:last-child { border-bottom: none; }
+
+.timeline__icon-wrap {
+  flex-shrink: 0; width: 32px; height: 32px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  margin-top: 2px; background: var(--sisrh-surface-muted, #f8fafc);
+  border: 1px solid var(--sisrh-border, #d9e1ea);
+}
+
+.timeline__item--crear    .timeline__icon-wrap { background: var(--sisrh-info-100, #eaf2fb);    border-color: var(--sisrh-info, #2563a6); }
+.timeline__item--modificar .timeline__icon-wrap { background: var(--sisrh-warning-100, #fff4db); border-color: var(--sisrh-warning, #b7791f); }
+.timeline__item--anular   .timeline__icon-wrap { background: var(--sisrh-danger-100, #fdecec);  border-color: var(--sisrh-danger, #b42318); }
+.timeline__item--sistema  .timeline__icon-wrap { background: var(--sisrh-success-100, #e7f5ee); border-color: var(--sisrh-success, #157347); }
+
+.timeline__icon { font-size: 1.1rem; width: 1.1rem; height: 1.1rem; color: var(--sisrh-text-muted, #64748b); }
+.timeline__item--crear    .timeline__icon { color: var(--sisrh-info, #2563a6); }
+.timeline__item--modificar .timeline__icon { color: var(--sisrh-warning, #b7791f); }
+.timeline__item--anular   .timeline__icon { color: var(--sisrh-danger, #b42318); }
+.timeline__item--sistema  .timeline__icon { color: var(--sisrh-success, #157347); }
+
+.timeline__body { flex: 1; min-width: 0; }
+
+.timeline__header {
+  display: flex; align-items: center; gap: 0.5rem;
+  margin-bottom: 0.25rem; flex-wrap: wrap;
+}
+
+.timeline__accion {
+  font-size: 0.8125rem; font-weight: 700;
+  color: var(--sisrh-text, #1f2937); letter-spacing: 0.02em;
+}
+
+.badge-anio {
+  font-size: 0.7rem; font-weight: 600;
+  padding: 1px 7px; border-radius: 999px;
+  background: var(--sisrh-primary-100, #e8eef6);
+  color: var(--sisrh-primary, #1f3a5f);
+}
+
+.timeline__desc {
+  font-size: 0.8125rem; color: var(--sisrh-text, #1f2937);
+  margin: 0 0 0.375rem; line-height: 1.5;
+}
+
+.timeline__meta {
+  display: flex; align-items: center; gap: 0.25rem;
+  font-size: 0.75rem; color: var(--sisrh-text-muted, #64748b);
+}
+
+.meta-icon { font-size: 0.875rem; width: 0.875rem; height: 0.875rem; margin-left: 0.5rem; }

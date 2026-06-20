@@ -16,20 +16,6 @@ import {
 describe('EventoPeriodoFormDialogComponent', () => {
   const tipos = [
     {
-      id: 1,
-      codigo: 'MATERNIDAD',
-      nombre: 'Subsidio por Maternidad',
-      afectaDiasLaborados: 'S',
-      afectaBaseAfp: 'S',
-      afectaBaseEssalud: 'S',
-      generaSubsidio: 'S',
-      requiereAdjunto: 'S',
-      permiteSolape: 'N',
-      codigoPlameSunat: '0915',
-      ordenVisual: 1,
-      activo: 1,
-    },
-    {
       id: 2,
       codigo: 'PERMISO_PERSONAL',
       nombre: 'Permiso personal',
@@ -48,7 +34,7 @@ describe('EventoPeriodoFormDialogComponent', () => {
   const dialogData: EventoPeriodoDialogData = {
     empleadoId: null,
     tipos,
-    categoriasLegajo: [{ id: 1, nombre: 'Subsidios', activo: 1 }],
+    categoriasLegajo: [{ id: 1, nombre: 'Permisos y licencias', activo: 1 }],
   };
 
   beforeEach(async () => {
@@ -85,53 +71,36 @@ describe('EventoPeriodoFormDialogComponent', () => {
     }).compileComponents();
   });
 
-  it('activa modo maternidad y calcula distribucion', () => {
+  it('muestra formulario general sin modo maternidad', () => {
     const fixture = TestBed.createComponent(EventoPeriodoFormDialogComponent);
     const cmp = fixture.componentInstance;
-    fixture.detectChanges();
-
-    cmp.form.controls.tipoEventoId.setValue(1);
-    cmp.form.controls.fechaInicio.setValue(new Date(2026, 4, 5));
-    cmp.form.controls.duracionLegal.setValue(98);
-    cmp.form.controls.fechaProbableParto.setValue(new Date(2026, 4, 20));
-    fixture.detectChanges();
-
-    expect(cmp.esMaternidad()).toBe(true);
-    expect(cmp.distribucion().length).toBeGreaterThan(0);
-    expect(cmp.distribucion().reduce((s, t) => s + t.diasSubsidio, 0)).toBe(98);
-    expect(cmp.maternidadResumen().totalDias).toBe(98);
-    expect(cmp.maternidadResumen().fechaFinTexto).toBe('06/08/2026');
-  });
-
-  it('limpia campos maternidad al cambiar a otro tipo', () => {
-    const fixture = TestBed.createComponent(EventoPeriodoFormDialogComponent);
-    const cmp = fixture.componentInstance;
-    fixture.detectChanges();
-
-    cmp.form.controls.tipoEventoId.setValue(1);
-    cmp.form.controls.nroCitt.setValue('CITT-1');
-    cmp.form.controls.duracionLegal.setValue(98);
     fixture.detectChanges();
 
     cmp.form.controls.tipoEventoId.setValue(2);
+    cmp.form.controls.fechaInicio.setValue(new Date(2026, 4, 5));
+    cmp.form.controls.fechaFin.setValue(new Date(2026, 4, 10));
     fixture.detectChanges();
 
-    expect(cmp.esMaternidad()).toBe(false);
-    expect(cmp.form.controls.nroCitt.value).toBe('');
-    expect(cmp.distribucion().length).toBe(0);
+    expect(cmp.tipoSeleccionado()?.codigo).toBe('PERMISO_PERSONAL');
+    expect(cmp.puedeRegistrar()).toBe(false);
   });
 
-  it('preview muestra advertencia multi-mes', () => {
+  it('habilita registro con empleado y fechas validas', () => {
     const fixture = TestBed.createComponent(EventoPeriodoFormDialogComponent);
     const cmp = fixture.componentInstance;
     fixture.detectChanges();
 
-    cmp.form.controls.tipoEventoId.setValue(1);
+    cmp.onEmpleadoSeleccionado({
+      id: 1,
+      empleadoId: 10,
+      nombreCompleto: 'Test',
+      dni: '12345678',
+    });
+    cmp.form.controls.tipoEventoId.setValue(2);
     cmp.form.controls.fechaInicio.setValue(new Date(2026, 4, 5));
-    cmp.form.controls.duracionLegal.setValue(98);
-    cmp.previsualizarImpacto();
+    cmp.form.controls.fechaFin.setValue(new Date(2026, 4, 10));
+    fixture.detectChanges();
 
-    expect(cmp.preview()?.cruzaMeses).toBe(true);
-    expect(cmp.previewVisible()).toBe(true);
+    expect(cmp.puedeRegistrar()).toBe(true);
   });
 });

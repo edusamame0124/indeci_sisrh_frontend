@@ -1,0 +1,115 @@
+<div class="tab-calculo">
+  @if (!tramos().length) {
+    <div class="tab-calculo__empty">
+      <mat-icon fontIcon="calculate" aria-hidden="true" />
+      <p>Genere tramos mensuales antes de calcular la liquidación.</p>
+    </div>
+  } @else {
+    <div class="tab-calculo__toolbar">
+      <mat-form-field appearance="outline" class="tab-calculo__select">
+        <mat-label>Tramo mensual</mat-label>
+        <mat-select [formControl]="tramoCtrl">
+          @for (t of tramos(); track t.id) {
+            <mat-option [value]="t.id">
+              {{ t.periodo }} ({{ formatFecha(t.fechaDesde) }} — {{ formatFecha(t.fechaHasta) }})
+            </mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      @if (puedeCalcular()) {
+        <button
+          mat-flat-button
+          color="primary"
+          type="button"
+          (click)="calcular()"
+          [disabled]="calculando() || !tramoCtrl.value"
+        >
+          @if (calculando()) {
+            <mat-spinner diameter="18" />
+          } @else {
+            <ng-container>
+              <mat-icon>calculate</mat-icon>
+              <span>Calcular liquidación</span>
+            </ng-container>
+          }
+        </button>
+      }
+    </div>
+
+    @if (loading()) {
+      <div class="tab-calculo__loading"><mat-spinner diameter="32" /></div>
+    } @else if (explicacion(); as exp) {
+      <div class="kpi-strip kpi-strip--calculo" aria-label="Resumen del cálculo">
+        <article class="kpi-strip__item">
+          <mat-icon aria-hidden="true">payments</mat-icon>
+          <div>
+            <span class="kpi-strip__label">Subsidio diario EsSalud</span>
+            <strong class="kpi-strip__value kpi-strip__value--sm">{{ formatMonto(exp.subsidioDiarioEssalud) }}</strong>
+          </div>
+        </article>
+        <article class="kpi-strip__item kpi-strip__item--accent">
+          <mat-icon aria-hidden="true">account_balance_wallet</mat-icon>
+          <div>
+            <span class="kpi-strip__label">Subsidio estimado</span>
+            <strong class="kpi-strip__value kpi-strip__value--sm">{{ formatMonto(exp.subsidioEstimado) }}</strong>
+          </div>
+        </article>
+        <article class="kpi-strip__item">
+          <mat-icon aria-hidden="true">add_chart</mat-icon>
+          <div>
+            <span class="kpi-strip__label">Diferencial INDECI</span>
+            <strong class="kpi-strip__value kpi-strip__value--sm">{{ formatMonto(exp.diferencialIndeci) }}</strong>
+          </div>
+        </article>
+        <article class="kpi-strip__item">
+          <mat-icon aria-hidden="true">fact_check</mat-icon>
+          <div>
+            <span class="kpi-strip__label">Conciliación</span>
+            <strong class="kpi-strip__value kpi-strip__value--sm">{{ formatMonto(exp.conciliacionTotal) }}</strong>
+          </div>
+        </article>
+      </div>
+
+      @if (liquidacion(); as liq) {
+        <p class="tab-calculo__estado" role="status">
+          <mat-icon aria-hidden="true">info</mat-icon>
+          Estado de liquidación: <strong>{{ labelEstado(liq.estado) }}</strong>
+        </p>
+      }
+
+      <mat-expansion-panel class="tab-calculo__detalle">
+        <mat-expansion-panel-header>
+          <mat-panel-title>Ver cómo se calculó</mat-panel-title>
+          <mat-panel-description>Detalle técnico bajo demanda</mat-panel-description>
+        </mat-expansion-panel-header>
+        <p class="tab-calculo__meta">{{ exp.reglaVersion }}</p>
+        <div class="data-table-wrap">
+          <table mat-table [dataSource]="pasos()" class="tab-panel__table" aria-label="Pasos del cálculo">
+            <ng-container matColumnDef="orden">
+              <th mat-header-cell *matHeaderCellDef>#</th>
+              <td mat-cell *matCellDef="let row">{{ row.orden }}</td>
+            </ng-container>
+            <ng-container matColumnDef="concepto">
+              <th mat-header-cell *matHeaderCellDef>Concepto</th>
+              <td mat-cell *matCellDef="let row">{{ row.concepto }}</td>
+            </ng-container>
+            <ng-container matColumnDef="formula">
+              <th mat-header-cell *matHeaderCellDef>Fórmula</th>
+              <td mat-cell *matCellDef="let row">{{ row.formula }}</td>
+            </ng-container>
+            <ng-container matColumnDef="valor">
+              <th mat-header-cell *matHeaderCellDef>Resultado</th>
+              <td mat-cell *matCellDef="let row"><strong>{{ row.valor }}</strong></td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+            <tr mat-row *matRowDef="let row; columns: columnas"></tr>
+          </table>
+        </div>
+      </mat-expansion-panel>
+    } @else if (tramoCtrl.value) {
+      <div class="tab-calculo__empty tab-calculo__empty--inline">
+        <p>Seleccione Calcular liquidación para ver el resumen y la validación.</p>
+      </div>
+    }
+  }
+</div>

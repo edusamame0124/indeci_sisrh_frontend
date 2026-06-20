@@ -1,0 +1,91 @@
+:host {
+  display: block;
+}
+
+.page {
+  padding: 16px;
+}
+
+.page-card {
+  width: 100%;
+  max-width: none;
+  box-sizing: border-box;
+}
+
+.jr-loading {
+  display: flex;
+  justify-content: center;
+  padding: 24px;
+}
+
+.jr-regimen {
+  width: 100%;
+  max-width: 480px;
+}
+
+.jr-seccion {
+  margin-top: 8px;
+  padding-top: 12px;
+  border-top: 0.5px solid var(--border-subtle, #EEF0F4);
+}
+
+.jr-seccion__titulo {
+  margin: 0 0 8px;
+  color: var(--text-primary, #0A1E35);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.jr-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px 16px;
+}
+
+.jr-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.jr-req {
+  width: 100%;
+  margin: 0;
+  color: var(--text-secondary, #4A5568);
+  font-size: 12px;
+}
+
+.jr-empty {
+  margin: 16px 0;
+  color: var(--text-secondary, #4A5568);
+  font-size: 13px;
+}
+
+.jr-tabla {
+  margin-top: 8px;
+  padding-top: 12px;
+  border-top: 0.5px solid var(--border-subtle, #EEF0F4);
+}
+
+.jr-tabla-scroll {
+  overflow: auto;
+  border: 0.5px solid var(--border-subtle, #EEF0F4);
+  border-radius: var(--radius-md, 7px);
+}
+
+.jr-table {
+  width: 100%;
+}
+
+.jr-table .jr-num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.jr-nota {
+  margin: 20px 0 0;
+  color: var(--text-secondary, #4A5568);
+  font-size: 12px;
+}

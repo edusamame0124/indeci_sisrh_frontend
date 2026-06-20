@@ -121,6 +121,7 @@
               [class.badge--programado]="r.estado === 'PROGRAMADO'"
               [class.badge--cerrado]="r.estado === 'CERRADO'"
               [class.badge--inactivo]="r.estado === 'INACTIVO'"
+              [class.badge--anulado]="r.estado === 'ANULADO'"
             >
               @if (r.bloqueadoPorPlanilla) {
                 <mat-icon fontIcon="lock" class="badge__lock" aria-label="Bloqueado por planilla cerrada" />
@@ -152,12 +153,31 @@
             </button>
             <button
               mat-icon-button
+              (click)="duplicarFila(r)"
+              [disabled]="!canDuplicar(r)"
+              [matTooltip]="canDuplicar(r) ? 'Duplicar vigencia' : 'No se puede duplicar una vigencia anulada o incompleta.'"
+              [attr.aria-label]="'Duplicar vigencia ONP ' + r.periodoInicio"
+            >
+              <mat-icon fontIcon="content_copy" />
+            </button>
+            <button
+              mat-icon-button
               (click)="cerrarVigencia(r)"
               [disabled]="r.bloqueadoPorPlanilla || r.estado !== 'VIGENTE'"
               matTooltip="Cerrar vigencia"
               [attr.aria-label]="'Cerrar vigencia ONP ' + r.periodoInicio"
             >
               <mat-icon fontIcon="timer_off" />
+            </button>
+            <button
+              mat-icon-button
+              (click)="eliminarFila(r)"
+              [disabled]="!canEliminar(r)"
+              [matTooltip]="tooltipEliminar(r)"
+              [attr.aria-label]="'Eliminar vigencia ONP ' + r.periodoInicio"
+              class="btn-icon-danger"
+            >
+              <mat-icon fontIcon="delete_outline" />
             </button>
           </td>
         </ng-container>

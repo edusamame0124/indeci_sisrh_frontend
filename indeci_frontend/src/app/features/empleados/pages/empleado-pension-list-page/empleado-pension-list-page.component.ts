@@ -26,6 +26,9 @@ import { ErrorMessageService } from '../../../../core/services/error-message.ser
 import { isErrorResponse } from '../../../../core/models/error-response.model';
 import type { EmpleadoPensionRow } from '../../models/empleado-pension.model';
 import type { PersonaEmpleado } from '../../models/persona-empleado.model';
+import {
+  EmpleadoPensionFormDialogComponent,
+} from '../empleado-pension-form-dialog/empleado-pension-form-dialog.component';
 
 @Component({
   selector: 'app-empleado-pension-list-page',
@@ -109,6 +112,23 @@ export class EmpleadoPensionListPageComponent implements OnInit {
   fmtPct(value: number | null): string {
     if (value == null || Number.isNaN(value)) return '—';
     return `${value}%`;
+  }
+
+  openRegistrarDialog(): void {
+    const eid = this.empleadoId();
+    if (eid == null) return;
+    const ref = this.dialogs.open(EmpleadoPensionFormDialogComponent, {
+      data: {
+        empleadoId:   eid,
+        personaLabel: this.persona()?.nombreCompleto ?? '',
+      },
+      width: '580px',
+      maxWidth: '95vw',
+      disableClose: false,
+    });
+    void ref.afterClosed().subscribe((ok: boolean | undefined) => {
+      if (ok === true) this.loadList(eid);
+    });
   }
 
   confirmEliminar(row: EmpleadoPensionRow): void {

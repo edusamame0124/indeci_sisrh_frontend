@@ -206,6 +206,21 @@
   border-radius: var(--sisrh-radius-sm);
 }
 
+.cal-celda__desc {
+  display: block;
+  margin: 0 0.2rem 0.2rem;
+  font-size: 0.6rem;
+  font-weight: 600;
+  line-height: 1.1;
+  color: var(--sisrh-status-danger, #A32D2D);
+}
+
+.resumen-nota {
+  margin: 0.5rem 0 0;
+  color: var(--sisrh-color-text-muted, #4A5568);
+  font-size: 0.72rem;
+}
+
 .cal-dia--laboral {
   background: var(--sisrh-badge-success-bg);
   border-color: color-mix(in srgb, var(--sisrh-badge-success-fg) 35%, transparent);

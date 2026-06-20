@@ -1,0 +1,15 @@
+:host { display: block; }
+.aud-section { padding: 1rem 0; }
+.aud-empty {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 0.625rem; padding: 3rem 2rem; text-align: center;
+  color: var(--sisrh-text-muted, #64748b);
+}
+.aud-empty mat-icon { font-size: 3rem; width: 3rem; height: 3rem; color: var(--sisrh-primary-100, #e8eef6); }
+.aud-empty h4 { margin: 0; font-size: 1rem; font-weight: 700; color: var(--sisrh-primary, #1f3a5f); }
+.aud-empty p { margin: 0; font-size: 0.8125rem; line-height: 1.5; }
+.aud-badge {
+  padding: 0.25rem 0.75rem; border-radius: 9999px;
+  background: var(--sisrh-info-100, #eaf2fb); color: var(--sisrh-info, #2563a6);
+  font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
+}

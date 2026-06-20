@@ -1,0 +1,94 @@
+<div class="hist-section">
+
+  @if (loading()) {
+    <div class="hist-state hist-state--loading" aria-live="polite">
+      <mat-spinner diameter="36" />
+      <span>Cargando historial…</span>
+    </div>
+  } @else if (error()) {
+    <div class="hist-state hist-state--error" role="alert">
+      <mat-icon fontIcon="error_outline" aria-hidden="true" />
+      {{ error() }}
+    </div>
+  } @else if (rangoMostrado().total === 0) {
+    <div class="hist-state hist-state--empty">
+      <mat-icon fontIcon="history_toggle_off" aria-hidden="true" />
+      <span>No se encontraron registros históricos.</span>
+    </div>
+  } @else {
+    <p class="hist-rango">
+      Mostrando {{ rangoMostrado().start }}–{{ rangoMostrado().end }}
+      de {{ rangoMostrado().total }} registros (incluyendo anulados)
+    </p>
+
+    <div class="hist-table-wrap" role="region" aria-label="Historial de vigencias IR4ta">
+      <table mat-table [dataSource]="pagedRows()" class="hist-table">
+
+        <ng-container matColumnDef="anioFiscal">
+          <th mat-header-cell *matHeaderCellDef>Año fiscal</th>
+          <td mat-cell *matCellDef="let r">{{ r.anioFiscal }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="vigenciaInicio">
+          <th mat-header-cell *matHeaderCellDef>Inicio</th>
+          <td mat-cell *matCellDef="let r">{{ r.vigenciaInicio | date:'dd/MM/yyyy' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="vigenciaFin">
+          <th mat-header-cell *matHeaderCellDef>Fin</th>
+          <td mat-cell *matCellDef="let r">
+            {{ r.vigenciaFin ? (r.vigenciaFin | date:'dd/MM/yyyy') : '—' }}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="uitVigente">
+          <th mat-header-cell *matHeaderCellDef class="col-num">UIT (S/)</th>
+          <td mat-cell *matCellDef="let r" class="col-num">{{ r.uitVigente | number:'1.2-2' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="estado">
+          <th mat-header-cell *matHeaderCellDef>Estado</th>
+          <td mat-cell *matCellDef="let r">
+            <span class="badge" [class]="'badge--' + r.estado.toLowerCase()">{{ r.estado }}</span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="fuenteOficial">
+          <th mat-header-cell *matHeaderCellDef>Fuente normativa</th>
+          <td mat-cell *matCellDef="let r" class="col-fuente" [matTooltip]="r.fuenteOficial">
+            {{ r.fuenteOficial }}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="creadoPor">
+          <th mat-header-cell *matHeaderCellDef>Registrado por</th>
+          <td mat-cell *matCellDef="let r">{{ r.creadoPor }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="creadoEn">
+          <th mat-header-cell *matHeaderCellDef>Fecha registro</th>
+          <td mat-cell *matCellDef="let r">{{ r.creadoEn | date:'dd/MM/yyyy HH:mm' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="modificadoEn">
+          <th mat-header-cell *matHeaderCellDef>Últ. modificación</th>
+          <td mat-cell *matCellDef="let r">
+            {{ r.modificadoEn ? (r.modificadoEn | date:'dd/MM/yyyy HH:mm') : '—' }}
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="columns"></tr>
+        <tr mat-row *matRowDef="let r; columns: columns;" [class.row--anulado]="r.estado === 'ANULADO'"></tr>
+      </table>
+    </div>
+
+    <mat-paginator
+      [length]="rangoMostrado().total"
+      [pageSize]="pageSize()"
+      [pageIndex]="pageIndex()"
+      [pageSizeOptions]="pageSizeOptions"
+      (page)="onPage($event)"
+      aria-label="Paginación del historial" />
+  }
+
+</div>

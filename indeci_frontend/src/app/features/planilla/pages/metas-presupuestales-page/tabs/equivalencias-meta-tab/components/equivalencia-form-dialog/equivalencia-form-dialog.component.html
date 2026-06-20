@@ -1,0 +1,63 @@
+<h2 mat-dialog-title class="dialog-title">
+  <mat-icon>add_link</mat-icon>
+  Nueva equivalencia de meta
+</h2>
+<p class="dialog-subtitle">
+  Año origen: <strong>{{ data.anioOrigen }}</strong> → Año destino: <strong>{{ data.anioDestino }}</strong>
+</p>
+
+<mat-dialog-content [formGroup]="form" class="dialog-content">
+
+  <mat-form-field appearance="outline" class="field-full">
+    <mat-label>Meta origen ({{ data.anioOrigen }}) <span class="req">*</span></mat-label>
+    <mat-select formControlName="metaOrigenId">
+      <mat-option [value]="0" disabled>Seleccione una meta origen</mat-option>
+      @for (m of data.metasOrigen; track m.id) {
+        <mat-option [value]="m.id">
+          {{ m.metaCodigo }} — {{ m.centroCosto }}
+        </mat-option>
+      }
+    </mat-select>
+    @if (form.controls.metaOrigenId.hasError('min') && form.controls.metaOrigenId.touched) {
+      <mat-error>Seleccione una meta origen.</mat-error>
+    }
+  </mat-form-field>
+
+  <div class="arrow-row">
+    <mat-icon class="arrow-icon">arrow_downward</mat-icon>
+    <span class="arrow-label">Se mapea a</span>
+  </div>
+
+  <mat-form-field appearance="outline" class="field-full">
+    <mat-label>Meta destino ({{ data.anioDestino }}) <span class="req">*</span></mat-label>
+    <mat-select formControlName="metaDestinoId">
+      <mat-option [value]="0" disabled>Seleccione una meta destino</mat-option>
+      @for (m of data.metasDestino; track m.id) {
+        <mat-option [value]="m.id">
+          {{ m.metaCodigo }} — {{ m.centroCosto }}
+        </mat-option>
+      }
+    </mat-select>
+    @if (form.controls.metaDestinoId.hasError('min') && form.controls.metaDestinoId.touched) {
+      <mat-error>Seleccione una meta destino.</mat-error>
+    }
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" class="field-full">
+    <mat-label>Observación (opcional)</mat-label>
+    <textarea matInput formControlName="observacion" rows="2" placeholder="Motivo o nota de la equivalencia"></textarea>
+  </mat-form-field>
+
+</mat-dialog-content>
+
+<mat-dialog-actions align="end" class="dialog-actions">
+  <button mat-stroked-button (click)="cancelar()" [disabled]="guardando()">Cancelar</button>
+  <button mat-flat-button color="primary" (click)="guardar()" [disabled]="form.invalid || guardando()">
+    @if (guardando()) {
+      <mat-spinner diameter="18"></mat-spinner>
+    } @else {
+      <mat-icon>add_link</mat-icon>
+    }
+    Registrar equivalencia
+  </button>
+</mat-dialog-actions>

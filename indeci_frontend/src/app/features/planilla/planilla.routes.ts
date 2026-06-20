@@ -151,6 +151,16 @@ export const PLANILLA_ROUTES: Routes = [
           ),
         title: 'Configuración Anual CAS — SISRH-INDECI',
       },
+
+      /* ——— Metas presupuestales anuales (V010_77) ——— */
+      {
+        path: 'metas',
+        loadComponent: () =>
+          import('./pages/metas-presupuestales-page/metas-presupuestales-page.component').then(
+            (m) => m.MetasPresupuestalesPageComponent,
+          ),
+        title: 'Metas presupuestales — SISRH-INDECI',
+      },
     ],
   },
 ];

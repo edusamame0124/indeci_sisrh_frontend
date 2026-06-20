@@ -1,0 +1,188 @@
+<section class="bandeja" aria-labelledby="bandeja-titulo">
+  <header class="bandeja__header">
+    <div>
+      <h2 id="bandeja-titulo" class="bandeja__title">Bandeja de casos</h2>
+      <p class="bandeja__sub">
+        Expedientes de subsidio por enfermedad o maternidad. Seleccione un caso para ver el detalle.
+      </p>
+    </div>
+    @if (puedeCrear()) {
+      <button type="button" mat-flat-button color="primary" (click)="abrirCrear()">
+        <mat-icon>add</mat-icon>
+        Nuevo caso
+      </button>
+    }
+  </header>
+
+  <mat-card class="bandeja__filtros" appearance="outlined">
+    <mat-card-content class="bandeja__filtros-grid">
+      <mat-form-field appearance="outline" class="bandeja__field">
+        <mat-label>Filtrar por empleado</mat-label>
+        <input
+          type="text"
+          matInput
+          [formControl]="empleadoCtrl"
+          [matAutocomplete]="autoEmpleado"
+          placeholder="Nombre o DNI (mín. 2 caracteres)"
+          aria-label="Filtrar casos por empleado"
+        />
+        @if (empleadoFiltro()) {
+          <button
+            mat-icon-button
+            matSuffix
+            type="button"
+            (click)="limpiarFiltroEmpleado()"
+            aria-label="Quitar filtro de empleado"
+            matTooltip="Ver todos los empleados"
+          >
+            <mat-icon>close</mat-icon>
+          </button>
+        } @else {
+          <mat-icon matSuffix>person_search</mat-icon>
+        }
+        <mat-autocomplete
+          #autoEmpleado="matAutocomplete"
+          [displayWith]="displayEmpleado"
+          (optionSelected)="onEmpleadoFiltroSeleccionado($event.option.value)"
+        >
+          @for (p of empleadoOpciones(); track p.id) {
+            <mat-option [value]="p">
+              <strong>{{ p.nombreCompleto }}</strong>
+              <small> — DNI {{ p.dni }}</small>
+            </mat-option>
+          }
+        </mat-autocomplete>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="bandeja__field bandeja__field--sm">
+        <mat-label>Período (AAAAMM)</mat-label>
+        <input matInput [formControl]="filtroPeriodo" maxlength="6" placeholder="202605" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="bandeja__field bandeja__field--sm">
+        <mat-label>Tipo</mat-label>
+        <mat-select [formControl]="filtroTipo">
+          <mat-option [value]="null">Todos</mat-option>
+          <mat-option value="ENFERMEDAD">Enfermedad</mat-option>
+          <mat-option value="MATERNIDAD">Maternidad</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="bandeja__field bandeja__field--sm">
+        <mat-label>Estado</mat-label>
+        <mat-select [formControl]="filtroEstado">
+          <mat-option [value]="null">Todos</mat-option>
+          <mat-option value="BORRADOR">Borrador</mat-option>
+          <mat-option value="PENDIENTE_VALIDACION">Pendiente validación</mat-option>
+          <mat-option value="CALCULADO">Calculado</mat-option>
+          <mat-option value="APLICADO_PLANILLA">Aplicado planilla</mat-option>
+          <mat-option value="EN_TRAMITE_ESSALUD">Trámite EsSalud</mat-option>
+          <mat-option value="CERRADO">Cerrado</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card class="bandeja__tabla" appearance="outlined">
+    @if (loading()) {
+      <div class="bandeja__loading" aria-live="polite">
+        <mat-spinner diameter="36" />
+        <span>Cargando casos…</span>
+      </div>
+    } @else if (casos().length === 0) {
+      <div class="bandeja__empty" aria-live="polite">
+        <mat-icon fontIcon="folder_open" aria-hidden="true" />
+        <p>No hay casos de subsidio con los filtros actuales.</p>
+        @if (puedeCrear()) {
+          <button type="button" mat-stroked-button color="primary" (click)="abrirCrear()">
+            Registrar primer caso
+          </button>
+        }
+      </div>
+    } @else {
+      <div class="bandeja__table-wrap">
+        <table mat-table [dataSource]="casos()" class="bandeja__table" aria-label="Casos de subsidio">
+          <ng-container matColumnDef="codigo">
+            <th mat-header-cell *matHeaderCellDef scope="col">Código</th>
+            <td mat-cell *matCellDef="let row">{{ row.codigoCaso }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="empleado">
+            <th mat-header-cell *matHeaderCellDef scope="col">Empleado</th>
+            <td mat-cell *matCellDef="let row">
+              <span class="bandeja__empleado">{{ row.nombreEmpleado ?? '—' }}</span>
+              <small class="bandeja__dni">DNI {{ row.dniEmpleado ?? '—' }}</small>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="tipo">
+            <th mat-header-cell *matHeaderCellDef scope="col">Tipo</th>
+            <td mat-cell *matCellDef="let row">{{ labelTipo(row.tipoCaso) }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="periodo">
+            <th mat-header-cell *matHeaderCellDef scope="col">Período ref.</th>
+            <td mat-cell *matCellDef="let row">{{ periodoDesdeCaso(row) }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="fechas">
+            <th mat-header-cell *matHeaderCellDef scope="col">Fechas</th>
+            <td mat-cell *matCellDef="let row">
+              {{ row.fechaInicio }} — {{ row.fechaFin }}
+              @if (row.diasContingencia != null) {
+                <small class="bandeja__dias">({{ row.diasContingencia }} días)</small>
+              }
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="estado">
+            <th mat-header-cell *matHeaderCellDef scope="col">Estado</th>
+            <td mat-cell *matCellDef="let row">
+              <span
+                class="bandeja__badge"
+                [class.bandeja__badge--neutral]="estadoVariant(row.estado) === 'neutral'"
+                [class.bandeja__badge--warning]="estadoVariant(row.estado) === 'warning'"
+                [class.bandeja__badge--info]="estadoVariant(row.estado) === 'info'"
+                [class.bandeja__badge--success]="estadoVariant(row.estado) === 'success'"
+              >
+                {{ labelEstado(row.estado) }}
+              </span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="acciones">
+            <th mat-header-cell *matHeaderCellDef scope="col">Acciones</th>
+            <td mat-cell *matCellDef="let row">
+              <button
+                type="button"
+                mat-stroked-button
+                color="primary"
+                (click)="verCaso(row)"
+                [attr.aria-label]="'Ver detalle del caso ' + row.codigoCaso"
+              >
+                <mat-icon>visibility</mat-icon>
+                Ver detalle
+              </button>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+          <tr
+            mat-row
+            *matRowDef="let row; columns: columnas"
+            [class.bandeja__row--active]="casoSeleccionado() === row.id"
+          ></tr>
+        </table>
+      </div>
+
+      <mat-paginator
+        [length]="totalElements()"
+        [pageIndex]="pageIndex()"
+        [pageSize]="pageSize()"
+        [pageSizeOptions]="pageSizeOptions"
+        (page)="onPageChange($event)"
+        aria-label="Paginación de casos de subsidio"
+      />
+    }
+  </mat-card>
+</section>
