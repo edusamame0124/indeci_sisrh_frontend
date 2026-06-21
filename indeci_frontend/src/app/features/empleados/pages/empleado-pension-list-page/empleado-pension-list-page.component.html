@@ -10,13 +10,14 @@
   <div class="actions">
     <a mat-button routerLink="/empleados/personas">Volver</a>
     @if (canRegistrar()) {
-      <a
+      <button
         mat-flat-button
         color="primary"
-        [routerLink]="['/empleados/pension/personas', personaId(), 'nueva']"
+        type="button"
+        (click)="openRegistrarDialog()"
       >
         Registrar pensión
-      </a>
+      </button>
     }
   </div>
 

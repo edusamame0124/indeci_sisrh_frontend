@@ -16,7 +16,7 @@ import { routes } from './app.routes';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
 import { errorRoutingInterceptor } from './core/interceptors/error-routing.interceptor';
 import { MatIconRegistry } from '@angular/material/icon';
-import { MAT_DATE_LOCALE } from '@angular/material/core';
+import { MAT_DATE_LOCALE, provideNativeDateAdapter } from '@angular/material/core';
 import { AuthService } from './core/services/auth.service';
 import { TokenStorageService } from './core/services/token-storage.service';
 
@@ -28,7 +28,9 @@ export const appConfig: ApplicationConfig = {
     provideClientHydration(withEventReplay()),
     provideHttpClient(withFetch(), withInterceptors([authInterceptor, errorRoutingInterceptor])),
     provideAnimationsAsync(),
-    // Fechas del datepicker de Material en formato peruano DD/MM/AAAA.
+    // Adaptador de fechas nativo para Angular Material Datepicker.
+    provideNativeDateAdapter(),
+    // Locale peruano → datepicker muestra DD/MM/AAAA.
     { provide: MAT_DATE_LOCALE, useValue: 'es-PE' },
     // Sin almacenamiento local no hay flujo auth (FR-030) — debe ir antes de hidratar.
     provideAppInitializer(() => {

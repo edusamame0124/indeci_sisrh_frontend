@@ -1,0 +1,97 @@
+.edit-dialog__context {
+  margin: 0 0 16px;
+  color: var(--text-secondary, #4a5568);
+  font-size: 13px;
+}
+
+.edit-dialog__error {
+  margin: 0 0 12px;
+  color: var(--indeci-red, #c8102e);
+  font-size: 13px;
+}
+
+.edit-dialog__form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  column-gap: 16px;
+  row-gap: 4px;
+}
+
+.edit-dialog__full {
+  grid-column: 1 / -1;
+}
+
+.edit-dialog__section-title {
+  margin: 0 0 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--sisrh-text, #1f2937);
+}
+
+.edit-dialog__papeleta {
+  padding: 16px;
+  margin-bottom: 16px;
+  border: 1px solid var(--sisrh-border, #d9e1ea);
+  border-radius: 8px;
+  background: var(--sisrh-surface-muted, #f8fafc);
+}
+
+.edit-dialog__papeleta-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 24px;
+  margin: 0;
+}
+
+.edit-dialog__papeleta-grid dt {
+  margin: 0 0 2px;
+  font-size: 12px;
+  color: var(--sisrh-text-muted, #64748b);
+}
+
+.edit-dialog__papeleta-grid dd {
+  margin: 0;
+  font-size: 14px;
+  color: var(--sisrh-text, #1f2937);
+}
+
+/* El hint no debe solaparse con el campo siguiente si envuelve a 2 líneas */
+.edit-dialog__form ::ng-deep .mat-mdc-form-field-subscript-wrapper {
+  position: static;
+}
+
+/* Decisión: bloque propio, fuera del card y horizontal */
+.edit-dialog__decision {
+  margin: 0 0 16px;
+  padding: 0;
+  border: 0;
+}
+
+.edit-dialog__decision-label {
+  display: block;
+  margin: 0 0 8px;
+  padding: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--sisrh-text, #1f2937);
+}
+
+.edit-dialog__radio-group {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 8px 32px;
+}
+
+@media (max-width: 640px) {
+  .edit-dialog__form,
+  .edit-dialog__papeleta-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .edit-dialog__radio-group {
+    flex-direction: column;
+    gap: 8px;
+  }
+}

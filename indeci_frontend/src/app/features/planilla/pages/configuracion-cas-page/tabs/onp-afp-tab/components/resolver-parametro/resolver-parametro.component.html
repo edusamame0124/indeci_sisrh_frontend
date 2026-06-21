@@ -8,7 +8,7 @@
     <div>
       <h3 class="resolver-header__title">Resolver parámetro previsional</h3>
       <p class="resolver-header__sub">
-        Ingrese el ID de empleado y el período para consultar qué parámetros usará el motor de planilla.
+        Seleccione un empleado y el período para consultar qué parámetros usará el motor de planilla.
       </p>
     </div>
   </div>
@@ -16,47 +16,55 @@
   <!-- Form -->
   <div class="resolver-form" role="form" aria-label="Formulario de resolución previsional">
 
-    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="form-field">
-      <mat-label>ID empleado</mat-label>
-      <mat-icon matPrefix fontIcon="person" aria-hidden="true" />
+    <!-- Empleado autocomplete -->
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="form-field form-field--wide">
+      <mat-label>Empleado</mat-label>
+      <mat-icon matPrefix fontIcon="person_search" aria-hidden="true" />
       <input
         matInput
-        type="number"
-        placeholder="ej. 1042"
-        [value]="empleadoId()"
-        (input)="empleadoId.set($any($event.target).value)"
-        aria-label="ID de empleado"
+        type="search"
+        [formControl]="empleadoSearchCtrl"
+        [matAutocomplete]="autoEmpleado"
+        placeholder="Buscar por nombre o DNI…"
+        aria-label="Buscar empleado"
+        autocomplete="off"
       />
-    </mat-form-field>
-
-    <mat-form-field appearance="outline" class="form-field">
-      <mat-label>Período (YYYYMM)</mat-label>
-      <mat-icon matPrefix fontIcon="calendar_today" aria-hidden="true" />
-      <input
-        matInput
-        type="text"
-        placeholder="ej. 202606"
-        maxlength="6"
-        [value]="periodo()"
-        (input)="periodo.set($any($event.target).value)"
-        aria-label="Período en formato YYYYMM"
-      />
-      @if (periodoInvalido) {
-        <mat-error>Formato YYYYMM — mes 01 a 12 (ej. 202606).</mat-error>
-      } @else {
-        <mat-hint>Año + mes, 6 dígitos</mat-hint>
+      @if (loadingPersonas()) {
+        <mat-icon matSuffix fontIcon="hourglass_empty" class="field-loading" aria-hidden="true" />
       }
+      <mat-autocomplete
+        #autoEmpleado="matAutocomplete"
+        [displayWith]="displayPersona"
+        (optionSelected)="onEmpleadoSelected($event)"
+      >
+        @if (personasFiltradas().length === 0 && searchQuery().length >= 2) {
+          <mat-option disabled>Sin resultados para "{{ searchQuery() }}"</mat-option>
+        }
+        @for (p of personasFiltradas(); track p.id) {
+          <mat-option [value]="p">
+            <span class="ac-nombre">{{ p.nombreCompleto }}</span>
+            @if (p.dni) {
+              <span class="ac-dni"> — DNI {{ p.dni }}</span>
+            }
+            @if (p.codigoInterno) {
+              <span class="ac-codigo"> · {{ p.codigoInterno }}</span>
+            }
+          </mat-option>
+        }
+      </mat-autocomplete>
     </mat-form-field>
 
+    <!-- Período select -->
     <mat-form-field appearance="outline" subscriptSizing="dynamic" class="form-field">
-      <mat-label>Sistema pensionario</mat-label>
+      <mat-label>Período</mat-label>
       <mat-select
-        [value]="sistema()"
-        (selectionChange)="sistema.set($event.value)"
-        aria-label="Sistema pensionario"
+        [value]="periodo()"
+        (selectionChange)="periodo.set($event.value)"
+        placeholder="Seleccione período"
+        aria-label="Período"
       >
-        @for (op of sistemasOpciones; track op.valor) {
-          <mat-option [value]="op.valor">{{ op.etiqueta }}</mat-option>
+        @for (p of periodos; track p) {
+          <mat-option [value]="p">{{ formatLabel(p) }}</mat-option>
         }
       </mat-select>
     </mat-form-field>
@@ -86,9 +94,17 @@
     </div>
   </div>
 
-  <!-- Error -->
+  <!-- Estado inicial sin resultado -->
+  @if (!resultado() && !error() && !resolving()) {
+    <div class="resolver-idle" role="note">
+      <mat-icon fontIcon="info_outline" aria-hidden="true" />
+      <span>Seleccione un empleado y período para consultar los parámetros previsionales aplicables.</span>
+    </div>
+  }
+
+  <!-- Error HTTP -->
   @if (error()) {
-    <div class="resolver-error" role="alert">
+    <div class="resolver-alert resolver-alert--error" role="alert">
       <mat-icon fontIcon="error_outline" aria-hidden="true" />
       {{ error() }}
     </div>
@@ -96,82 +112,133 @@
 
   <!-- Resultado -->
   @if (resultado(); as r) {
-    <div class="resolver-result" role="region" aria-label="Resultado de resolución previsional">
-      <div class="result-header">
-        <mat-icon fontIcon="check_circle" class="result-header__icon" aria-hidden="true" />
+
+    <!-- SIN_VIGENCIA — alerta roja -->
+    @if (estadoEs(r, 'SIN_VIGENCIA')) {
+      <div class="resolver-alert resolver-alert--error" role="alert">
+        <mat-icon fontIcon="event_busy" aria-hidden="true" />
         <div>
-          <span class="result-header__title">Parámetro resuelto</span>
-          <span class="result-header__badge" [class.badge--afp]="r.sistemaPensionario === 'AFP'" [class.badge--onp]="r.sistemaPensionario === 'ONP'">
-            {{ r.sistemaPensionario }}
+          <strong>Sin vigencia aplicable</strong>
+          <p>{{ r.mensaje }}</p>
+        </div>
+      </div>
+    }
+
+    <!-- CONFIG_INCOMPLETA — alerta naranja -->
+    @if (estadoEs(r, 'CONFIG_INCOMPLETA')) {
+      <div class="resolver-alert resolver-alert--warning" role="alert">
+        <mat-icon fontIcon="warning_amber" aria-hidden="true" />
+        <div>
+          <strong>Configuración incompleta</strong>
+          <p>{{ r.mensaje }}</p>
+        </div>
+      </div>
+    }
+
+    <!-- VALIDO — tarjeta verde completa -->
+    @if (esValido(r)) {
+      <div class="resolver-result" role="region" aria-label="Resultado de validación ONP/AFP">
+
+        <!-- Cabecera -->
+        <div class="result-header">
+          <mat-icon fontIcon="verified" class="result-header__icon" aria-hidden="true" />
+          <div class="result-header__texts">
+            <span class="result-header__title">Resultado de validación ONP/AFP</span>
+            <span
+              class="result-header__badge"
+              [class.badge--afp]="r.sistemaPensionario === 'AFP'"
+              [class.badge--onp]="r.sistemaPensionario === 'ONP'"
+            >
+              {{ r.sistemaPensionario }}
+            </span>
+            @if (r.afpNombre) {
+              <span class="result-header__afp">— {{ r.afpNombre }}</span>
+            }
+          </div>
+          <span class="result-header__estado">
+            <mat-icon fontIcon="check_circle" class="estado-icon" aria-hidden="true" />
+            Configuración válida
           </span>
-          @if (r.afpNombre) {
-            <span class="result-header__afp">— {{ r.afpNombre }}</span>
+        </div>
+
+        <!-- Grid de datos -->
+        <div class="result-grid">
+
+          <!-- Fila 1: Empleado + Período + Sistema -->
+          <div class="result-item">
+            <span class="result-item__label">Empleado</span>
+            <span class="result-item__value">{{ r.empleadoNombre ?? '–' }}</span>
+            @if (r.documento) {
+              <span class="result-item__sub">DNI {{ r.documento }}</span>
+            }
+          </div>
+
+          <div class="result-item">
+            <span class="result-item__label">Período consultado</span>
+            <span class="result-item__value">{{ r.periodoConsultado ? formatLabel(r.periodoConsultado) : '–' }}</span>
+          </div>
+
+          <div class="result-item">
+            <span class="result-item__label">Vigencia aplicada</span>
+            <span class="result-item__value">{{ vigenciaDisplay(r.vigenciaInicio, r.vigenciaFin) }}</span>
+          </div>
+
+          <!-- ONP -->
+          @if (r.sistemaPensionario === 'ONP') {
+            <div class="result-item">
+              <span class="result-item__label">Sistema pensionario</span>
+              <span class="result-item__value">ONP (Sistema Nacional de Pensiones)</span>
+            </div>
+            <div class="result-item">
+              <span class="result-item__label">Aporte ONP</span>
+              <span class="result-item__value result-item__value--num">{{ r.aporteOnpPct | number:'1.2-2' }}%</span>
+            </div>
           }
+
+          <!-- AFP -->
+          @if (r.sistemaPensionario === 'AFP') {
+            <div class="result-item">
+              <span class="result-item__label">AFP</span>
+              <span class="result-item__value">{{ r.afpNombre ?? '–' }}</span>
+            </div>
+            <div class="result-item">
+              <span class="result-item__label">Tipo de comisión</span>
+              <span class="result-item__value">{{ r.tipoComision ?? '–' }}</span>
+            </div>
+            <div class="result-item">
+              <span class="result-item__label">Aporte obligatorio</span>
+              <span class="result-item__value result-item__value--num">{{ r.aporteObligatorioPct | number:'1.2-2' }}%</span>
+            </div>
+            <div class="result-item">
+              <span class="result-item__label">Comisión flujo</span>
+              <span class="result-item__value result-item__value--num">{{ r.comisionFlujoPct | number:'1.2-2' }}%</span>
+            </div>
+            <div class="result-item">
+              <span class="result-item__label">Comisión saldo anual</span>
+              <span class="result-item__value result-item__value--num">{{ r.comisionSaldoAnualPct | number:'1.2-2' }}%</span>
+            </div>
+            <div class="result-item">
+              <span class="result-item__label">Prima de seguro</span>
+              <span class="result-item__value result-item__value--num">{{ r.primaSeguroPct | number:'1.2-2' }}%</span>
+            </div>
+            <div class="result-item">
+              <span class="result-item__label">Rem. máx. asegurable</span>
+              <span class="result-item__value result-item__value--num">
+                {{ r.remuneracionMaximaAsegurable | currency:'PEN':'symbol-narrow':'1.2-2' }}
+              </span>
+            </div>
+          }
+
+          <!-- Fuente (ancho completo) -->
+          <div class="result-item result-item--full">
+            <span class="result-item__label">Fuente oficial</span>
+            <span class="result-item__value result-item__value--fuente">{{ r.fuente ?? '–' }}</span>
+          </div>
+
         </div>
       </div>
+    }
 
-      <div class="result-grid">
-        <!-- ONP -->
-        @if (r.sistemaPensionario === 'ONP') {
-          <div class="result-item">
-            <span class="result-item__label">Tasa ONP</span>
-            <span class="result-item__value">{{ r.aporteOnpPct | number:'1.2-2' }}%</span>
-          </div>
-        }
-
-        <!-- AFP -->
-        @if (r.sistemaPensionario === 'AFP') {
-          <div class="result-item">
-            <span class="result-item__label">Aporte obligatorio</span>
-            <span class="result-item__value">{{ r.aporteObligatorioPct | number:'1.2-2' }}%</span>
-          </div>
-          <div class="result-item">
-            <span class="result-item__label">Tipo comisión</span>
-            <span class="result-item__value">{{ r.tipoComision }}</span>
-          </div>
-          <div class="result-item">
-            <span class="result-item__label">Comisión flujo</span>
-            <span class="result-item__value">{{ r.comisionFlujoPct | number:'1.2-2' }}%</span>
-          </div>
-          <div class="result-item">
-            <span class="result-item__label">Comisión saldo anual</span>
-            <span class="result-item__value">{{ r.comisionSaldoAnualPct | number:'1.2-2' }}%</span>
-          </div>
-          <div class="result-item">
-            <span class="result-item__label">Prima seguro</span>
-            <span class="result-item__value">{{ r.primaSeguroPct | number:'1.2-2' }}%</span>
-          </div>
-          <div class="result-item">
-            <span class="result-item__label">Rem. máx. asegurable</span>
-            <span class="result-item__value">{{ r.remuneracionMaximaAsegurable | currency:'PEN':'symbol-narrow':'1.2-2' }}</span>
-          </div>
-        }
-
-        <div class="result-item">
-          <span class="result-item__label">Vigencia inicio</span>
-          <span class="result-item__value">{{ formatPeriodo(r.vigenciaInicio) }}</span>
-        </div>
-
-        @if (r.vigenciaFin) {
-          <div class="result-item">
-            <span class="result-item__label">Vigencia fin</span>
-            <span class="result-item__value">{{ formatPeriodo(r.vigenciaFin) }}</span>
-          </div>
-        }
-
-        <div class="result-item result-item--full">
-          <span class="result-item__label">Fuente oficial</span>
-          <span class="result-item__value">{{ r.fuente }}</span>
-        </div>
-
-        @if (r.mensaje) {
-          <div class="result-item result-item--full result-item--obs">
-            <span class="result-item__label">Observación</span>
-            <span class="result-item__value">{{ r.mensaje }}</span>
-          </div>
-        }
-      </div>
-    </div>
   }
 
 </section>

@@ -9,20 +9,20 @@ import type {
   EventoPeriodoPage,
   EventoPeriodoRequest,
   EventoPeriodoResponse,
-  MaternidadPreview,
   TipoEvento,
 } from '../models/evento-periodo.model';
 
 /**
  * F3.6 — Cliente del CRUD de eventos del período.
  * Backend: {@code EventoPeriodoController} → `/api/rrhh/evento-periodo`.
+ * P0-F0: sin preview maternidad (retirado a módulo Subsidios).
  */
 @Injectable({ providedIn: 'root' })
 export class EventoPeriodoApiService {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = '/api/rrhh/evento-periodo';
 
-  /** Catálogo de tipos de evento (activos, ordenados visualmente). */
+  /** Catálogo de tipos de evento operativos (sin subsidios). */
   listarTipos(): Observable<readonly TipoEvento[]> {
     return this.http
       .get<ApiResponse<TipoEvento[]>>(`${this.baseUrl}/tipos`)
@@ -93,15 +93,6 @@ export class EventoPeriodoApiService {
   eliminar(id: number): Observable<null> {
     return this.http
       .delete<ApiResponse<null>>(`${this.baseUrl}/${id}`)
-      .pipe(map(extractApiData));
-  }
-
-  previewMaternidad(dto: EventoPeriodoRequest): Observable<MaternidadPreview> {
-    return this.http
-      .post<ApiResponse<MaternidadPreview>>(
-        `${this.baseUrl}/preview-maternidad`,
-        dto,
-      )
       .pipe(map(extractApiData));
   }
 }

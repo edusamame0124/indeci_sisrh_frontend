@@ -1,0 +1,30 @@
+<section class="subsidios-page">
+  <header class="subsidios-page__header">
+    <div>
+      <h1 class="subsidios-page__title">
+        Subsidios por enfermedad e incapacidad temporal y por maternidad
+      </h1>
+      <p class="subsidios-page__subtitle">
+        Expediente único por trabajador con CITT, tramos mensuales, base histórica y liquidación explicada.
+        Flujo operativo centralizado en Asistencia (no en Eventos del período).
+      </p>
+    </div>
+  </header>
+
+  @if (vista() === 'bandeja') {
+    <app-subsidio-bandeja-casos
+      [casoSeleccionado]="casoId()"
+      (verDetalle)="abrirDetalle($event)"
+    />
+  } @else if (casoId(); as id) {
+    <app-subsidio-detalle-caso
+      [casoId]="id"
+      (volver)="volverBandeja()"
+    />
+  }
+
+  <p class="subsidios-page__ref">
+    Base normativa: D.S. 009-97-SA (Reglamento Ley 26790) y normas EsSalud sobre subsidios por
+    incapacidad temporal y maternidad.
+  </p>
+</section>

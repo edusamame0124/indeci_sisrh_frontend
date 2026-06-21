@@ -1,4 +1,6 @@
-/** Mirrors `EmpleadoPensionDto` (Java) — contrato actualizado 2026-05-12. */
+export type CondicionEspecialAfp = 'NO_APLICA' | 'RETIRO_955' | 'PENSIONISTA_SPP';
+
+/** Mirrors `EmpleadoPensionDto` (Java). */
 export interface EmpleadoPensionInput {
   empleadoId: number;
   regimenPensionarioId: number;
@@ -8,6 +10,10 @@ export interface EmpleadoPensionInput {
   porcentajeSeguro: number | null;
   tipoComisionAfpId: number | null;
   tipoRegimen: string;
+  condicionEspecialAfp: CondicionEspecialAfp | null;
+  fechaCondicionAfp: string | null;
+  documentoSustentoId: number | null;
+  observacionCondicionAfp: string | null;
 }
 
 /** Mirrors `EmpleadoPensionResponseDto` (Java). */
@@ -23,6 +29,9 @@ export interface EmpleadoPensionRow {
   readonly activo: number;
   readonly regimenPensionario: string;
   readonly tipoComisionAfp: string;
+  readonly condicionEspecialAfp: CondicionEspecialAfp | null;
+  readonly fechaCondicionAfp: string | null;
+  readonly observacionCondicionAfp: string | null;
 }
 
 /**

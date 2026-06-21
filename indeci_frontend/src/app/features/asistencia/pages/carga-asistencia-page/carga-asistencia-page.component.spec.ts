@@ -170,20 +170,35 @@ describe('CargaAsistenciaPageComponent (Spec 010 PANTALLA-02)', () => {
     expect(fixture.nativeElement.querySelector('.sisrh-dropzone')).toBeNull();
   });
 
-  it('muestra enlace PDF RR. HH. cuando el calendario esta listo', () => {
+  it('descarga el PDF por blob cuando el calendario esta listo', () => {
     const fixture = conPeriodo();
     const comp = fixture.componentInstance;
 
-    expect(comp.pdfUrl()).toBeNull();
+    expect(comp.puedeDescargarPdf()).toBe(false);
 
     comp.onEmpleadoChange(42);
     httpMock.expectOne('/api/rrhh/asistencia/42/2026-05').flush({ data: asistencia(42) });
     fixture.detectChanges();
 
-    const link = fixture.nativeElement.querySelector('.acciones__pdf') as HTMLAnchorElement;
-    expect(comp.pdfUrl()).toBe('/api/rrhh/asistencia/42/2026-05/pdf');
-    expect(link.href).toContain('/api/rrhh/asistencia/42/2026-05/pdf');
-    expect(link.textContent).toContain('Descargar PDF');
+    expect(comp.puedeDescargarPdf()).toBe(true);
+    const boton = fixture.nativeElement.querySelector('.acciones__pdf') as HTMLButtonElement;
+    expect(boton.textContent).toContain('Descargar PDF');
+
+    const createSpy = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:x');
+    const revokeSpy = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+    const clickSpy = vi
+      .spyOn(HTMLAnchorElement.prototype, 'click')
+      .mockImplementation(() => {});
+
+    comp.descargarPdf();
+    const req = httpMock.expectOne('/api/rrhh/asistencia/42/2026-05/pdf');
+    expect(req.request.responseType).toBe('blob');
+    req.flush(new Blob(['%PDF']));
+
+    expect(clickSpy).toHaveBeenCalled();
+    createSpy.mockRestore();
+    revokeSpy.mockRestore();
+    clickSpy.mockRestore();
   });
 
   it('guardar() hace POST a /api/rrhh/asistencia con los dÃ­as del calendario', () => {

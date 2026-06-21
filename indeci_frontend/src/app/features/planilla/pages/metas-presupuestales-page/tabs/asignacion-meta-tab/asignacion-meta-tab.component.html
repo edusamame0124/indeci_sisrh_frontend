@@ -1,0 +1,184 @@
+<div class="tab-section">
+
+  <!-- Cabecera -->
+  <div class="tab-head">
+    <div class="tab-head-info">
+      <h2 class="tab-title">Asignación anual por empleado</h2>
+      <p class="tab-desc">Metas presupuestales asignadas a empleados para el año <strong>{{ anioFiscal }}</strong>.</p>
+    </div>
+    <div class="tab-head-actions">
+      <button mat-stroked-button (click)="cargar()" matTooltip="Recargar">
+        <mat-icon>refresh</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <!-- KPI Cards -->
+  @if (!loading() && asignaciones().length > 0) {
+    <div class="kpi-row">
+      <div class="kpi-mini">
+        <span class="kpi-mini-valor">{{ asignaciones().length }}</span>
+        <span class="kpi-mini-label">Total asignaciones</span>
+      </div>
+      <div class="kpi-mini kpi-mini--ok">
+        <span class="kpi-mini-valor">{{ totalPublicados }}</span>
+        <span class="kpi-mini-label">Publicadas</span>
+      </div>
+      <div class="kpi-mini kpi-mini--warn">
+        <span class="kpi-mini-valor">{{ totalBorradores }}</span>
+        <span class="kpi-mini-label">Borradores</span>
+      </div>
+      <div class="kpi-mini" [class.kpi-mini--err]="totalObservados > 0">
+        <span class="kpi-mini-valor">{{ totalObservados }}</span>
+        <span class="kpi-mini-label">Observadas</span>
+      </div>
+    </div>
+  }
+
+  <!-- Filtros -->
+  <div class="filtros-bar">
+    <mat-form-field appearance="outline" class="filtro-busqueda" subscriptSizing="dynamic">
+      <mat-label>Buscar empleado o meta</mat-label>
+      <mat-icon matPrefix>search</mat-icon>
+      <input
+        matInput
+        type="search"
+        [value]="filtroBusqueda()"
+        (input)="filtroBusqueda.set($any($event.target).value); currentPage.set(0)"
+        placeholder="DNI, apellidos, código de meta…"
+      />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="filtro-estado" subscriptSizing="dynamic">
+      <mat-label>Estado</mat-label>
+      <mat-select [value]="filtroEstado()" (selectionChange)="filtroEstado.set($event.value); currentPage.set(0)">
+        <mat-option value="">Todos</mat-option>
+        <mat-option value="BORRADOR">Borrador</mat-option>
+        <mat-option value="PUBLICADO">Publicado</mat-option>
+        <mat-option value="OBSERVADO">Observado</mat-option>
+        <mat-option value="VALIDADO">Validado</mat-option>
+        <mat-option value="ANULADO">Anulado</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="filtro-origen" subscriptSizing="dynamic">
+      <mat-label>Origen</mat-label>
+      <mat-select [value]="filtroOrigen()" (selectionChange)="filtroOrigen.set($event.value); currentPage.set(0)">
+        <mat-option value="">Todos</mat-option>
+        <mat-option value="MANUAL">Manual</mat-option>
+        <mat-option value="SISTEMA">Sistema</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    @if (filtroBusqueda() || filtroEstado() || filtroOrigen()) {
+      <button mat-button (click)="limpiarFiltros()">
+        <mat-icon>clear</mat-icon> Limpiar
+      </button>
+    }
+
+    <span class="filtros-conteo">{{ totalFiltrados }} resultado{{ totalFiltrados !== 1 ? 's' : '' }}</span>
+  </div>
+
+  <!-- Tabla -->
+  @if (loading()) {
+    <div class="tab-loading" aria-live="polite">
+      <mat-spinner diameter="32"></mat-spinner>
+      <span>Cargando asignaciones año {{ anioFiscal }}…</span>
+    </div>
+  } @else if (asignacionesFiltradas.length === 0) {
+    <div class="tab-empty">
+      <mat-icon>person_off</mat-icon>
+      @if (filtroBusqueda() || filtroEstado() || filtroOrigen()) {
+        <p>No se encontraron asignaciones con los filtros aplicados.</p>
+        <button mat-stroked-button (click)="limpiarFiltros()">Limpiar filtros</button>
+      } @else {
+        <p>No hay asignaciones de metas para el año {{ anioFiscal }}.</p>
+        <p class="tab-empty-hint">Use el <strong>Proceso masivo</strong> para copiar asignaciones del año anterior.</p>
+      }
+    </div>
+  } @else {
+    <div class="tabla-wrap" role="region" aria-label="Asignaciones anuales de metas">
+      <table mat-table [dataSource]="asignacionesPaginadas" class="asig-table">
+
+        <ng-container matColumnDef="empleadoDni">
+          <th mat-header-cell *matHeaderCellDef>DNI</th>
+          <td mat-cell *matCellDef="let a" class="col-mono">{{ a.empleadoDni ?? '—' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="empleadoNombre">
+          <th mat-header-cell *matHeaderCellDef>Empleado</th>
+          <td mat-cell *matCellDef="let a" class="col-nombre">{{ a.empleadoNombre ?? '—' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="metaCodigo">
+          <th mat-header-cell *matHeaderCellDef>Meta</th>
+          <td mat-cell *matCellDef="let a"><strong class="col-codigo">{{ a.metaCodigo ?? '—' }}</strong></td>
+        </ng-container>
+
+        <ng-container matColumnDef="centroCosto">
+          <th mat-header-cell *matHeaderCellDef>Centro de costo</th>
+          <td mat-cell *matCellDef="let a" class="col-long" [title]="a.centroCosto ?? ''">{{ a.centroCosto ?? '—' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="categoriaPresupuestal">
+          <th mat-header-cell *matHeaderCellDef>Categoría ptal.</th>
+          <td mat-cell *matCellDef="let a" class="col-long" [title]="a.categoriaPresupuestal ?? ''">{{ a.categoriaPresupuestal ?? '—' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="actividad">
+          <th mat-header-cell *matHeaderCellDef>Actividad</th>
+          <td mat-cell *matCellDef="let a" class="col-long" [title]="a.actividad ?? ''">{{ a.actividad ?? '—' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="finalidad">
+          <th mat-header-cell *matHeaderCellDef>Finalidad</th>
+          <td mat-cell *matCellDef="let a" class="col-long" [title]="a.finalidad ?? ''">{{ a.finalidad ?? '—' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="estado">
+          <th mat-header-cell *matHeaderCellDef>Estado</th>
+          <td mat-cell *matCellDef="let a">
+            <span class="badge" [ngClass]="estadoClass(a.estado)">{{ estadoLabel(a.estado) }}</span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="origen">
+          <th mat-header-cell *matHeaderCellDef>Origen</th>
+          <td mat-cell *matCellDef="let a" class="col-origen">{{ a.origen }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="acciones">
+          <th mat-header-cell *matHeaderCellDef class="col-acciones">Acc.</th>
+          <td mat-cell *matCellDef="let a" class="col-acciones">
+            @if (a.estado !== 'ANULADO' && !a.bloqueadoPorPlanilla) {
+              <button mat-icon-button [matMenuTriggerFor]="menuAsig" [attr.aria-label]="'Acciones para ' + a.empleadoNombre">
+                <mat-icon>more_vert</mat-icon>
+              </button>
+              <mat-menu #menuAsig="matMenu">
+                <button mat-menu-item (click)="anular(a)" class="accion-anular">
+                  <mat-icon>block</mat-icon> Anular asignación
+                </button>
+              </mat-menu>
+            } @else if (a.bloqueadoPorPlanilla) {
+              <mat-icon class="icon-lock" matTooltip="Bloqueado — usado en planilla cerrada">lock</mat-icon>
+            }
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="columnas; sticky: true"></tr>
+        <tr mat-row *matRowDef="let row; columns: columnas;" class="fila-tabla"></tr>
+      </table>
+    </div>
+
+    <mat-paginator
+      [length]="totalFiltrados"
+      [pageSize]="pageSize"
+      [pageIndex]="currentPage()"
+      [pageSizeOptions]="[10, 25, 50]"
+      (page)="onPage($event)"
+      aria-label="Paginación de asignaciones"
+    />
+  }
+
+  <p class="normativa-note">Asignaciones vigentes usadas por el motor de planilla — D.Leg. 1057 CAS</p>
+</div>

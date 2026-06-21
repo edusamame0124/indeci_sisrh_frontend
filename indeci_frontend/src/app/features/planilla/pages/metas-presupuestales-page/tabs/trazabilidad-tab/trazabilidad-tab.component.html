@@ -1,0 +1,234 @@
+<section class="traz-page">
+
+  <!-- Cabecera -->
+  <div class="traz-header">
+    <div>
+      <h2 class="traz-titulo">Trazabilidad de metas presupuestales</h2>
+      <p class="traz-desc">
+        Consulte las metas asignadas a cada empleado antes de iniciar el proceso de actualización anual.
+        Solo lectura — para modificar use la pestaña <strong>Asignaciones</strong>.
+      </p>
+    </div>
+  </div>
+
+  <!-- Barra de filtros -->
+  <div class="filter-bar">
+
+    <mat-form-field appearance="outline" subscriptSizing="fixed" class="field-anio">
+      <mat-label>Año fiscal</mat-label>
+      <mat-select [value]="anioConsulta()" (selectionChange)="anioConsulta.set($event.value)">
+        @for (a of aniosDisponibles; track a) {
+          <mat-option [value]="a">{{ a }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" subscriptSizing="fixed" class="field-busqueda">
+      <mat-label>Buscar empleado / DNI / código</mat-label>
+      <input matInput
+             [value]="busqueda()"
+             (input)="busqueda.set($any($event.target).value)"
+             placeholder="Nombre, DNI o código interno…">
+      <mat-icon matSuffix>search</mat-icon>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" subscriptSizing="fixed" class="field-estado">
+      <mat-label>Estado</mat-label>
+      <mat-select [value]="filtroEstado()" (selectionChange)="filtroEstado.set($event.value)">
+        <mat-option value="">Todos los estados</mat-option>
+        <mat-option value="PUBLICADO">Publicado</mat-option>
+        <mat-option value="VALIDADO">Validado</mat-option>
+        <mat-option value="BORRADOR">Borrador</mat-option>
+        <mat-option value="OBSERVADO">Observado</mat-option>
+        <mat-option value="CERRADO">Cerrado</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" subscriptSizing="fixed" class="field-centro">
+      <mat-label>Centro de costo</mat-label>
+      <input matInput
+             [value]="filtroCentro()"
+             (input)="filtroCentro.set($any($event.target).value)"
+             placeholder="Filtrar por centro de costo…">
+    </mat-form-field>
+
+    <div class="filter-actions">
+      <button mat-flat-button color="primary"
+              (click)="buscar(0)"
+              [disabled]="cargando()">
+        <mat-icon>search</mat-icon>
+        {{ cargando() ? 'Buscando…' : 'Buscar' }}
+      </button>
+      @if (buscado()) {
+        <button mat-stroked-button
+                (click)="limpiarFiltros()"
+                [disabled]="cargando()"
+                matTooltip="Limpiar todos los filtros">
+          <mat-icon>filter_list_off</mat-icon>
+          Limpiar
+        </button>
+      }
+    </div>
+
+  </div>
+
+  <!-- Barra de progreso -->
+  @if (cargando()) {
+    <mat-progress-bar mode="indeterminate" class="loading-bar"></mat-progress-bar>
+  }
+
+  <!-- KPI mini cards -->
+  @if (buscado() && resumen(); as r) {
+    <div class="kpi-row">
+
+      <div class="kpi-mini">
+        <span class="kpi-n">{{ totalElements() }}</span>
+        <span class="kpi-lbl">Encontradas</span>
+      </div>
+
+      <div class="kpi-mini kpi-mini--ok">
+        <span class="kpi-n">{{ r.totalEmpleadosPublicados }}</span>
+        <span class="kpi-lbl">Publicadas</span>
+      </div>
+
+      <div class="kpi-mini" [class.kpi-mini--warn]="r.totalEmpleadosSinMeta > 0">
+        <span class="kpi-n">{{ r.totalEmpleadosSinMeta }}</span>
+        <span class="kpi-lbl">Sin meta</span>
+      </div>
+
+      <div class="kpi-mini">
+        <span class="kpi-n kpi-n--sm">{{ r.estadoGeneral }}</span>
+        <span class="kpi-lbl">Estado general</span>
+      </div>
+
+    </div>
+  }
+
+  <!-- Contenido principal -->
+  @if (buscado() && !cargando()) {
+
+    @if (registros().length === 0) {
+      <div class="state-empty">
+        <mat-icon>search_off</mat-icon>
+        <p>No se encontraron asignaciones de metas para los filtros seleccionados.</p>
+        <button mat-stroked-button (click)="limpiarFiltros()">
+          <mat-icon>filter_list_off</mat-icon> Limpiar filtros
+        </button>
+      </div>
+    } @else {
+
+      <div class="tabla-wrap">
+        <p class="tabla-info">
+          Se encontraron <strong>{{ totalElements() }}</strong> asignaciones · año fiscal
+          <strong>{{ anioConsulta() }}</strong>
+        </p>
+
+        <table mat-table [dataSource]="registros()" class="traz-table">
+
+          <!-- N° -->
+          <ng-container matColumnDef="numero">
+            <th mat-header-cell *matHeaderCellDef>N°</th>
+            <td mat-cell *matCellDef="let r; let i = index">
+              {{ currentPage() * pageSize + i + 1 }}
+            </td>
+          </ng-container>
+
+          <!-- Empleado -->
+          <ng-container matColumnDef="empleado">
+            <th mat-header-cell *matHeaderCellDef>Apellidos y nombres</th>
+            <td mat-cell *matCellDef="let r" class="col-nombre">
+              {{ r.empleadoNombre ?? '—' }}
+            </td>
+          </ng-container>
+
+          <!-- DNI -->
+          <ng-container matColumnDef="dni">
+            <th mat-header-cell *matHeaderCellDef>DNI</th>
+            <td mat-cell *matCellDef="let r" class="col-mono">{{ r.empleadoDni ?? '—' }}</td>
+          </ng-container>
+
+          <!-- Meta -->
+          <ng-container matColumnDef="metaCodigo">
+            <th mat-header-cell *matHeaderCellDef>Meta</th>
+            <td mat-cell *matCellDef="let r" class="col-meta">{{ r.metaCodigo ?? '—' }}</td>
+          </ng-container>
+
+          <!-- Centro de costo -->
+          <ng-container matColumnDef="centroCosto">
+            <th mat-header-cell *matHeaderCellDef>Centro de costo</th>
+            <td mat-cell *matCellDef="let r" class="col-centro">{{ r.centroCosto ?? '—' }}</td>
+          </ng-container>
+
+          <!-- Estado -->
+          <ng-container matColumnDef="estado">
+            <th mat-header-cell *matHeaderCellDef>Estado</th>
+            <td mat-cell *matCellDef="let r">
+              <span class="badge" [ngClass]="estadoClass(r.estado)">{{ r.estado }}</span>
+            </td>
+          </ng-container>
+
+          <!-- Origen -->
+          <ng-container matColumnDef="origen">
+            <th mat-header-cell *matHeaderCellDef>Origen</th>
+            <td mat-cell *matCellDef="let r" class="col-origen">{{ origenLabel(r.origen) }}</td>
+          </ng-container>
+
+          <!-- Bloqueado -->
+          <ng-container matColumnDef="bloqueado">
+            <th mat-header-cell *matHeaderCellDef>Bloqueo</th>
+            <td mat-cell *matCellDef="let r">
+              @if (r.bloqueadoPorPlanilla === 1) {
+                <span class="badge badge-err"
+                      matTooltip="Registrado en planilla cerrada — no editable"
+                      [matTooltipShowDelay]="200">
+                  <mat-icon class="badge-icon">lock</mat-icon> Bloqueado
+                </span>
+              } @else {
+                <span class="badge badge-ok">
+                  <mat-icon class="badge-icon">lock_open</mat-icon> Editable
+                </span>
+              }
+            </td>
+          </ng-container>
+
+          <!-- Fecha registro -->
+          <ng-container matColumnDef="creadoEn">
+            <th mat-header-cell *matHeaderCellDef>Fecha registro</th>
+            <td mat-cell *matCellDef="let r" class="col-fecha">{{ formatFecha(r.creadoEn) }}</td>
+          </ng-container>
+
+          <!-- Acciones -->
+          <ng-container matColumnDef="acciones">
+            <th mat-header-cell *matHeaderCellDef></th>
+            <td mat-cell *matCellDef="let r">
+              <button mat-icon-button
+                      [matTooltip]="'Ver detalle — ' + (r.empleadoNombre ?? '')"
+                      [matTooltipShowDelay]="300">
+                <mat-icon>visibility</mat-icon>
+              </button>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="columnas; sticky: true"></tr>
+          <tr mat-row *matRowDef="let r; columns: columnas;" class="traz-row"></tr>
+
+        </table>
+      </div>
+
+      <mat-paginator
+        [length]="totalElements()"
+        [pageSize]="pageSize"
+        [pageIndex]="currentPage()"
+        [pageSizeOptions]="[10, 25, 50]"
+        (page)="onPage($event)"
+        aria-label="Navegación de páginas de trazabilidad">
+      </mat-paginator>
+
+    }
+  }
+
+  <p class="norm-note">
+    Base normativa: D.S. 068-2024-EF · Directiva N.° 005-2024-EF/50.01 · Clasificadores presupuestarios MEF vigentes
+  </p>
+
+</section>

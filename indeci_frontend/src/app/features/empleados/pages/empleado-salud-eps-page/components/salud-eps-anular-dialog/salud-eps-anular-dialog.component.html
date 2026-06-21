@@ -1,0 +1,50 @@
+<h2 mat-dialog-title class="dlg-title">
+  <mat-icon fontIcon="block" class="dlg-title__icon" aria-hidden="true" />
+  Anular cobertura Salud/EPS
+</h2>
+
+<mat-dialog-content class="dlg-content">
+  <div class="dlg-warn" role="alert">
+    <mat-icon fontIcon="warning_amber" aria-hidden="true" />
+    <p>
+      Esta acción <strong>no eliminará físicamente</strong> el registro.
+      La cobertura será anulada, dejará de aplicarse en planilla y quedará
+      registrada en historial y auditoría.
+    </p>
+  </div>
+
+  <p class="dlg-tipo">Cobertura a anular: <strong>{{ tipo === 'ESSALUD' ? 'Solo EsSalud (9%)' : 'EsSalud + EPS' }}</strong></p>
+
+  <p class="dlg-sug-label">Seleccione un motivo o escriba uno:</p>
+  <div class="dlg-sugs">
+    @for (s of sugerencias; track s) {
+      <button type="button" mat-stroked-button class="dlg-sug" (click)="aplicarSugerencia(s)">
+        {{ s }}
+      </button>
+    }
+  </div>
+
+  <form [formGroup]="form">
+    <mat-form-field appearance="outline" class="dlg-field">
+      <mat-label>Motivo de anulación *</mat-label>
+      <textarea matInput formControlName="motivo" rows="3" maxlength="500"
+                placeholder="Describa el motivo de la anulación (mínimo 10 caracteres)…"></textarea>
+      @if (form.get('motivo')?.hasError('required') && form.get('motivo')?.touched) {
+        <mat-error>El motivo es obligatorio.</mat-error>
+      }
+      @if (form.get('motivo')?.hasError('minlength') && form.get('motivo')?.touched) {
+        <mat-error>Mínimo 10 caracteres.</mat-error>
+      }
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions class="dlg-actions">
+  <button mat-stroked-button [mat-dialog-close]="false" [disabled]="saving()">Cancelar</button>
+  <button mat-flat-button class="btn-anular"
+          (click)="confirmar()" [disabled]="form.invalid || saving()">
+    @if (saving()) { <mat-spinner diameter="16" /> }
+    @else { <mat-icon fontIcon="block" aria-hidden="true" /> }
+    {{ saving() ? 'Anulando…' : 'Anular cobertura' }}
+  </button>
+</mat-dialog-actions>

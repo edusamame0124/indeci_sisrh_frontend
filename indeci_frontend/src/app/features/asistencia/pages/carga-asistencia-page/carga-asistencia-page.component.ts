@@ -3,6 +3,7 @@
   Component,
   OnInit,
   computed,
+  effect,
   inject,
   signal,
 } from '@angular/core';
@@ -21,6 +22,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { PeriodoPlanillaApiService } from '../../../planilla/services/periodo-planilla-api.service';
 import { PersonaApiService } from '../../../empleados/services/persona-api.service';
 import { AsistenciaApiService } from '../../services/asistencia-api.service';
+import { AsistenciaTabService } from '../../services/asistencia-tab.service';
 import { ErrorMessageService } from '../../../../core/services/error-message.service';
 import { isErrorResponse } from '../../../../core/models/error-response.model';
 import type { PeriodoPlanillaRow } from '../../../planilla/models/periodo-planilla.model';
@@ -86,11 +88,12 @@ export class CargaAsistenciaPageComponent implements OnInit {
   private readonly periodoApi = inject(PeriodoPlanillaApiService);
   private readonly personaApi = inject(PersonaApiService);
   private readonly asistenciaApi = inject(AsistenciaApiService);
+  private readonly tabs = inject(AsistenciaTabService);
   private readonly snack = inject(MatSnackBar);
   private readonly errors = inject(ErrorMessageService);
 
   /** DÃ­as de la semana (lunes a domingo) para el encabezado de la grilla. */
-  readonly diasSemana = ['Lun', 'Mar', 'MiÃ©', 'Jue', 'Vie', 'SÃ¡b', 'Dom'] as const;
+  readonly diasSemana = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'] as const;
   readonly tiposDia = TIPOS_DIA;
   readonly estadosAsistencia = ESTADOS_ASISTENCIA;
 
@@ -109,6 +112,8 @@ export class CargaAsistenciaPageComponent implements OnInit {
   readonly cargandoCalendario = signal(false);
   readonly guardando = signal(false);
   readonly calendarioListo = signal(false);
+  readonly descargandoPdf = signal(false);
+  readonly recalculando = signal(false);
 
   readonly periodoActivo = computed(() => {
     const sel = this.periodoSeleccionado();
@@ -156,14 +161,42 @@ export class CargaAsistenciaPageComponent implements OnInit {
     return semanas;
   });
 
-  readonly pdfUrl = computed(() => {
-    const empleadoId = this.empleadoSeleccionado();
-    const periodo = this.periodoSeleccionado();
-    if (empleadoId == null || periodo == null || !this.calendarioListo()) {
-      return null;
-    }
-    return this.asistenciaApi.pdfUrl(empleadoId, periodo);
-  });
+  readonly puedeDescargarPdf = computed(
+    () =>
+      this.empleadoSeleccionado() != null &&
+      this.periodoSeleccionado() != null &&
+      this.calendarioListo(),
+  );
+
+  constructor() {
+    // Preselección reactiva al navegar desde "Carga masiva" (botón "Ver asistencia cargada").
+    // Usa effects porque esta pestaña se inicializa una sola vez (las tabs persisten).
+    effect(
+      () => {
+        const periodo = this.tabs.preselectPeriodo();
+        if (periodo == null || !this.periodos().some((p) => p.periodo === periodo)) {
+          return;
+        }
+        this.tabs.preselectPeriodo.set(null);
+        if (this.periodoSeleccionado() !== periodo) {
+          this.onPeriodoChange(periodo);
+        }
+      },
+      { allowSignalWrites: true },
+    );
+
+    effect(
+      () => {
+        const empleadoId = this.tabs.preselectEmpleadoId();
+        if (empleadoId == null || !this.empleados().some((e) => e.empleadoId === empleadoId)) {
+          return;
+        }
+        this.tabs.preselectEmpleadoId.set(null);
+        this.onEmpleadoChange(empleadoId);
+      },
+      { allowSignalWrites: true },
+    );
+  }
 
   ngOnInit(): void {
     this.cargarPeriodos();
@@ -222,6 +255,25 @@ export class CargaAsistenciaPageComponent implements OnInit {
     return `cal-dia--${tipo.toLowerCase()}`;
   }
 
+  /** Descuento referencial del día (D.Leg. 276 Art. 24). 0 si el día no descuenta. */
+  descuentoDia(dia: AsistenciaDia): number {
+    const remun = this.remuneracionBase() ?? 0;
+    if (dia.tipoDia === 'TARDANZA') {
+      return this.round2((remun * Math.max(0, dia.minutosTardanza)) / (30 * 8 * 60));
+    }
+    if (dia.tipoDia === 'FALTA') {
+      return this.round2(remun / 30);
+    }
+    return 0;
+  }
+
+  /** Tooltip del día con el descuento referencial cuando aplica. */
+  tooltipDia(dia: AsistenciaDia): string {
+    const base = `${dia.dia} — ${dia.tipoDia} (clic para cambiar)`;
+    const desc = this.descuentoDia(dia);
+    return desc > 0 ? `${base} · Descuento S/ ${this.fmtMonto(desc)}` : base;
+  }
+
   // ============ Guardar ============
 
   guardar(): void {
@@ -249,6 +301,53 @@ export class CargaAsistenciaPageComponent implements OnInit {
           this.onHttpSnack(err);
         },
       });
+  }
+
+  /**
+   * Recalcula la tardanza/descuentos del empleado desde las marcas y la jornada vigente,
+   * sin pasar por "Validar cabeceras". Refresca el calendario al terminar.
+   */
+  recalcular(): void {
+    const empleadoId = this.empleadoSeleccionado();
+    const periodo = this.periodoSeleccionado();
+    if (empleadoId == null || periodo == null) return;
+
+    this.recalculando.set(true);
+    this.asistenciaApi.recalcular(empleadoId, periodo).subscribe({
+      next: () => {
+        this.recalculando.set(false);
+        this.snack.open('Asistencia recalculada con la jornada vigente.', 'Cerrar', { duration: 4000 });
+        this.cargarAsistencia();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.recalculando.set(false);
+        this.onHttpSnack(err);
+      },
+    });
+  }
+
+  /** Descarga el PDF vía blob (lleva el JWT por el interceptor; el href directo no lo haría). */
+  descargarPdf(): void {
+    const empleadoId = this.empleadoSeleccionado();
+    const periodo = this.periodoSeleccionado();
+    if (empleadoId == null || periodo == null) return;
+
+    this.descargandoPdf.set(true);
+    this.asistenciaApi.descargarPdf(empleadoId, periodo).subscribe({
+      next: (blob) => {
+        this.descargandoPdf.set(false);
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `asistencia-${empleadoId}-${periodo}.pdf`;
+        a.click();
+        URL.revokeObjectURL(url);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.descargandoPdf.set(false);
+        this.onHttpSnack(err);
+      },
+    });
   }
 
   fmtMonto(value: number | null | undefined): string {

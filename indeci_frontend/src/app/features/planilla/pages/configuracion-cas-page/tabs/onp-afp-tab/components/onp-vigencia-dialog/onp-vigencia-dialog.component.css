@@ -63,6 +63,12 @@ h2.dlg-title {
   width: 100%;
 }
 
+.req-star {
+  color: var(--sisrh-danger, #b42318);
+  margin-left: 1px;
+}
+
+
 mat-dialog-actions {
   padding: 12px 24px;
   border-top: 1px solid var(--sisrh-border, #D9E1EA);

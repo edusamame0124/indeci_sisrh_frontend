@@ -1,0 +1,65 @@
+<!-- Título del dialog -->
+<div class="dlg-head" mat-dialog-title>
+  <div class="dlg-head__main">
+    <div class="dlg-head__icon-wrap">
+      <mat-icon fontIcon="health_and_safety" aria-hidden="true" />
+    </div>
+    <div>
+      <h2 class="dlg-head__title">Salud / EPS del empleado</h2>
+      <p class="dlg-head__sub">
+        {{ data.nombreCompleto }} &mdash; DNI {{ data.dni }}
+        @if (data.regimenLaboral) {
+          &mdash; Régimen laboral: {{ data.regimenLaboral }}
+        }
+      </p>
+    </div>
+  </div>
+  <button mat-icon-button mat-dialog-close class="dlg-close" aria-label="Cerrar">
+    <mat-icon fontIcon="close" aria-hidden="true" />
+  </button>
+</div>
+
+<!-- Cuerpo -->
+<mat-dialog-content class="dlg-body">
+
+  @if (loading()) {
+    <div class="dlg-loading" aria-busy="true">
+      <mat-spinner diameter="36" />
+    </div>
+  } @else if (error()) {
+    <div class="dlg-error" role="alert">
+      <mat-icon fontIcon="error_outline" aria-hidden="true" />
+      {{ error() }}
+    </div>
+  } @else {
+    <mat-tab-group dynamicHeight animationDuration="150ms" class="dlg-tabs">
+
+      <mat-tab label="Información actual">
+        <app-salud-eps-actual-tab
+          [empleadoId]="data.empleadoId"
+          [actual]="actual()"
+          [epsList]="epsList()"
+          (guardado)="onGuardado()"
+        />
+      </mat-tab>
+
+      <mat-tab label="Historial de vigencias">
+        <app-salud-eps-historial-tab
+          [empleadoId]="data.empleadoId"
+          [rows]="historial()"
+          (refrescar)="cargar()"
+        />
+      </mat-tab>
+
+      <mat-tab label="Documentos">
+        <app-salud-eps-documentos-tab [rows]="historial()" />
+      </mat-tab>
+
+      <mat-tab label="Auditoría">
+        <app-salud-eps-auditoria-tab [rows]="historial()" />
+      </mat-tab>
+
+    </mat-tab-group>
+  }
+
+</mat-dialog-content>

@@ -125,7 +125,11 @@
 .badge--programado { background: var(--sisrh-info-100, #eaf2fb);    color: var(--sisrh-info, #2563a6); }
 .badge--cerrado    { background: #f1f5f9; color: #475569; }
 .badge--inactivo   { background: #f1f5f9; color: #94a3b8; }
+.badge--anulado    { background: var(--sisrh-danger-100, #fdecec);  color: var(--sisrh-danger, #b42318); }
 .badge--fuente     { background: var(--sisrh-primary-100, #e8eef6); color: var(--sisrh-primary, #1f3a5f); }
+
+.btn-icon-danger { color: var(--sisrh-danger, #b42318); }
+.btn-icon-danger:disabled { color: var(--sisrh-text-soft, #94a3b8); }
 
 .badge__lock {
   font-size: 0.75rem !important;

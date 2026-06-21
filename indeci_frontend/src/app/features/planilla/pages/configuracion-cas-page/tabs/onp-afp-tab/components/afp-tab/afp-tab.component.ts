@@ -1,11 +1,14 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   OnInit,
   computed,
   inject,
   signal,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Subject, debounceTime } from 'rxjs';
 import { CurrencyPipe, DecimalPipe, TitleCasePipe } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
@@ -28,6 +31,14 @@ import {
   AfpVigenciaDialogComponent,
   type AfpDialogData,
 } from '../afp-vigencia-dialog/afp-vigencia-dialog.component';
+import {
+  DuplicarVigenciaDialogComponent,
+  type DuplicarVigenciaDialogData,
+} from '../duplicar-vigencia-dialog/duplicar-vigencia-dialog.component';
+import {
+  EliminarVigenciaDialogComponent,
+  type EliminarVigenciaDialogData,
+} from '../eliminar-vigencia-dialog/eliminar-vigencia-dialog.component';
 
 /**
  * Pestaña AFP — tabla de parámetros de vigencia por AFP.
@@ -55,9 +66,11 @@ import {
   styleUrl: './afp-tab.component.css',
 })
 export class AfpTabComponent implements OnInit {
-  private readonly api    = inject(ParametroPrevisionalApiService);
-  private readonly snack  = inject(MatSnackBar);
-  private readonly dialog = inject(MatDialog);
+  private readonly api       = inject(ParametroPrevisionalApiService);
+  private readonly snack     = inject(MatSnackBar);
+  private readonly dialog    = inject(MatDialog);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly busqueda$ = new Subject<string>();
 
   readonly columns = [
     'afp', 'vigenciaInicio', 'vigenciaFin',
@@ -66,13 +79,16 @@ export class AfpTabComponent implements OnInit {
     'fuenteOficial', 'estado', 'acciones',
   ] as const;
 
-  readonly pageSizeOptions = [10, 20, 50] as const;
+  readonly pageSizeOptions = [10, 20, 50, 100] as const;
+
+  readonly trackByRow = (_: number, r: AfpParametroRow): number => r.id;
   readonly estadosOpciones: Array<{ valor: EstadoParametro | ''; etiqueta: string }> = [
     { valor: '',          etiqueta: 'Todos' },
     { valor: 'VIGENTE',   etiqueta: 'Vigente' },
     { valor: 'PROGRAMADO',etiqueta: 'Programado' },
     { valor: 'CERRADO',   etiqueta: 'Cerrado' },
     { valor: 'INACTIVO',  etiqueta: 'Inactivo' },
+    { valor: 'ANULADO',   etiqueta: 'Anulado' },
   ];
 
   readonly loading       = signal(true);
@@ -110,6 +126,9 @@ export class AfpTabComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    this.busqueda$
+      .pipe(debounceTime(300), takeUntilDestroyed(this.destroyRef))
+      .subscribe((v) => { this.busqueda.set(v); this.pageIndex.set(0); });
     this.cargarCatalog();
     this.cargar();
   }
@@ -120,8 +139,7 @@ export class AfpTabComponent implements OnInit {
   }
 
   onBusqueda(v: string): void {
-    this.busqueda.set(v);
-    this.pageIndex.set(0);
+    this.busqueda$.next(v);
   }
 
   aplicarFiltros(): void {
@@ -142,10 +160,49 @@ export class AfpTabComponent implements OnInit {
     this.snack.open('Use el ícono ⧉ en la fila deseada para duplicar esa vigencia.', 'Cerrar', { duration: 4000 });
   }
 
+  canDuplicar(row: AfpParametroRow): boolean {
+    return row.estado !== 'INACTIVO' && row.estado !== 'ANULADO';
+  }
+
+  canEliminar(row: AfpParametroRow): boolean {
+    return row.estado !== 'ANULADO' && !row.bloqueadoPorPlanilla;
+  }
+
+  tooltipEliminar(row: AfpParametroRow): string {
+    if (row.estado === 'ANULADO')    return 'Ya anulada';
+    if (row.bloqueadoPorPlanilla)    return 'Bloqueada por planilla cerrada';
+    return 'Eliminar (anulación lógica con trazabilidad)';
+  }
+
+  eliminarFila(row: AfpParametroRow): void {
+    const data: EliminarVigenciaDialogData = { tipo: 'AFP', row };
+    this.dialog.open(EliminarVigenciaDialogComponent, {
+      data,
+      width: '580px',
+      maxWidth: '95vw',
+    }).afterClosed().subscribe((result) => {
+      if (result) {
+        this.snack.open(
+          'Vigencia AFP anulada correctamente. Ya no será considerada por el motor de planilla.',
+          'Cerrar',
+          { duration: 4000 },
+        );
+        this.cargar();
+      }
+    });
+  }
+
   duplicarFila(row: AfpParametroRow): void {
-    this.api.duplicarAfpVigencia(row.id).subscribe({
-      next: () => { this.snack.open('Vigencia duplicada correctamente.', 'Cerrar', { duration: 3000 }); this.cargar(); },
-      error: () => this.snack.open('Error al duplicar vigencia.', 'Cerrar', { duration: 4000 }),
+    const data: DuplicarVigenciaDialogData = { tipo: 'AFP', row };
+    this.dialog.open(DuplicarVigenciaDialogComponent, {
+      data,
+      width: '560px',
+      maxWidth: '95vw',
+    }).afterClosed().subscribe((result) => {
+      if (result) {
+        this.snack.open('Vigencia AFP duplicada correctamente.', 'Cerrar', { duration: 3000 });
+        this.cargar();
+      }
     });
   }
 
@@ -166,7 +223,12 @@ export class AfpTabComponent implements OnInit {
 
   editar(row: AfpParametroRow): void {
     if (row.bloqueadoPorPlanilla) {
-      this.snack.open('Bloqueado: parámetro usado en planilla cerrada.', 'Cerrar', { duration: 4000 });
+      this.snack.open(
+        'No se puede editar este parámetro porque ya fue utilizado en una planilla cerrada. ' +
+        'Cree una nueva vigencia o duplique la vigente para mantener la trazabilidad.',
+        'Cerrar',
+        { duration: 6000 },
+      );
       return;
     }
     this.abrirDialog({ modo: 'editar', row, catalog: this.afpCatalog() });
@@ -195,10 +257,12 @@ export class AfpTabComponent implements OnInit {
   private cargar(): void {
     this.loading.set(true);
     this.error.set(null);
+    const estado = this.filtroEstado() || undefined;
     this.api.afpParametros({
-      periodo: this.filtroPeriodo() || undefined,
-      afpId:   this.filtroAfpId() ?? undefined,
-      estado:  this.filtroEstado() || undefined,
+      periodo:        this.filtroPeriodo() || undefined,
+      afpId:          this.filtroAfpId() ?? undefined,
+      estado,
+      incluirAnulados: estado === 'ANULADO' || undefined,
     }).subscribe({
       next: (rows) => { this._rows.set(rows); this.loading.set(false); },
       error: () => { this.error.set('No se pudo cargar los parámetros AFP.'); this.loading.set(false); },

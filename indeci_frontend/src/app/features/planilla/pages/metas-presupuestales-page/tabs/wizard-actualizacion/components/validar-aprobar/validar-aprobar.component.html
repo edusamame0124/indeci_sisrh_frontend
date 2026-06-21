@@ -1,0 +1,297 @@
+<!-- ═══════════════════════════════════════════════════════════════
+     Paso 5 — Validar y aprobar
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="va-page">
+
+  <!-- Indicador de proceso (5 pasos completos) -->
+  <nav class="proc-steps" aria-label="Progreso del proceso">
+    <div class="proc-step proc-step--done">
+      <span class="proc-num"><mat-icon>check</mat-icon></span>
+      <span class="proc-label">1. Catálogo destino</span>
+    </div>
+    <div class="proc-sep"></div>
+    <div class="proc-step proc-step--done">
+      <span class="proc-num"><mat-icon>check</mat-icon></span>
+      <span class="proc-label">2. Equivalencias detectadas</span>
+    </div>
+    <div class="proc-sep"></div>
+    <div class="proc-step proc-step--done">
+      <span class="proc-num"><mat-icon>check</mat-icon></span>
+      <span class="proc-label">3. Proceso masivo</span>
+    </div>
+    <div class="proc-sep"></div>
+    <div class="proc-step proc-step--done">
+      <span class="proc-num"><mat-icon>check</mat-icon></span>
+      <span class="proc-label">4. Corrección de excepciones</span>
+    </div>
+    <div class="proc-sep"></div>
+    <div class="proc-step proc-step--active">
+      <span class="proc-num">5</span>
+      <span class="proc-label">Validar y aprobar</span>
+    </div>
+  </nav>
+
+  @if (!lote) {
+    <div class="va-empty">
+      <mat-icon>search_off</mat-icon>
+      <p>No hay lote activo. Ejecute el proceso masivo primero.</p>
+    </div>
+  } @else {
+
+    <!-- Banner de validación -->
+    @if (puedePublicar || lote.estado === 'PUBLICADO') {
+      <div class="banner-ok" role="status">
+        <mat-icon>check_circle</mat-icon>
+        <div>
+          <strong>Todas las validaciones fueron superadas.</strong>
+          <p>El proceso está listo para su publicación. Al publicar, la planilla utilizará la asignación anual del año fiscal correspondiente.</p>
+        </div>
+      </div>
+    } @else {
+      <div class="banner-warn" role="alert">
+        <mat-icon>warning_amber</mat-icon>
+        <div>
+          <strong>Hay validaciones pendientes.</strong>
+          <p>Revise el checklist y corrija los ítems marcados antes de publicar.</p>
+        </div>
+      </div>
+    }
+
+    <!-- ── Grid de 3 columnas ── -->
+    <div class="va-grid">
+
+      <!-- COLUMNA 1: Checklist -->
+      <section class="va-col va-col--checklist">
+        <h3 class="col-titulo">Checklist final de validación</h3>
+        <ul class="checklist">
+          @for (item of checklist; track item.label) {
+            <li class="chk-item" [class.chk-item--ok]="item.cumple" [class.chk-item--warn]="!item.cumple">
+              <mat-icon class="chk-ico">
+                {{ item.cumple ? 'check_circle' : 'warning_amber' }}
+              </mat-icon>
+              <div class="chk-body">
+                <span class="chk-label">{{ item.label }}</span>
+                <span class="chk-det">{{ item.detalle }}</span>
+              </div>
+              <span class="chk-badge" [class.chk-badge--ok]="item.cumple" [class.chk-badge--warn]="!item.cumple">
+                {{ item.cumple ? 'Cumplido' : 'Advertencia' }}
+              </span>
+            </li>
+          }
+        </ul>
+
+        @if (detalleExpandido()) {
+          <div class="chk-detalle-extra">
+            <p>Resumen técnico: {{ totalChecksOk }}/{{ checklist.length }} validaciones superadas.</p>
+          </div>
+        }
+
+        <button class="link-btn-expand" (click)="detalleExpandido.set(!detalleExpandido())">
+          {{ detalleExpandido() ? 'Ocultar detalle' : 'Ver detalle de validaciones' }}
+          <mat-icon class="expand-ico">{{ detalleExpandido() ? 'expand_less' : 'expand_more' }}</mat-icon>
+        </button>
+      </section>
+
+      <!-- COLUMNA 2: Resultado final -->
+      <section class="va-col va-col--resultado">
+        <h3 class="col-titulo">Resultado final</h3>
+
+        <div class="res-grid">
+          <div class="res-kpi res-kpi--blue">
+            <span class="res-val">{{ kpiAsignados }}</span>
+            <span class="res-label">Empleados asignados</span>
+            <span class="res-pct">(100%)</span>
+          </div>
+          <div class="res-kpi" [class.res-kpi--green]="kpiObservados === 0" [class.res-kpi--orange]="kpiObservados > 0">
+            <span class="res-val">{{ kpiObservados }}</span>
+            <span class="res-label">Observados</span>
+            <span class="res-pct">({{ pctDe(kpiObservados) }}%)</span>
+          </div>
+          <div class="res-kpi" [class.res-kpi--green]="kpiPublicables > 0" [class.res-kpi--gray]="kpiPublicables === 0">
+            <span class="res-val">{{ kpiPublicables }}</span>
+            <span class="res-label">Publicables</span>
+            <span class="res-pct">({{ pctDe(kpiPublicables) }}%)</span>
+          </div>
+          <div class="res-kpi" [class.res-kpi--red]="kpiBloqueados > 0" [class.res-kpi--gray]="kpiBloqueados === 0">
+            <span class="res-val">{{ kpiBloqueados }}</span>
+            <span class="res-label">Bloqueados por uso en planilla</span>
+            <span class="res-pct">({{ pctDe(kpiBloqueados) }}%)</span>
+          </div>
+        </div>
+
+        <p class="res-ts">
+          <mat-icon class="ts-ico">schedule</mat-icon>
+          Última validación: {{ formatFechaPublico(lote.creadoEn) }}
+        </p>
+      </section>
+
+      <!-- COLUMNA 3: Aprobación -->
+      <section class="va-col va-col--aprobacion">
+        <h3 class="col-titulo">Aprobación y publicación</h3>
+
+        <dl class="lote-dl">
+          <div class="dl-row"><dt>Año fiscal</dt><dd>{{ lote.anioDestino }}</dd></div>
+          <div class="dl-row"><dt>Lote</dt><dd>{{ lote.codigoLote }}</dd></div>
+          <div class="dl-row"><dt>Responsable</dt><dd>{{ lote.creadoPor }}</dd></div>
+          <div class="dl-row"><dt>Fecha validación</dt><dd>{{ formatFechaPublico(lote.creadoEn) }}</dd></div>
+        </dl>
+
+        <mat-form-field appearance="outline" subscriptSizing="fixed" class="comentario-field">
+          <mat-label>Comentario final</mat-label>
+          <textarea matInput
+            [value]="comentarioFinal()"
+            (input)="comentarioFinal.set($any($event.target).value)"
+            rows="3"
+            placeholder="Indique observaciones o confirmaciones del proceso…"
+            maxlength="500">
+          </textarea>
+        </mat-form-field>
+
+        @if (lote.estado === 'PUBLICADO') {
+          <div class="pub-ok">
+            <mat-icon class="pub-ok-ico">verified</mat-icon>
+            <p><strong>Publicado correctamente.</strong> Las asignaciones ya están disponibles en planilla.</p>
+          </div>
+        } @else if (confirmando()) {
+          <div class="pub-confirm">
+            <p class="confirm-txt">
+              ¿Confirma la publicación de <strong>{{ lote.totalEmpleados }}</strong> empleado(s) para el año <strong>{{ lote.anioDestino }}</strong>?
+            </p>
+            <div class="confirm-btns">
+              <button mat-stroked-button (click)="cancelarConfirmacion()" [disabled]="procesando">Cancelar</button>
+              <button mat-flat-button color="primary" (click)="confirmarPublicacion()" [disabled]="procesando">
+                @if (procesando) { <mat-spinner diameter="16" color="accent"></mat-spinner> }
+                @else { <mat-icon>publish</mat-icon> }
+                Confirmar publicación
+              </button>
+            </div>
+          </div>
+        } @else {
+          <button mat-flat-button color="primary"
+            class="btn-publicar"
+            (click)="onPublicar()"
+            [disabled]="!puedePublicar || procesando">
+            <mat-icon>publish</mat-icon>
+            Publicar asignación anual
+          </button>
+          @if (!puedePublicar) {
+            <p class="pub-blocked">
+              <mat-icon class="blocked-ico">lock</mat-icon>
+              Corrija los ítems del checklist antes de publicar.
+            </p>
+          }
+        }
+
+        <button mat-stroked-button class="btn-exportar" (click)="onExportar()" [disabled]="procesando">
+          <mat-icon>download</mat-icon>
+          Exportar acta / reporte
+        </button>
+
+        <!-- Consideraciones importantes -->
+        <div class="consideraciones">
+          <h4 class="cons-titulo">
+            <mat-icon class="cons-ico">info</mat-icon>
+            Consideraciones importantes
+          </h4>
+          <ul class="cons-lista">
+            <li>La planilla utilizará la asignación del año fiscal correspondiente.</li>
+            <li>Si el registro ya fue utilizado en planilla, quedará bloqueado para edición.</li>
+          </ul>
+        </div>
+      </section>
+    </div>
+
+    <!-- Tabla de muestra de empleados (full width) -->
+    @if (muestraDetalles.length > 0) {
+      <section class="va-section">
+        <div class="sec-header">
+          <h3 class="sec-titulo">Resultado final por empleado (muestra)</h3>
+          <span class="sec-sub">Mostrando 1 a {{ muestraDetalles.length }} de {{ detalles.length }} resultados</span>
+        </div>
+
+        <div class="tabla-wrap">
+          <table mat-table [dataSource]="muestraDetalles" class="va-table">
+
+            <ng-container matColumnDef="empleado">
+              <th mat-header-cell *matHeaderCellDef>Empleado</th>
+              <td mat-cell *matCellDef="let d">
+                <p class="emp-cod">{{ d.empleadoDni ?? '—' }}</p>
+                <p class="emp-nom">{{ d.empleadoNombre ?? '—' }}</p>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="metaOrigen">
+              <th mat-header-cell *matHeaderCellDef>Meta publicada {{ anioFiscal }}</th>
+              <td mat-cell *matCellDef="let d">
+                <span class="cod-badge">{{ d.metaDestinoCodigo ?? d.metaOrigenCodigo ?? '—' }}</span>
+                @if (d.metaDestinoDescripcion) {
+                  <p class="meta-desc">{{ d.metaDestinoDescripcion }}</p>
+                }
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="metaDestino">
+              <th mat-header-cell *matHeaderCellDef>Estado</th>
+              <td mat-cell *matCellDef="let d">
+                @if (lote.estado === 'PUBLICADO') {
+                  <span class="est-badge est-badge--pub">
+                    <mat-icon class="est-ico">check</mat-icon> Publicado
+                  </span>
+                } @else {
+                  <span class="est-badge est-badge--listo">
+                    <mat-icon class="est-ico">check</mat-icon> Listo para publicar
+                  </span>
+                }
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="estado">
+              <th mat-header-cell *matHeaderCellDef>Fecha publicación</th>
+              <td mat-cell *matCellDef="let d">
+                <span class="fecha-pub">{{ lote.finalizadoEn ? formatFechaPublico(lote.finalizadoEn) : '—' }}</span>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="columnasDetalle"></tr>
+            <tr mat-row *matRowDef="let d; columns: columnasDetalle;"></tr>
+          </table>
+        </div>
+      </section>
+    }
+
+    <!-- Timeline horizontal de trazabilidad -->
+    <section class="va-section">
+      <h3 class="sec-titulo">Trazabilidad del proceso</h3>
+      <div class="timeline-h">
+        @for (nodo of timeline; track nodo.titulo; let last = $last) {
+          <div class="tl-nodo" [class.tl-nodo--activo]="nodo.activo">
+            <div class="tl-circulo">
+              <mat-icon class="tl-ico">{{ nodo.activo ? 'check_circle' : nodo.icono }}</mat-icon>
+            </div>
+            <p class="tl-titulo">{{ nodo.titulo }}</p>
+            <p class="tl-det">{{ nodo.detalle }}</p>
+          </div>
+          @if (!last) {
+            <div class="tl-linea" [class.tl-linea--activa]="nodo.activo"></div>
+          }
+        }
+      </div>
+    </section>
+
+    <!-- Navegación -->
+    <div class="nav-row">
+      <button mat-stroked-button (click)="onAtras()" [disabled]="procesando">
+        <mat-icon>arrow_back</mat-icon> Volver
+      </button>
+      @if (lote.estado === 'PUBLICADO') {
+        <span class="pub-badge">
+          <mat-icon>verified</mat-icon> Proceso completado
+        </span>
+      }
+    </div>
+
+    <p class="norm-note">
+      Base normativa: D.S. 068-2024-EF — Directiva N.° 005-2024-EF/50.01 · Clasificador MEF vigente
+    </p>
+  }
+</div>

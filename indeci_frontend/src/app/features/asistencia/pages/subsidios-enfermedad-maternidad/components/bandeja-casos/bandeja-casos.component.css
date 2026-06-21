@@ -1,0 +1,108 @@
+.bandeja {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.bandeja__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.bandeja__title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--sisrh-primary, #1f3a5f);
+}
+
+.bandeja__sub {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--sisrh-text-muted, #64748b);
+  max-width: 560px;
+}
+
+.bandeja__filtros-grid {
+  display: grid;
+  grid-template-columns: 2fr repeat(3, minmax(140px, 1fr));
+  gap: 12px;
+  align-items: start;
+}
+
+.bandeja__field {
+  width: 100%;
+}
+
+.bandeja__loading,
+.bandeja__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 48px 24px;
+  color: var(--sisrh-text-muted, #64748b);
+  text-align: center;
+}
+
+.bandeja__table-wrap {
+  overflow-x: auto;
+}
+
+.bandeja__table {
+  width: 100%;
+}
+
+.bandeja__empleado {
+  display: block;
+  font-weight: 500;
+}
+
+.bandeja__dni,
+.bandeja__dias {
+  display: block;
+  color: var(--sisrh-text-muted, #64748b);
+  font-size: 12px;
+}
+
+.bandeja__badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.bandeja__badge--neutral {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.bandeja__badge--warning {
+  background: #fff4db;
+  color: #b7791f;
+}
+
+.bandeja__badge--info {
+  background: #e8eef6;
+  color: #1f3a5f;
+}
+
+.bandeja__badge--success {
+  background: #e7f5ee;
+  color: #157347;
+}
+
+.bandeja__row--active {
+  background: #f0f6ff;
+}
+
+@media (max-width: 960px) {
+  .bandeja__filtros-grid {
+    grid-template-columns: 1fr;
+  }
+}

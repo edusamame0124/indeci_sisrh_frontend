@@ -15,12 +15,24 @@
   </mat-card>
 
   <section class="asistencia-shell__tabs">
-    <mat-tab-group animationDuration="150ms" dynamicHeight aria-label="Opciones de carga de asistencia">
-      <mat-tab label="Carga individual">
-        <app-carga-asistencia-page />
+    <mat-tab-group
+      animationDuration="150ms"
+      dynamicHeight
+      aria-label="Opciones de carga de asistencia"
+      [selectedIndex]="tabs.selectedTab()"
+      (selectedIndexChange)="tabs.selectedTab.set($event)"
+    >
+      <mat-tab label="Jornada y tolerancias">
+        <app-jornada-regimen-config-page />
       </mat-tab>
       <mat-tab label="Carga masiva CSV">
         <app-carga-masiva-csv-page />
+      </mat-tab>
+      <mat-tab label="Consulta diaria de asistencia">
+        <app-consulta-diaria-asistencia-page />
+      </mat-tab>
+      <mat-tab label="Asistencia por empleado">
+        <app-carga-asistencia-page />
       </mat-tab>
       <mat-tab label="Historial de importaciones">
         <app-historial-importaciones-page />

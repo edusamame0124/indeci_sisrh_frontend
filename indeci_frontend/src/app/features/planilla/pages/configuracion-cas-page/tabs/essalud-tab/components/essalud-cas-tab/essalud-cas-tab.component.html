@@ -1,0 +1,190 @@
+<div class="es-section">
+
+  <!-- Info banner normativo -->
+  <div class="es-banner" role="note">
+    <mat-icon fontIcon="info" aria-hidden="true" />
+    <span>
+      EsSalud: 9% a cargo del empleador (D.S. 009-97-SA). Base = mín(Rem. CAS, UIT × 45%).
+      Con EPS: 6.75% EsSalud + 2.25% crédito EPS. Fuente: SUNAT / EsSalud.
+    </span>
+  </div>
+
+  <!-- Filtros -->
+  <div class="es-filters" role="search" aria-label="Filtros de vigencias EsSalud">
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="filter-field">
+      <mat-label>Estado</mat-label>
+      <mat-select [value]="filtroEstado()" (selectionChange)="filtroEstado.set($event.value)">
+        @for (op of estadosOpciones; track op.valor) {
+          <mat-option [value]="op.valor">{{ op.etiqueta }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="filter-search">
+      <mat-icon matPrefix fontIcon="search" aria-hidden="true" />
+      <input matInput type="search" placeholder="Buscar por fuente, UIT, fechas…"
+             [value]="busqueda()" (input)="onBusqueda($any($event.target).value)"
+             aria-label="Buscar vigencias EsSalud" />
+    </mat-form-field>
+
+    <button mat-flat-button color="primary" (click)="aplicarFiltros()">Filtrar</button>
+  </div>
+
+  <!-- Acciones -->
+  <div class="es-actions" role="toolbar" aria-label="Acciones EsSalud">
+    <button mat-flat-button color="primary" (click)="nuevaVigencia()">
+      <mat-icon fontIcon="add" aria-hidden="true" />
+      Nueva vigencia
+    </button>
+  </div>
+
+  <!-- Estados: loading / error / vacío / tabla -->
+  @if (loading()) {
+    <div class="es-state es-state--loading" aria-live="polite">
+      <mat-spinner diameter="36" />
+      <span>Cargando configuración EsSalud…</span>
+    </div>
+  } @else if (error()) {
+    <div class="es-state es-state--error" role="alert">
+      <mat-icon fontIcon="error_outline" aria-hidden="true" />
+      {{ error() }}
+    </div>
+  } @else if (rowsFiltradas().length === 0) {
+    <div class="es-state es-state--empty">
+      <mat-icon fontIcon="health_and_safety" aria-hidden="true" />
+      <span>No se encontraron vigencias EsSalud con los filtros aplicados.</span>
+    </div>
+  } @else {
+    <div class="es-table-wrap" role="region" aria-label="Tabla de vigencias EsSalud">
+      <table mat-table [dataSource]="pagedRows()" [trackBy]="trackByRow"
+             class="es-table" aria-label="Vigencias EsSalud / EPS">
+
+        <ng-container matColumnDef="vigenciaInicio">
+          <th mat-header-cell *matHeaderCellDef>Vigencia inicio</th>
+          <td mat-cell *matCellDef="let r" class="col-date">
+            {{ r.vigenciaInicio | slice:0:10 }}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="vigenciaFin">
+          <th mat-header-cell *matHeaderCellDef>Vigencia fin</th>
+          <td mat-cell *matCellDef="let r" class="col-date">
+            {{ r.vigenciaFin ? (r.vigenciaFin | slice:0:10) : '—' }}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="uitVigente">
+          <th mat-header-cell *matHeaderCellDef class="col-num">UIT vigente (S/)</th>
+          <td mat-cell *matCellDef="let r" class="col-num">
+            {{ r.uitVigente | number:'1.2-2' }}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="pctBaseCas">
+          <th mat-header-cell *matHeaderCellDef class="col-num">% Base CAS</th>
+          <td mat-cell *matCellDef="let r" class="col-num">{{ r.pctBaseCas | number:'1.2-2' }}%</td>
+        </ng-container>
+
+        <ng-container matColumnDef="baseMaximaCas">
+          <th mat-header-cell *matHeaderCellDef class="col-num">Base máx. CAS (S/)</th>
+          <td mat-cell *matCellDef="let r" class="col-num col-hl">
+            {{ r.baseMaximaCas | number:'1.2-2' }}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="pctEssalud">
+          <th mat-header-cell *matHeaderCellDef class="col-num">% EsSalud</th>
+          <td mat-cell *matCellDef="let r" class="col-num">{{ r.pctEssalud | number:'1.2-2' }}%</td>
+        </ng-container>
+
+        <ng-container matColumnDef="pctEssaludEps">
+          <th mat-header-cell *matHeaderCellDef class="col-num">% EsSalud EPS</th>
+          <td mat-cell *matCellDef="let r" class="col-num">{{ r.pctEssaludEps | number:'1.2-2' }}%</td>
+        </ng-container>
+
+        <ng-container matColumnDef="pctCreditoEps">
+          <th mat-header-cell *matHeaderCellDef class="col-num">% Crédito EPS</th>
+          <td mat-cell *matCellDef="let r" class="col-num">{{ r.pctCreditoEps | number:'1.2-2' }}%</td>
+        </ng-container>
+
+        <ng-container matColumnDef="fuenteOficial">
+          <th mat-header-cell *matHeaderCellDef>Fuente oficial</th>
+          <td mat-cell *matCellDef="let r">
+            <span class="badge badge--fuente">{{ r.fuenteOficial }}</span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="estado">
+          <th mat-header-cell *matHeaderCellDef>Estado</th>
+          <td mat-cell *matCellDef="let r">
+            <span class="badge"
+              [class.badge--vigente]="r.estado === 'VIGENTE'"
+              [class.badge--programado]="r.estado === 'PROGRAMADO'"
+              [class.badge--cerrado]="r.estado === 'CERRADO'"
+              [class.badge--anulado]="r.estado === 'ANULADO'"
+            >
+              @if (r.bloqueadoPorPlanilla) {
+                <mat-icon fontIcon="lock" class="badge__lock" aria-label="Bloqueado" />
+              }
+              {{ r.estado }}
+            </span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="acciones">
+          <th mat-header-cell *matHeaderCellDef class="col-actions">Acciones</th>
+          <td mat-cell *matCellDef="let r" class="col-actions">
+            <button mat-icon-button (click)="verDetalle(r)"
+                    matTooltip="Ver detalle" aria-label="Ver detalle">
+              <mat-icon fontIcon="visibility" />
+            </button>
+            <button mat-icon-button (click)="editar(r)"
+                    [disabled]="!canEditar(r)"
+                    [matTooltip]="canEditar(r) ? 'Editar' : 'No editable'"
+                    aria-label="Editar vigencia">
+              <mat-icon fontIcon="edit" />
+            </button>
+            <button mat-icon-button (click)="duplicarFila(r)"
+                    [disabled]="!canDuplicar(r)"
+                    [matTooltip]="canDuplicar(r) ? 'Duplicar vigencia' : 'No duplicable'"
+                    aria-label="Duplicar vigencia">
+              <mat-icon fontIcon="content_copy" />
+            </button>
+            <button mat-icon-button (click)="cerrarVigencia(r)"
+                    [disabled]="!canCerrar(r)"
+                    matTooltip="Cerrar vigencia"
+                    aria-label="Cerrar vigencia">
+              <mat-icon fontIcon="timer_off" />
+            </button>
+            <button mat-icon-button (click)="eliminarFila(r)"
+                    [disabled]="!canEliminar(r)"
+                    [matTooltip]="tooltipEliminar(r)"
+                    aria-label="Anular vigencia"
+                    class="btn-icon-danger">
+              <mat-icon fontIcon="delete_outline" />
+            </button>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="columns; sticky: true"></tr>
+        <tr mat-row *matRowDef="let r; columns: columns;" class="es-row"></tr>
+      </table>
+    </div>
+
+    <div class="es-pag-row">
+      <span class="es-count">
+        Mostrando {{ rango().start }} a {{ rango().end }} de {{ rango().total }} registros
+      </span>
+      <mat-paginator
+        [length]="rowsFiltradas().length"
+        [pageSize]="pageSize()"
+        [pageIndex]="pageIndex()"
+        [pageSizeOptions]="pageSizeOptions"
+        (page)="onPage($event)"
+        aria-label="Paginación de vigencias EsSalud"
+      />
+    </div>
+  }
+
+  <p class="es-note">Base normativa: D.S. 009-97-SA · Ley 26790 · R.M. 283-2013-SA · D.Leg. 1057 (CAS)</p>
+</div>

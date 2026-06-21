@@ -21,6 +21,16 @@ export const ASISTENCIA_ROUTES: Routes = [
           ),
         title: 'Carga de asistencia — SISRH-INDECI',
       },
+
+      /* ——— Subsidios por Enfermedad/Incapacidad Temporal y Maternidad (subrama de Carga) ——— */
+      {
+        path: 'subsidios',
+        loadComponent: () =>
+          import(
+            './pages/subsidios-enfermedad-maternidad/subsidios-enfermedad-maternidad.component'
+          ).then((m) => m.SubsidiosEnfermedadMaternidadComponent),
+        title: 'Subsidios por Enfermedad y Maternidad — SISRH-INDECI',
+      },
     ],
   },
 ];
