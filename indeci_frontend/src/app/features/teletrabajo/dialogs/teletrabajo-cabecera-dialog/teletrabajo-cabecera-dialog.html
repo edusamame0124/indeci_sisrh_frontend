@@ -1,0 +1,124 @@
+<h2 mat-dialog-title>Nuevo reporte de teletrabajo</h2>
+
+<mat-dialog-content>
+  @if (error()) {
+    <div class="error">
+      {{ error() }}
+    </div>
+  }
+
+  @if (cargando()) {
+    <div class="loading">
+      <mat-spinner diameter="36"></mat-spinner>
+      <span>Cargando catálogos...</span>
+    </div>
+  } @else {
+    <form [formGroup]="form" class="form">
+      <div class="trabajador-search">
+        <mat-form-field appearance="outline">
+          <mat-label>Buscar trabajador</mat-label>
+          <input
+            matInput
+            formControlName="filtroTrabajador"
+            placeholder="Ingrese DNI, nombres o apellidos"
+            (keyup.enter)="buscarTrabajadores()"
+          />
+        </mat-form-field>
+
+        <button
+          mat-stroked-button
+          color="primary"
+          type="button"
+          [disabled]="buscandoTrabajador()"
+          (click)="buscarTrabajadores()"
+        >
+          <mat-icon>search</mat-icon>
+          Buscar
+        </button>
+      </div>
+
+      @if (buscandoTrabajador()) {
+        <div class="small-loading">
+          <mat-spinner diameter="24"></mat-spinner>
+          <span>Buscando...</span>
+        </div>
+      }
+
+      @if (trabajadores().length) {
+        <div class="resultados">
+          @for (trabajador of trabajadores(); track trabajador.empleadoId || trabajador.id) {
+            <button type="button" class="trabajador-item" (click)="seleccionarTrabajador(trabajador)">
+              <strong>{{ textoTrabajador(trabajador) }}</strong>
+              <span>DNI: {{ trabajador.dni || '-' }}</span>
+              <span>Cargo: {{ trabajador.cargo || '-' }}</span>
+            </button>
+          }
+        </div>
+      }
+
+      @if (trabajadorSeleccionado(); as trabajador) {
+        <div class="seleccionado">
+          <mat-icon>check_circle</mat-icon>
+          <div>
+            <strong>{{ textoTrabajador(trabajador) }}</strong>
+            <span>DNI: {{ trabajador.dni || '-' }}</span>
+          </div>
+        </div>
+      }
+
+      <div class="grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Mes</mat-label>
+          <mat-select formControlName="mes">
+            @for (mes of meses; track mes.id) {
+              <mat-option [value]="mes.id">
+                {{ mes.nombre }}
+              </mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Año</mat-label>
+          <input matInput type="number" formControlName="anio" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Modalidad</mat-label>
+          <mat-select formControlName="modalidadId">
+            @for (modalidad of modalidades(); track modalidad.id) {
+              <mat-option [value]="modalidad.id">
+                {{ modalidad.nombre }}
+              </mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Fecha reporte</mat-label>
+          <input matInput type="date" formControlName="fechaReporte" />
+        </mat-form-field>
+      </div>
+    </form>
+  }
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button type="button" (click)="cancelar()">
+    Cancelar
+  </button>
+
+  <button
+    mat-flat-button
+    color="primary"
+    type="button"
+    [disabled]="guardando() || cargando()"
+    (click)="guardar()"
+  >
+    @if (guardando()) {
+      Guardando...
+    } @else {
+      Guardar cabecera
+    }
+  </button>
+</mat-dialog-actions>

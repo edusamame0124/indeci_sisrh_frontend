@@ -1,0 +1,818 @@
+<div class="legajo-detalle-page">
+  <div class="top-actions">
+    <button mat-stroked-button type="button" (click)="volver()">
+      <mat-icon>arrow_back</mat-icon>
+      Volver
+    </button>
+
+    <button
+      mat-flat-button
+      color="primary"
+      type="button"
+      (click)="exportarPdf()"
+      [disabled]="exportandoPdf() || legajoState.cargando()"
+      matTooltip="Exportar legajo en PDF"
+    >
+      <mat-icon>picture_as_pdf</mat-icon>
+
+      @if (exportandoPdf()) {
+        Generando PDF...
+      } @else {
+        Exportar PDF
+      }
+    </button>
+  </div>
+
+  @if (legajoState.cargando()) {
+    <div class="loading">
+      <mat-spinner diameter="42"></mat-spinner>
+      <span>Cargando legajo...</span>
+    </div>
+  }
+
+  @if (legajoState.error()) {
+    <div class="error">
+      {{ legajoState.error() }}
+    </div>
+  }
+
+  @if (legajoState.resumen(); as legajo) {
+    <mat-card class="datos-card">
+      <div class="datos-layout">
+        <div class="datos-info">
+          <h1>{{ legajoState.nombreCompleto() }}</h1>
+          <p>Detalle integral del legajo personal del trabajador.</p>
+
+          <div class="datos-grid">
+            <div>
+              <span>DNI</span>
+              <strong>{{ legajo.persona?.dni || '-' }}</strong>
+            </div>
+
+            <div>
+              <span>Persona ID</span>
+              <strong>{{ legajoState.personaId() || '-' }}</strong>
+            </div>
+
+            <div>
+              <span>Empleado ID</span>
+              <strong>{{ legajoState.empleadoId() || '-' }}</strong>
+            </div>
+
+            <div>
+              <span>Estado</span>
+              <strong>{{ legajo.empleado?.estado || '-' }}</strong>
+            </div>
+
+            <div>
+              <span>Código interno</span>
+              <strong>{{ legajo.empleado?.codigoInterno || '-' }}</strong>
+            </div>
+
+            <div>
+              <span>Código SISPER</span>
+              <strong>{{ legajo.empleado?.codigoSisper || '-' }}</strong>
+            </div>
+
+            <div>
+              <span>Correo</span>
+              <strong>{{ legajo.persona?.correo || '-' }}</strong>
+            </div>
+
+            <div>
+              <span>Teléfono</span>
+              <strong>{{ legajo.persona?.telefono || '-' }}</strong>
+            </div>
+
+            <div>
+              <span>Dirección</span>
+              <strong>{{ legajo.persona?.direccion || '-' }}</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="foto-panel">
+          @if (legajoState.fotoPerfil()) {
+            <img [src]="legajoState.fotoPerfil()" alt="Foto de perfil" />
+          } @else {
+            <div class="foto-placeholder">
+              <mat-icon>person</mat-icon>
+            </div>
+          }
+
+          <label class="upload-foto">
+            Cambiar foto
+            <input type="file" accept="image/*" hidden (change)="subirFoto($event)" />
+          </label>
+        </div>
+      </div>
+    </mat-card>
+
+    <mat-card class="acordeon-card">
+      <mat-accordion multi>
+        <!-- FORMACIÓN ACADÉMICA -->
+        <mat-expansion-panel>
+          <mat-expansion-panel-header>
+            <mat-panel-title>Formación académica</mat-panel-title>
+            <mat-panel-description>
+              {{ legajo.formacionAcademica?.length || 0 }} registro(s)
+            </mat-panel-description>
+          </mat-expansion-panel-header>
+
+          <div class="panel-actions">
+            <button mat-flat-button color="primary" type="button" (click)="agregarFormacion()">
+              <mat-icon>add</mat-icon>
+              Agregar
+            </button>
+          </div>
+
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Institución</th>
+                  <th>Carrera</th>
+                  <th>Inicio</th>
+                  <th>Fin</th>
+                  <th>Nro. título</th>
+                  <th>Sustento</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                @for (item of legajo.formacionAcademica; track item.id) {
+                  <tr>
+                    <td>{{ item.institucion || '-' }}</td>
+                    <td>{{ item.carrera || '-' }}</td>
+                    <td>{{ item.fechaInicio || '-' }}</td>
+                    <td>{{ item.fechaFin || '-' }}</td>
+                    <td>{{ item.nroTitulo || '-' }}</td>
+                    <td>
+                      @if (item.legajoDocumentoId) {
+                        <button
+                          mat-icon-button
+                          matTooltip="Ver sustento"
+                          [disabled]="!item.legajoDocumentoId"
+                          (click)="verSustento(item.legajoDocumentoId)"
+                        >
+                          <mat-icon>visibility</mat-icon>
+                        </button>
+                      } @else {
+                        -
+                      }
+                    </td>
+                    <td class="actions">
+                      <button
+                        mat-icon-button
+                        type="button"
+                        (click)="editarRegistro('FORMACION', item)"
+                      >
+                        <mat-icon>edit</mat-icon>
+                      </button>
+
+                      <button
+                        mat-icon-button
+                        color="warn"
+                        type="button"
+                        (click)="eliminarRegistro('FORMACION', item.id)"
+                      >
+                        <mat-icon>delete</mat-icon>
+                      </button>
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="7" class="empty">No hay formación académica registrada.</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </mat-expansion-panel>
+
+        <!-- CAPACITACIONES -->
+        <mat-expansion-panel>
+          <mat-expansion-panel-header>
+            <mat-panel-title>Capacitaciones</mat-panel-title>
+            <mat-panel-description>
+              {{ legajo.capacitaciones?.length || 0 }} registro(s)
+            </mat-panel-description>
+          </mat-expansion-panel-header>
+
+          <div class="panel-actions">
+            <button mat-flat-button color="primary" type="button" (click)="agregarCapacitacion()">
+              <mat-icon>add</mat-icon>
+              Agregar
+            </button>
+          </div>
+
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Curso</th>
+                  <th>Institución</th>
+                  <th>Horas</th>
+                  <th>Inicio</th>
+                  <th>Fin</th>
+                  <th>Certificado</th>
+                  <th>Sustento</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                @for (item of legajo.capacitaciones; track item.id) {
+                  <tr>
+                    <td>{{ item.nombreCurso }}</td>
+                    <td>{{ item.institucion }}</td>
+                    <td>{{ item.horas }}</td>
+                    <td>{{ item.fechaInicio }}</td>
+                    <td>{{ item.fechaFin }}</td>
+                    <td>{{ item.certificado === 1 ? 'Sí' : 'No' }}</td>
+                    <td>
+                      @if (item.legajoDocumentoId) {
+                        <button
+                          mat-icon-button
+                          matTooltip="Ver sustento"
+                          [disabled]="!item.legajoDocumentoId"
+                          (click)="verSustento(item.legajoDocumentoId)"
+                        >
+                          <mat-icon>visibility</mat-icon>
+                        </button>
+                      } @else {
+                        -
+                      }
+                    </td>
+                    <td class="actions">
+                      <button
+                        mat-icon-button
+                        type="button"
+                        (click)="editarRegistro('CAPACITACION', item)"
+                      >
+                        <mat-icon>edit</mat-icon>
+                      </button>
+
+                      <button
+                        mat-icon-button
+                        color="warn"
+                        type="button"
+                        (click)="eliminarRegistro('CAPACITACION', item.id)"
+                      >
+                        <mat-icon>delete</mat-icon>
+                      </button>
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="8" class="empty">No hay capacitaciones registradas.</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </mat-expansion-panel>
+
+        <!-- IDIOMAS -->
+        <mat-expansion-panel>
+          <mat-expansion-panel-header>
+            <mat-panel-title>Idiomas</mat-panel-title>
+            <mat-panel-description>
+              {{ legajo.idiomas?.length || 0 }} registro(s)
+            </mat-panel-description>
+          </mat-expansion-panel-header>
+
+          <div class="panel-actions">
+            <button mat-flat-button color="primary" type="button" (click)="agregarIdioma()">
+              <mat-icon>add</mat-icon>
+              Agregar
+            </button>
+          </div>
+
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Idioma</th>
+                  <th>Lectura</th>
+                  <th>Escritura</th>
+                  <th>Habla</th>
+                  <th>Certificado</th>
+                  <th>Sustento</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                @for (item of legajo.idiomas; track item.id) {
+                  <tr>
+                    <td>{{ item.idioma }}</td>
+                    <td>{{ item.nivelLectura }}</td>
+                    <td>{{ item.nivelEscritura }}</td>
+                    <td>{{ item.nivelHabla }}</td>
+                    <td>{{ item.certificado === 1 ? 'Sí' : 'No' }}</td>
+                    <td>
+                      @if (item.legajoDocumentoId) {
+                        <button
+                          mat-icon-button
+                          matTooltip="Ver sustento"
+                          [disabled]="!item.legajoDocumentoId"
+                          (click)="verSustento(item.legajoDocumentoId)"
+                        >
+                          <mat-icon>visibility</mat-icon>
+                        </button>
+                      } @else {
+                        -
+                      }
+                    </td>
+                    <td class="actions">
+                      <button
+                        mat-icon-button
+                        type="button"
+                        (click)="editarRegistro('IDIOMA', item)"
+                      >
+                        <mat-icon>edit</mat-icon>
+                      </button>
+
+                      <button
+                        mat-icon-button
+                        color="warn"
+                        type="button"
+                        (click)="eliminarRegistro('IDIOMA', item.id)"
+                      >
+                        <mat-icon>delete</mat-icon>
+                      </button>
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="7" class="empty">No hay idiomas registrados.</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </mat-expansion-panel>
+
+        <!-- CONOCIMIENTOS INFORMÁTICOS -->
+        <mat-expansion-panel>
+          <mat-expansion-panel-header>
+            <mat-panel-title>Conocimientos informáticos</mat-panel-title>
+            <mat-panel-description>
+              {{ legajo.conocimientosInformaticos?.length || 0 }} registro(s)
+            </mat-panel-description>
+          </mat-expansion-panel-header>
+
+          <div class="panel-actions">
+            <button mat-flat-button color="primary" type="button" (click)="agregarConocimiento()">
+              <mat-icon>add</mat-icon>
+              Agregar
+            </button>
+          </div>
+
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Herramienta</th>
+                  <th>Nivel</th>
+                  <th>Certificado</th>
+                  <th>Sustento</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                @for (item of legajo.conocimientosInformaticos; track item.id) {
+                  <tr>
+                    <td>{{ item.herramienta }}</td>
+                    <td>{{ item.nivel }}</td>
+                    <td>{{ item.certificado === 1 ? 'Sí' : 'No' }}</td>
+                    <td>
+                      @if (item.legajoDocumentoId) {
+                        <button
+                          mat-icon-button
+                          matTooltip="Ver sustento"
+                          [disabled]="!item.legajoDocumentoId"
+                          (click)="verSustento(item.legajoDocumentoId)"
+                        >
+                          <mat-icon>visibility</mat-icon>
+                        </button>
+                      } @else {
+                        -
+                      }
+                    </td>
+                    <td class="actions">
+                      <button
+                        mat-icon-button
+                        type="button"
+                        (click)="editarRegistro('CONOCIMIENTO', item)"
+                      >
+                        <mat-icon>edit</mat-icon>
+                      </button>
+
+                      <button
+                        mat-icon-button
+                        color="warn"
+                        type="button"
+                        (click)="eliminarRegistro('CONOCIMIENTO', item.id)"
+                      >
+                        <mat-icon>delete</mat-icon>
+                      </button>
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="5" class="empty">
+                      No hay conocimientos informáticos registrados.
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </mat-expansion-panel>
+
+        <!-- FAMILIARES -->
+        <mat-expansion-panel>
+          <mat-expansion-panel-header>
+            <mat-panel-title>Familiares</mat-panel-title>
+            <mat-panel-description>
+              {{ legajo.familiares?.length || 0 }} registro(s)
+            </mat-panel-description>
+          </mat-expansion-panel-header>
+
+          <div class="panel-actions">
+            <button mat-flat-button color="primary" type="button" (click)="agregarFamiliar()">
+              <mat-icon>add</mat-icon>
+              Agregar
+            </button>
+          </div>
+
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Nombre completo</th>
+                  <th>Parentesco</th>
+                  <th>Fecha nacimiento</th>
+                  <th>Documento</th>
+                  <th>Teléfono</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                @for (item of legajo.familiares; track item.id) {
+                  <tr>
+                    <td>{{ item.nombreCompleto }}</td>
+                    <td>{{ item.parentesco }}</td>
+                    <td>{{ item.fechaNacimiento || '-' }}</td>
+                    <td>{{ item.nroDocumento || '-' }}</td>
+                    <td>{{ item.telefono || '-' }}</td>
+                    <td class="actions">
+                      <button
+                        mat-icon-button
+                        type="button"
+                        (click)="editarRegistro('FAMILIAR', item)"
+                      >
+                        <mat-icon>edit</mat-icon>
+                      </button>
+
+                      <button
+                        mat-icon-button
+                        color="warn"
+                        type="button"
+                        (click)="eliminarRegistro('FAMILIAR', item.id)"
+                      >
+                        <mat-icon>delete</mat-icon>
+                      </button>
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="6" class="empty">No hay familiares registrados.</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </mat-expansion-panel>
+
+        <!-- EXPERIENCIA LABORAL -->
+        <mat-expansion-panel>
+          <mat-expansion-panel-header>
+            <mat-panel-title>Experiencia laboral externa</mat-panel-title>
+            <mat-panel-description>
+              {{ legajo.experienciaLaboralExterna?.length || 0 }} registro(s)
+            </mat-panel-description>
+          </mat-expansion-panel-header>
+
+          <div class="panel-actions">
+            <button mat-flat-button color="primary" type="button" (click)="agregarExperiencia()">
+              <mat-icon>add</mat-icon>
+              Agregar
+            </button>
+          </div>
+
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Empresa</th>
+                  <th>Cargo</th>
+                  <th>Inicio</th>
+                  <th>Fin</th>
+                  <th>Funciones</th>
+                  <th>Sustento</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                @for (item of legajo.experienciaLaboralExterna; track item.id) {
+                  <tr>
+                    <td>{{ item.empresa }}</td>
+                    <td>{{ item.cargo }}</td>
+                    <td>{{ item.fechaInicio }}</td>
+                    <td>{{ item.fechaFin || '-' }}</td>
+                    <td>{{ item.funciones || '-' }}</td>
+                    <td>
+                      @if (item.legajoDocumentoId) {
+                        <button
+                          mat-icon-button
+                          matTooltip="Ver sustento"
+                          [disabled]="!item.legajoDocumentoId"
+                          (click)="verSustento(item.legajoDocumentoId)"
+                        >
+                          <mat-icon>visibility</mat-icon>
+                        </button>
+                      } @else {
+                        -
+                      }
+                    </td>
+                    <td class="actions">
+                      <button
+                        mat-icon-button
+                        type="button"
+                        (click)="editarRegistro('EXPERIENCIA', item)"
+                      >
+                        <mat-icon>edit</mat-icon>
+                      </button>
+
+                      <button
+                        mat-icon-button
+                        color="warn"
+                        type="button"
+                        (click)="eliminarRegistro('EXPERIENCIA', item.id)"
+                      >
+                        <mat-icon>delete</mat-icon>
+                      </button>
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="7" class="empty">No hay experiencia laboral registrada.</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </mat-expansion-panel>
+
+        <!-- RECONOCIMIENTOS -->
+        <mat-expansion-panel>
+          <mat-expansion-panel-header>
+            <mat-panel-title>Reconocimientos</mat-panel-title>
+            <mat-panel-description>
+              {{ legajo.reconocimientos?.length || 0 }} registro(s)
+            </mat-panel-description>
+          </mat-expansion-panel-header>
+
+          <div class="panel-actions">
+            <button mat-flat-button color="primary" type="button" (click)="agregarReconocimiento()">
+              <mat-icon>add</mat-icon>
+              Agregar
+            </button>
+          </div>
+
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Tipo</th>
+                  <th>Descripción</th>
+                  <th>Fecha</th>
+                  <th>Sustento</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                @for (item of legajo.reconocimientos; track item.id) {
+                  <tr>
+                    <td>{{ item.tipoReconocimiento }}</td>
+                    <td>{{ item.descripcion }}</td>
+                    <td>{{ item.fechaReconocimiento }}</td>
+                    <td>
+                      @if (item.legajoDocumentoId) {
+                        <button
+                          mat-icon-button
+                          matTooltip="Ver sustento"
+                          [disabled]="!item.legajoDocumentoId"
+                          (click)="verSustento(item.legajoDocumentoId)"
+                        >
+                          <mat-icon>visibility</mat-icon>
+                        </button>
+                      } @else {
+                        -
+                      }
+                    </td>
+                    <td class="actions">
+                      <button
+                        mat-icon-button
+                        type="button"
+                        (click)="editarRegistro('RECONOCIMIENTO', item)"
+                      >
+                        <mat-icon>edit</mat-icon>
+                      </button>
+
+                      <button
+                        mat-icon-button
+                        color="warn"
+                        type="button"
+                        (click)="eliminarRegistro('RECONOCIMIENTO', item.id)"
+                      >
+                        <mat-icon>delete</mat-icon>
+                      </button>
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="5" class="empty">No hay reconocimientos registrados.</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </mat-expansion-panel>
+
+        <!-- MEDIDAS DISCIPLINARIAS -->
+        <mat-expansion-panel>
+          <mat-expansion-panel-header>
+            <mat-panel-title>Medidas disciplinarias</mat-panel-title>
+            <mat-panel-description>
+              {{ legajo.medidasDisciplinarias?.length || 0 }} registro(s)
+            </mat-panel-description>
+          </mat-expansion-panel-header>
+
+          <div class="panel-actions">
+            <button
+              mat-flat-button
+              color="primary"
+              type="button"
+              (click)="agregarMedidaDisciplinaria()"
+            >
+              <mat-icon>add</mat-icon>
+              Agregar
+            </button>
+          </div>
+
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Tipo</th>
+                  <th>Descripción</th>
+                  <th>Inicio</th>
+                  <th>Fin</th>
+                  <th>Sustento</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                @for (item of legajo.medidasDisciplinarias; track item.id) {
+                  <tr>
+                    <td>{{ item.tipoMedida }}</td>
+                    <td>{{ item.descripcion }}</td>
+                    <td>{{ item.fechaInicio }}</td>
+                    <td>{{ item.fechaFin || '-' }}</td>
+                    <td>
+                      @if (item.legajoDocumentoId) {
+                        <button
+                          mat-button
+                          type="button"
+                          (click)="legajoState.descargarDocumento(item.legajoDocumentoId)"
+                        >
+                          Ver sustento
+                        </button>
+                      } @else {
+                        -
+                      }
+                    </td>
+                    <td class="actions">
+                      <button
+                        mat-icon-button
+                        type="button"
+                        (click)="editarRegistro('MEDIDA', item)"
+                      >
+                        <mat-icon>edit</mat-icon>
+                      </button>
+
+                      <button
+                        mat-icon-button
+                        color="warn"
+                        type="button"
+                        (click)="eliminarRegistro('MEDIDA', item.id)"
+                      >
+                        <mat-icon>delete</mat-icon>
+                      </button>
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="6" class="empty">No hay medidas disciplinarias registradas.</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </mat-expansion-panel>
+
+        <!-- DOCUMENTOS -->
+        <mat-expansion-panel>
+          <mat-expansion-panel-header>
+            <mat-panel-title>Documentos del legajo</mat-panel-title>
+            <mat-panel-description>
+              {{ legajo.documentos?.length || 0 }} registro(s)
+            </mat-panel-description>
+          </mat-expansion-panel-header>
+
+          <div class="panel-actions">
+            <button mat-flat-button color="primary" type="button" (click)="subirDocumento()">
+              <mat-icon>upload</mat-icon>
+              Subir documento
+            </button>
+          </div>
+
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Documento</th>
+                  <th>Fecha</th>
+                  <th>Origen</th>
+                  <th>Observación</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                @for (item of legajo.documentos; track item.id) {
+                  <tr>
+                    <td>{{ item.nombreDocumento || item.nombreArchivo || '-' }}</td>
+                    <td>{{ item.fechaDocumento || '-' }}</td>
+                    <td>{{ item.origen || '-' }}</td>
+                    <td>{{ item.observacion || '-' }}</td>
+                    <td class="actions">
+                      <button
+                        mat-button
+                        type="button"
+                        (click)="legajoState.descargarDocumento(item.id)"
+                      >
+                        Descargar
+                      </button>
+
+                      <button
+                        mat-icon-button
+                        type="button"
+                        (click)="editarRegistro('DOCUMENTO', item)"
+                      >
+                        <mat-icon>edit</mat-icon>
+                      </button>
+
+                      <button
+                        mat-icon-button
+                        color="warn"
+                        type="button"
+                        (click)="eliminarRegistro('DOCUMENTO', item.id)"
+                      >
+                        <mat-icon>delete</mat-icon>
+                      </button>
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="5" class="empty">No hay documentos registrados.</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </mat-expansion-panel>
+      </mat-accordion>
+    </mat-card>
+  }
+</div>

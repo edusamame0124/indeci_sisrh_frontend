@@ -1,3 +1,52 @@
-<section class="legajo-section" aria-labelledby="legajo-trayectoria-laboral-title">
-  <h2 id="legajo-trayectoria-laboral-title">Trayectoria Laboral</h2>
-</section>
+@if (!legajoState.resumen()) {
+  <mat-card>
+    <p>Busque un trabajador para visualizar esta sección.</p>
+  </mat-card>
+} @else {
+  <mat-card>
+    <div class="section-header">
+      <h3>Experiencia Laboral Externa</h3>
+      <button mat-flat-button color="primary" type="button" (click)="agregarExperiencia()">
+        <mat-icon>add</mat-icon>
+        Agregar
+      </button>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Empresa</th>
+          <th>Cargo</th>
+          <th>Inicio</th>
+          <th>Fin</th>
+          <th>Funciones</th>
+          <th>Documento</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (item of legajoState.resumen()?.experienciaLaboralExterna; track item.id) {
+          <tr>
+            <td>{{ item.empresa }}</td>
+            <td>{{ item.cargo }}</td>
+            <td>{{ item.fechaInicio }}</td>
+            <td>{{ item.fechaFin || '-' }}</td>
+            <td>{{ item.funciones || '-' }}</td>
+            <td>
+              @if (item.legajoDocumentoId) {
+                <button mat-button type="button" (click)="legajoState.descargarDocumento(item.legajoDocumentoId)">
+                  Ver
+                </button>
+              } @else {
+                -
+              }
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="6" class="empty">No hay experiencia laboral registrada.</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </mat-card>
+}

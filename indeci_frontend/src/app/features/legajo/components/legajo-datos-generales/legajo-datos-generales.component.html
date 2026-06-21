@@ -1,3 +1,75 @@
-<section class="legajo-section" aria-labelledby="legajo-datos-generales-title">
-  <h2 id="legajo-datos-generales-title">Datos Generales</h2>
-</section>
+@if (!legajoState.resumen()) {
+  <mat-card>
+    <p>Busque un trabajador para visualizar su legajo.</p>
+  </mat-card>
+} @else {
+  <mat-card>
+    <div class="datos-layout">
+      <div class="foto-box">
+        @if (legajoState.fotoPerfil()) {
+          <img [src]="legajoState.fotoPerfil()" alt="Foto de perfil" />
+        } @else {
+          <div class="foto-placeholder">
+            <mat-icon>person</mat-icon>
+          </div>
+        }
+
+        <label class="upload-foto">
+          Cambiar foto
+          <input type="file" accept="image/*" hidden (change)="subirFoto($event)" />
+        </label>
+      </div>
+
+      <div class="datos-info">
+        <h2>{{ legajoState.nombreCompleto() }}</h2>
+
+        <div class="grid">
+          <div>
+            <span>DNI</span>
+            <strong>{{ legajoState.persona()?.dni || '-' }}</strong>
+          </div>
+
+          <div>
+            <span>Persona ID</span>
+            <strong>{{ legajoState.personaId() || '-' }}</strong>
+          </div>
+
+          <div>
+            <span>Empleado ID</span>
+            <strong>{{ legajoState.empleadoId() || '-' }}</strong>
+          </div>
+
+          <div>
+            <span>Estado</span>
+            <strong>{{ legajoState.empleado()?.estado || '-' }}</strong>
+          </div>
+
+          <div>
+            <span>Código interno</span>
+            <strong>{{ legajoState.empleado()?.codigoInterno || '-' }}</strong>
+          </div>
+
+          <div>
+            <span>Código SISPER</span>
+            <strong>{{ legajoState.empleado()?.codigoSisper || '-' }}</strong>
+          </div>
+
+          <div>
+            <span>Correo</span>
+            <strong>{{ legajoState.persona()?.correo || '-' }}</strong>
+          </div>
+
+          <div>
+            <span>Teléfono</span>
+            <strong>{{ legajoState.persona()?.telefono || '-' }}</strong>
+          </div>
+
+          <div>
+            <span>Dirección</span>
+            <strong>{{ legajoState.persona()?.direccion || '-' }}</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+  </mat-card>
+}

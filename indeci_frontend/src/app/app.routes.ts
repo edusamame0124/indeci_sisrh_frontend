@@ -10,9 +10,7 @@ export const routes: Routes = [
     // Portal público de Transparencia (Ley 27806) — sin authGuard.
     path: 'transparencia',
     loadChildren: () =>
-      import('./features/transparencia/transparencia.routes').then(
-        (m) => m.TRANSPARENCIA_ROUTES,
-      ),
+      import('./features/transparencia/transparencia.routes').then((m) => m.TRANSPARENCIA_ROUTES),
   },
   {
     path: '',
@@ -42,8 +40,7 @@ export const routes: Routes = [
       },
       {
         path: 'legajo',
-        loadChildren: () =>
-          import('./features/legajo/legajo.routes').then((m) => m.LEGAJO_ROUTES),
+        loadChildren: () => import('./features/legajo/legajo.routes').then((m) => m.LEGAJO_ROUTES),
       },
       {
         path: 'catalogos',
@@ -74,8 +71,12 @@ export const routes: Routes = [
       },
       {
         path: 'admin',
+        loadChildren: () => import('./features/admin/admin.routes').then((m) => m.ADMIN_ROUTES),
+      },
+      {
+        path: 'teletrabajo',
         loadChildren: () =>
-          import('./features/admin/admin.routes').then((m) => m.ADMIN_ROUTES),
+          import('./features/teletrabajo/teletrabajo.routes').then((m) => m.TELETRABAJO_ROUTES),
       },
     ],
   },

@@ -1,0 +1,69 @@
+<h2 mat-dialog-title>Agregar familiar</h2>
+
+<mat-dialog-content class="dialog-content">
+  <form [formGroup]="form" class="form-grid">
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Nombre completo</mat-label>
+      <input matInput formControlName="nombreCompleto" />
+
+      @if (campoInvalido('nombreCompleto')) {
+        <mat-error>El nombre completo es obligatorio.</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Parentesco</mat-label>
+      <input matInput formControlName="parentesco" placeholder="Ejemplo: Hijo, cónyuge, padre" />
+
+      @if (campoInvalido('parentesco')) {
+        <mat-error>El parentesco es obligatorio.</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Fecha nacimiento</mat-label>
+      <input matInput type="date" formControlName="fechaNacimiento" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>ID tipo documento</mat-label>
+      <input matInput type="number" formControlName="tipoDocumentoId" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Nro. documento</mat-label>
+      <input matInput formControlName="nroDocumento" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Teléfono</mat-label>
+      <input matInput formControlName="telefono" />
+    </mat-form-field>
+  </form>
+
+  @if (error()) {
+    <div class="error">
+      {{ error() }}
+    </div>
+  }
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button type="button" (click)="cancelar()" [disabled]="guardando()">Cancelar</button>
+
+  <button
+    mat-flat-button
+    color="primary"
+    type="button"
+    (click)="guardar()"
+    [disabled]="guardando()"
+  >
+    @if (guardando()) {
+      <mat-spinner diameter="18"></mat-spinner>
+    } @else {
+      <mat-icon>save</mat-icon>
+    }
+
+    Guardar
+  </button>
+</mat-dialog-actions>

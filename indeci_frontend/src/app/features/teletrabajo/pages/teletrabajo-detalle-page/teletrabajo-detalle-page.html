@@ -1,0 +1,160 @@
+<div class="teletrabajo-detalle-page">
+  <div class="top-actions">
+    <button mat-stroked-button type="button" (click)="volver()">
+      <mat-icon>arrow_back</mat-icon>
+      Volver
+    </button>
+
+    <button
+      mat-flat-button
+      color="primary"
+      type="button"
+      [disabled]="descargandoExcel() || !reporte()"
+      (click)="descargarExcel()"
+    >
+      <mat-icon>download</mat-icon>
+      @if (descargandoExcel()) {
+        Descargando...
+      } @else {
+        Descargar Excel
+      }
+    </button>
+  </div>
+
+  @if (error()) {
+    <div class="error">
+      {{ error() }}
+    </div>
+  }
+
+  @if (cargando()) {
+    <div class="loading">
+      <mat-spinner diameter="42"></mat-spinner>
+      <span>Cargando reporte...</span>
+    </div>
+  }
+
+  @if (reporte(); as reporte) {
+    <mat-card class="cabecera-card">
+      <div class="cabecera-header">
+        <div>
+          <h1>Reporte de Teletrabajo</h1>
+          <p>Cabecera del reporte mensual en estado {{ reporte.estado || 'BORRADOR' }}.</p>
+        </div>
+
+        <span class="estado">
+          {{ reporte.estado || 'BORRADOR' }}
+        </span>
+      </div>
+
+      <div class="datos-grid">
+        <div>
+          <span>ID Reporte</span>
+          <strong>{{ reporte.id }}</strong>
+        </div>
+
+        <div>
+          <span>Empleado ID</span>
+          <strong>{{ reporte.empleadoId }}</strong>
+        </div>
+
+        <div>
+          <span>Mes</span>
+          <strong>{{ nombreMes(reporte.mes) }}</strong>
+        </div>
+
+        <div>
+          <span>Año</span>
+          <strong>{{ reporte.anio }}</strong>
+        </div>
+
+        <div>
+          <span>Modalidad</span>
+          <strong>{{ reporte.modalidad || '-' }}</strong>
+        </div>
+
+        <div>
+          <span>Fecha reporte</span>
+          <strong>{{ reporte.fechaReporte || '-' }}</strong>
+        </div>
+      </div>
+    </mat-card>
+
+    <mat-card class="actividades-card">
+      <div class="section-header">
+        <div>
+          <h2>Actividades</h2>
+          <p>Actividades programadas y ejecutadas del Anexo 10.</p>
+        </div>
+
+        <button mat-flat-button color="primary" type="button" (click)="agregarActividad()">
+          <mat-icon>add</mat-icon>
+          Agregar actividad
+        </button>
+      </div>
+
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>N°</th>
+              <th>Actividad programada</th>
+              <th>Actividad ejecutada</th>
+              <th>Medio verificación</th>
+              <th>Inicio</th>
+              <th>Fin</th>
+              <th>Cumplimiento</th>
+              <th>% Avance</th>
+              <th>Incidencia / Observación</th>
+              <th>Conformidad</th>
+              <th class="acciones-col">Acciones</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            @for (detalle of reporte.detalles; track detalle.id) {
+              <tr>
+                <td>{{ detalle.nroOrden || $index + 1 }}</td>
+                <td>{{ detalle.actividadProgramada || '-' }}</td>
+                <td>{{ detalle.actividadEjecutada || '-' }}</td>
+                <td>{{ detalle.medioVerificacion || '-' }}</td>
+                <td>{{ detalle.fechaInicio || '-' }}</td>
+                <td>{{ detalle.fechaFin || '-' }}</td>
+                <td>{{ detalle.estadoCumplimiento || '-' }}</td>
+                <td>{{ detalle.porcentajeAvance ?? '-' }}</td>
+                <td>{{ detalle.incidenciaObservacion || '-' }}</td>
+                <td>{{ detalle.conformidad || '-' }}</td>
+                <td class="acciones">
+                  <button
+                    mat-icon-button
+                    type="button"
+                    matTooltip="Editar actividad"
+                    (click)="editarActividad(detalle)"
+                  >
+                    <mat-icon>edit</mat-icon>
+                  </button>
+
+                  <button
+                    mat-icon-button
+                    color="warn"
+                    type="button"
+                    matTooltip="Eliminar actividad"
+                    (click)="eliminarActividad(detalle)"
+                  >
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="11" class="empty">
+                  No hay actividades registradas para este reporte.
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </mat-card>
+  }
+</div>

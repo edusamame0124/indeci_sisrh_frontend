@@ -1,0 +1,93 @@
+<h2 mat-dialog-title>Agregar experiencia laboral externa</h2>
+
+<mat-dialog-content class="dialog-content">
+  <form [formGroup]="form" class="form-grid">
+    <mat-form-field appearance="outline">
+      <mat-label>Empresa</mat-label>
+      <input matInput formControlName="empresa" />
+
+      @if (campoInvalido('empresa')) {
+        <mat-error>La empresa es obligatoria.</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Cargo</mat-label>
+      <input matInput formControlName="cargo" />
+
+      @if (campoInvalido('cargo')) {
+        <mat-error>El cargo es obligatorio.</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Fecha inicio</mat-label>
+      <input matInput type="date" formControlName="fechaInicio" />
+
+      @if (campoInvalido('fechaInicio')) {
+        <mat-error>La fecha de inicio es obligatoria.</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Fecha fin</mat-label>
+      <input matInput type="date" formControlName="fechaFin" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Funciones</mat-label>
+      <textarea matInput rows="4" formControlName="funciones"></textarea>
+    </mat-form-field>
+
+    <div class="sustento full-width">
+      <h3>Sustento documental</h3>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Nombre del documento</mat-label>
+        <input matInput formControlName="nombreDocumento" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Fecha del documento</mat-label>
+        <input matInput type="date" formControlName="fechaDocumento" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Observación del documento</mat-label>
+        <textarea matInput rows="2" formControlName="observacionDocumento"></textarea>
+      </mat-form-field>
+
+      <div class="file-row full-width">
+        <label>Archivo sustentatorio</label>
+
+        <input type="file" accept=".pdf,image/*" (change)="seleccionarArchivo($event)" />
+      </div>
+    </div>
+  </form>
+
+  @if (error()) {
+    <div class="error">
+      {{ error() }}
+    </div>
+  }
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button type="button" (click)="cancelar()" [disabled]="guardando()">Cancelar</button>
+
+  <button
+    mat-flat-button
+    color="primary"
+    type="button"
+    (click)="guardar()"
+    [disabled]="guardando()"
+  >
+    @if (guardando()) {
+      <mat-spinner diameter="18"></mat-spinner>
+    } @else {
+      <mat-icon>save</mat-icon>
+    }
+
+    Guardar
+  </button>
+</mat-dialog-actions>

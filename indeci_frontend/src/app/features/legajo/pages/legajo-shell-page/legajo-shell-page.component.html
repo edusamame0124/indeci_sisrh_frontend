@@ -1,13 +1,53 @@
-<div class="page sisrh-page legajo-shell">
-  <nav class="crumbs sisrh-crumbs" aria-label="Ubicación">
-    <a mat-button routerLink="/">Inicio</a>
-    <span class="crumbs__sep" aria-hidden="true">/</span>
-    <span class="crumbs__here">Legajo Personal</span>
-  </nav>
+<mat-card class="legajo-header">
+  <div class="legajo-header__title">
+    <h1>Legajo Personal</h1>
+    <p>Consulta y administración del expediente digital del trabajador.</p>
+  </div>
 
-  <mat-card class="page-card sisrh-elevated legajo-shell__card">
-    <mat-card-content class="legajo-shell__content">
-      <router-outlet />
-    </mat-card-content>
-  </mat-card>
-</div>
+  <div class="legajo-search">
+    <mat-form-field appearance="outline">
+      <mat-label>Persona ID</mat-label>
+      <input
+        matInput
+        type="number"
+        [(ngModel)]="personaIdInput"
+        placeholder="Ejemplo: 2267"
+        (keyup.enter)="buscar()"
+      />
+    </mat-form-field>
+
+    <button
+      mat-flat-button
+      color="primary"
+      type="button"
+      (click)="buscar()"
+      [disabled]="legajoState.cargando()"
+    >
+      <mat-icon>search</mat-icon>
+      Buscar
+    </button>
+  </div>
+
+  @if (legajoState.cargando()) {
+    <div class="loading">
+      <mat-spinner diameter="32"></mat-spinner>
+      <span>Cargando legajo...</span>
+    </div>
+  }
+
+  @if (legajoState.error()) {
+    <div class="error">
+      {{ legajoState.error() }}
+    </div>
+  }
+
+  @if (legajoState.resumen()) {
+    <div class="legajo-persona-resumen">
+      <strong>{{ legajoState.nombreCompleto() }}</strong>
+      <span>Persona ID: {{ legajoState.personaId() || '-' }}</span>
+      <span>Empleado ID: {{ legajoState.empleadoId() || '-' }}</span>
+    </div>
+  }
+</mat-card>
+
+<router-outlet></router-outlet>

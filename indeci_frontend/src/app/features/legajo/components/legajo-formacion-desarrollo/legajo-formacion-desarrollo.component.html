@@ -1,3 +1,191 @@
-<section class="legajo-section" aria-labelledby="legajo-formacion-desarrollo-title">
-  <h2 id="legajo-formacion-desarrollo-title">Formación y Desarrollo</h2>
-</section>
+@if (!legajoState.resumen()) {
+  <mat-card>
+    <p>Busque un trabajador para visualizar esta sección.</p>
+  </mat-card>
+} @else {
+  <div class="section-grid">
+    <mat-card>
+      <div class="section-header">
+        <h3>Formación Académica</h3>
+        <button mat-flat-button color="primary" type="button" (click)="agregarFormacion()">
+          <mat-icon>add</mat-icon>
+          Agregar
+        </button>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Institución</th>
+            <th>Carrera</th>
+            <th>Inicio</th>
+            <th>Fin</th>
+            <th>Documento</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of legajoState.resumen()?.formacionAcademica; track item.id) {
+            <tr>
+              <td>{{ item.institucion || '-' }}</td>
+              <td>{{ item.carrera || '-' }}</td>
+              <td>{{ item.fechaInicio || '-' }}</td>
+              <td>{{ item.fechaFin || '-' }}</td>
+              <td>
+                @if (item.legajoDocumentoId) {
+                  <button mat-button type="button" (click)="legajoState.descargarDocumento(item.legajoDocumentoId)">
+                    Ver
+                  </button>
+                } @else {
+                  -
+                }
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="5" class="empty">No hay formación registrada.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </mat-card>
+
+    <mat-card>
+      <div class="section-header">
+        <h3>Capacitaciones</h3>
+        <button mat-flat-button color="primary" type="button" (click)="agregarCapacitacion()">
+          <mat-icon>add</mat-icon>
+          Agregar
+        </button>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Curso</th>
+            <th>Institución</th>
+            <th>Horas</th>
+            <th>Inicio</th>
+            <th>Fin</th>
+            <th>Certificado</th>
+            <th>Documento</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of legajoState.resumen()?.capacitaciones; track item.id) {
+            <tr>
+              <td>{{ item.nombreCurso }}</td>
+              <td>{{ item.institucion }}</td>
+              <td>{{ item.horas }}</td>
+              <td>{{ item.fechaInicio }}</td>
+              <td>{{ item.fechaFin }}</td>
+              <td>{{ item.certificado === 1 ? 'Sí' : 'No' }}</td>
+              <td>
+                @if (item.legajoDocumentoId) {
+                  <button mat-button type="button" (click)="legajoState.descargarDocumento(item.legajoDocumentoId)">
+                    Ver
+                  </button>
+                } @else {
+                  -
+                }
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="7" class="empty">No hay capacitaciones registradas.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </mat-card>
+
+    <mat-card>
+      <div class="section-header">
+        <h3>Idiomas</h3>
+        <button mat-flat-button color="primary" type="button" (click)="agregarIdioma()">
+          <mat-icon>add</mat-icon>
+          Agregar
+        </button>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Idioma</th>
+            <th>Lectura</th>
+            <th>Escritura</th>
+            <th>Habla</th>
+            <th>Certificado</th>
+            <th>Documento</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of legajoState.resumen()?.idiomas; track item.id) {
+            <tr>
+              <td>{{ item.idioma }}</td>
+              <td>{{ item.nivelLectura }}</td>
+              <td>{{ item.nivelEscritura }}</td>
+              <td>{{ item.nivelHabla }}</td>
+              <td>{{ item.certificado === 1 ? 'Sí' : 'No' }}</td>
+              <td>
+                @if (item.legajoDocumentoId) {
+                  <button mat-button type="button" (click)="legajoState.descargarDocumento(item.legajoDocumentoId)">
+                    Ver
+                  </button>
+                } @else {
+                  -
+                }
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="6" class="empty">No hay idiomas registrados.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </mat-card>
+
+    <mat-card>
+      <div class="section-header">
+        <h3>Conocimientos Informáticos</h3>
+        <button mat-flat-button color="primary" type="button" (click)="agregarConocimiento()">
+          <mat-icon>add</mat-icon>
+          Agregar
+        </button>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Herramienta</th>
+            <th>Nivel</th>
+            <th>Certificado</th>
+            <th>Documento</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of legajoState.resumen()?.conocimientosInformaticos; track item.id) {
+            <tr>
+              <td>{{ item.herramienta }}</td>
+              <td>{{ item.nivel }}</td>
+              <td>{{ item.certificado === 1 ? 'Sí' : 'No' }}</td>
+              <td>
+                @if (item.legajoDocumentoId) {
+                  <button mat-button type="button" (click)="legajoState.descargarDocumento(item.legajoDocumentoId)">
+                    Ver
+                  </button>
+                } @else {
+                  -
+                }
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="4" class="empty">No hay conocimientos registrados.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </mat-card>
+  </div>
+}

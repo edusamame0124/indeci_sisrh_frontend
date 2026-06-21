@@ -1,0 +1,124 @@
+<h2 mat-dialog-title>
+  @if (esEdicion) {
+    Editar actividad
+  } @else {
+    Agregar actividad
+  }
+</h2>
+
+<mat-dialog-content>
+  @if (error()) {
+    <div class="error">
+      {{ error() }}
+    </div>
+  }
+
+  @if (cargando()) {
+    <div class="loading">
+      <mat-spinner diameter="36"></mat-spinner>
+      <span>Cargando catálogos...</span>
+    </div>
+  } @else {
+    <form [formGroup]="form" class="form">
+      <div class="grid">
+        <mat-form-field appearance="outline">
+          <mat-label>N° orden</mat-label>
+          <input matInput type="number" formControlName="nroOrden" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>% avance</mat-label>
+          <input matInput type="number" formControlName="porcentajeAvance" />
+        </mat-form-field>
+      </div>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Actividad programada</mat-label>
+        <textarea
+          matInput
+          rows="3"
+          formControlName="actividadProgramada"
+        ></textarea>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Actividad ejecutada</mat-label>
+        <textarea
+          matInput
+          rows="3"
+          formControlName="actividadEjecutada"
+        ></textarea>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Medio de verificación</mat-label>
+        <input matInput formControlName="medioVerificacion" />
+      </mat-form-field>
+
+      <div class="grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Fecha inicio</mat-label>
+          <input matInput type="date" formControlName="fechaInicio" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Fecha fin</mat-label>
+          <input matInput type="date" formControlName="fechaFin" />
+        </mat-form-field>
+      </div>
+
+      <div class="grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Estado cumplimiento</mat-label>
+          <mat-select formControlName="estadoCumplimientoId">
+            @for (estado of estadosCumplimiento(); track estado.id) {
+              <mat-option [value]="estado.id">
+                {{ estado.nombre }}
+              </mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Conformidad</mat-label>
+          <mat-select formControlName="conformidadId">
+            @for (conformidad of conformidades(); track conformidad.id) {
+              <mat-option [value]="conformidad.id">
+                {{ conformidad.nombre }}
+              </mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Incidencia / Observación</mat-label>
+        <textarea
+          matInput
+          rows="3"
+          formControlName="incidenciaObservacion"
+        ></textarea>
+      </mat-form-field>
+    </form>
+  }
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button type="button" (click)="cancelar()">
+    Cancelar
+  </button>
+
+  <button
+    mat-flat-button
+    color="primary"
+    type="button"
+    [disabled]="guardando() || cargando()"
+    (click)="guardar()"
+  >
+    @if (guardando()) {
+      Guardando...
+    } @else {
+      Guardar
+    }
+  </button>
+</mat-dialog-actions>

@@ -1,0 +1,96 @@
+<div class="teletrabajo-list-page">
+  <div class="page-header">
+    <div>
+      <h1>Reportes de Teletrabajo</h1>
+      <p>Registro, consulta y exportación del Anexo 10 mensual.</p>
+    </div>
+
+    <button mat-flat-button color="primary" type="button" (click)="nuevoReporte()">
+      <mat-icon>add</mat-icon>
+      Nuevo reporte
+    </button>
+  </div>
+
+  @if (error()) {
+    <div class="error">
+      {{ error() }}
+    </div>
+  }
+
+  <mat-card class="table-card">
+    @if (cargando()) {
+      <div class="loading">
+        <mat-spinner diameter="42"></mat-spinner>
+        <span>Cargando reportes...</span>
+      </div>
+    } @else {
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Trabajador</th>
+              <th>Mes</th>
+              <th>Año</th>
+              <th>Modalidad</th>
+              <th>Estado</th>
+              <th>Fecha reporte</th>
+              <th class="acciones-col">Acciones</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            @for (reporte of reportes(); track reporte.id) {
+              <tr>
+                <td>{{ trabajadorTexto(reporte) }}</td>
+                <td>{{ nombreMes(reporte.mes) }}</td>
+                <td>{{ reporte.anio || '-' }}</td>
+                <td>{{ reporte.modalidad || '-' }}</td>
+                <td>
+                  <span class="estado">
+                    {{ reporte.estado || 'BORRADOR' }}
+                  </span>
+                </td>
+                <td>{{ reporte.fechaReporte || '-' }}</td>
+                <td class="acciones">
+                  <button
+                    mat-icon-button
+                    type="button"
+                    matTooltip="Ver actividades"
+                    (click)="verDetalle(reporte)"
+                  >
+                    <mat-icon>visibility</mat-icon>
+                  </button>
+
+                  <button
+                    mat-icon-button
+                    type="button"
+                    matTooltip="Descargar Excel"
+                    (click)="descargarExcel(reporte)"
+                  >
+                    <mat-icon>download</mat-icon>
+                  </button>
+
+                  <button
+                    mat-icon-button
+                    color="warn"
+                    type="button"
+                    matTooltip="Eliminar reporte"
+                    (click)="eliminarReporte(reporte)"
+                  >
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="7" class="empty">
+                  No hay reportes de teletrabajo registrados.
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </mat-card>
+</div>

@@ -1,12 +1,33 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { Component, inject } from '@angular/core';
+
+import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
+import { MatIconModule } from '@angular/material/icon';
+
+import { LegajoStateService } from '../../services/legajo-state';
 
 @Component({
   selector: 'app-legajo-datos-generales',
   standalone: true,
-  imports: [],
-  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [
+    CommonModule,
+    MatButtonModule,
+    MatCardModule,
+    MatIconModule,
+  ],
   templateUrl: './legajo-datos-generales.component.html',
-  styleUrl: './legajo-datos-generales.component.css',
+  styleUrl: './legajo-datos-generales.component.scss',
 })
-/** LEGAJO_SEC_DATOS_GENERALES — scaffold UI; lógica en fase posterior. */
-export class LegajoDatosGeneralesComponent {}
+export class LegajoDatosGeneralesComponent {
+  readonly legajoState = inject(LegajoStateService);
+
+  subirFoto(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+
+    if (!file) return;
+
+    this.legajoState.subirFoto(file);
+  }
+}

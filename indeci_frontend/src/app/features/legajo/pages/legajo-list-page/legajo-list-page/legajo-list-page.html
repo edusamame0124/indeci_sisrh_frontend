@@ -1,0 +1,109 @@
+<div class="legajo-list-page">
+  <mat-card class="header-card">
+    <div class="header">
+      <div>
+        <h1>Legajo Personal</h1>
+        <p>Busque un trabajador para visualizar y administrar su legajo.</p>
+      </div>
+    </div>
+
+    <div class="search-row">
+      <mat-form-field appearance="outline">
+        <mat-label>Buscar trabajador</mat-label>
+        <input
+          matInput
+          [(ngModel)]="filtro"
+          placeholder="DNI, nombre o código interno"
+          (keyup.enter)="buscar()"
+        />
+      </mat-form-field>
+
+      <button
+        mat-flat-button
+        color="primary"
+        type="button"
+        (click)="buscar()"
+        [disabled]="cargando()"
+      >
+        <mat-icon>search</mat-icon>
+        Buscar
+      </button>
+
+      <button mat-stroked-button type="button" (click)="limpiar()" [disabled]="cargando()">
+        <mat-icon>refresh</mat-icon>
+        Limpiar
+      </button>
+    </div>
+
+    @if (error()) {
+      <div class="error">
+        {{ error() }}
+      </div>
+    }
+  </mat-card>
+
+  @if (cargando()) {
+    <div class="loading">
+      <mat-spinner diameter="40"></mat-spinner>
+      <span>Buscando trabajadores...</span>
+    </div>
+  }
+
+  <mat-card class="table-card">
+    <div class="table-header">
+      <h2>Trabajadores</h2>
+      <span>{{ totalElements() }} registro(s)</span>
+    </div>
+
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>DNI</th>
+            <th>Trabajador</th>
+            <th>Código interno</th>
+            <th>Régimen laboral</th>
+            <th>Estado</th>
+            <th>Persona ID</th>
+            <th>Empleado ID</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          @for (item of personas(); track item.id) {
+            <tr>
+              <td>{{ item.dni || '-' }}</td>
+              <td>{{ item.nombreCompleto || '-' }}</td>
+              <td>{{ item.codigoInterno || '-' }}</td>
+              <td>{{ item.regimenLaboral || '-' }}</td>
+              <td>{{ item.estado || '-' }}</td>
+              <td>{{ item.id }}</td>
+              <td>{{ item.empleadoId || '-' }}</td>
+              <td>
+                <button mat-stroked-button color="primary" type="button" (click)="verLegajo(item)">
+                  <mat-icon>folder_open</mat-icon>
+                  Ver legajo
+                </button>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="8" class="empty">No hay trabajadores para mostrar.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <mat-paginator
+      [length]="totalElements()"
+      [pageIndex]="page"
+      [pageSize]="size"
+      [pageSizeOptions]="pageSizeOptions"
+      showFirstLastButtons
+      (page)="cambiarPagina($event)"
+    >
+    </mat-paginator>
+  </mat-card>
+</div>

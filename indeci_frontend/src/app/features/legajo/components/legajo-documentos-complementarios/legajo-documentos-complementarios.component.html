@@ -1,3 +1,46 @@
-<section class="legajo-section" aria-labelledby="legajo-documentos-complementarios-title">
-  <h2 id="legajo-documentos-complementarios-title">Documentos Complementarios</h2>
-</section>
+@if (!legajoState.resumen()) {
+  <mat-card>
+    <p>Busque un trabajador para visualizar esta sección.</p>
+  </mat-card>
+} @else {
+  <mat-card>
+    <div class="section-header">
+      <h3>Documentos del Legajo</h3>
+      <button mat-flat-button color="primary" type="button" (click)="subirDocumento()">
+        <mat-icon>upload</mat-icon>
+        Subir documento
+      </button>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Documento</th>
+          <th>Fecha</th>
+          <th>Origen</th>
+          <th>Observación</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (item of legajoState.resumen()?.documentos; track item.id) {
+          <tr>
+            <td>{{ item.nombreDocumento || item.nombreArchivo || '-' }}</td>
+            <td>{{ item.fechaDocumento || '-' }}</td>
+            <td>{{ item.origen || '-' }}</td>
+            <td>{{ item.observacion || '-' }}</td>
+            <td>
+              <button mat-button type="button" (click)="legajoState.descargarDocumento(item.id)">
+                Descargar
+              </button>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="5" class="empty">No hay documentos registrados.</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </mat-card>
+}

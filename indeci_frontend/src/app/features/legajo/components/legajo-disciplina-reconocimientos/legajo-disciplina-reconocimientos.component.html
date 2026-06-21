@@ -1,3 +1,95 @@
-<section class="legajo-section" aria-labelledby="legajo-disciplina-reconocimientos-title">
-  <h2 id="legajo-disciplina-reconocimientos-title">Disciplina y Reconocimientos</h2>
-</section>
+@if (!legajoState.resumen()) {
+  <mat-card>
+    <p>Busque un trabajador para visualizar esta sección.</p>
+  </mat-card>
+} @else {
+  <div class="section-grid">
+    <mat-card>
+      <div class="section-header">
+        <h3>Reconocimientos</h3>
+        <button mat-flat-button color="primary" type="button" (click)="agregarReconocimiento()">
+          <mat-icon>add</mat-icon>
+          Agregar
+        </button>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Tipo</th>
+            <th>Descripción</th>
+            <th>Fecha</th>
+            <th>Documento</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of legajoState.resumen()?.reconocimientos; track item.id) {
+            <tr>
+              <td>{{ item.tipoReconocimiento }}</td>
+              <td>{{ item.descripcion }}</td>
+              <td>{{ item.fechaReconocimiento }}</td>
+              <td>
+                @if (item.legajoDocumentoId) {
+                  <button mat-button type="button" (click)="legajoState.descargarDocumento(item.legajoDocumentoId)">
+                    Ver
+                  </button>
+                } @else {
+                  -
+                }
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="4" class="empty">No hay reconocimientos registrados.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </mat-card>
+
+    <mat-card>
+      <div class="section-header">
+        <h3>Medidas Disciplinarias</h3>
+        <button mat-flat-button color="primary" type="button" (click)="agregarMedida()">
+          <mat-icon>add</mat-icon>
+          Agregar
+        </button>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Tipo</th>
+            <th>Descripción</th>
+            <th>Inicio</th>
+            <th>Fin</th>
+            <th>Documento</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of legajoState.resumen()?.medidasDisciplinarias; track item.id) {
+            <tr>
+              <td>{{ item.tipoMedida }}</td>
+              <td>{{ item.descripcion }}</td>
+              <td>{{ item.fechaInicio }}</td>
+              <td>{{ item.fechaFin || '-' }}</td>
+              <td>
+                @if (item.legajoDocumentoId) {
+                  <button mat-button type="button" (click)="legajoState.descargarDocumento(item.legajoDocumentoId)">
+                    Ver
+                  </button>
+                } @else {
+                  -
+                }
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="5" class="empty">No hay medidas disciplinarias registradas.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </mat-card>
+  </div>
+}

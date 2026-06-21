@@ -1,12 +1,28 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { Component, inject } from '@angular/core';
+
+import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
+import { MatIconModule } from '@angular/material/icon';
+
+import { LegajoStateService } from '../../services/legajo-state';
 
 @Component({
   selector: 'app-legajo-documentos-complementarios',
   standalone: true,
-  imports: [],
-  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [
+    CommonModule,
+    MatButtonModule,
+    MatCardModule,
+    MatIconModule,
+  ],
   templateUrl: './legajo-documentos-complementarios.component.html',
-  styleUrl: './legajo-documentos-complementarios.component.css',
+  styleUrl: './legajo-documentos-complementarios.component.scss',
 })
-/** LEGAJO_SEC_DOCUMENTOS_COMPLEMENTARIOS — scaffold UI; lógica en fase posterior. */
-export class LegajoDocumentosComplementariosComponent {}
+export class LegajoDocumentosComplementariosComponent {
+  readonly legajoState = inject(LegajoStateService);
+
+  subirDocumento(): void {
+    console.log('Pendiente abrir dialog de subir documento');
+  }
+}
