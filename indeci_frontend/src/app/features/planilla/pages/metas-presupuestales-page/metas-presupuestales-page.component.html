@@ -1,0 +1,119 @@
+<section class="metas-page">
+  <header class="metas-header">
+    <div class="metas-header-title">
+      <h1>Metas presupuestales anuales</h1>
+      <p class="metas-subtitle">Asignación y seguimiento por empleado — V010_77 / SPEC §M05</p>
+    </div>
+
+    <mat-form-field appearance="outline" class="anio-selector">
+      <mat-label>Año fiscal</mat-label>
+      <mat-select [value]="anioSeleccionado()" (selectionChange)="onAnioChange($event.value)">
+        @for (anio of aniosDisponibles; track anio) {
+          <mat-option [value]="anio">{{ anio }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </header>
+
+  <!-- KPI Dashboard -->
+  @if (resumen(); as r) {
+    <div class="kpi-grid" role="region" aria-label="Resumen de metas presupuestales">
+
+      <!-- Catálogo -->
+      <div class="kpi-card">
+        <div class="kpi-icon kpi-icon--blue">
+          <mat-icon>category</mat-icon>
+        </div>
+        <div class="kpi-body">
+          <span class="kpi-valor">{{ r.totalMetasPublicadas }}</span>
+          <span class="kpi-label">Metas publicadas</span>
+          <span class="kpi-sub">de {{ r.totalMetasCatalogo }} en catálogo</span>
+        </div>
+      </div>
+
+      <!-- Equivalencias -->
+      <div class="kpi-card">
+        <div class="kpi-icon kpi-icon--info">
+          <mat-icon>link</mat-icon>
+        </div>
+        <div class="kpi-body">
+          <span class="kpi-valor">{{ r.totalEquivalencias }}</span>
+          <span class="kpi-label">Equivalencias vigentes</span>
+          <span class="kpi-sub">para año {{ r.anioFiscal }}</span>
+        </div>
+      </div>
+
+      <!-- Asignaciones -->
+      <div class="kpi-card"
+        [class.kpi-card--ok]="r.totalEmpleadosSinMeta === 0 && r.totalEmpleadosPublicados > 0"
+        [class.kpi-card--warn]="r.totalEmpleadosSinMeta > 0">
+        <div class="kpi-icon"
+          [class.kpi-icon--green]="r.totalEmpleadosSinMeta === 0 && r.totalEmpleadosPublicados > 0"
+          [class.kpi-icon--amber]="r.totalEmpleadosSinMeta > 0"
+          [class.kpi-icon--blue]="r.totalEmpleadosPublicados === 0">
+          <mat-icon>people</mat-icon>
+        </div>
+        <div class="kpi-body">
+          <span class="kpi-valor">{{ r.totalEmpleadosPublicados }}</span>
+          <span class="kpi-label">Empleados con meta</span>
+          @if (r.totalEmpleadosSinMeta > 0) {
+            <span class="kpi-sub kpi-sub--warn">
+              {{ r.totalEmpleadosSinMeta }} sin meta asignada
+            </span>
+          } @else {
+            <span class="kpi-sub">todos asignados</span>
+          }
+        </div>
+      </div>
+
+      <!-- Estado general -->
+      <div class="kpi-card kpi-card--estado"
+        [class.kpi-card--ok]="r.estadoGeneral === 'CON_METAS'"
+        [class.kpi-card--warn]="r.estadoGeneral === 'PARCIAL'"
+        [class.kpi-card--err]="r.estadoGeneral === 'SIN_METAS'">
+        <div class="kpi-icon"
+          [class.kpi-icon--green]="r.estadoGeneral === 'CON_METAS'"
+          [class.kpi-icon--amber]="r.estadoGeneral === 'PARCIAL'"
+          [class.kpi-icon--red]="r.estadoGeneral === 'SIN_METAS'">
+          <mat-icon>
+            {{ r.estadoGeneral === 'CON_METAS' ? 'check_circle' :
+               r.estadoGeneral === 'PARCIAL'   ? 'warning_amber' : 'cancel' }}
+          </mat-icon>
+        </div>
+        <div class="kpi-body">
+          <span class="kpi-valor kpi-valor--sm">
+            {{ r.estadoGeneral === 'CON_METAS' ? 'Completo' :
+               r.estadoGeneral === 'PARCIAL'   ? 'Parcial'  : 'Sin metas' }}
+          </span>
+          <span class="kpi-label">Estado del período</span>
+          <span class="kpi-sub">año {{ r.anioFiscal }}</span>
+        </div>
+      </div>
+
+    </div>
+  } @else if (loadingResumen()) {
+    <div class="kpi-loading">
+      <mat-spinner diameter="24"></mat-spinner>
+      <span>Cargando resumen…</span>
+    </div>
+  }
+
+  <!-- Tabs principales -->
+  <mat-tab-group animationDuration="150ms" class="metas-tabs">
+    <mat-tab label="Trazabilidad">
+      <app-trazabilidad-tab />
+    </mat-tab>
+    <mat-tab label="Catálogo">
+      <app-catalogo-meta-tab [anioFiscal]="anioSeleccionado()" />
+    </mat-tab>
+    <mat-tab label="Asignaciones">
+      <app-asignacion-meta-tab [anioFiscal]="anioSeleccionado()" />
+    </mat-tab>
+    <mat-tab label="Equivalencias">
+      <app-equivalencias-meta-tab [anioFiscal]="anioSeleccionado()" />
+    </mat-tab>
+    <mat-tab label="Actualización masiva">
+      <app-wizard-actualizacion [anioFiscal]="anioSeleccionado()" />
+    </mat-tab>
+  </mat-tab-group>
+</section>

@@ -1,0 +1,143 @@
+/* ══════════════════════════════════════════════════════
+   Metas Presupuestales Page — SISRH Design System
+   ══════════════════════════════════════════════════════ */
+
+.metas-page {
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* ── Header ── */
+.metas-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.metas-header-title h1 {
+  margin: 0 0 4px;
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--sisrh-primary, #1f3a5f);
+}
+
+.metas-subtitle {
+  margin: 0;
+  font-size: 12px;
+  color: var(--sisrh-text-muted, #64748b);
+}
+
+.anio-selector { min-width: 160px; }
+
+/* ── KPI Grid ── */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+@media (max-width: 1100px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 600px)  { .kpi-grid { grid-template-columns: 1fr; } }
+
+/* ── KPI Card ── */
+.kpi-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+  background: var(--sisrh-surface, #fff);
+  border: 1px solid var(--sisrh-border, #d9e1ea);
+  border-radius: 10px;
+  transition: box-shadow 0.15s, border-color 0.15s;
+}
+
+.kpi-card:hover { box-shadow: 0 2px 10px rgba(0,0,0,0.07); }
+
+.kpi-card--ok   { border-color: var(--sisrh-success, #157347); }
+.kpi-card--warn { border-color: var(--sisrh-warning, #b7791f); }
+.kpi-card--err  { border-color: var(--sisrh-danger,  #b42318); }
+
+/* ── KPI Icon ── */
+.kpi-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.kpi-icon mat-icon {
+  font-size: 22px;
+  width: 22px;
+  height: 22px;
+}
+
+.kpi-icon--blue  { background: var(--sisrh-primary-100, #e8eef6); color: var(--sisrh-primary, #1f3a5f); }
+.kpi-icon--info  { background: var(--sisrh-info-100,    #eaf2fb); color: var(--sisrh-info,    #2563a6); }
+.kpi-icon--green { background: var(--sisrh-success-100, #e7f5ee); color: var(--sisrh-success, #157347); }
+.kpi-icon--amber { background: var(--sisrh-warning-100, #fff4db); color: var(--sisrh-warning, #b7791f); }
+.kpi-icon--red   { background: var(--sisrh-danger-100,  #fdecec); color: var(--sisrh-danger,  #b42318); }
+
+/* ── KPI Body ── */
+.kpi-body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 1px;
+}
+
+.kpi-valor {
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--sisrh-text, #1f2937);
+}
+
+.kpi-valor--sm {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.kpi-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--sisrh-text, #1f2937);
+  line-height: 1.3;
+}
+
+.kpi-sub {
+  font-size: 11px;
+  color: var(--sisrh-text-muted, #64748b);
+  line-height: 1.3;
+}
+
+.kpi-sub--warn {
+  color: var(--sisrh-warning, #b7791f);
+  font-weight: 600;
+}
+
+/* ── Loading KPI ── */
+.kpi-loading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--sisrh-text-muted, #64748b);
+  font-size: 13px;
+  margin-bottom: 20px;
+  padding: 8px 0;
+}
+
+/* ── Tabs ── */
+.metas-tabs {
+  background: var(--sisrh-surface, #fff);
+  border-radius: 8px;
+  border: 1px solid var(--sisrh-border, #d9e1ea);
+  overflow: hidden;
+}

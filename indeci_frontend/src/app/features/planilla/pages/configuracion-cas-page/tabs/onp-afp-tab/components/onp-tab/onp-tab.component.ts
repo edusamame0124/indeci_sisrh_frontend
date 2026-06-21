@@ -27,6 +27,14 @@ import {
   OnpVigenciaDialogComponent,
   type OnpDialogData,
 } from '../onp-vigencia-dialog/onp-vigencia-dialog.component';
+import {
+  DuplicarVigenciaDialogComponent,
+  type DuplicarVigenciaDialogData,
+} from '../duplicar-vigencia-dialog/duplicar-vigencia-dialog.component';
+import {
+  EliminarVigenciaDialogComponent,
+  type EliminarVigenciaDialogData,
+} from '../eliminar-vigencia-dialog/eliminar-vigencia-dialog.component';
 
 /**
  * Pestaña ONP — tabla de parámetros de vigencia del Sistema Nacional de Pensiones.
@@ -70,6 +78,7 @@ export class OnpTabComponent implements OnInit {
     { valor: 'PROGRAMADO', etiqueta: 'Programado' },
     { valor: 'CERRADO',    etiqueta: 'Cerrado' },
     { valor: 'INACTIVO',   etiqueta: 'Inactivo' },
+    { valor: 'ANULADO',    etiqueta: 'Anulado' },
   ];
 
   readonly loading       = signal(true);
@@ -135,6 +144,52 @@ export class OnpTabComponent implements OnInit {
     this.abrirDialog({ modo: 'ver', row });
   }
 
+  canDuplicar(row: OnpParametroRow): boolean {
+    return row.estado !== 'INACTIVO' && row.estado !== 'ANULADO';
+  }
+
+  canEliminar(row: OnpParametroRow): boolean {
+    return row.estado !== 'ANULADO' && !row.bloqueadoPorPlanilla;
+  }
+
+  tooltipEliminar(row: OnpParametroRow): string {
+    if (row.estado === 'ANULADO') return 'Ya anulada';
+    if (row.bloqueadoPorPlanilla) return 'Bloqueada por planilla cerrada';
+    return 'Eliminar (anulación lógica con trazabilidad)';
+  }
+
+  eliminarFila(row: OnpParametroRow): void {
+    const data: EliminarVigenciaDialogData = { tipo: 'ONP', row };
+    this.dialog.open(EliminarVigenciaDialogComponent, {
+      data,
+      width: '580px',
+      maxWidth: '95vw',
+    }).afterClosed().subscribe((result) => {
+      if (result) {
+        this.snack.open(
+          'Vigencia ONP anulada correctamente. Ya no será considerada por el motor de planilla.',
+          'Cerrar',
+          { duration: 4000 },
+        );
+        this.cargar();
+      }
+    });
+  }
+
+  duplicarFila(row: OnpParametroRow): void {
+    const data: DuplicarVigenciaDialogData = { tipo: 'ONP', row };
+    this.dialog.open(DuplicarVigenciaDialogComponent, {
+      data,
+      width: '560px',
+      maxWidth: '95vw',
+    }).afterClosed().subscribe((result) => {
+      if (result) {
+        this.snack.open('Vigencia ONP duplicada correctamente.', 'Cerrar', { duration: 3000 });
+        this.cargar();
+      }
+    });
+  }
+
   cerrarVigencia(row: OnpParametroRow): void {
     if (row.bloqueadoPorPlanilla) {
       this.snack.open('Bloqueado: parámetro usado en planilla cerrada.', 'Cerrar', { duration: 4000 });
@@ -148,7 +203,12 @@ export class OnpTabComponent implements OnInit {
 
   editar(row: OnpParametroRow): void {
     if (row.bloqueadoPorPlanilla) {
-      this.snack.open('Bloqueado: parámetro usado en planilla cerrada.', 'Cerrar', { duration: 4000 });
+      this.snack.open(
+        'No se puede editar este parámetro porque ya fue utilizado en una planilla cerrada. ' +
+        'Cree una nueva vigencia o duplique la vigente para mantener la trazabilidad.',
+        'Cerrar',
+        { duration: 6000 },
+      );
       return;
     }
     this.abrirDialog({ modo: 'editar', row });
@@ -177,9 +237,11 @@ export class OnpTabComponent implements OnInit {
   private cargar(): void {
     this.loading.set(true);
     this.error.set(null);
+    const estado = this.filtroEstado() || undefined;
     this.api.onpParametros({
-      periodo: this.filtroPeriodo() || undefined,
-      estado:  this.filtroEstado() || undefined,
+      periodo:        this.filtroPeriodo() || undefined,
+      estado,
+      incluirAnulados: estado === 'ANULADO' || undefined,
     }).subscribe({
       next: (rows) => { this._rows.set(rows); this.loading.set(false); },
       error: () => { this.error.set('No se pudo cargar los parámetros ONP.'); this.loading.set(false); },

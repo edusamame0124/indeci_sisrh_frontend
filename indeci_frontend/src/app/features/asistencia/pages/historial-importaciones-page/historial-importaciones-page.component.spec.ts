@@ -23,6 +23,7 @@ describe('HistorialImportacionesPageComponent', () => {
     filasValidas: 9,
     filasError: 1,
     empleadosProcesados: 3,
+    estadoValidacion: 'REQUIERE_CALCULO',
   };
 
   const page: SpringPage<AsistenciaImportHistorial> = {

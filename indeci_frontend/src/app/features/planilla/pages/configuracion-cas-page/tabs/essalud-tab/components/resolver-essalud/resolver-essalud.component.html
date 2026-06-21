@@ -1,0 +1,169 @@
+<div class="res-section">
+
+  <!-- Header -->
+  <div class="res-header">
+    <mat-icon fontIcon="manage_search" class="res-header__icon" aria-hidden="true" />
+    <div>
+      <h3 class="res-header__title">Resolver EsSalud para trabajador</h3>
+      <p class="res-header__desc">
+        Consulte la vigencia y el cálculo EsSalud aplicable a un trabajador CAS en un período dado.
+        La cobertura (Solo EsSalud o EsSalud + EPS) se detecta automáticamente del registro del trabajador.
+      </p>
+    </div>
+  </div>
+
+  <!-- Formulario -->
+  <div class="res-form">
+
+    <!-- Empleado — MatAutocomplete -->
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="res-field">
+      <mat-label>Empleado</mat-label>
+      <mat-icon matPrefix fontIcon="person_search" aria-hidden="true" />
+      <input
+        matInput
+        type="search"
+        [formControl]="empleadoSearchCtrl"
+        [matAutocomplete]="autoEmpleado"
+        placeholder="Buscar por nombre o DNI…"
+        aria-label="Buscar empleado"
+        autocomplete="off"
+      />
+      @if (loadingPersonas()) {
+        <mat-icon matSuffix fontIcon="hourglass_empty" class="field-loading" aria-hidden="true" />
+      }
+      <mat-autocomplete
+        #autoEmpleado="matAutocomplete"
+        [displayWith]="displayPersona"
+        (optionSelected)="onEmpleadoSelected($event)"
+      >
+        @if (personasFiltradas().length === 0 && searchQuery().length >= 2) {
+          <mat-option disabled>Sin resultados para "{{ searchQuery() }}"</mat-option>
+        }
+        @for (p of personasFiltradas(); track p.id) {
+          <mat-option [value]="p">
+            <span class="ac-nombre">{{ p.nombreCompleto }}</span>
+            @if (p.dni) {
+              <span class="ac-dni"> — DNI {{ p.dni }}</span>
+            }
+            @if (p.codigoInterno) {
+              <span class="ac-codigo"> · {{ p.codigoInterno }}</span>
+            }
+          </mat-option>
+        }
+      </mat-autocomplete>
+    </mat-form-field>
+
+    <!-- Período -->
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="res-field-sm">
+      <mat-label>Período</mat-label>
+      <mat-select
+        [value]="periodo()"
+        (selectionChange)="periodo.set($event.value)"
+        placeholder="Seleccione período"
+        aria-label="Período"
+      >
+        @for (p of periodos; track p) {
+          <mat-option [value]="p">{{ formatLabel(p) }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <!-- Acciones -->
+    <div class="res-btns">
+      <button mat-flat-button color="primary"
+              (click)="resolver()" [disabled]="!canResolve()">
+        @if (resolving()) {
+          <mat-spinner diameter="16" />
+        } @else {
+          <mat-icon fontIcon="calculate" aria-hidden="true" />
+        }
+        {{ resolving() ? 'Calculando…' : 'Resolver' }}
+      </button>
+      @if (resultado() || resolveError()) {
+        <button mat-stroked-button type="button" (click)="limpiar()">
+          <mat-icon fontIcon="clear" aria-hidden="true" />
+          Limpiar
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- Cobertura detectada -->
+  @if (coberturaDetectada() !== undefined) {
+    <div class="cobertura-chip" [class]="coberturaClass(coberturaDetectada())">
+      <mat-icon [fontIcon]="coberturaIcon(coberturaDetectada())" aria-hidden="true" />
+      <span>
+        <strong>Cobertura detectada:</strong>
+        {{ coberturaLabel(coberturaDetectada()) }}
+      </span>
+    </div>
+  }
+
+  <!-- Error -->
+  @if (resolveError()) {
+    <div class="res-error" role="alert">
+      <mat-icon fontIcon="error_outline" aria-hidden="true" />
+      {{ resolveError() }}
+    </div>
+  }
+
+  <!-- Resultado -->
+  @if (resultado(); as r) {
+    <div class="res-card" [class.res-card--ok]="r.encontrado" [class.res-card--warn]="!r.encontrado">
+      <div class="res-card__header">
+        <mat-icon [fontIcon]="r.encontrado ? 'check_circle' : 'warning_amber'" aria-hidden="true" />
+        <span>{{ r.encontrado ? 'Vigencia encontrada' : 'Sin vigencia EsSalud' }}</span>
+        @if (r.mensaje) { <span class="res-card__msg">{{ r.mensaje }}</span> }
+      </div>
+
+      @if (r.encontrado) {
+        <div class="res-grid">
+          <span class="res-label">Trabajador</span>
+          <span class="res-val">{{ r.empleadoNombre }} ({{ r.documento }})</span>
+
+          <span class="res-label">Régimen</span>
+          <span class="res-val">{{ r.regimenLaboral }}</span>
+
+          <span class="res-label">Período</span>
+          <span class="res-val">{{ r.periodoConsultado }}</span>
+
+          <span class="res-label">Vigencia</span>
+          <span class="res-val">
+            {{ r.vigenciaInicio | slice:0:10 }} –
+            {{ r.vigenciaFin ? (r.vigenciaFin | slice:0:10) : 'abierta' }}
+          </span>
+
+          <span class="res-label">UIT vigente</span>
+          <span class="res-val">S/ {{ r.uitVigente | number:'1.2-2' }}</span>
+
+          <span class="res-label">Remuneración CAS</span>
+          <span class="res-val">S/ {{ r.remuneracionCas | number:'1.2-2' }}</span>
+
+          <span class="res-label">Tope UIT ({{ r.pctBaseCas }}%)</span>
+          <span class="res-val">S/ {{ r.limiteUit | number:'1.2-2' }}</span>
+
+          <span class="res-label res-separator">──</span>
+          <span class="res-separator">──</span>
+
+          <span class="res-label">Base aplicable</span>
+          <span class="res-val res-val--hl">S/ {{ r.baseAplicable | number:'1.2-2' }}</span>
+
+          @if (!r.tieneEps) {
+            <span class="res-label">EsSalud ({{ r.pctEssalud }}%)</span>
+            <span class="res-val res-val--hl">S/ {{ r.essalud9 | number:'1.2-2' }}</span>
+          }
+          @if (r.tieneEps) {
+            <span class="res-label">EsSalud con EPS ({{ r.pctEssaludEps }}%)</span>
+            <span class="res-val res-val--hl">S/ {{ r.essaludEps675 | number:'1.2-2' }}</span>
+            <span class="res-label">Crédito EPS ({{ r.pctCreditoEps }}%)</span>
+            <span class="res-val">S/ {{ r.creditoEps225 | number:'1.2-2' }}</span>
+          }
+
+          <span class="res-label">Fuente</span>
+          <span class="res-val res-val--muted">{{ r.fuenteOficial }}</span>
+        </div>
+      }
+    </div>
+  }
+
+</div>

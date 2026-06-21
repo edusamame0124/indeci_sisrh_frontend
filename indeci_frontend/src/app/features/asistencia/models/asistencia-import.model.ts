@@ -68,6 +68,8 @@ export interface AsistenciaImportHistorial {
   readonly filasValidas: number;
   readonly filasError: number;
   readonly empleadosProcesados: number;
+  /** REQUIERE_CALCULO | VALIDADO | null (no aplica). Solo lectura en el historial. */
+  readonly estadoValidacion: 'REQUIERE_CALCULO' | 'VALIDADO' | null;
 }
 
 export interface AsistenciaValidacionBatch {
@@ -86,4 +88,68 @@ export interface SpringPage<T> {
   readonly totalPages: number;
   readonly number: number;
   readonly size: number;
+}
+
+/** F2/F3 — fila del detalle paginado server-side (24 columnas, minutos numéricos). */
+export interface AsistenciaImportFilaDetalle {
+  readonly id: number;
+  readonly numeroFila: number;
+  readonly empleadoId: number | null;
+  readonly estado: 'VALIDA' | 'WARN' | 'OBSERVADA' | 'ERROR';
+  readonly dni: string | null;
+  readonly empleadoSistema: string | null;
+  readonly nombreCsv: string | null;
+  readonly fecha: string | null;
+  readonly dia: string | null;
+  readonly entradaProg: string | null;
+  readonly salidaProg: string | null;
+  readonly marca1: string | null;
+  readonly marca2: string | null;
+  readonly marca3: string | null;
+  readonly marca4: string | null;
+  readonly tardanzaMin: number | null;
+  readonly refrigerioMin: number | null;
+  readonly excesoRefrigMin: number | null;
+  readonly tiempoRefrigMin: number | null;
+  readonly tiempoAntesSalMin: number | null;
+  readonly horasTrabMin: number | null;
+  readonly horasExtra25Min: number | null;
+  readonly horasExtra35Min: number | null;
+  readonly horasExtra100Min: number | null;
+  readonly horasExtraTotalMin: number | null;
+  readonly observaciones: string | null;
+  readonly mensajeValidacion: string | null;
+  readonly aceptadaObservada: boolean;
+}
+
+/** F2/F3 — resumen liviano de la importación (banda de estado del paso "Validar"). */
+export interface AsistenciaImportResumen {
+  readonly importacionId: number;
+  readonly nombreArchivo: string;
+  readonly periodo: string;
+  readonly periodoDetectadoIni: string | null;
+  readonly periodoDetectadoFin: string | null;
+  readonly filasLeidas: number;
+  readonly filasValidas: number;
+  readonly filasObservadas: number;
+  readonly filasError: number;
+  readonly empleadosDetectados: number;
+  readonly estado: EstadoImportacion;
+  readonly hashArchivo: string;
+  readonly tamanoBytes: number | null;
+  readonly duplicadoHashPrevio: boolean;
+  readonly usuario: string;
+  readonly fechaImportacion: string;
+  readonly usuarioValidacion: string | null;
+  readonly fechaValidacion: string | null;
+  readonly usuarioConfirmacion: string | null;
+  readonly fechaConfirmacion: string | null;
+}
+
+/** Filtros del detalle server-side. */
+export interface AsistenciaImportDetalleFiltro {
+  readonly dni?: string;
+  readonly nombre?: string;
+  readonly estado?: string;
+  readonly soloErrores?: boolean;
 }

@@ -1,0 +1,126 @@
+:host {
+  display: block;
+}
+
+.diaria {
+  padding: 16px 0 8px;
+}
+
+.diaria__header {
+  margin-bottom: 16px;
+}
+
+.diaria__title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary, #0a1e35);
+}
+
+.diaria__hora {
+  font-weight: 400;
+  color: var(--text-secondary, #4a5568);
+}
+
+.diaria__subtitle {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--text-secondary, #4a5568);
+}
+
+.diaria__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-main, #e2e6ed);
+}
+
+.diaria__field {
+  width: 180px;
+}
+
+.diaria__field--dni {
+  width: 140px;
+}
+
+.diaria__field--nombre {
+  width: 220px;
+  flex: 1 1 180px;
+  max-width: 320px;
+}
+
+.diaria__count {
+  margin: 0 0 8px;
+  font-size: 13px;
+  color: var(--text-secondary, #4a5568);
+}
+
+.diaria__loading {
+  display: flex;
+  justify-content: center;
+  padding: 32px 0;
+}
+
+.diaria__table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border-main, #e2e6ed);
+  border-radius: var(--radius-md, 7px);
+}
+
+.diaria__table {
+  width: 100%;
+  min-width: 960px;
+}
+
+.diaria__num {
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.diaria__badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  background: var(--surface-hover, #f8fafd);
+  color: var(--text-primary, #0a1e35);
+}
+
+.diaria__badge--ok {
+  background: #e8f5e9;
+  color: #1b5e20;
+}
+
+.diaria__badge--warn {
+  background: #fff8e1;
+  color: #e65100;
+}
+
+.diaria__badge--danger {
+  background: #ffebee;
+  color: #b71c1c;
+}
+
+.diaria__papeleta {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  background: #e8f5e9;
+  color: #1b5e20;
+  cursor: help;
+}
+
+@media (max-width: 768px) {
+  .diaria__field,
+  .diaria__field--dni,
+  .diaria__field--nombre {
+    width: 100%;
+    max-width: none;
+  }
+}

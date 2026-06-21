@@ -1,0 +1,53 @@
+<div class="aud-section">
+
+  <p class="aud-nota">
+    Trazabilidad de acciones sobre vigencias de retención 4ta categoría.
+    Ref. D.L. 1451 · Art. 33 inc. e) TUO LIR.
+  </p>
+
+  @if (loading()) {
+    <div class="aud-state" aria-live="polite">
+      <mat-spinner diameter="36" />
+      <span>Cargando trazabilidad…</span>
+    </div>
+  } @else if (error()) {
+    <div class="aud-error" role="alert">
+      <mat-icon fontIcon="error_outline" aria-hidden="true" />
+      {{ error() }}
+    </div>
+  } @else if (!eventos().length) {
+    <div class="aud-state">
+      <mat-icon fontIcon="manage_search" aria-hidden="true" />
+      <span>No se encontraron eventos de auditoría.</span>
+    </div>
+  } @else {
+    <p class="aud-rango">{{ eventos().length }} evento(s) — orden cronológico inverso</p>
+
+    <div class="timeline" role="list">
+      @for (ev of eventos(); track ev.rowId + '_' + ev.accion + '_' + ev.fecha) {
+        <div class="timeline__item" [class]="'timeline__item--' + ev.tipo" role="listitem">
+
+          <div class="timeline__icon-wrap" aria-hidden="true">
+            <mat-icon [fontIcon]="iconForTipo(ev.tipo)" class="timeline__icon" />
+          </div>
+
+          <div class="timeline__body">
+            <div class="timeline__header">
+              <span class="timeline__accion">{{ ev.accion }}</span>
+              <span class="badge-anio">Año {{ ev.anioFiscal }}</span>
+            </div>
+            <p class="timeline__desc">{{ ev.descripcion }}</p>
+            <div class="timeline__meta">
+              <mat-icon fontIcon="person_outline" class="meta-icon" aria-hidden="true" />
+              <span>{{ ev.usuario }}</span>
+              <mat-icon fontIcon="schedule" class="meta-icon" aria-hidden="true" />
+              <span>{{ ev.fecha | date:'dd/MM/yyyy HH:mm' }}</span>
+            </div>
+          </div>
+
+        </div>
+      }
+    </div>
+  }
+
+</div>

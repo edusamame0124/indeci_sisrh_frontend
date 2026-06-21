@@ -1,0 +1,93 @@
+<div class="tab-planilla">
+  <div class="tab-planilla__toolbar">
+    <mat-form-field appearance="outline" class="tab-planilla__select">
+      <mat-label>Tramo mensual</mat-label>
+      <mat-select [formControl]="tramoCtrl">
+        @for (t of tramos(); track t.id) {
+          <mat-option [value]="t.id">{{ t.periodo }} — {{ t.diasSubsidio }} d. subsidio</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </div>
+
+  @if (ultimaLiquidacion(); as liq) {
+    <article class="tab-planilla__hero" role="status">
+      <div class="tab-planilla__hero-icon" aria-hidden="true">
+        <mat-icon>account_balance</mat-icon>
+      </div>
+      <div>
+        <span class="tab-planilla__hero-label">Monto que impactará planilla</span>
+        <strong class="tab-planilla__hero-valor">{{ formatMonto(liq.subsidioEstimado + liq.diferencialIndeci) }}</strong>
+        <small>
+          EsSalud {{ formatMonto(liq.subsidioEstimado) }} · Diferencial INDECI
+          {{ formatMonto(liq.diferencialIndeci) }}
+        </small>
+      </div>
+      <span class="tab-planilla__hero-estado">{{ labelEstado(liq.estado) }}</span>
+    </article>
+  }
+
+  @if (loading()) {
+    <div class="tab-planilla__loading"><mat-spinner diameter="32" /></div>
+  } @else if (!liquidaciones().length) {
+    <div class="tab-planilla__empty">
+      <mat-icon fontIcon="receipt_long" aria-hidden="true" />
+      <p>No hay liquidaciones para el tramo seleccionado.</p>
+      <small>Calcule la liquidación en el Paso 3 — Cálculo y validación.</small>
+    </div>
+  } @else {
+    <div class="data-table-wrap">
+      <table mat-table [dataSource]="liquidaciones()" class="tab-panel__table" aria-label="Liquidaciones del tramo">
+        <ng-container matColumnDef="version">
+          <th mat-header-cell *matHeaderCellDef>Versión</th>
+          <td mat-cell *matCellDef="let row">v{{ row.versionLiq }}</td>
+        </ng-container>
+        <ng-container matColumnDef="estado">
+          <th mat-header-cell *matHeaderCellDef>Estado</th>
+          <td mat-cell *matCellDef="let row">
+            <span class="estado-badge">{{ labelEstado(row.estado) }}</span>
+          </td>
+        </ng-container>
+        <ng-container matColumnDef="essalud">
+          <th mat-header-cell *matHeaderCellDef>Subsidio EsSalud</th>
+          <td mat-cell *matCellDef="let row">{{ formatMonto(row.subsidioEstimado) }}</td>
+        </ng-container>
+        <ng-container matColumnDef="diff">
+          <th mat-header-cell *matHeaderCellDef>Diferencial INDECI</th>
+          <td mat-cell *matCellDef="let row">{{ formatMonto(row.diferencialIndeci) }}</td>
+        </ng-container>
+        <ng-container matColumnDef="acciones">
+          <th mat-header-cell *matHeaderCellDef>Acciones</th>
+          <td mat-cell *matCellDef="let row">
+            @if (puedeAplicar() && row.estado === 'CALCULADO') {
+              <button mat-flat-button color="primary" type="button" (click)="aplicar(row)" [disabled]="procesando()">
+                Aplicar a planilla
+              </button>
+            }
+            @if (puedeAjustar() && row.estado === 'APLICADO_PLANILLA') {
+              <button mat-stroked-button type="button" (click)="revertir(row)" [disabled]="procesando()">
+                Revertir
+              </button>
+            }
+          </td>
+        </ng-container>
+        <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+        <tr mat-row *matRowDef="let row; columns: columnas"></tr>
+      </table>
+    </div>
+  }
+
+  @if (motivosBloqueo().length > 0) {
+    <div class="tab-planilla__bloqueo" role="alert" aria-label="Motivos de bloqueo">
+      <div class="tab-planilla__bloqueo-head">
+        <mat-icon aria-hidden="true">block</mat-icon>
+        <strong>No se puede aplicar a planilla</strong>
+      </div>
+      <ul>
+        @for (m of motivosBloqueo(); track m) {
+          <li>{{ m }}</li>
+        }
+      </ul>
+    </div>
+  }
+</div>

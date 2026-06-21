@@ -1,0 +1,29 @@
+.ver-dialog__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 24px;
+  margin: 0;
+}
+
+.ver-dialog__grid dt {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary, #4a5568);
+}
+
+.ver-dialog__grid dd {
+  margin: 2px 0 0;
+  font-size: 14px;
+  color: var(--text-primary, #0a1e35);
+}
+
+.ver-dialog__full {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 640px) {
+  .ver-dialog__grid {
+    grid-template-columns: 1fr;
+  }
+}

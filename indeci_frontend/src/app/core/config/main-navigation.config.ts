@@ -117,8 +117,14 @@ export const MAIN_NAV_ITEMS: readonly MainNavItem[] = [
     icon: 'calculate',
     requiredAnyRole: [...PLANILLA_OPERATIVA_ROLES],
     children: [
+      { label: 'Configuración Anual CAS', route: '/planilla/configuracion-cas', icon: 'settings' },
       { label: 'Periodos', route: '/planilla/periodos', icon: 'event' },
       { label: 'Carga de asistencia', route: '/asistencia/carga', icon: 'event_available' },
+      {
+        label: 'Subsidios por Enfermedad e Incapacidad Temporal y Subsidios por Maternidad',
+        route: '/asistencia/subsidios',
+        icon: 'medical_services',
+      },
       { label: 'Centro de Validaciones', route: '/planilla/validaciones', icon: 'rule' },
       { label: 'Asistente de Recálculo', route: '/planilla/recalculo', icon: 'tune' },
       { label: 'Generación masiva', route: '/planilla/generacion-masiva', icon: 'group_work' },
@@ -126,7 +132,6 @@ export const MAIN_NAV_ITEMS: readonly MainNavItem[] = [
       { label: 'Movimientos', route: '/planilla/movimientos', icon: 'list' },
       { label: 'Suspensiones / Licencias', route: '/planilla/suspensiones', icon: 'event_busy' },
       { label: 'MCPP', route: '/planilla/mcpp', icon: 'receipt' },
-      { label: 'Configuración Anual CAS', route: '/planilla/configuracion-cas', icon: 'settings' },
     ],
   },
 

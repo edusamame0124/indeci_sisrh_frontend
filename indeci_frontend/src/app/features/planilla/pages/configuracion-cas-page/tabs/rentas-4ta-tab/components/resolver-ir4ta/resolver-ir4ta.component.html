@@ -1,0 +1,222 @@
+<div class="res-section">
+
+  <!-- Header -->
+  <div class="res-header">
+    <mat-icon fontIcon="manage_search" class="res-header__icon" aria-hidden="true" />
+    <div>
+      <h3 class="res-header__title">Resolver IR 4ta Categoría para trabajador</h3>
+      <p class="res-header__desc">
+        Consulte la vigencia y simule la retención IR 4ta aplicable a un trabajador CAS en un período dado.
+        Ingrese la base imponible mensual para comparar el escenario con y sin retención.
+      </p>
+    </div>
+  </div>
+
+  <!-- Formulario -->
+  <div class="res-form">
+
+    <!-- Empleado -->
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="res-field">
+      <mat-label>Empleado</mat-label>
+      <mat-icon matPrefix fontIcon="person_search" aria-hidden="true" />
+      <input
+        matInput
+        type="search"
+        [formControl]="empleadoSearchCtrl"
+        [matAutocomplete]="autoEmpleado"
+        placeholder="Buscar por nombre o DNI…"
+        aria-label="Buscar empleado"
+        autocomplete="off"
+      />
+      @if (loadingPersonas()) {
+        <mat-icon matSuffix fontIcon="hourglass_empty" class="field-loading" aria-hidden="true" />
+      }
+      <mat-autocomplete
+        #autoEmpleado="matAutocomplete"
+        [displayWith]="displayPersona"
+        (optionSelected)="onEmpleadoSelected($event)"
+      >
+        @if (personasFiltradas().length === 0 && searchQuery().length >= 2) {
+          <mat-option disabled>Sin resultados para "{{ searchQuery() }}"</mat-option>
+        }
+        @for (p of personasFiltradas(); track p.id) {
+          <mat-option [value]="p">
+            <span class="ac-nombre">{{ p.nombreCompleto }}</span>
+            @if (p.dni) { <span class="ac-dni"> — DNI {{ p.dni }}</span> }
+            @if (p.codigoInterno) { <span class="ac-codigo"> · {{ p.codigoInterno }}</span> }
+          </mat-option>
+        }
+      </mat-autocomplete>
+    </mat-form-field>
+
+    <!-- Período -->
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="res-field-sm">
+      <mat-label>Período</mat-label>
+      <mat-select
+        [value]="periodo()"
+        (selectionChange)="periodo.set($event.value)"
+        aria-label="Período"
+      >
+        @for (p of periodos; track p) {
+          <mat-option [value]="p">{{ formatLabel(p) }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <!-- Base imponible -->
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="res-field-sm">
+      <mat-label>Base imponible (S/)</mat-label>
+      <mat-icon matPrefix fontIcon="payments" aria-hidden="true" />
+      <input
+        matInput
+        type="number"
+        min="0"
+        step="0.01"
+        [formControl]="baseCtrl"
+        placeholder="Ej: 2500.00"
+        aria-label="Base imponible mensual"
+      />
+      <mat-hint>Honorario / remuneración mensual bruta</mat-hint>
+    </mat-form-field>
+
+    <!-- Botones -->
+    <div class="res-btns">
+      <button mat-flat-button color="primary"
+              (click)="resolver()" [disabled]="!canResolve()">
+        @if (resolving()) {
+          <mat-spinner diameter="16" />
+        } @else {
+          <mat-icon fontIcon="calculate" aria-hidden="true" />
+        }
+        {{ resolving() ? 'Calculando…' : 'Resolver' }}
+      </button>
+      @if (resultado() || resolveError()) {
+        <button mat-stroked-button type="button" (click)="limpiar()">
+          <mat-icon fontIcon="clear" aria-hidden="true" />
+          Limpiar
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- Error -->
+  @if (resolveError()) {
+    <div class="res-error" role="alert">
+      <mat-icon fontIcon="error_outline" aria-hidden="true" />
+      {{ resolveError() }}
+    </div>
+  }
+
+  <!-- Resultado + simulación -->
+  @if (resultado(); as r) {
+    <div class="res-card" [class.res-card--ok]="r.encontrado" [class.res-card--warn]="!r.encontrado">
+
+      <div class="res-card__header">
+        <mat-icon [fontIcon]="r.encontrado ? 'check_circle' : 'warning_amber'" aria-hidden="true" />
+        <span>{{ r.encontrado ? 'Vigencia IR4ta encontrada' : 'Sin vigencia IR4ta para el período' }}</span>
+        @if (r.mensaje) { <span class="res-card__msg">— {{ r.mensaje }}</span> }
+      </div>
+
+      @if (r.encontrado) {
+        <!-- Parámetros de la vigencia -->
+        <div class="res-grid">
+          <span class="res-label">Año fiscal</span>
+          <span class="res-val">{{ r.anioFiscal }}</span>
+
+          <span class="res-label">Período</span>
+          <span class="res-val">{{ r.periodoConsultado }}</span>
+
+          <span class="res-label">Vigencia</span>
+          <span class="res-val">
+            {{ r.vigenciaInicio }}
+            @if (r.vigenciaFin) { – {{ r.vigenciaFin }} } @else { – abierta }
+          </span>
+
+          <span class="res-label">UIT vigente</span>
+          <span class="res-val">S/ {{ r.uitVigente | number:'1.2-2' }}</span>
+
+          <span class="res-label">Base inafecta (75% UIT)</span>
+          <span class="res-val">S/ {{ r.baseInafectaIr4ta | number:'1.2-2' }}</span>
+
+          <span class="res-label">Tasa retención</span>
+          <span class="res-val">{{ r.tasaIr4ta }}%</span>
+
+          <span class="res-label">Fuente</span>
+          <span class="res-val res-val--muted">{{ r.fuenteOficial }}</span>
+        </div>
+
+        <!-- Simulación -->
+        @if (simulacion(); as sim) {
+          <div class="sim-divider"></div>
+
+          <div class="sim-header">
+            <mat-icon fontIcon="science" aria-hidden="true" />
+            <span>Simulación — base ingresada: <strong>S/ {{ sim.baseImponible | number:'1.2-2' }}</strong></span>
+          </div>
+
+          <div class="sim-badge" [class.sim-badge--afecto]="sim.afecto" [class.sim-badge--exento]="!sim.afecto">
+            <mat-icon [fontIcon]="sim.afecto ? 'warning_amber' : 'check_circle'" aria-hidden="true" />
+            {{ sim.afecto
+              ? 'AFECTO — base supera la inafecta (S/ ' + (sim.baseInafecta | number:'1.2-2') + ')'
+              : 'EXENTO — base no supera la inafecta (S/ ' + (sim.baseInafecta | number:'1.2-2') + ')'
+            }}
+          </div>
+
+          <!-- Comparativa con / sin retención -->
+          <div class="sim-grid">
+
+            <!-- Columna CON retención -->
+            <div class="sim-col sim-col--con">
+              <div class="sim-col__title">
+                <mat-icon fontIcon="receipt_long" aria-hidden="true" />
+                Con retención IR4ta
+              </div>
+              <div class="sim-row">
+                <span class="sim-lbl">Base imponible</span>
+                <span class="sim-val">S/ {{ sim.baseImponible | number:'1.2-2' }}</span>
+              </div>
+              <div class="sim-row">
+                <span class="sim-lbl">Retención ({{ sim.tasaPct }}%)</span>
+                <span class="sim-val sim-val--desc">– S/ {{ sim.conRetencion | number:'1.2-2' }}</span>
+              </div>
+              <div class="sim-separator"></div>
+              <div class="sim-row sim-row--total">
+                <span class="sim-lbl">Neto estimado</span>
+                <span class="sim-val sim-val--total">S/ {{ (sim.baseImponible - sim.conRetencion) | number:'1.2-2' }}</span>
+              </div>
+            </div>
+
+            <!-- Columna SIN retención -->
+            <div class="sim-col sim-col--sin">
+              <div class="sim-col__title">
+                <mat-icon fontIcon="no_encryption" aria-hidden="true" />
+                Sin retención (suspensión 4ta)
+              </div>
+              <div class="sim-row">
+                <span class="sim-lbl">Base imponible</span>
+                <span class="sim-val">S/ {{ sim.baseImponible | number:'1.2-2' }}</span>
+              </div>
+              <div class="sim-row">
+                <span class="sim-lbl">Retención</span>
+                <span class="sim-val sim-val--exento">S/ 0.00 (suspendida)</span>
+              </div>
+              <div class="sim-separator"></div>
+              <div class="sim-row sim-row--total">
+                <span class="sim-lbl">Neto estimado</span>
+                <span class="sim-val sim-val--total">S/ {{ sim.baseImponible | number:'1.2-2' }}</span>
+              </div>
+            </div>
+
+          </div>
+
+          <p class="sim-nota">
+            Base normativa: TUO LIR Art. 33 inc. e) · D.S. 122-94-EF · SUNAT 3042.
+            La suspensión requiere constancia SUNAT vigente registrada en el sistema.
+          </p>
+        }
+      }
+
+    </div>
+  }
+
+</div>

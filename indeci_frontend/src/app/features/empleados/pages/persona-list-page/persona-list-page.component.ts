@@ -44,6 +44,10 @@ import {
   PersonaDetailDialogEditIntent,
   PersonaDetailPageComponent,
 } from '../persona-detail-page/persona-detail-page.component';
+import {
+  EmpleadoSaludEpsDialogComponent,
+  type EmpleadoSaludEpsDialogData,
+} from '../empleado-salud-eps-page/empleado-salud-eps-dialog.component';
 
 interface PersonaQuickAccess {
   readonly key: 'puesto' | 'cuentaBancaria' | 'pension' | 'planilla' | 'conceptos';
@@ -333,6 +337,25 @@ export const PERSONA_QUICK_ACCESS: readonly PersonaQuickAccess[] = [
                       </div>
                     </td>
                   </ng-container>
+                  <!-- Columna Salud / EPS del empleado -->
+                  <ng-container matColumnDef="saludEps">
+                    <th mat-header-cell *matHeaderCellDef scope="col" class="col-salud-eps">
+                      Salud / EPS
+                    </th>
+                    <td mat-cell *matCellDef="let row" class="col-salud-eps">
+                      <button
+                        mat-icon-button
+                        type="button"
+                        class="row-action row-action--salud"
+                        (click)="openSaludEps(row)"
+                        [attr.aria-label]="'Salud/EPS de ' + row.nombreCompleto"
+                        matTooltip="Salud / EPS del empleado"
+                      >
+                        <mat-icon fontIcon="health_and_safety" aria-hidden="true" />
+                      </button>
+                    </td>
+                  </ng-container>
+
                   <ng-container matColumnDef="acciones">
                     <th mat-header-cell *matHeaderCellDef scope="col" class="col-acciones">
                       Acciones
@@ -472,6 +495,15 @@ export const PERSONA_QUICK_ACCESS: readonly PersonaQuickAccess[] = [
         text-align: center;
         padding: 0 4px;
       }
+      :host ::ng-deep .persona-table .col-salud-eps {
+        width: 1%;
+        white-space: nowrap;
+        text-align: center;
+        padding: 0 4px;
+      }
+      .row-action--salud {
+        color: var(--sisrh-success, #157347);
+      }
       .regimen-chip {
         display: inline-flex;
         align-items: center;
@@ -552,9 +584,10 @@ export class PersonaListPageComponent {
           'cuentaBancaria',
           'pension',
           'planilla',
-          'regimen',        // régimen laboral (chip)
+          'regimen',
           'conceptos',
-          'suspension4ta',  // acceso directo a suspensión de 4ta
+          'suspension4ta',
+          'saludEps',
           'acciones',
         ],
   );
@@ -671,6 +704,22 @@ export class PersonaListPageComponent {
     );
     ref.afterClosed().subscribe((result) => {
       if (result?.action === 'edit') this.openEdit({ id: result.personaId });
+    });
+  }
+
+  openSaludEps(row: PersonaResumen): void {
+    const data: EmpleadoSaludEpsDialogData = {
+      empleadoId: row.id,
+      nombreCompleto: row.nombreCompleto,
+      dni: (row.dni ?? '').trim(),
+      regimenLaboral: row.regimenLaboral,
+    };
+    this.dialogs.open(EmpleadoSaludEpsDialogComponent, {
+      data,
+      width: '900px',
+      maxWidth: '96vw',
+      maxHeight: '90vh',
+      autoFocus: false,
     });
   }
 

@@ -1,0 +1,405 @@
+<div class="eq-container">
+
+  <!-- ══ CABECERA ══ -->
+  <div class="eq-header">
+    <div class="eq-header-info">
+      <div class="eq-breadcrumb">
+        <span class="eq-chip">Paso 2 de 5</span>
+      </div>
+      <h2 class="eq-titulo">Equivalencias de metas presupuestales</h2>
+      <p class="eq-desc">
+        Empareje las metas del año <strong>{{ anioOrigen() }}</strong> con el catálogo destino
+        <strong>{{ anioFiscal }}</strong> para aplicar la asignación masiva.
+      </p>
+    </div>
+
+    <!-- Selector de años -->
+    <div class="anio-selector">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="anio-sel">
+        <mat-label>Año origen</mat-label>
+        <mat-select [value]="anioOrigen()" (selectionChange)="onAnioOrigenChange($event.value)">
+          @for (a of [anioFiscal - 3, anioFiscal - 2, anioFiscal - 1]; track a) {
+            <mat-option [value]="a">{{ a }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-icon class="arrow-icon">arrow_forward</mat-icon>
+      <div class="anio-destino-wrap">
+        <span class="anio-destino-n">{{ anioFiscal }}</span>
+        <span class="anio-destino-lbl">destino</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ BANNER INFORMATIVO ══ -->
+  <div class="eq-banner">
+    <mat-icon class="eq-banner-icon">auto_awesome</mat-icon>
+    <div class="eq-banner-cuerpo">
+      <strong>Detección automática por estructura</strong>
+      <span>
+        El sistema compara <em>Centro de costo, Categoría, Producto, Actividad y Finalidad</em>
+        sin usar el código de meta. Metas con la misma estructura quedan emparejadas automáticamente,
+        aunque hayan cambiado de código entre años.
+      </span>
+    </div>
+  </div>
+
+  <!-- ══ BARRA DE ACCIONES ══ -->
+  <div class="eq-actions">
+    <button mat-flat-button color="primary" (click)="detectarAuto()" [disabled]="detectando() || loading()">
+      @if (detectando()) {
+        <mat-spinner diameter="18" class="spinner-btn"></mat-spinner>
+      } @else {
+        <mat-icon>auto_awesome</mat-icon>
+      }
+      {{ detectando() ? 'Detectando…' : 'Detectar equivalencias automáticamente' }}
+    </button>
+
+    <button mat-stroked-button (click)="abrirFormEquiv()">
+      <mat-icon>add_link</mat-icon> Agregar manualmente
+    </button>
+
+    @if (modoDeteccion()) {
+      <button mat-stroked-button (click)="volverAEquivalencias()">
+        <mat-icon>list</mat-icon> Ver equivalencias registradas
+      </button>
+    }
+
+    <button mat-icon-button (click)="cargar()" matTooltip="Recargar" [disabled]="loading()">
+      <mat-icon>refresh</mat-icon>
+    </button>
+  </div>
+
+  <!-- ══ KPI CARDS (solo modo detección) ══ -->
+  @if (modoDeteccion() && deteccionResultados().length > 0) {
+    <div class="eq-kpi-grid">
+
+      <div class="eq-kpi">
+        <div class="eq-kpi-icon kpi-blue"><mat-icon>list_alt</mat-icon></div>
+        <div class="eq-kpi-body">
+          <span class="eq-kpi-valor">{{ totalOrigen }}</span>
+          <span class="eq-kpi-lbl">Metas con asignaciones</span>
+          <span class="eq-kpi-sub">en {{ anioOrigen() }}</span>
+        </div>
+      </div>
+
+      <div class="eq-kpi eq-kpi--ok">
+        <div class="eq-kpi-icon kpi-green"><mat-icon>check_circle</mat-icon></div>
+        <div class="eq-kpi-body">
+          <span class="eq-kpi-valor">{{ totalDetectadas }}</span>
+          <span class="eq-kpi-lbl">Detectadas automáticamente</span>
+          <span class="eq-kpi-sub">equivalencia creada en BORRADOR</span>
+        </div>
+      </div>
+
+      <div class="eq-kpi" [class.eq-kpi--warn]="totalObservadas > 0">
+        <div class="eq-kpi-icon"
+          [class.kpi-amber]="totalObservadas > 0"
+          [class.kpi-gray]="totalObservadas === 0">
+          <mat-icon>warning_amber</mat-icon>
+        </div>
+        <div class="eq-kpi-body">
+          <span class="eq-kpi-valor" [class.eq-kpi-valor--warn]="totalObservadas > 0">
+            {{ totalObservadas }}
+          </span>
+          <span class="eq-kpi-lbl">Con observación</span>
+          <span class="eq-kpi-sub">requiere revisión manual</span>
+        </div>
+      </div>
+
+      <div class="eq-kpi" [class.eq-kpi--err]="totalPendientes > 0">
+        <div class="eq-kpi-icon"
+          [class.kpi-red]="totalPendientes > 0"
+          [class.kpi-gray]="totalPendientes === 0">
+          <mat-icon>link_off</mat-icon>
+        </div>
+        <div class="eq-kpi-body">
+          <span class="eq-kpi-valor" [class.eq-kpi-valor--err]="totalPendientes > 0">
+            {{ totalPendientes }}
+          </span>
+          <span class="eq-kpi-lbl">Sin coincidencia</span>
+          <span class="eq-kpi-sub">agregar equivalencia manual</span>
+        </div>
+      </div>
+
+    </div>
+  }
+
+  <!-- ══ FILTROS ══ -->
+  @if (!loading() && !detectando()) {
+    <div class="eq-filtros">
+      @if (modoDeteccion()) {
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Estado detección</mat-label>
+          <mat-select
+            [value]="filtroEstado()"
+            (selectionChange)="filtroEstado.set($event.value); currentPage.set(0)">
+            <mat-option value="">Todos los estados</mat-option>
+            <mat-option value="OK_AUTOMATICO">Detectadas</mat-option>
+            <mat-option value="SIN_COINCIDENCIA">Sin coincidencia</mat-option>
+            <mat-option value="COINCIDENCIA_MULTIPLE">Múltiple</mat-option>
+            <mat-option value="OBSERVADO">Observadas</mat-option>
+          </mat-select>
+        </mat-form-field>
+      }
+
+      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="filtro-busqueda">
+        <mat-label>Buscar</mat-label>
+        <mat-icon matPrefix>search</mat-icon>
+        <input
+          matInput type="search"
+          [value]="filtroBusqueda()"
+          (input)="filtroBusqueda.set($any($event.target).value); currentPage.set(0)"
+          placeholder="Código meta, centro de costo…"
+        />
+        @if (filtroBusqueda()) {
+          <button matSuffix mat-icon-button (click)="filtroBusqueda.set(''); currentPage.set(0)">
+            <mat-icon>close</mat-icon>
+          </button>
+        }
+      </mat-form-field>
+
+      @if (filtroEstado() || filtroBusqueda()) {
+        <button mat-stroked-button (click)="limpiarFiltros()">
+          <mat-icon>filter_alt_off</mat-icon> Limpiar
+        </button>
+      }
+    </div>
+  }
+
+  <!-- ══ LOADING ══ -->
+  @if (loading() || detectando()) {
+    <div class="eq-loading" aria-live="polite">
+      <mat-spinner diameter="32"></mat-spinner>
+      <span>{{ detectando() ? 'Analizando estructura de metas…' : 'Cargando equivalencias…' }}</span>
+    </div>
+  }
+
+  <!-- ══ TABLA MODO DETECCIÓN ══ -->
+  @if (!loading() && !detectando() && modoDeteccion()) {
+    @if (deteccionFiltrada.length === 0) {
+      <div class="eq-empty">
+        <mat-icon>manage_search</mat-icon>
+        <p>No hay resultados con los filtros aplicados.</p>
+        <button mat-stroked-button (click)="limpiarFiltros()">
+          <mat-icon>filter_alt_off</mat-icon> Limpiar filtros
+        </button>
+      </div>
+    } @else {
+      <p class="eq-contador" aria-live="polite">
+        Mostrando <strong>{{ inicioReg }}</strong> a <strong>{{ finReg }}</strong>
+        de <strong>{{ deteccionFiltrada.length }}</strong> metas origen
+      </p>
+
+      <div class="tabla-wrap" role="region" aria-label="Resultados de detección de equivalencias">
+        <table mat-table [dataSource]="deteccionPaginada" class="eq-table">
+
+          <!-- Meta origen -->
+          <ng-container matColumnDef="metaOrigen">
+            <th mat-header-cell *matHeaderCellDef>Meta origen ({{ anioOrigen() }})</th>
+            <td mat-cell *matCellDef="let r">
+              <strong class="col-codigo">{{ r.metaOrigenCodigo }}</strong>
+            </td>
+          </ng-container>
+
+          <!-- Centro de costo -->
+          <ng-container matColumnDef="centroCosto">
+            <th mat-header-cell *matHeaderCellDef>Centro de costo</th>
+            <td mat-cell *matCellDef="let r" class="col-long" [matTooltip]="r.centroCosto">
+              {{ r.centroCosto }}
+            </td>
+          </ng-container>
+
+          <!-- Categoría / Actividad -->
+          <ng-container matColumnDef="categoria">
+            <th mat-header-cell *matHeaderCellDef>Actividad / Finalidad</th>
+            <td mat-cell *matCellDef="let r" class="col-long"
+              [matTooltip]="r.categoriaPresupuestal + ' · ' + r.actividad + ' · ' + r.finalidad">
+              {{ r.actividad }}
+            </td>
+          </ng-container>
+
+          <!-- Trabajadores -->
+          <ng-container matColumnDef="trabajadores">
+            <th mat-header-cell *matHeaderCellDef class="col-num">Trabajadores</th>
+            <td mat-cell *matCellDef="let r" class="col-num">
+              <span class="badge-num">{{ r.trabajadoresAsignados }}</span>
+            </td>
+          </ng-container>
+
+          <!-- Meta destino detectada -->
+          <ng-container matColumnDef="metaDestino">
+            <th mat-header-cell *matHeaderCellDef>Meta destino ({{ anioFiscal }})</th>
+            <td mat-cell *matCellDef="let r">
+              @if (r.metaDestinoCodigo) {
+                <strong class="col-codigo col-destino">{{ r.metaDestinoCodigo }}</strong>
+              } @else {
+                <span class="col-vacio">—</span>
+              }
+            </td>
+          </ng-container>
+
+          <!-- Estado detección -->
+          <ng-container matColumnDef="estadoDeteccion">
+            <th mat-header-cell *matHeaderCellDef>Estado</th>
+            <td mat-cell *matCellDef="let r">
+              <span class="badge" [ngClass]="estadoDeteccionClass(r.estadoDeteccion)">
+                {{ estadoDeteccionLabel(r.estadoDeteccion) }}
+              </span>
+            </td>
+          </ng-container>
+
+          <!-- Observación -->
+          <ng-container matColumnDef="observacion">
+            <th mat-header-cell *matHeaderCellDef>Observación</th>
+            <td mat-cell *matCellDef="let r" class="col-obs" [matTooltip]="r.observacion ?? ''">
+              {{ r.observacion ?? '—' }}
+            </td>
+          </ng-container>
+
+          <!-- Acciones -->
+          <ng-container matColumnDef="acciones" stickyEnd>
+            <th mat-header-cell *matHeaderCellDef class="col-acciones">Acc.</th>
+            <td mat-cell *matCellDef="let r" class="col-acciones">
+              @if (r.estadoDeteccion !== 'OK_AUTOMATICO') {
+                <button
+                  mat-icon-button
+                  (click)="abrirFormEquiv()"
+                  matTooltip="Asignar equivalencia manualmente"
+                  aria-label="Asignar equivalencia manualmente">
+                  <mat-icon>add_link</mat-icon>
+                </button>
+              }
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="columnasDeteccion; sticky: true"></tr>
+          <tr mat-row *matRowDef="let row; columns: columnasDeteccion;" class="fila-tabla"
+            [class.fila-ok]="row.estadoDeteccion === 'OK_AUTOMATICO'"
+            [class.fila-err]="row.estadoDeteccion === 'SIN_COINCIDENCIA'"
+            [class.fila-warn]="row.estadoDeteccion === 'COINCIDENCIA_MULTIPLE' || row.estadoDeteccion === 'OBSERVADO'"
+          ></tr>
+        </table>
+      </div>
+
+      <mat-paginator
+        [length]="deteccionFiltrada.length"
+        [pageSize]="pageSize"
+        [pageIndex]="currentPage()"
+        [pageSizeOptions]="[10, 20, 50]"
+        (page)="onPage($event)"
+        aria-label="Paginación de detección"
+      />
+    }
+  }
+
+  <!-- ══ TABLA MODO EQUIVALENCIAS ══ -->
+  @if (!loading() && !detectando() && !modoDeteccion()) {
+    @if (equivalencias().length === 0) {
+      <div class="eq-empty">
+        <mat-icon>link_off</mat-icon>
+        <p>No hay equivalencias configuradas para {{ anioOrigen() }} → {{ anioFiscal }}.</p>
+        <p class="eq-empty-hint">
+          Use "Detectar equivalencias automáticamente" para emparejar metas por estructura,<br>
+          o agregue equivalencias manualmente una a una.
+        </p>
+        <div class="eq-empty-actions">
+          <button mat-flat-button color="primary" (click)="detectarAuto()" [disabled]="detectando()">
+            <mat-icon>auto_awesome</mat-icon> Detectar automáticamente
+          </button>
+          <button mat-stroked-button (click)="abrirFormEquiv()">
+            <mat-icon>add_link</mat-icon> Agregar manualmente
+          </button>
+        </div>
+      </div>
+    } @else {
+      <p class="eq-contador" aria-live="polite">
+        <strong>{{ equivalencias().filter(e => e.estado !== 'ANULADO').length }}</strong>
+        equivalencias activas ·
+        <strong>{{ equivalencias().length }}</strong> total
+      </p>
+
+      <div class="tabla-wrap" role="region" aria-label="Tabla de equivalencias registradas">
+        <table mat-table [dataSource]="equivalenciasPaginadas" class="eq-table">
+
+          <ng-container matColumnDef="origenCodigo">
+            <th mat-header-cell *matHeaderCellDef>Meta origen ({{ anioOrigen() }})</th>
+            <td mat-cell *matCellDef="let e">
+              <strong class="col-codigo">{{ e.metaOrigenCodigo ?? '—' }}</strong>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="origenDesc">
+            <th mat-header-cell *matHeaderCellDef>Descripción origen</th>
+            <td mat-cell *matCellDef="let e" class="col-long"
+              [matTooltip]="e.metaOrigenDescripcion ?? ''">
+              {{ e.metaOrigenDescripcion ?? '—' }}
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="metaDestino">
+            <th mat-header-cell *matHeaderCellDef>Meta destino ({{ anioFiscal }})</th>
+            <td mat-cell *matCellDef="let e">
+              <strong class="col-codigo col-destino">{{ e.metaDestinoCodigo ?? '—' }}</strong>
+              <span class="col-desc-sm" [matTooltip]="e.metaDestinoDescripcion ?? ''">
+                {{ e.metaDestinoDescripcion ?? '' }}
+              </span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="estado">
+            <th mat-header-cell *matHeaderCellDef>Estado</th>
+            <td mat-cell *matCellDef="let e">
+              <span class="badge" [ngClass]="estadoEquivClass(e.estado)">
+                {{ estadoEquivLabel(e.estado) }}
+              </span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="acciones" stickyEnd>
+            <th mat-header-cell *matHeaderCellDef class="col-acciones">Acc.</th>
+            <td mat-cell *matCellDef="let e" class="col-acciones">
+              @if (e.estado !== 'ANULADO') {
+                <button mat-icon-button [matMenuTriggerFor]="menuEquiv" aria-label="Acciones de equivalencia">
+                  <mat-icon>more_vert</mat-icon>
+                </button>
+                <mat-menu #menuEquiv="matMenu">
+                  <button mat-menu-item (click)="anular(e)" class="menu-anular">
+                    <mat-icon>link_off</mat-icon> Anular equivalencia
+                  </button>
+                </mat-menu>
+              }
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="columnasEquiv; sticky: true"></tr>
+          <tr mat-row *matRowDef="let row; columns: columnasEquiv;" class="fila-tabla"></tr>
+        </table>
+      </div>
+
+      <mat-paginator
+        [length]="equivalenciasFiltradas.length"
+        [pageSize]="pageSize"
+        [pageIndex]="currentPage()"
+        [pageSizeOptions]="[10, 20, 50]"
+        (page)="onPage($event)"
+        aria-label="Paginación de equivalencias"
+      />
+    }
+  }
+
+  <!-- ══ LEYENDA (modo detección) ══ -->
+  @if (modoDeteccion() && deteccionResultados().length > 0) {
+    <div class="eq-leyenda">
+      <span class="leyenda-titulo">Leyenda:</span>
+      <span class="badge badge-ok">Detectada</span><span>Equivalencia creada automáticamente.</span>
+      <span class="badge badge-warn">Múltiple</span><span>Varias coincidencias — selección manual requerida.</span>
+      <span class="badge badge-warn">Observada</span><span>Meta destino en estado no asignable.</span>
+      <span class="badge badge-err">Sin coincidencia</span><span>Sin estructura equivalente en {{ anioFiscal }}.</span>
+    </div>
+  }
+
+  <p class="normativa-note">
+    Base normativa: Ley 28411 SGNP · Clasificadores presupuestarios DNPP · D.Leg. 1057 Art. 8 CAS
+  </p>
+</div>

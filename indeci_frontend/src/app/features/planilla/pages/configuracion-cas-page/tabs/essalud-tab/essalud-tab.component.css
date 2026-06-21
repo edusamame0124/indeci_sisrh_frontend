@@ -1,3 +1,31 @@
+:host {
+  display: block;
+  font-family: var(--sisrh-font-sans, 'Source Sans 3', 'Segoe UI', system-ui, sans-serif);
+}
+
+.es-container { padding: 0; }
+
+.es-page-header {
+  display: flex; align-items: flex-start; gap: 0.75rem;
+  padding: 1rem 1.25rem 0.75rem;
+  border-bottom: 1px solid var(--sisrh-border-soft, #e7ecf2);
+  margin-bottom: 0.25rem;
+}
+.es-page-header__icon {
+  font-size: 1.75rem; width: 1.75rem; height: 1.75rem;
+  color: var(--sisrh-primary, #1f3a5f); margin-top: 0.125rem;
+}
+.es-page-header__title {
+  margin: 0 0 0.125rem; font-size: 1.0625rem; font-weight: 700;
+  color: var(--sisrh-primary, #1f3a5f);
+}
+.es-page-header__desc {
+  margin: 0; font-size: 0.8125rem; color: var(--sisrh-text-muted, #64748b);
+}
+
+.es-tab-content { padding: 1rem 1.25rem; }
+
+/* Legacy styles preserved below (unused by new template) */
 .tab-section {
   display: flex;
   flex-direction: column;

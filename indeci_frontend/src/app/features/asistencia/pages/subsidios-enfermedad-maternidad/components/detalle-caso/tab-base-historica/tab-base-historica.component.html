@@ -1,0 +1,89 @@
+<div class="tab-base" [class.tab-base--detalle]="modo() === 'detalle'">
+  @if (modo() !== 'detalle') {
+    <div class="tab-base__acciones">
+      @if (puedeCalcular()) {
+        <button mat-flat-button color="primary" type="button" (click)="calcular()" [disabled]="calculando()">
+          @if (calculando()) {
+            <mat-spinner diameter="18" />
+          } @else {
+            <ng-container>
+              <mat-icon>calculate</mat-icon>
+              <span>Calcular base histórica</span>
+            </ng-container>
+          }
+        </button>
+      }
+      <button mat-stroked-button type="button" (click)="cargar()" [disabled]="loading()">
+        <mat-icon>refresh</mat-icon>
+        Actualizar
+      </button>
+    </div>
+  } @else {
+    <div class="tab-base__acciones">
+      <button mat-stroked-button type="button" (click)="cargar()" [disabled]="loading()">
+        <mat-icon>refresh</mat-icon>
+        Actualizar detalle
+      </button>
+    </div>
+  }
+
+  @if (loading()) {
+    <div class="tab-base__loading"><mat-spinner diameter="32" /></div>
+  } @else if (!base()) {
+    <div class="tab-base__empty">
+      <mat-icon fontIcon="analytics" aria-hidden="true" />
+      <p>No hay base histórica calculada.</p>
+      @if (modo() !== 'detalle') {
+        <small>Use el botón Calcular cuando el caso tenga tramos generados.</small>
+      }
+    </div>
+  } @else if (base(); as b) {
+    @if (modo() !== 'detalle') {
+      <article class="tab-base__destacado" aria-label="Base reconocida">
+        <span class="tab-base__destacado-label">Base reconocida</span>
+        <strong class="tab-base__destacado-valor">{{ formatMonto(b.baseReconocida) }}</strong>
+        <small>Tope mensual (BIM): {{ formatMonto(b.topeMensual) }}</small>
+      </article>
+
+      <dl class="tab-base__fields">
+        <div class="tab-base__field">
+          <dt>Meses evaluados</dt>
+          <dd>{{ b.mesesEvaluados }}</dd>
+        </div>
+        <div class="tab-base__field">
+          <dt>Divisor promedio</dt>
+          <dd>{{ b.divisorPromedio }}</dd>
+        </div>
+        <div class="tab-base__field">
+          <dt>Fuente de datos</dt>
+          <dd>{{ b.fuente }}</dd>
+        </div>
+      </dl>
+    }
+
+    @if (modo() !== 'resumen' && b.detalle.length) {
+      <div class="data-table-wrap">
+        <table mat-table [dataSource]="b.detalle" class="tab-panel__table" aria-label="Detalle base histórica">
+          <ng-container matColumnDef="periodo">
+            <th mat-header-cell *matHeaderCellDef>Período</th>
+            <td mat-cell *matCellDef="let row"><strong class="sisrh-tabular">{{ row.periodo }}</strong></td>
+          </ng-container>
+          <ng-container matColumnDef="rem">
+            <th mat-header-cell *matHeaderCellDef>Remuneración real</th>
+            <td mat-cell *matCellDef="let row">{{ formatMonto(row.remuneracionReal) }}</td>
+          </ng-container>
+          <ng-container matColumnDef="tope">
+            <th mat-header-cell *matHeaderCellDef>Tope aplicado</th>
+            <td mat-cell *matCellDef="let row">{{ formatMonto(row.topeAplicado) }}</td>
+          </ng-container>
+          <ng-container matColumnDef="base">
+            <th mat-header-cell *matHeaderCellDef>Base computable</th>
+            <td mat-cell *matCellDef="let row">{{ formatMonto(row.baseComputable) }}</td>
+          </ng-container>
+          <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+          <tr mat-row *matRowDef="let row; columns: columnas"></tr>
+        </table>
+      </div>
+    }
+  }
+</div>

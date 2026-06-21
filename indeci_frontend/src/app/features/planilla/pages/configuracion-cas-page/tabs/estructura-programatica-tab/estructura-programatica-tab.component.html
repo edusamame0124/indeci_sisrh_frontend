@@ -1,122 +1,119 @@
-<div class="tab-section">
-  <div class="tab-section__head">
-    <div>
-      <h2 class="tab-section__title">Estructura Programática CAS</h2>
-      <p class="tab-section__desc">
-        Metas presupuestales y cadenas programáticas vinculadas a las plazas CAS del ejercicio.
-        Estas cadenas se usan en la generación del MCPP Web y en los clasificadores del PLAME.
+<div class="ep-container">
+
+  <!-- Cabecera: título + selector de año fiscal -->
+  <div class="ep-header">
+    <div class="ep-header-info">
+      <h2 class="ep-title">
+        <mat-icon class="ep-title-icon">account_tree</mat-icon>
+        Metas Presupuestales CAS
+      </h2>
+      <p class="ep-desc">
+        Gestión del catálogo de metas, asignación anual por empleado, equivalencias entre años y proceso masivo de actualización.
       </p>
     </div>
-    <button
-      mat-flat-button
-      color="primary"
-      class="tab-section__action"
-      (click)="agregar()"
-      matTooltip="Registrar nueva cadena programática"
-      aria-label="Registrar nueva cadena programática"
-    >
-      <mat-icon fontIcon="add" aria-hidden="true" />
-      Nueva cadena
-    </button>
+
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="ep-anio-sel">
+      <mat-label>Año fiscal</mat-label>
+      <mat-icon matPrefix>calendar_today</mat-icon>
+      <mat-select
+        [value]="anioFiscal()"
+        (selectionChange)="anioFiscal.set($event.value)"
+        aria-label="Seleccionar año fiscal"
+      >
+        @for (a of aniosDisponibles; track a) {
+          <mat-option [value]="a">{{ a }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
   </div>
 
-  @if (!loading() && !error()) {
-    <mat-form-field appearance="outline" class="buscador" subscriptSizing="dynamic">
-      <mat-label>Buscar por código, programa o actividad</mat-label>
-      <mat-icon matPrefix fontIcon="search" aria-hidden="true" />
-      <input
-        matInput
-        type="search"
-        autocomplete="off"
-        [value]="busqueda()"
-        (input)="onBusqueda($any($event.target).value)"
-        aria-label="Buscar estructura programática"
-      />
-    </mat-form-field>
-  }
 
-  @if (loading()) {
-    <div class="tab-section__loading" aria-live="polite" aria-label="Cargando estructura programática">
-      <mat-spinner diameter="36" />
-      <span>Cargando estructura programática…</span>
-    </div>
-  } @else if (error()) {
-    <div class="tab-section__error" role="alert">
-      <mat-icon fontIcon="error_outline" aria-hidden="true" />
-      <span>{{ error() }}</span>
-    </div>
-  } @else if (rows().length === 0) {
-    <div class="tab-section__empty">
-      <mat-icon fontIcon="account_tree" aria-hidden="true" />
-      @if (busqueda()) {
-        <span>No se encontraron resultados para "<strong>{{ busqueda() }}</strong>".</span>
-      } @else {
-        <span>No hay cadenas programáticas configuradas. Registre la primera.</span>
-      }
-    </div>
-  } @else {
-    <div class="tab-table-wrap" role="region" aria-label="Tabla de estructura programática">
-      <table mat-table [dataSource]="rows()" class="tab-table" aria-label="Estructura programática CAS">
 
-        <ng-container matColumnDef="codigo">
-          <th mat-header-cell *matHeaderCellDef>Código</th>
-          <td mat-cell *matCellDef="let row" class="col-mono">{{ row.codigo }}</td>
-        </ng-container>
+  <!-- Sub-tabs en el orden del flujo -->
+  <mat-tab-group
+    [selectedIndex]="subTabActivo()"
+    (selectedIndexChange)="subTabActivo.set($event)"
+    animationDuration="0ms"
+    class="ep-tab-group"
+    aria-label="Módulos de metas presupuestales"
+  >
 
-        <ng-container matColumnDef="categoria">
-          <th mat-header-cell *matHeaderCellDef class="col-center">Cat.</th>
-          <td mat-cell *matCellDef="let row" class="col-center">{{ row.categoria }}</td>
-        </ng-container>
+    <!-- Tab 0: Trazabilidad — consulta de asignaciones vigentes (solo lectura) -->
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <mat-icon class="tab-icon">manage_search</mat-icon>
+        Trazabilidad
+      </ng-template>
+      <ng-template matTabContent>
+        <app-trazabilidad-tab />
+      </ng-template>
+    </mat-tab>
 
-        <ng-container matColumnDef="funcion">
-          <th mat-header-cell *matHeaderCellDef class="col-center">Func.</th>
-          <td mat-cell *matCellDef="let row" class="col-center">{{ row.funcion }}</td>
-        </ng-container>
+    <!-- Tab 1: Dashboard — visión general -->
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <mat-icon class="tab-icon">dashboard</mat-icon>
+        Dashboard
+      </ng-template>
+      <ng-template matTabContent>
+        <app-meta-dashboard-tab
+          [anioFiscal]="anioFiscal()"
+          (navegarA)="navegarATab($event)"
+        />
+      </ng-template>
+    </mat-tab>
 
-        <ng-container matColumnDef="programa">
-          <th mat-header-cell *matHeaderCellDef class="col-center">Prog.</th>
-          <td mat-cell *matCellDef="let row" class="col-center">{{ row.programa }}</td>
-        </ng-container>
+    <!-- Tab 2 · Paso 1: Cargar catálogo destino -->
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <span class="tab-paso">1</span>
+        <mat-icon class="tab-icon">list_alt</mat-icon>
+        Catálogo
+      </ng-template>
+      <ng-template matTabContent>
+        <app-catalogo-meta-tab
+          [anioFiscal]="anioFiscal()"
+          (navegarA)="navegarATab($event)"
+        />
+      </ng-template>
+    </mat-tab>
 
-        <ng-container matColumnDef="subPrograma">
-          <th mat-header-cell *matHeaderCellDef class="col-center">Sub-prog.</th>
-          <td mat-cell *matCellDef="let row" class="col-center">{{ row.subPrograma }}</td>
-        </ng-container>
+    <!-- Tab 3 · Paso 2: Configurar equivalencias -->
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <span class="tab-paso">2</span>
+        <mat-icon class="tab-icon">swap_horiz</mat-icon>
+        Equivalencias
+      </ng-template>
+      <ng-template matTabContent>
+        <app-equivalencias-meta-tab [anioFiscal]="anioFiscal()" />
+      </ng-template>
+    </mat-tab>
 
-        <ng-container matColumnDef="actividad">
-          <th mat-header-cell *matHeaderCellDef>Actividad / Acción</th>
-          <td mat-cell *matCellDef="let row" class="col-actividad">{{ row.actividad }}</td>
-        </ng-container>
+    <!-- Tab 4 · Pasos 3-6: Aplicar masiva → Revisar → Corregir → Validar -->
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <span class="tab-paso">3</span>
+        <mat-icon class="tab-icon">autorenew</mat-icon>
+        Proceso masivo
+      </ng-template>
+      <ng-template matTabContent>
+        <app-wizard-actualizacion [anioFiscal]="anioFiscal()" />
+      </ng-template>
+    </mat-tab>
 
-        <ng-container matColumnDef="estado">
-          <th mat-header-cell *matHeaderCellDef>Estado</th>
-          <td mat-cell *matCellDef="let row">
-            <span class="badge" [class.badge--activo]="row.activo" [class.badge--inactivo]="!row.activo">
-              {{ row.activo ? 'Activa' : 'Inactiva' }}
-            </span>
-          </td>
-        </ng-container>
+    <!-- Tab 5 · Pasos 7-10: Validar → Publicar → Usar → Bloquear -->
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <span class="tab-paso">4</span>
+        <mat-icon class="tab-icon">assignment_ind</mat-icon>
+        Asignación anual
+      </ng-template>
+      <ng-template matTabContent>
+        <app-asignacion-meta-tab [anioFiscal]="anioFiscal()" />
+      </ng-template>
+    </mat-tab>
 
-        <ng-container matColumnDef="acciones">
-          <th mat-header-cell *matHeaderCellDef class="col-actions">Acciones</th>
-          <td mat-cell *matCellDef="let row" class="col-actions">
-            <button
-              mat-icon-button
-              (click)="editar(row)"
-              matTooltip="Editar cadena {{ row.codigo }}"
-              [attr.aria-label]="'Editar cadena ' + row.codigo"
-            >
-              <mat-icon fontIcon="edit" />
-            </button>
-          </td>
-        </ng-container>
+  </mat-tab-group>
 
-        <tr mat-header-row *matHeaderRowDef="columns"></tr>
-        <tr mat-row *matRowDef="let row; columns: columns;" class="tab-table__row"></tr>
-      </table>
-    </div>
-    <p class="tab-section__note">
-      Base normativa: Ley 28411 (SGNP) · Clasificadores presupuestarios DNPP · D.Leg. 1057 Art. 8 CAS
-    </p>
-  }
 </div>

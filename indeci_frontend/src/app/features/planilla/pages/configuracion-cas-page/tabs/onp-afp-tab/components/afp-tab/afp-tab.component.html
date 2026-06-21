@@ -61,14 +61,6 @@
       <mat-icon fontIcon="add" aria-hidden="true" />
       Nueva vigencia AFP
     </button>
-    <button mat-stroked-button (click)="duplicarVigencia()">
-      <mat-icon fontIcon="content_copy" aria-hidden="true" />
-      Duplicar vigencia
-    </button>
-    <button mat-stroked-button (click)="exportar()">
-      <mat-icon fontIcon="download" aria-hidden="true" />
-      Exportar
-    </button>
   </div>
 
   <!-- Estado de carga / error / vacío / tabla -->
@@ -89,7 +81,7 @@
     </div>
   } @else {
     <div class="afp-table-wrap" role="region" aria-label="Tabla de parámetros AFP">
-      <table mat-table [dataSource]="pagedRows()" class="afp-table" aria-label="Parámetros AFP por vigencia">
+      <table mat-table [dataSource]="pagedRows()" [trackBy]="trackByRow" class="afp-table" aria-label="Parámetros AFP por vigencia">
 
         <ng-container matColumnDef="afp">
           <th mat-header-cell *matHeaderCellDef>AFP</th>
@@ -151,6 +143,7 @@
               [class.badge--programado]="r.estado === 'PROGRAMADO'"
               [class.badge--cerrado]="r.estado === 'CERRADO'"
               [class.badge--inactivo]="r.estado === 'INACTIVO'"
+              [class.badge--anulado]="r.estado === 'ANULADO'"
             >
               @if (r.bloqueadoPorPlanilla) {
                 <mat-icon fontIcon="lock" class="badge__lock" aria-label="Bloqueado por planilla cerrada" />
@@ -183,7 +176,8 @@
             <button
               mat-icon-button
               (click)="duplicarFila(r)"
-              matTooltip="Duplicar vigencia"
+              [disabled]="!canDuplicar(r)"
+              [matTooltip]="canDuplicar(r) ? 'Duplicar vigencia' : 'No se puede duplicar una vigencia anulada o incompleta.'"
               [attr.aria-label]="'Duplicar vigencia ' + r.afpNombre"
             >
               <mat-icon fontIcon="content_copy" />
@@ -197,10 +191,20 @@
             >
               <mat-icon fontIcon="timer_off" />
             </button>
+            <button
+              mat-icon-button
+              (click)="eliminarFila(r)"
+              [disabled]="!canEliminar(r)"
+              [matTooltip]="tooltipEliminar(r)"
+              [attr.aria-label]="'Eliminar vigencia ' + r.afpNombre"
+              class="btn-icon-danger"
+            >
+              <mat-icon fontIcon="delete_outline" />
+            </button>
           </td>
         </ng-container>
 
-        <tr mat-header-row *matHeaderRowDef="columns"></tr>
+        <tr mat-header-row *matHeaderRowDef="columns; sticky: true"></tr>
         <tr mat-row *matRowDef="let r; columns: columns;" class="afp-row"></tr>
       </table>
     </div>

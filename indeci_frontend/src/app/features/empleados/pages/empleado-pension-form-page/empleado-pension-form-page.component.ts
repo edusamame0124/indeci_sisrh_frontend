@@ -29,6 +29,7 @@ import type {
   TipoComisionAfpCatalogItem,
 } from '../../models/catalog-item.model';
 import type {
+  CondicionEspecialAfp,
   EmpleadoPensionInput,
   TasasVigentesPension,
 } from '../../models/empleado-pension.model';
@@ -111,6 +112,10 @@ export class EmpleadoPensionFormPageComponent implements OnInit {
   /** Cuando false, los 3 % se ven readonly (valor del catálogo). Toggle "Personalizar". */
   readonly personalizarTasas = signal(false);
   readonly mostrarBloqueTasas = computed(() => this.esAfp());
+  /** Preservados en edición — la página aún no expone UI de condición AFP. */
+  readonly condicionEspecialAfp = signal<CondicionEspecialAfp | null>(null);
+  readonly fechaCondicionAfp = signal<string | null>(null);
+  readonly observacionCondicionAfp = signal<string | null>(null);
 
   constructor() {
     this.form.controls.regimenPensionarioId.valueChanges
@@ -294,6 +299,9 @@ export class EmpleadoPensionFormPageComponent implements OnInit {
         }
         // emitEvent:false para evitar que onRegimenChange dispare y haga
         // un fetch que sobreescriba los valores guardados del empleado.
+        this.condicionEspecialAfp.set(row.condicionEspecialAfp);
+        this.fechaCondicionAfp.set(row.fechaCondicionAfp);
+        this.observacionCondicionAfp.set(row.observacionCondicionAfp);
         this.form.patchValue(
           {
             regimenPensionarioId: row.regimenPensionarioId,
@@ -344,6 +352,7 @@ export class EmpleadoPensionFormPageComponent implements OnInit {
 
     const regimen = this.regimenes().find((r) => r.id === regimenId);
     const tipoRegimen = regimen?.tipo?.trim().toUpperCase() ?? '';
+    const esAfp = tipoRegimen === 'AFP';
 
     const body: EmpleadoPensionInput = {
       empleadoId: empId,
@@ -352,8 +361,12 @@ export class EmpleadoPensionFormPageComponent implements OnInit {
       porcentajeAporte: v.porcentajeAporte,
       porcentajeComision: v.porcentajeComision,
       porcentajeSeguro: v.porcentajeSeguro,
-      tipoComisionAfpId: tipoRegimen === 'AFP' ? v.tipoComisionAfpId : null,
+      tipoComisionAfpId: esAfp ? v.tipoComisionAfpId : null,
       tipoRegimen,
+      condicionEspecialAfp: esAfp ? this.condicionEspecialAfp() : null,
+      fechaCondicionAfp: esAfp ? this.fechaCondicionAfp() : null,
+      documentoSustentoId: null,
+      observacionCondicionAfp: esAfp ? this.observacionCondicionAfp() : null,
     };
 
     this.saving.set(true);

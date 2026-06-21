@@ -33,6 +33,9 @@ describe('EmpleadoPensionApiService', () => {
         activo: 1,
         regimenPensionario: 'INTEGRA',
         tipoComisionAfp: 'POR FLUJO',
+        condicionEspecialAfp: null,
+        fechaCondicionAfp: null,
+        observacionCondicionAfp: null,
       },
     ];
     let out;
@@ -55,6 +58,10 @@ describe('EmpleadoPensionApiService', () => {
       porcentajeSeguro: 1.36,
       tipoComisionAfpId: 3,
       tipoRegimen: 'AFP',
+      condicionEspecialAfp: null,
+      fechaCondicionAfp: null,
+      documentoSustentoId: null,
+      observacionCondicionAfp: null,
     };
     let done = false;
     service.guardar(body).subscribe(() => {
@@ -77,6 +84,10 @@ describe('EmpleadoPensionApiService', () => {
       porcentajeSeguro: null,
       tipoComisionAfpId: null,
       tipoRegimen: 'ONP',
+      condicionEspecialAfp: null,
+      fechaCondicionAfp: null,
+      documentoSustentoId: null,
+      observacionCondicionAfp: null,
     };
     let done = false;
     service.actualizar(7, body).subscribe(() => {

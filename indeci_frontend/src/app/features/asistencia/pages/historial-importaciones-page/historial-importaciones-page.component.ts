@@ -37,7 +37,7 @@ export class HistorialImportacionesPageComponent implements OnInit {
   private readonly snack = inject(MatSnackBar);
   private readonly errors = inject(ErrorMessageService);
 
-  readonly columnas = ['fecha', 'periodo', 'archivo', 'estado', 'filas', 'empleados', 'usuario', 'acciones'] as const;
+  readonly columnas = ['fecha', 'periodo', 'archivo', 'estado', 'validacion', 'filas', 'empleados', 'usuario', 'acciones'] as const;
   readonly periodoFiltro = signal('');
   readonly rows = signal<readonly AsistenciaImportHistorial[]>([]);
   readonly loading = signal(false);
@@ -98,8 +98,9 @@ export class HistorialImportacionesPageComponent implements OnInit {
     });
   }
 
-  puedeValidar(row: AsistenciaImportHistorial): boolean {
-    return row.estado === 'CONFIRMADA' || row.estado === 'PARCIAL';
+  /** Solo se ofrece "Ejecutar cálculo" cuando la importación tiene cabeceras sin validar. */
+  requiereCalculo(row: AsistenciaImportHistorial): boolean {
+    return row.estadoValidacion === 'REQUIERE_CALCULO';
   }
 
   requiereRecalculo(row: AsistenciaImportHistorial): boolean {

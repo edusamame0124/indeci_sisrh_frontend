@@ -63,6 +63,16 @@
   color: var(--status-warn, #854F0B);
 }
 
+.historial__badge--ok {
+  background: var(--status-success-bg, #E7F5EE);
+  color: var(--status-success, #157347);
+}
+
+.historial__muted {
+  color: var(--text-secondary, #94A3B8);
+  font-size: 12px;
+}
+
 .historial__validate {
   border-color: var(--status-active, #0F6E56);
   color: var(--status-active, #0F6E56);

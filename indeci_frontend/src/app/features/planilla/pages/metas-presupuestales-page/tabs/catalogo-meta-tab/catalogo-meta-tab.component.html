@@ -1,0 +1,393 @@
+<div class="cat-layout">
+
+  <!-- ══════════════════════ MAIN ══════════════════════ -->
+  <main class="cat-main">
+
+    <!-- Cabecera -->
+    <div class="cat-header">
+      <div class="cat-header-left">
+        <div class="cat-breadcrumb">
+          <span class="cat-chip">Módulo 2 de 5</span>
+        </div>
+        <h2 class="cat-titulo">Catálogo anual de metas presupuestales</h2>
+        <p class="cat-desc">
+          Gestione el catálogo oficial de metas para el año fiscal
+          <strong>{{ anioFiscal }}</strong>.
+        </p>
+      </div>
+      <div class="cat-header-actions">
+        <button mat-stroked-button (click)="abrirFormMeta(null)">
+          <mat-icon>add</mat-icon> Nueva meta
+        </button>
+        <button mat-stroked-button (click)="abrirImportar()">
+          <mat-icon>upload_file</mat-icon> Importar CSV
+        </button>
+        <button mat-stroked-button (click)="exportarCsv()" [disabled]="metasFiltradas.length === 0">
+          <mat-icon>download</mat-icon> Exportar
+        </button>
+        <button mat-stroked-button (click)="navegarA.emit(3)" matTooltip="Ver historial de lotes">
+          <mat-icon>history</mat-icon> Ver historial
+        </button>
+        <button mat-icon-button (click)="cargar()" matTooltip="Recargar">
+          <mat-icon>refresh</mat-icon>
+        </button>
+      </div>
+    </div>
+
+    <!-- Barra de acción masiva (aparece solo cuando hay selección) -->
+    @if (haySeleccion) {
+      <div class="accion-masiva-bar" role="toolbar" aria-label="Acciones sobre selección">
+        <mat-icon class="accion-masiva-icon">checklist</mat-icon>
+        <span class="accion-masiva-txt">
+          <strong>{{ cantidadSeleccionada }}</strong>
+          meta{{ cantidadSeleccionada !== 1 ? 's' : '' }} seleccionada{{ cantidadSeleccionada !== 1 ? 's' : '' }}
+        </span>
+        <div class="accion-masiva-btns">
+          <button mat-stroked-button class="btn-accion-validar" (click)="accionMasiva('VALIDADO')">
+            <mat-icon>fact_check</mat-icon> Validar
+          </button>
+          <button mat-stroked-button class="btn-accion-publicar" (click)="accionMasiva('PUBLICADO')">
+            <mat-icon>publish</mat-icon> Publicar
+          </button>
+          <button mat-stroked-button class="btn-accion-cerrar" (click)="accionMasiva('CERRADO')">
+            <mat-icon>lock</mat-icon> Cerrar
+          </button>
+          <button mat-stroked-button class="btn-accion-anular" (click)="accionMasiva('ANULADO')">
+            <mat-icon>block</mat-icon> Anular
+          </button>
+        </div>
+        <button mat-icon-button (click)="limpiarSeleccion()" matTooltip="Limpiar selección">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+    }
+
+    <!-- Filtros -->
+    <div class="filtros-grid">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Año fiscal</mat-label>
+        <input matInput [value]="anioFiscal" readonly class="input-readonly" />
+        <mat-icon matSuffix>calendar_today</mat-icon>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Meta</mat-label>
+        <mat-select
+          [value]="filtroMeta()"
+          (selectionChange)="filtroMeta.set($event.value); currentPage.set(0)"
+        >
+          <mat-option value="">Todas las metas</mat-option>
+          @for (m of metasUnicas; track m) {
+            <mat-option [value]="m.toLowerCase()">{{ m }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Centro de costo</mat-label>
+        <mat-select
+          [value]="filtroCentro()"
+          (selectionChange)="filtroCentro.set($event.value); currentPage.set(0)"
+        >
+          <mat-option value="">Todos</mat-option>
+          @for (c of centrosUnicos; track c) {
+            <mat-option [value]="c.toLowerCase()">{{ c }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Estado</mat-label>
+        <mat-select
+          [value]="filtroEstado()"
+          (selectionChange)="filtroEstado.set($event.value); currentPage.set(0)"
+        >
+          <mat-option value="">Todos los estados</mat-option>
+          <mat-option value="BORRADOR">Borrador</mat-option>
+          <mat-option value="VALIDADO">Validado</mat-option>
+          <mat-option value="PUBLICADO">Publicado</mat-option>
+          <mat-option value="CERRADO">Cerrado</mat-option>
+          <mat-option value="ANULADO">Anulado</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="filtro-busqueda">
+        <mat-label>Buscar</mat-label>
+        <mat-icon matPrefix>search</mat-icon>
+        <input
+          matInput
+          type="search"
+          [value]="filtroBusqueda()"
+          (input)="filtroBusqueda.set($any($event.target).value); currentPage.set(0)"
+          placeholder="Código, actividad, finalidad…"
+        />
+        @if (filtroBusqueda()) {
+          <button matSuffix mat-icon-button (click)="filtroBusqueda.set(''); currentPage.set(0)">
+            <mat-icon>close</mat-icon>
+          </button>
+        }
+      </mat-form-field>
+
+      <div class="filtros-acciones">
+        <button mat-stroked-button (click)="limpiarFiltros()">
+          <mat-icon>filter_alt_off</mat-icon> Limpiar
+        </button>
+        <button mat-flat-button color="primary" (click)="cargar()">
+          <mat-icon>search</mat-icon> Buscar
+        </button>
+      </div>
+    </div>
+
+    <!-- Loading -->
+    @if (loading()) {
+      <div class="cat-loading" aria-live="polite">
+        <mat-spinner diameter="32"></mat-spinner>
+        <span>Cargando catálogo {{ anioFiscal }}…</span>
+      </div>
+    }
+
+    <!-- Tabla -->
+    @if (!loading()) {
+      @if (metasFiltradas.length === 0) {
+        <div class="cat-empty">
+          <mat-icon>folder_open</mat-icon>
+          @if (filtroBusqueda() || filtroEstado() || filtroMeta() || filtroCentro()) {
+            <p>No se encontraron metas con los filtros aplicados.</p>
+            <button mat-stroked-button (click)="limpiarFiltros()">
+              <mat-icon>filter_alt_off</mat-icon> Limpiar filtros
+            </button>
+          } @else {
+            <p>No hay metas registradas para el año <strong>{{ anioFiscal }}</strong>.</p>
+            <button mat-flat-button color="primary" (click)="abrirFormMeta(null)">
+              <mat-icon>add</mat-icon> Registrar primera meta
+            </button>
+          }
+        </div>
+      } @else {
+        <!-- Contador -->
+        <p class="cat-contador" aria-live="polite">
+          Mostrando <strong>{{ inicioRegistros }}</strong>
+          a <strong>{{ finRegistros }}</strong>
+          de <strong>{{ totalFiltrados }}</strong> registros
+        </p>
+
+        <!-- Tabla -->
+        <div class="tabla-wrap" role="region" aria-label="Catálogo de metas presupuestales">
+          <table mat-table [dataSource]="metasPaginadas" class="metas-table">
+
+            <!-- Checkbox header -->
+            <ng-container matColumnDef="seleccion" sticky>
+              <th mat-header-cell *matHeaderCellDef class="col-check">
+                <mat-checkbox
+                  color="primary"
+                  [checked]="todosPaginadosSeleccionados"
+                  [indeterminate]="algunPaginadoSeleccionado && !todosPaginadosSeleccionados"
+                  (change)="toggleTodosPaginados($event.checked)"
+                  aria-label="Seleccionar todas las metas de la página"
+                />
+              </th>
+              <td mat-cell *matCellDef="let m" class="col-check">
+                <mat-checkbox
+                  color="primary"
+                  [checked]="estaSeleccionada(m.id)"
+                  (change)="toggleFila(m.id)"
+                  [attr.aria-label]="'Seleccionar meta ' + m.metaCodigo"
+                />
+              </td>
+            </ng-container>
+
+            <!-- Año fiscal -->
+            <ng-container matColumnDef="anioFiscal">
+              <th mat-header-cell *matHeaderCellDef>Año fiscal</th>
+              <td mat-cell *matCellDef="let m" class="col-anio">{{ m.anioFiscal }}</td>
+            </ng-container>
+
+            <!-- Meta -->
+            <ng-container matColumnDef="metaCodigo">
+              <th mat-header-cell *matHeaderCellDef>Meta</th>
+              <td mat-cell *matCellDef="let m">
+                <strong class="col-codigo">{{ m.metaCodigo }}</strong>
+              </td>
+            </ng-container>
+
+            <!-- Centro de costo -->
+            <ng-container matColumnDef="centroCosto">
+              <th mat-header-cell *matHeaderCellDef>Centro de costo</th>
+              <td mat-cell *matCellDef="let m" class="col-long" [matTooltip]="m.centroCosto">{{ m.centroCosto || '—' }}</td>
+            </ng-container>
+
+            <!-- Categoría presupuestal -->
+            <ng-container matColumnDef="categoriaPresupuestal">
+              <th mat-header-cell *matHeaderCellDef>Categoría ptal.</th>
+              <td mat-cell *matCellDef="let m" class="col-long" [matTooltip]="m.categoriaPresupuestal">{{ m.categoriaPresupuestal || '—' }}</td>
+            </ng-container>
+
+            <!-- Producto -->
+            <ng-container matColumnDef="producto">
+              <th mat-header-cell *matHeaderCellDef>Producto</th>
+              <td mat-cell *matCellDef="let m" class="col-long" [matTooltip]="m.producto">{{ m.producto || '—' }}</td>
+            </ng-container>
+
+            <!-- Actividad -->
+            <ng-container matColumnDef="actividad">
+              <th mat-header-cell *matHeaderCellDef>Actividad</th>
+              <td mat-cell *matCellDef="let m" class="col-long" [matTooltip]="m.actividad">{{ m.actividad || '—' }}</td>
+            </ng-container>
+
+            <!-- Finalidad -->
+            <ng-container matColumnDef="finalidad">
+              <th mat-header-cell *matHeaderCellDef>Finalidad</th>
+              <td mat-cell *matCellDef="let m" class="col-long" [matTooltip]="m.finalidad">{{ m.finalidad || '—' }}</td>
+            </ng-container>
+
+            <!-- Estado -->
+            <ng-container matColumnDef="estado">
+              <th mat-header-cell *matHeaderCellDef>Estado</th>
+              <td mat-cell *matCellDef="let m">
+                <span class="badge" [ngClass]="estadoClass(m.estado)">{{ estadoLabel(m.estado) }}</span>
+              </td>
+            </ng-container>
+
+            <!-- Acciones -->
+            <ng-container matColumnDef="acciones" stickyEnd>
+              <th mat-header-cell *matHeaderCellDef class="col-acciones">Acciones</th>
+              <td mat-cell *matCellDef="let m" class="col-acciones">
+                <button
+                  mat-icon-button
+                  (click)="verDetalle(m)"
+                  matTooltip="Ver detalle"
+                  aria-label="Ver detalle de meta"
+                >
+                  <mat-icon>visibility</mat-icon>
+                </button>
+                <button
+                  mat-icon-button
+                  (click)="abrirFormMeta(m)"
+                  matTooltip="Editar"
+                  [disabled]="!esEditable(m)"
+                  aria-label="Editar meta"
+                >
+                  <mat-icon>edit</mat-icon>
+                </button>
+                <button
+                  mat-icon-button
+                  [matMenuTriggerFor]="menuMeta"
+                  [attr.aria-label]="'Más acciones para meta ' + m.metaCodigo"
+                >
+                  <mat-icon>more_vert</mat-icon>
+                </button>
+                <mat-menu #menuMeta="matMenu">
+                  <button
+                    mat-menu-item
+                    (click)="anular(m)"
+                    [disabled]="m.estado === 'ANULADO' || m.estado === 'CERRADO'"
+                    class="menu-item-anular"
+                  >
+                    <mat-icon>block</mat-icon> Anular meta
+                  </button>
+                </mat-menu>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="columnas; sticky: true"></tr>
+            <tr
+              mat-row
+              *matRowDef="let row; columns: columnas;"
+              class="fila-tabla"
+              [class.fila-seleccionada]="estaSeleccionada(row.id)"
+            ></tr>
+          </table>
+        </div>
+
+        <mat-paginator
+          [length]="totalFiltrados"
+          [pageSize]="pageSize"
+          [pageIndex]="currentPage()"
+          [pageSizeOptions]="[10, 25, 50]"
+          (page)="onPage($event)"
+          aria-label="Paginación del catálogo"
+        />
+      }
+    }
+
+    <p class="normativa-note">Base normativa: Ley 28411 SGNP · Clasificadores DNPP · D.Leg. 1057 Art. 8 CAS</p>
+  </main>
+
+  <!-- ══════════════════════ ASIDE ══════════════════════ -->
+  <aside class="cat-aside">
+
+    <!-- Sobre este módulo -->
+    <div class="aside-card">
+      <div class="aside-card-title">
+        <mat-icon>info_outline</mat-icon>
+        Sobre este módulo
+      </div>
+      <p class="aside-card-desc">
+        El catálogo centraliza las metas presupuestales vigentes para el año fiscal.
+        Las metas publicadas pueden asignarse a empleados y son la base para la
+        trazabilidad presupuestal de planilla.
+      </p>
+      @if (!loading() && metas().length > 0) {
+        <div class="aside-stats">
+          <div class="aside-stat">
+            <span class="aside-stat-n">{{ metas().length }}</span>
+            <span class="aside-stat-lbl">Total metas</span>
+          </div>
+          <div class="aside-stat">
+            <span class="aside-stat-n aside-stat-n--ok">{{ totalPublicadas }}</span>
+            <span class="aside-stat-lbl">Publicadas</span>
+          </div>
+          <div class="aside-stat">
+            <span class="aside-stat-n aside-stat-n--warn">{{ totalBorradores }}</span>
+            <span class="aside-stat-lbl">Borradores</span>
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- Leyenda de estados -->
+    <div class="aside-card">
+      <div class="aside-card-title">
+        <mat-icon>label_outline</mat-icon>
+        Leyenda de estados
+      </div>
+      <ul class="estado-leyenda">
+        <li>
+          <span class="badge badge-warn">Borrador</span>
+          <span>Meta creada, pendiente de revisión.</span>
+        </li>
+        <li>
+          <span class="badge badge-info">Validado</span>
+          <span>Meta revisada, lista para publicar.</span>
+        </li>
+        <li>
+          <span class="badge badge-ok">Publicado</span>
+          <span>Visible para asignación a empleados.</span>
+        </li>
+        <li>
+          <span class="badge badge-gray">Cerrado</span>
+          <span>Período finalizado, sin cambios.</span>
+        </li>
+        <li>
+          <span class="badge badge-err">Anulado</span>
+          <span>Meta sin efecto, no asignable.</span>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Información oficial -->
+    <div class="aside-card aside-card--oficial">
+      <div class="aside-card-title">
+        <mat-icon>gavel</mat-icon>
+        Información oficial
+      </div>
+      <ul class="info-oficial-lista">
+        <li>Ley 28411 — Sistema Nacional de Presupuesto</li>
+        <li>Directiva DNPP — Clasificadores Presupuestales</li>
+        <li>D.Leg. 1057 Art. 8 — Régimen CAS</li>
+      </ul>
+    </div>
+
+  </aside>
+
+</div>

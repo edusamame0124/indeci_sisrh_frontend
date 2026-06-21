@@ -28,8 +28,20 @@ export interface AfpDialogData {
   catalog: readonly AfpCatalogRow[];
 }
 
-// YYYYMM con mes 01–12
-const PERIODO_PATTERN = /^[0-9]{4}(0[1-9]|1[0-2])$/;
+function generarPeriodos(): string[] {
+  const periodos: string[] = [];
+  const anioFin = new Date().getFullYear() + 2;
+  for (let a = anioFin; a >= 1990; a--) {
+    for (let m = 12; m >= 1; m--) {
+      periodos.push(`${a}${String(m).padStart(2, '0')}`);
+    }
+  }
+  return periodos;
+}
+
+function formatPeriodo(p: string): string {
+  return `${p.slice(0, 4)}-${p.slice(4, 6)}`;
+}
 
 @Component({
   selector: 'app-afp-vigencia-dialog',
@@ -54,21 +66,21 @@ export class AfpVigenciaDialogComponent implements OnInit {
   private readonly dialogRef = inject(MatDialogRef<AfpVigenciaDialogComponent>);
   readonly data              = inject<AfpDialogData>(MAT_DIALOG_DATA);
 
-  readonly saving   = signal(false);
-  readonly errorMsg = signal<string | null>(null);
+  readonly saving      = signal(false);
+  readonly errorMsg    = signal<string | null>(null);
+  readonly periodos    = generarPeriodos();
+  readonly formatLabel = formatPeriodo;
 
   readonly form = this.fb.group({
     afpId:                       [null as number | null, [Validators.required]],
-    periodoInicio:               ['', [Validators.required, Validators.pattern(PERIODO_PATTERN)]],
-    periodoFin:                  [null as string | null, [Validators.pattern(PERIODO_PATTERN)]],
+    periodoInicio:               [null as string | null, [Validators.required]],
+    periodoFin:                  [null as string | null],
     aporteObligatorioPct:        [null as number | null, [Validators.required, Validators.min(0), Validators.max(100)]],
     comisionFlujoPct:            [null as number | null, [Validators.required, Validators.min(0), Validators.max(100)]],
     comisionSaldoAnualPct:       [null as number | null, [Validators.required, Validators.min(0), Validators.max(100)]],
     primaSeguroPct:              [null as number | null, [Validators.required, Validators.min(0), Validators.max(100)]],
     remuneracionMaximaAsegurable:[null as number | null, [Validators.required, Validators.min(0.01)]],
     fuenteOficial:               ['', [Validators.required]],
-    urlFuenteOficial:            [null as string | null],
-    fechaPublicacion:            [null as string | null],
     observacion:                 [null as string | null],
   });
 
@@ -89,8 +101,6 @@ export class AfpVigenciaDialogComponent implements OnInit {
         primaSeguroPct:              r.primaSeguroPct,
         remuneracionMaximaAsegurable:r.remuneracionMaximaAsegurable,
         fuenteOficial:               r.fuenteOficial,
-        urlFuenteOficial:            r.urlFuenteOficial,
-        fechaPublicacion:            r.fechaPublicacion,
         observacion:                 r.observacion,
       });
     }
@@ -110,8 +120,8 @@ export class AfpVigenciaDialogComponent implements OnInit {
       primaSeguroPct:              Number(v.primaSeguroPct),
       remuneracionMaximaAsegurable:Number(v.remuneracionMaximaAsegurable),
       fuenteOficial:               v.fuenteOficial!,
-      urlFuenteOficial:            v.urlFuenteOficial || null,
-      fechaPublicacion:            v.fechaPublicacion || null,
+      urlFuenteOficial:            null,
+      fechaPublicacion:            null,
       observacion:                 v.observacion || null,
     };
     this.saving.set(true);

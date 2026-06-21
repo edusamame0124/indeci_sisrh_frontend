@@ -1,0 +1,86 @@
+<h2 mat-dialog-title class="dialog-titulo">
+  <mat-icon class="titulo-icon">{{ icono }}</mat-icon>
+  {{ etiqueta }} {{ metasAptas.length }} meta{{ metasAptas.length !== 1 ? 's' : '' }}
+</h2>
+
+<mat-dialog-content class="dialog-body">
+
+  <!-- Resumen de metas aptas -->
+  @if (metasAptas.length > 0) {
+    <div class="resumen-bloque resumen-bloque--ok">
+      <mat-icon>check_circle</mat-icon>
+      <div>
+        <strong>{{ metasAptas.length }} meta{{ metasAptas.length !== 1 ? 's' : '' }}</strong>
+        cambiarán al estado <strong>{{ etiqueta }}</strong>.
+      </div>
+    </div>
+  }
+
+  <!-- Metas que serán omitidas -->
+  @if (metasOmitidas.length > 0) {
+    <div class="resumen-bloque resumen-bloque--warn">
+      <mat-icon>info</mat-icon>
+      <div>
+        <strong>{{ metasOmitidas.length }} meta{{ metasOmitidas.length !== 1 ? 's' : '' }}</strong>
+        serán omitidas porque su estado actual no permite esta transición.
+        <div class="omitidas-lista">
+          @for (m of metasOmitidas; track m.id) {
+            <span class="omitida-item">
+              <strong class="mono">{{ m.metaCodigo }}</strong>
+              <span class="badge" [ngClass]="estadoClass(m.estado)">{{ estadoLabel(m.estado) }}</span>
+            </span>
+          }
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Sin metas aptas -->
+  @if (metasAptas.length === 0) {
+    <div class="resumen-bloque resumen-bloque--err">
+      <mat-icon>cancel</mat-icon>
+      <div>Ninguna de las metas seleccionadas puede realizar esta transición.</div>
+    </div>
+  }
+
+  <!-- Motivo (solo para ANULADO) -->
+  @if (requiereMotivo) {
+    <div class="motivo-bloque">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="motivo-field">
+        <mat-label>Motivo de anulación <span class="req">*</span></mat-label>
+        <textarea
+          matInput
+          rows="3"
+          [formControl]="form.controls.motivo"
+          placeholder="Describe el motivo de la anulación (mínimo 5 caracteres)…"
+        ></textarea>
+        @if (form.controls.motivo.invalid && form.controls.motivo.touched) {
+          <mat-error>El motivo es obligatorio (mínimo 5 caracteres).</mat-error>
+        }
+      </mat-form-field>
+    </div>
+  }
+
+  <!-- Aviso para CERRADO -->
+  @if (data.nuevoEstado === 'CERRADO') {
+    <div class="aviso-bloque">
+      <mat-icon>warning_amber</mat-icon>
+      <span>Las metas cerradas no podrán modificarse ni anularse. Esta acción es irreversible.</span>
+    </div>
+  }
+
+</mat-dialog-content>
+
+<mat-dialog-actions align="end" class="dialog-actions">
+  <button mat-stroked-button (click)="cancelar()">Cancelar</button>
+  <button
+    mat-flat-button
+    color="primary"
+    [disabled]="!puedeConfirmar"
+    (click)="confirmar()"
+    [class.btn-danger]="data.nuevoEstado === 'ANULADO'"
+  >
+    <mat-icon>{{ icono }}</mat-icon>
+    {{ etiqueta }} {{ metasAptas.length }} meta{{ metasAptas.length !== 1 ? 's' : '' }}
+  </button>
+</mat-dialog-actions>

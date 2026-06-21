@@ -1,0 +1,90 @@
+<h2 mat-dialog-title class="dlg-title">
+  <mat-icon fontIcon="delete_outline" class="dlg-title__icon--danger" aria-hidden="true" />
+  Eliminar vigencia 4ta categoría
+</h2>
+
+<mat-dialog-content>
+
+  <!-- Aviso de anulación lógica -->
+  <div class="dlg-advertencia" role="note">
+    <mat-icon fontIcon="warning_amber" aria-hidden="true" />
+    <span>
+      Esta acción <strong>no eliminará físicamente</strong> el registro.
+      La vigencia será <strong>anulada</strong>, dejará de aplicarse en planilla
+      y quedará registrada en historial y auditoría.
+    </span>
+  </div>
+
+  <!-- Detalle del registro -->
+  <div class="dlg-detalle">
+    <div class="dlg-detalle__fila">
+      <span class="dlg-detalle__label">Año fiscal</span>
+      <span class="dlg-detalle__valor">{{ data.row.anioFiscal }}</span>
+    </div>
+    <div class="dlg-detalle__fila">
+      <span class="dlg-detalle__label">UIT vigente</span>
+      <span class="dlg-detalle__valor">S/ {{ data.row.uitVigente | number:'1.2-2' }}</span>
+    </div>
+    <div class="dlg-detalle__fila">
+      <span class="dlg-detalle__label">Estado actual</span>
+      <span class="dlg-detalle__valor">{{ data.row.estado }}</span>
+    </div>
+    <div class="dlg-detalle__fila">
+      <span class="dlg-detalle__label">Fuente normativa</span>
+      <span class="dlg-detalle__valor">{{ data.row.fuenteOficial }}</span>
+    </div>
+  </div>
+
+  @if (errorMsg()) {
+    <div class="dlg-error" role="alert">
+      <mat-icon fontIcon="error_outline" aria-hidden="true" />
+      {{ errorMsg() }}
+    </div>
+  }
+
+  <!-- Motivos sugeridos -->
+  <div class="dlg-sugerencias">
+    <p class="dlg-sugerencias__label">Motivos frecuentes:</p>
+    <div class="dlg-sugerencias__chips">
+      @for (s of motivosSugeridos; track s) {
+        <button type="button" class="chip-sugerencia" (click)="aplicarSugerencia(s)">
+          {{ s }}
+        </button>
+      }
+    </div>
+  </div>
+
+  <form [formGroup]="form" novalidate>
+    <mat-form-field appearance="outline" class="field-full">
+      <mat-label>Motivo de anulación <span class="req-star">*</span></mat-label>
+      <textarea
+        matInput
+        formControlName="motivo"
+        rows="3"
+        placeholder="Describa el motivo de la anulación (mínimo 10 caracteres)"
+        maxlength="500"
+      ></textarea>
+      <mat-hint align="end">{{ (form.get('motivo')?.value?.length ?? 0) }}/500</mat-hint>
+      @if (form.get('motivo')?.errors?.['required'] && form.get('motivo')?.touched) {
+        <mat-error>El motivo es obligatorio.</mat-error>
+      }
+      @if (form.get('motivo')?.errors?.['minlength'] && form.get('motivo')?.touched) {
+        <mat-error>El motivo debe tener al menos 10 caracteres.</mat-error>
+      }
+    </mat-form-field>
+  </form>
+
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-stroked-button (click)="cancelar()" [disabled]="saving()">Cancelar</button>
+  <button
+    mat-flat-button
+    color="warn"
+    (click)="confirmar()"
+    [disabled]="form.invalid || saving()"
+  >
+    @if (saving()) { <mat-spinner diameter="18" /> } @else { <mat-icon fontIcon="delete_outline" /> }
+    {{ saving() ? 'Anulando…' : 'Confirmar anulación' }}
+  </button>
+</mat-dialog-actions>

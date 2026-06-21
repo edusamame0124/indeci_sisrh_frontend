@@ -1,0 +1,73 @@
+<h2 mat-dialog-title class="dlg-title dlg-title--danger">
+  <mat-icon fontIcon="delete_outline" aria-hidden="true" />
+  Anular vigencia EsSalud / EPS
+</h2>
+
+<mat-dialog-content>
+  <div class="dlg-warn" role="alert">
+    <mat-icon fontIcon="warning_amber" aria-hidden="true" />
+    <div>
+      <strong>Acción irreversible</strong> — la vigencia quedará como ANULADO y no podrá ser reutilizada.
+      El motor de planilla la ignorará a partir de este momento.
+    </div>
+  </div>
+
+  <div class="dlg-row-info">
+    <span class="dlg-info-label">Vigencia</span>
+    <span class="dlg-info-value">
+      {{ data.row.vigenciaInicio | slice:0:10 }}
+      @if (data.row.vigenciaFin) { → {{ data.row.vigenciaFin | slice:0:10 }} }
+    </span>
+    <span class="dlg-info-label">UIT vigente</span>
+    <span class="dlg-info-value">S/ {{ data.row.uitVigente | number:'1.2-2' }}</span>
+    <span class="dlg-info-label">EsSalud %</span>
+    <span class="dlg-info-value">{{ data.row.pctEssalud | number:'1.2-2' }}%</span>
+  </div>
+
+  @if (errorMsg()) {
+    <div class="dlg-error" role="alert">
+      <mat-icon fontIcon="error_outline" aria-hidden="true" />
+      {{ errorMsg() }}
+    </div>
+  }
+
+  <form [formGroup]="form" novalidate>
+    <mat-form-field appearance="outline" class="field-full">
+      <mat-label>Motivo de anulación <span class="req-star">*</span></mat-label>
+      <textarea matInput formControlName="motivo" rows="3"
+                placeholder="Describa el motivo de la anulación (mínimo 10 caracteres)…"></textarea>
+      @if (form.get('motivo')?.errors?.['required'] && form.get('motivo')?.touched) {
+        <mat-error>El motivo es obligatorio para mantener la trazabilidad.</mat-error>
+      }
+      @if (form.get('motivo')?.errors?.['minlength'] && form.get('motivo')?.touched) {
+        <mat-error>El motivo debe tener al menos 10 caracteres.</mat-error>
+      }
+    </mat-form-field>
+  </form>
+
+  <p class="dlg-suggestions-label">Motivos frecuentes:</p>
+  <div class="dlg-suggestions">
+    @for (s of motivosSugeridos; track s) {
+      <button class="dlg-chip" type="button" (click)="aplicarSugerencia(s)">{{ s }}</button>
+    }
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-stroked-button (click)="cancelar()" [disabled]="saving()">
+    Cancelar
+  </button>
+  <button
+    mat-flat-button
+    color="warn"
+    (click)="confirmar()"
+    [disabled]="form.invalid || saving()"
+  >
+    @if (saving()) {
+      <mat-spinner diameter="18" />
+    } @else {
+      <mat-icon fontIcon="delete_forever" />
+    }
+    {{ saving() ? 'Anulando…' : 'Confirmar anulación' }}
+  </button>
+</mat-dialog-actions>

@@ -1,0 +1,193 @@
+<section class="diaria" aria-labelledby="titulo-consulta-diaria">
+  <header class="diaria__header">
+    <h2 id="titulo-consulta-diaria" class="diaria__title">
+      Lista de asistencia del día
+      @if (consultaEjecutada()) {
+        — {{ tituloFecha() }}
+        @if (consultaHora(); as hora) {
+          <span class="diaria__hora">a las {{ hora }}</span>
+        }
+      }
+    </h2>
+    <p class="diaria__subtitle">
+      Consulte la asistencia registrada por fecha y filtre por DNI o nombre del empleado.
+    </p>
+  </header>
+
+  <div class="diaria__filters">
+    <mat-form-field appearance="outline" class="diaria__field">
+      <mat-label>Fecha</mat-label>
+      <input matInput [matDatepicker]="dpFecha" [ngModel]="fechaModel()" (ngModelChange)="fechaModel.set($event)" />
+      <mat-datepicker-toggle matSuffix [for]="dpFecha" />
+      <mat-datepicker #dpFecha />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="diaria__field diaria__field--dni">
+      <mat-label>DNI</mat-label>
+      <input
+        matInput
+        maxlength="8"
+        inputmode="numeric"
+        [ngModel]="filtroDni()"
+        (ngModelChange)="filtroDni.set($event)"
+        aria-label="Filtrar por DNI"
+      />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="diaria__field diaria__field--nombre">
+      <mat-label>Buscar por nombre</mat-label>
+      <input
+        matInput
+        [ngModel]="filtroNombre()"
+        (ngModelChange)="filtroNombre.set($event)"
+        aria-label="Buscar por nombre"
+      />
+    </mat-form-field>
+
+    <button mat-flat-button color="primary" type="button" (click)="buscar()" [disabled]="loading()">
+      <mat-icon fontIcon="search" aria-hidden="true" />
+      Buscar
+    </button>
+  </div>
+
+  @if (loading()) {
+    <div class="diaria__loading" aria-busy="true">
+      <mat-progress-spinner mode="indeterminate" diameter="40" aria-label="Cargando asistencia" />
+    </div>
+  } @else if (loadError()) {
+    <app-empty-state
+      variant="error"
+      icon="error_outline"
+      title="No se pudo cargar la consulta"
+      [description]="loadError()!"
+    >
+      <button mat-stroked-button type="button" (click)="buscar()">Reintentar</button>
+    </app-empty-state>
+  } @else if (consultaEjecutada() && rows().length === 0) {
+    <app-empty-state
+      icon="event_busy"
+      title="Sin registros para la fecha"
+      description="No hay asistencia registrada con los filtros indicados. Verifique la fecha o ajuste el DNI."
+    />
+  } @else if (consultaEjecutada()) {
+    <p class="diaria__count" role="status" aria-live="polite">
+      {{ total() }} registro{{ total() === 1 ? '' : 's' }}
+    </p>
+
+    <div class="diaria__table-wrap" role="region" aria-label="Tabla de asistencia del día" tabindex="0">
+      <table mat-table [dataSource]="rows()" class="diaria__table">
+        <ng-container matColumnDef="indice">
+          <th mat-header-cell *matHeaderCellDef scope="col">#</th>
+          <td mat-cell *matCellDef="let row; let i = index">{{ indiceFila(i) }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="dni">
+          <th mat-header-cell *matHeaderCellDef scope="col">DNI</th>
+          <td mat-cell *matCellDef="let row">{{ row.dni || '—' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="nombre">
+          <th mat-header-cell *matHeaderCellDef scope="col">Nombre</th>
+          <td mat-cell *matCellDef="let row">{{ row.nombreCompleto || '—' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="fecha">
+          <th mat-header-cell *matHeaderCellDef scope="col">Fecha</th>
+          <td mat-cell *matCellDef="let row">{{ row.fecha }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="horaIngreso">
+          <th mat-header-cell *matHeaderCellDef scope="col">Hora ingreso</th>
+          <td mat-cell *matCellDef="let row">{{ row.marcaEntrada || '—' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="horaSalida">
+          <th mat-header-cell *matHeaderCellDef scope="col">Hora salida</th>
+          <td mat-cell *matCellDef="let row">{{ row.marcaSalida || '—' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="condicion">
+          <th mat-header-cell *matHeaderCellDef scope="col">Condición</th>
+          <td mat-cell *matCellDef="let row">
+            <span [class]="badgeClass(row.tipoDia)">{{ condicionLabel(row.tipoDia) }}</span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="papeleta">
+          <th mat-header-cell *matHeaderCellDef scope="col">Permiso/Papeleta</th>
+          <td mat-cell *matCellDef="let row">
+            @if (row.tienePapeletaAprobada) {
+              <span
+                class="diaria__papeleta"
+                [matTooltip]="papeletaTooltip(row)"
+                matTooltipPosition="above"
+              >
+                Tiene Papeleta Aprobada
+              </span>
+            }
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="tReal">
+          <th mat-header-cell *matHeaderCellDef scope="col">T.Real</th>
+          <td mat-cell *matCellDef="let row" class="diaria__num">{{ fmtMin(row.horasTrabajadasMin) }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="tEcono">
+          <th mat-header-cell *matHeaderCellDef scope="col">T.Econo</th>
+          <td mat-cell *matCellDef="let row" class="diaria__num">{{ fmtMin(row.minutosSalidaAnticipada) }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="editar">
+          <th mat-header-cell *matHeaderCellDef scope="col">Editar</th>
+          <td mat-cell *matCellDef="let row">
+            <button
+              mat-stroked-button
+              type="button"
+              color="primary"
+              (click)="editar(row)"
+              aria-label="Editar asistencia de {{ row.nombreCompleto || row.dni }}"
+            >
+              <mat-icon fontIcon="edit" aria-hidden="true" />
+              Editar
+            </button>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="ver">
+          <th mat-header-cell *matHeaderCellDef scope="col">Ver</th>
+          <td mat-cell *matCellDef="let row">
+            <button
+              mat-stroked-button
+              type="button"
+              (click)="ver(row)"
+              aria-label="Ver detalle de {{ row.nombreCompleto || row.dni }}"
+            >
+              <mat-icon fontIcon="visibility" aria-hidden="true" />
+              Ver
+            </button>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="cols"></tr>
+        <tr mat-row *matRowDef="let row; columns: cols"></tr>
+      </table>
+    </div>
+
+    <mat-paginator
+      [length]="total()"
+      [pageIndex]="pageIndex()"
+      [pageSize]="pageSize()"
+      [pageSizeOptions]="[10, 25, 50]"
+      (page)="onPage($event)"
+      showFirstLastButtons
+      aria-label="Paginador de asistencia diaria"
+    />
+  } @else {
+    <app-empty-state
+      icon="calendar_today"
+      title="Seleccione una fecha"
+      description="Elija la fecha y pulse Buscar para ver la asistencia del día."
+    />
+  }
+</section>

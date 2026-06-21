@@ -1,4 +1,4 @@
-export type EstadoParametro = 'VIGENTE' | 'PROGRAMADO' | 'CERRADO' | 'INACTIVO';
+export type EstadoParametro = 'VIGENTE' | 'PROGRAMADO' | 'CERRADO' | 'INACTIVO' | 'ANULADO';
 export type TipoComision = 'FLUJO' | 'SALDO' | 'MIXTA' | 'NO_APLICA';
 export type TipoSistemaPensionario = 'ONP' | 'AFP' | 'SIN_REGIMEN';
 
@@ -77,9 +77,20 @@ export interface PrevisionalKpi {
   ultimaActualizacionSbs: string | null;
 }
 
+export type EstadoValidacionPrevisional = 'VALIDO' | 'CONFIG_INCOMPLETA' | 'SIN_VIGENCIA';
+
 export interface ResolverParametroResult {
   encontrado: boolean;
+  // Contexto del empleado
+  empleadoId: number | null;
+  empleadoNombre: string | null;
+  documento: string | null;
+  periodoConsultado: string | null;
+  // Estado de validación
+  estadoValidacion: EstadoValidacionPrevisional | null;
+  // Datos previsionales
   sistemaPensionario: TipoSistemaPensionario | null;
+  afpId: number | null;
   afpNombre: string | null;
   tipoComision: TipoComision | null;
   aporteOnpPct: number | null;
@@ -92,6 +103,16 @@ export interface ResolverParametroResult {
   vigenciaFin: string | null;
   fuente: string | null;
   mensaje: string | null;
+}
+
+export interface DuplicarVigenciaRequest {
+  periodoInicio: string;
+  fuenteOficial: string;
+  observacion: string;
+}
+
+export interface AnularVigenciaRequest {
+  motivo: string;
 }
 
 export interface HistorialPrevisionalRow {

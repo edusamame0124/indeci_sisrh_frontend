@@ -1,0 +1,252 @@
+<div class="tab-layout">
+
+  <!-- ── Columna principal ─────────────────────────────────────────────────── -->
+  <div class="tab-main">
+
+    <form [formGroup]="form" class="tab-form" (ngSubmit)="guardar()" novalidate>
+
+      <!-- Sección: Cobertura de salud -->
+      <section class="form-section">
+        <h4 class="form-section__title">Cobertura de salud</h4>
+        <div class="radio-group" role="radiogroup" aria-label="Tipo de cobertura de salud">
+          <label class="radio-card" [class.radio-card--selected]="formVal().tipoCobertura === 'ESSALUD'">
+            <input type="radio" formControlName="tipoCobertura" value="ESSALUD" class="radio-input" />
+            <span class="radio-body">
+              <span class="radio-label">Solo EsSalud (9%)</span>
+              <span class="radio-desc">El trabajador cuenta únicamente con cobertura de EsSalud.</span>
+            </span>
+          </label>
+          <label class="radio-card" [class.radio-card--selected]="formVal().tipoCobertura === 'ESSALUD_EPS'">
+            <input type="radio" formControlName="tipoCobertura" value="ESSALUD_EPS" class="radio-input" />
+            <span class="radio-body">
+              <span class="radio-label">EsSalud + EPS (6.75% EsSalud + 2.25% Crédito EPS)</span>
+              <span class="radio-desc">El trabajador cuenta con cobertura de EsSalud y una EPS adicional.</span>
+            </span>
+          </label>
+        </div>
+      </section>
+
+      <!-- ─── EsSalud + EPS: bloque con EPS + fechas ────────────────────────── -->
+      @if (esEps()) {
+        <section class="form-section form-section--eps">
+          <h4 class="form-section__title">
+            Datos de la EPS
+            <span class="form-section__badge">Completar</span>
+          </h4>
+
+          <!-- EPS select -->
+          <div class="form-row">
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="form-field">
+              <mat-label>EPS *</mat-label>
+              <mat-select formControlName="epsId" placeholder="Seleccione la EPS">
+                @for (e of epsList; track e.id) {
+                  <mat-option [value]="e.id">{{ e.nombre }}</mat-option>
+                }
+              </mat-select>
+              @if (errorVisible('epsId', 'required')) {
+                <mat-error>Seleccione la EPS.</mat-error>
+              }
+            </mat-form-field>
+          </div>
+
+          <!-- Fechas EPS -->
+          <div class="form-row form-row--2col">
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="form-field">
+              <mat-label>Fecha inicio *</mat-label>
+              <input matInput
+                     [matDatepicker]="dpInicioEps"
+                     formControlName="fechaInicio"
+                     placeholder="dd/mm/aaaa" />
+              <mat-datepicker-toggle matIconSuffix [for]="dpInicioEps" />
+              <mat-datepicker #dpInicioEps />
+              @if (errorVisible('fechaInicio', 'required')) {
+                <mat-error>La fecha de inicio es obligatoria.</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="form-field">
+              <mat-label>Fecha fin (opcional)</mat-label>
+              <input matInput
+                     [matDatepicker]="dpFinEps"
+                     formControlName="fechaFin"
+                     placeholder="dd/mm/aaaa" />
+              <mat-datepicker-toggle matIconSuffix [for]="dpFinEps" />
+              <mat-datepicker #dpFinEps />
+            </mat-form-field>
+          </div>
+
+          @if (formErrorVisible('fechaFinMenor')) {
+            <p class="form-error">La fecha fin no puede ser menor que la fecha de inicio.</p>
+          }
+        </section>
+
+      } @else {
+        <!-- ─── Solo EsSalud: bloque solo con vigencia ──────────────────────── -->
+        <section class="form-section">
+          <h4 class="form-section__title">Vigencia de la cobertura</h4>
+          <div class="form-row form-row--2col">
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="form-field">
+              <mat-label>Fecha inicio *</mat-label>
+              <input matInput
+                     [matDatepicker]="dpInicio"
+                     formControlName="fechaInicio"
+                     placeholder="dd/mm/aaaa" />
+              <mat-datepicker-toggle matIconSuffix [for]="dpInicio" />
+              <mat-datepicker #dpInicio />
+              @if (errorVisible('fechaInicio', 'required')) {
+                <mat-error>La fecha de inicio es obligatoria.</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="form-field">
+              <mat-label>Fecha fin (opcional)</mat-label>
+              <input matInput
+                     [matDatepicker]="dpFin"
+                     formControlName="fechaFin"
+                     placeholder="dd/mm/aaaa" />
+              <mat-datepicker-toggle matIconSuffix [for]="dpFin" />
+              <mat-datepicker #dpFin />
+            </mat-form-field>
+          </div>
+
+          @if (formErrorVisible('fechaFinMenor')) {
+            <p class="form-error">La fecha fin no puede ser menor que la fecha de inicio.</p>
+          }
+        </section>
+      }
+
+      <!-- Sección: Datos complementarios -->
+      <section class="form-section">
+        <h4 class="form-section__title">Datos complementarios</h4>
+        <div class="form-row form-row--2col">
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="form-field">
+            <mat-label>Documento sustento (opcional)</mat-label>
+            <input matInput formControlName="documentoSustento" placeholder="Nº de documento o referencia" />
+          </mat-form-field>
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="form-field">
+            <mat-label>Observación (opcional)</mat-label>
+            <input matInput formControlName="observacion" placeholder="Observación adicional" />
+          </mat-form-field>
+        </div>
+      </section>
+
+      <!-- Acciones -->
+      <div class="form-actions">
+        <button mat-stroked-button type="button" (click)="cancelar()" [disabled]="saving()">
+          Cancelar
+        </button>
+        <button mat-flat-button color="primary" type="submit" [disabled]="saving()">
+          @if (saving()) {
+            <mat-spinner diameter="16" />
+          } @else {
+            <mat-icon fontIcon="save" aria-hidden="true" />
+          }
+          {{ saving() ? 'Guardando…' : 'Guardar' }}
+        </button>
+      </div>
+
+    </form>
+
+    <!-- Paneles informativos -->
+    <div class="info-row">
+      <div class="info-box info-box--blue">
+        <p class="info-box__title">
+          <mat-icon fontIcon="calculate" aria-hidden="true" />
+          Reglas clave para el cálculo
+        </p>
+        <ol class="info-box__list">
+          <li>Base aplicable = menor entre remuneración CAS y 45% de la UIT vigente.</li>
+          <li>Si el trabajador tiene Solo EsSalud → Aporte empleador = Base × 9%.</li>
+          <li>Si el trabajador tiene EsSalud + EPS →
+            <ul>
+              <li>Aporte EsSalud empleador = Base × 6.75%</li>
+              <li>Crédito EPS = Base × 2.25%</li>
+              <li>Total aporte = 9%</li>
+            </ul>
+          </li>
+          <li class="info-box__note">
+            La configuración de vigencias y tasas se gestiona en el módulo
+            <em>Configuración EsSalud / EPS</em>.
+          </li>
+        </ol>
+      </div>
+      <div class="info-box info-box--green">
+        <p class="info-box__title">
+          <mat-icon fontIcon="info_outline" aria-hidden="true" />
+          Importante
+        </p>
+        <ul class="info-box__list">
+          <li>Esta información <strong>NO</strong> genera descuentos al trabajador.</li>
+          <li>Si el trabajador tiene un descuento voluntario asociado a una EPS,
+              registrarlo en el módulo de <em>Conceptos</em>.</li>
+          <li>Cambios en esta configuración afectan el cálculo de EsSalud del empleador en planillas futuras.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Cobertura actual del trabajador -->
+    @if (actual) {
+      <div class="cobertura-card"
+           [class.cobertura-card--activo]="actual.estado === 'ACTIVO'"
+           [class.cobertura-card--cerrado]="actual.estado === 'CERRADO'">
+        <div class="cobertura-card__header">
+          <mat-icon fontIcon="health_and_safety" aria-hidden="true" />
+          <span>Cobertura actual del trabajador</span>
+        </div>
+        <div class="cobertura-card__body">
+          <span class="cobertura-tipo">
+            {{ actual.tipoCobertura === 'ESSALUD'
+               ? 'Solo EsSalud (9%)'
+               : 'EsSalud + EPS (' + (actual.epsNombre ?? '') + ')' }}
+          </span>
+          <span class="badge" [class]="estadoBadgeClass(actual.estado)">{{ actual.estado }}</span>
+        </div>
+        <p class="cobertura-card__dates">
+          Desde: {{ actual.fechaInicio | date:'dd/MM/yyyy' }}
+          @if (actual.fechaFin) {
+            &nbsp;|&nbsp; Hasta: {{ actual.fechaFin | date:'dd/MM/yyyy' }}
+          } @else {
+            &nbsp;|&nbsp; Sin fecha fin definida
+          }
+        </p>
+      </div>
+    }
+
+  </div>
+
+  <!-- ── Panel lateral ─────────────────────────────────────────────────────── -->
+  <aside class="tab-aside">
+    @if (actual) {
+      <div class="aside-card">
+        <div class="aside-row">
+          <span class="aside-label">Estado</span>
+          <span class="badge" [class]="estadoBadgeClass(actual.estado)">{{ actual.estado }}</span>
+        </div>
+        <div class="aside-row">
+          <span class="aside-label">Fecha de registro</span>
+          <span class="aside-val">{{ actual.creadoEn | date:'dd/MM/yyyy' }}</span>
+        </div>
+        <div class="aside-row">
+          <span class="aside-label">Registrado por</span>
+          <span class="aside-val">{{ actual.creadoPor }}</span>
+        </div>
+        @if (actual.modificadoEn) {
+          <div class="aside-row">
+            <span class="aside-label">Última modificación</span>
+            <span class="aside-val">{{ actual.modificadoEn | date:'dd/MM/yyyy HH:mm' }}</span>
+          </div>
+          <div class="aside-row">
+            <span class="aside-label">Modificado por</span>
+            <span class="aside-val">{{ actual.modificadoPor }}</span>
+          </div>
+        }
+      </div>
+    } @else {
+      <div class="aside-empty">
+        <mat-icon fontIcon="health_and_safety" aria-hidden="true" />
+        <p>Sin cobertura registrada.<br />Complete el formulario para registrar la primera.</p>
+      </div>
+    }
+  </aside>
+
+</div>

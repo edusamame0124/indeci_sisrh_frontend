@@ -1,0 +1,135 @@
+/* ── Título ── */
+.dialog-titulo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--sisrh-primary, #1f3a5f);
+  margin: 0;
+  padding-bottom: 2px;
+}
+.titulo-icono {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: var(--sisrh-primary-100, #e8eef6);
+  flex-shrink: 0;
+}
+.titulo-icono mat-icon { font-size: 20px; width: 20px; height: 20px; color: var(--sisrh-primary, #1f3a5f); }
+
+/* ── Meta info (año + leyenda) ── */
+.dialog-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 24px 4px;
+  flex-wrap: wrap;
+}
+.anio-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--sisrh-info, #2563a6);
+  background: var(--sisrh-info-100, #eaf2fb);
+  padding: 3px 10px;
+  border-radius: 20px;
+}
+.anio-badge mat-icon { font-size: 14px; width: 14px; height: 14px; }
+
+.req-nota {
+  font-size: 12px;
+  color: var(--sisrh-text-muted, #64748b);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ── Body del diálogo ── */
+.dialog-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 4px 0;
+  min-width: 520px;
+  max-width: 660px;
+  max-height: 70vh;
+}
+
+/* ── Sección ── */
+.form-seccion {
+  border-bottom: 1px solid var(--sisrh-border-soft, #e7ecf2);
+  padding: 16px 0 20px;
+}
+.form-seccion:last-child { border-bottom: none; padding-bottom: 8px; }
+
+.seccion-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--sisrh-text-muted, #64748b);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  margin-bottom: 14px;
+}
+.seccion-header mat-icon { font-size: 15px; width: 15px; height: 15px; }
+.seccion-opcional { font-weight: 400; text-transform: none; letter-spacing: 0; font-size: 11px; }
+
+.seccion-campos {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ── Campo duo (2 columnas) ── */
+.campo-duo {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+/* ── Tamaños de campo ── */
+.field-full  { width: 100%; }
+.field-codigo { width: 200px; }
+
+/* ── Ayuda del código ── */
+.field-ayuda {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  padding: 8px 12px;
+  background: var(--sisrh-info-100, #eaf2fb);
+  border-radius: 6px;
+  max-width: 100%;
+}
+.ayuda-icon { font-size: 16px; width: 16px; height: 16px; color: var(--sisrh-info, #2563a6); flex-shrink: 0; margin-top: 1px; }
+.ayuda-texto {
+  font-size: 12px;
+  color: var(--sisrh-info, #2563a6);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* ── Obligatorio ── */
+.req { color: var(--sisrh-danger, #b42318); font-weight: 700; }
+
+/* ── Spinner dentro del botón ── */
+.spinner-btn { display: inline-flex; }
+
+/* ── Acciones ── */
+.dialog-actions { gap: 8px; padding: 12px 0 4px; }
+
+/* ── Responsive ── */
+@media (max-width: 600px) {
+  .dialog-body  { min-width: unset; }
+  .campo-duo    { grid-template-columns: 1fr; }
+  .field-codigo { width: 100%; }
+}

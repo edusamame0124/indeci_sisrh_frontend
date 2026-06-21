@@ -4,8 +4,11 @@ import { map, type Observable } from 'rxjs';
 import type { ApiResponse } from '../../../core/models/api-response.model';
 import { extractApiData } from '../../../core/http/map-api-response';
 import type {
+  AsistenciaImportDetalleFiltro,
+  AsistenciaImportFilaDetalle,
   AsistenciaImportHistorial,
   AsistenciaImportPreview,
+  AsistenciaImportResumen,
   AsistenciaValidacionBatch,
   EstrategiaConflicto,
   SpringPage,
@@ -28,11 +31,36 @@ export class AsistenciaImportApiService {
   confirmar(
     importacionId: number,
     estrategiaConflicto: EstrategiaConflicto,
+    motivoRectificacion?: string,
   ): Observable<AsistenciaImportPreview> {
     return this.http
       .post<ApiResponse<AsistenciaImportPreview>>(`${this.baseUrl}/${importacionId}/confirm`, {
         importacionId,
         estrategiaConflicto,
+        motivoRectificacion: motivoRectificacion ?? null,
+      })
+      .pipe(map(extractApiData));
+  }
+
+  /** F5 / P3 — acepta filas OBSERVADAS (ids vacío = todas) con motivo obligatorio. */
+  aceptarObservadas(
+    importacionId: number,
+    idsFilas: readonly number[],
+    motivo: string,
+  ): Observable<number> {
+    return this.http
+      .post<ApiResponse<number>>(`${this.baseUrl}/${importacionId}/aceptar-observadas`, {
+        idsFilas,
+        motivo,
+      })
+      .pipe(map(extractApiData));
+  }
+
+  /** F5 / P4 — anula la importación (motivo obligatorio). */
+  anular(importacionId: number, motivo: string): Observable<AsistenciaImportPreview> {
+    return this.http
+      .post<ApiResponse<AsistenciaImportPreview>>(`${this.baseUrl}/${importacionId}/anular`, {
+        motivo,
       })
       .pipe(map(extractApiData));
   }
@@ -45,6 +73,47 @@ export class AsistenciaImportApiService {
     return this.http
       .get<ApiResponse<SpringPage<AsistenciaImportHistorial>>>(this.baseUrl, { params })
       .pipe(map(extractApiData));
+  }
+
+  /** F2/F3 — detalle paginado server-side con filtros (25 por defecto). */
+  detalles(
+    importacionId: number,
+    filtro: AsistenciaImportDetalleFiltro = {},
+    page = 0,
+    size = 25,
+  ): Observable<SpringPage<AsistenciaImportFilaDetalle>> {
+    let params = new HttpParams().set('page', page).set('size', size);
+    if (filtro.dni != null && filtro.dni.trim().length > 0) {
+      params = params.set('dni', filtro.dni.trim());
+    }
+    if (filtro.nombre != null && filtro.nombre.trim().length > 0) {
+      params = params.set('nombre', filtro.nombre.trim());
+    }
+    if (filtro.estado != null && filtro.estado.trim().length > 0) {
+      params = params.set('estado', filtro.estado.trim());
+    }
+    if (filtro.soloErrores) {
+      params = params.set('soloErrores', true);
+    }
+    return this.http
+      .get<ApiResponse<SpringPage<AsistenciaImportFilaDetalle>>>(
+        `${this.baseUrl}/${importacionId}/detalles`,
+        { params },
+      )
+      .pipe(map(extractApiData));
+  }
+
+  resumen(importacionId: number): Observable<AsistenciaImportResumen> {
+    return this.http
+      .get<ApiResponse<AsistenciaImportResumen>>(`${this.baseUrl}/${importacionId}/resumen`)
+      .pipe(map(extractApiData));
+  }
+
+  /** F4 — descarga el Excel de filas con error/observadas (req 15). */
+  descargarErroresXlsx(importacionId: number): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/${importacionId}/errores.xlsx`, {
+      responseType: 'blob',
+    });
   }
 
   validarCabeceras(importacionId: number): Observable<AsistenciaValidacionBatch> {

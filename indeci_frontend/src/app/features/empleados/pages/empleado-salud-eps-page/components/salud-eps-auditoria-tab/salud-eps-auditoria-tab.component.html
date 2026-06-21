@@ -1,0 +1,45 @@
+<div class="aud-wrap">
+
+  <p class="aud-note">
+    <mat-icon fontIcon="info_outline" aria-hidden="true" />
+    Trazabilidad de cambios en coberturas Salud/EPS del empleado.
+    Los registros anulados quedan en auditoría aunque no aparezcan en el historial activo.
+  </p>
+
+  @if (entradas.length === 0) {
+    <div class="aud-empty">
+      <mat-icon fontIcon="manage_search" aria-hidden="true" />
+      <p>Sin movimientos registrados.</p>
+    </div>
+  } @else {
+    <div class="aud-timeline">
+      @for (e of entradas; track e.fecha) {
+        <div class="aud-entry">
+          <div class="aud-entry__icon" [class]="colorAccion(e.accion)">
+            <mat-icon [fontIcon]="iconAccion(e.accion)" aria-hidden="true" />
+          </div>
+          <div class="aud-entry__body">
+            <div class="aud-entry__head">
+              <span class="aud-accion">{{ e.accion }}</span>
+              <span class="aud-fecha">{{ e.fecha | date:'dd/MM/yyyy HH:mm' }}</span>
+            </div>
+            <p class="aud-detalle">{{ e.detalle }}</p>
+            @if (e.motivo) {
+              <p class="aud-motivo">
+                <mat-icon fontIcon="notes" aria-hidden="true" />
+                Motivo: {{ e.motivo }}
+              </p>
+            }
+            @if (e.usuario) {
+              <p class="aud-usuario">
+                <mat-icon fontIcon="person" aria-hidden="true" />
+                {{ e.usuario }}
+              </p>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+</div>

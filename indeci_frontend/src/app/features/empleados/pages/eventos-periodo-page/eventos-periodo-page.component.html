@@ -3,9 +3,10 @@
     <div>
       <h1 id="eventos-titulo">Eventos del período</h1>
       <p class="eventos-header__sub">
-        Registra maternidad, enfermedad, licencias, cese y demás eventos del
-        empleado. Los días afectos se descuentan automáticamente del cálculo
-        de planilla cuando el motor v3 está activo.
+        Registra licencias, permisos, cese y demás incidencias del empleado.
+        Los días afectos se descuentan del cálculo de planilla cuando el motor v3 está activo.
+        Los subsidios por enfermedad y maternidad se gestionan en
+        <strong>Asistencia → Subsidios</strong>.
       </p>
     </div>
     <button
@@ -60,7 +61,7 @@
         <mat-label>Tipo</mat-label>
         <mat-select [formControl]="filtroTipo">
           <mat-option [value]="null">Todos los tipos</mat-option>
-          <mat-option *ngFor="let t of tipos()" [value]="t.id">
+          <mat-option *ngFor="let t of tiposOperativos()" [value]="t.id">
             {{ t.nombre }}
           </mat-option>
         </mat-select>
@@ -140,8 +141,8 @@
           <th mat-header-cell *matHeaderCellDef>Tipo</th>
           <td mat-cell *matCellDef="let e">
             <span class="evento-tipo">{{ e.tipoEventoNombre }}</span>
-            <small *ngIf="e.generaSubsidio === 'S'" class="evento-tipo__flag">
-              Genera subsidio
+            <small *ngIf="e.generaSubsidio === 'S'" class="evento-tipo__flag evento-tipo__flag--legacy">
+              Histórico — use Subsidios
             </small>
           </td>
         </ng-container>
@@ -203,7 +204,10 @@
               mat-icon-button
               type="button"
               (click)="abrirFormEditar(e)"
-              matTooltip="Editar evento"
+              [disabled]="esEventoSubsidioLegacy(e)"
+              [matTooltip]="esEventoSubsidioLegacy(e)
+                ? 'Evento histórico de subsidio — edite en Asistencia → Subsidios'
+                : 'Editar evento'"
               aria-label="Editar evento"
             >
               <mat-icon>edit</mat-icon>
@@ -211,7 +215,7 @@
             <button
               mat-icon-button
               type="button"
-              *ngIf="e.estado === 'REGISTRADO'"
+              *ngIf="e.estado === 'REGISTRADO' && !esEventoSubsidioLegacy(e)"
               (click)="validar(e)"
               matTooltip="Validar evento"
               aria-label="Validar evento"
@@ -222,7 +226,7 @@
             <button
               mat-icon-button
               type="button"
-              *ngIf="e.estado === 'REGISTRADO'"
+              *ngIf="e.estado === 'REGISTRADO' && !esEventoSubsidioLegacy(e)"
               (click)="rechazar(e)"
               matTooltip="Rechazar evento"
               aria-label="Rechazar evento"
@@ -261,7 +265,7 @@
   </mat-card>
 
   <p class="eventos-spec-note" *ngIf="!loadingEventos() && totalElements() > 0">
-    Spec F3.6 — Eventos del Período. Los flags por tipo controlan el motor v3
-    (días laborados, subsidios y solape).
+    Spec F3.6 — Eventos del Período (incidencias de asistencia).
+    Subsidios por enfermedad/maternidad: módulo Asistencia → Subsidios.
   </p>
 </section>

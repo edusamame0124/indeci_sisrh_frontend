@@ -1,0 +1,47 @@
+<div class="doc-wrap">
+
+  <div class="doc-info" role="note">
+    <mat-icon fontIcon="info_outline" aria-hidden="true" />
+    <p>
+      Se muestran los documentos de sustento y observaciones registrados en cada vigencia.
+      Para adjuntar archivos digitales, use el módulo de <strong>Legajo digital</strong>.
+    </p>
+  </div>
+
+  @if (conDocumento.length === 0) {
+    <div class="doc-empty">
+      <mat-icon fontIcon="folder_open" aria-hidden="true" />
+      <p>No hay documentos de sustento registrados.</p>
+    </div>
+  } @else {
+    <div class="doc-list">
+      @for (r of conDocumento; track r.id) {
+        <div class="doc-card">
+          <div class="doc-card__header">
+            <mat-icon fontIcon="health_and_safety" aria-hidden="true" />
+            <span class="doc-card__tipo">
+              {{ r.tipoCobertura === 'ESSALUD' ? 'Solo EsSalud' : 'EsSalud + EPS' }}
+              @if (r.epsNombre) { — {{ r.epsNombre }} }
+            </span>
+            <span class="doc-card__fecha">desde {{ r.fechaInicio }}</span>
+          </div>
+          @if (r.documentoSustento) {
+            <div class="doc-card__row">
+              <mat-icon fontIcon="description" aria-hidden="true" />
+              <span class="doc-card__label">Documento sustento:</span>
+              <span class="doc-card__val">{{ r.documentoSustento }}</span>
+            </div>
+          }
+          @if (r.observacion) {
+            <div class="doc-card__row">
+              <mat-icon fontIcon="notes" aria-hidden="true" />
+              <span class="doc-card__label">Observación:</span>
+              <span class="doc-card__val">{{ r.observacion }}</span>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+
+</div>

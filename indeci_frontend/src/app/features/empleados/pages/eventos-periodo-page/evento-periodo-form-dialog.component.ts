@@ -25,13 +25,11 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
-import { MatRadioModule } from '@angular/material/radio';
-import { MatTableModule } from '@angular/material/table';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { provideNativeDateAdapter } from '@angular/material/core';
-import { debounceTime, distinctUntilChanged, merge, of, startWith, switchMap, type Observable } from 'rxjs';
+import { debounceTime, distinctUntilChanged, of, startWith, switchMap, type Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { EventoPeriodoApiService } from '../../services/evento-periodo-api.service';
@@ -41,23 +39,12 @@ import type { LegajoDocumentoResponse } from '../../models/legajo-documento.mode
 import { ErrorMessageService } from '../../../../core/services/error-message.service';
 import { isErrorResponse } from '../../../../core/models/error-response.model';
 import type {
-  EventoDistribucionMes,
   EventoPeriodoRequest,
   EventoPeriodoResponse,
-  MaternidadPreview,
   TipoEvento,
 } from '../../models/evento-periodo.model';
 import type { LegajoCategoria } from '../../models/legajo-documento.model';
 import type { PersonaResumen } from '../../models/persona-empleado.model';
-import {
-  calcularDistribucionMensual,
-  calcularFechaFinMaternidad,
-  construirPreviewMaternidad,
-  formatearFechaEs,
-  formatearPeriodo,
-  normalizarDuracionLegal,
-  type DuracionLegalMaternidad,
-} from '../../utils/evento-periodo-maternidad.utils';
 
 export interface EventoPeriodoDialogData {
   /** Null al crear — el usuario elige empleado en el modal. */
@@ -82,8 +69,6 @@ export interface EventoPeriodoDialogData {
     MatInputModule,
     MatProgressSpinnerModule,
     MatSelectModule,
-    MatRadioModule,
-    MatTableModule,
     MatDatepickerModule,
     MatAutocompleteModule,
   ],
@@ -106,29 +91,11 @@ export class EventoPeriodoFormDialogComponent {
   readonly data = inject<EventoPeriodoDialogData>(MAT_DIALOG_DATA);
 
   readonly submitting = signal(false);
-  readonly previewing = signal(false);
   readonly archivoSeleccionado = signal<File | null>(null);
-  readonly previewVisible = signal(false);
-  readonly preview = signal<MaternidadPreview | null>(null);
-  readonly distribucion = signal<readonly EventoDistribucionMes[]>([]);
   readonly empleadoSeleccionado = signal<PersonaResumen | null>(null);
   readonly empleadoOpciones = signal<readonly PersonaResumen[]>([]);
   readonly buscandoEmpleados = signal(false);
   readonly empleadoCtrl = this.fb.nonNullable.control('');
-  /** Resumen calculado — signal explícito para refrescar inputs readonly (OnPush). */
-  readonly maternidadResumen = signal<{
-    fechaFinTexto: string;
-    totalDias: number | null;
-  }>({ fechaFinTexto: '', totalDias: null });
-
-  readonly distribucionColumns = [
-    'periodo',
-    'desde',
-    'hasta',
-    'dias',
-    'afectaDias',
-    'estado',
-  ] as const;
 
   readonly form = this.fb.nonNullable.group({
     tipoEventoId: this.fb.nonNullable.control<number | null>(null, [Validators.required]),
@@ -136,27 +103,13 @@ export class EventoPeriodoFormDialogComponent {
     fechaFin: this.fb.nonNullable.control<Date | null>(null, [Validators.required]),
     diasAfectos: this.fb.nonNullable.control<number | null>(null),
     observacion: this.fb.nonNullable.control<string>(''),
-    fechaProbableParto: this.fb.nonNullable.control<Date | null>(null),
-    duracionLegal: this.fb.nonNullable.control<DuracionLegalMaternidad | null>(null),
-    motivoExtension: this.fb.nonNullable.control<string | null>(null),
-    difierePrenatalPostnatal: this.fb.nonNullable.control<string>('NO'),
-    tipoDocumento: this.fb.nonNullable.control<string | null>(null),
-    nroCitt: this.fb.nonNullable.control<string>(''),
-    fechaEmisionDoc: this.fb.nonNullable.control<Date | null>(null),
   });
 
-  /** Puente FormControl → signal para que OnPush detecte cambio de tipo. */
   private readonly tipoEventoIdSig = toSignal(
     this.form.controls.tipoEventoId.valueChanges.pipe(
       startWith(this.form.controls.tipoEventoId.value),
     ),
     { initialValue: this.form.controls.tipoEventoId.value },
-  );
-
-  /** Invalida computeds que leen FormControl (no son signals). */
-  private readonly formSync = toSignal(
-    merge(this.form.valueChanges, this.form.statusChanges).pipe(startWith(null)),
-    { initialValue: null },
   );
 
   readonly tipoSeleccionado = computed<TipoEvento | null>(() => {
@@ -167,32 +120,19 @@ export class EventoPeriodoFormDialogComponent {
     return this.data.tipos.find((t) => t.id === numericId) ?? null;
   });
 
-  readonly esMaternidad = computed(
-    () => this.tipoSeleccionado()?.codigo === 'MATERNIDAD',
-  );
-
   readonly tipoMetadata = computed(() => {
     const t = this.tipoSeleccionado();
     if (!t) return null;
     const flags: string[] = [];
     if (t.afectaDiasLaborados === 'S') flags.push('Afecta días laborados');
-    if (t.generaSubsidio === 'S') flags.push('Genera subsidio EsSalud');
     if (t.requiereAdjunto === 'S') flags.push('Requiere sustento');
     if (t.permiteSolape === 'S') flags.push('Permite solape');
     return flags.length ? flags.join(' · ') : 'Sin afectaciones adicionales';
   });
 
   readonly puedeRegistrar = computed(() => {
-    this.formSync();
     if (this.submitting()) return false;
     if (!this.modoEdicion() && !this.empleadoSeleccionado()?.empleadoId) return false;
-    if (!this.form.controls.tipoEventoId.value) return false;
-    if (this.esMaternidad()) {
-      if (this.form.invalid) return false;
-      if (this.distribucion().length === 0) return false;
-      if (!this.modoEdicion() && !this.archivoSeleccionado()) return false;
-      return true;
-    }
     return !this.form.invalid;
   });
 
@@ -201,10 +141,6 @@ export class EventoPeriodoFormDialogComponent {
     this.modoEdicion() ? 'Editar evento del período' : 'Registrar evento del período',
   );
 
-  readonly formatearPeriodo = formatearPeriodo;
-  readonly formatearFechaEs = formatearFechaEs;
-
-  /** Evita mismatch string/number en mat-select (id del catálogo). */
   readonly compararTipoEvento = (
     a: number | string | null,
     b: number | string | null,
@@ -213,8 +149,6 @@ export class EventoPeriodoFormDialogComponent {
     return Number(a) === Number(b);
   };
 
-  private modoMaternidadAnterior = false;
-
   readonly displayEmpleado = (p: PersonaResumen | string | null): string => {
     if (!p || typeof p === 'string') return p ?? '';
     return `${p.nombreCompleto} — DNI ${p.dni ?? ''}`;
@@ -222,8 +156,6 @@ export class EventoPeriodoFormDialogComponent {
 
   constructor() {
     this.escucharBusquedaEmpleado();
-    this.escucharCambioTipo();
-    this.escucharCalculoMaternidad();
 
     const e = this.data.evento;
     if (e) {
@@ -233,21 +165,7 @@ export class EventoPeriodoFormDialogComponent {
         fechaFin: e.fechaFin ? new Date(e.fechaFin) : null,
         diasAfectos: e.diasAfectos ?? null,
         observacion: e.observacion ?? '',
-        fechaProbableParto: e.fechaProbableParto ? new Date(e.fechaProbableParto) : null,
-        duracionLegal: (e.duracionLegal as DuracionLegalMaternidad | null) ?? null,
-        motivoExtension: e.motivoExtension ?? null,
-        difierePrenatalPostnatal: e.difierePrenatalPostnatal ?? 'NO',
-        tipoDocumento: e.tipoDocumento ?? null,
-        nroCitt: e.nroCitt ?? '',
-        fechaEmisionDoc: e.fechaEmisionDoc ? new Date(e.fechaEmisionDoc) : null,
       });
-      if (e.distribucionMensual?.length) {
-        this.distribucion.set(e.distribucionMensual);
-      }
-      if (e.tipoEventoCodigo === 'MATERNIDAD') {
-        this.activarModoMaternidad(true);
-        this.recalcularMaternidad();
-      }
     }
   }
 
@@ -264,36 +182,9 @@ export class EventoPeriodoFormDialogComponent {
     this.dialogRef.close(null);
   }
 
-  /** Dispara recálculo al elegir fecha en el datepicker (valueChanges a veces no alcanza). */
-  onFechaDescansoChange(): void {
-    this.recalcularMaternidad();
-  }
-
-  previsualizarImpacto(): void {
-    if (!this.esMaternidad()) return;
-    const inicio = this.form.controls.fechaInicio.value;
-    const duracion = this.form.controls.duracionLegal.value;
-    if (!inicio || !duracion) {
-      this.snack.open('Complete fecha de inicio y duración legal.', 'Cerrar', { duration: 5000 });
-      return;
-    }
-    this.previewing.set(true);
-    const local = construirPreviewMaternidad(inicio, duracion);
-    this.preview.set(local);
-    this.previewVisible.set(true);
-    this.previewing.set(false);
-  }
-
   guardar(): void {
     if (!this.puedeRegistrar()) {
       this.form.markAllAsTouched();
-      if (this.esMaternidad() && !this.archivoSeleccionado() && !this.modoEdicion()) {
-        this.snack.open(
-          'Adjunte el CITT, certificado médico o documento sustentatorio para registrar el subsidio por maternidad.',
-          'Cerrar',
-          { duration: 7000 },
-        );
-      }
       return;
     }
     const tipo = this.tipoSeleccionado();
@@ -403,170 +294,15 @@ export class EventoPeriodoFormDialogComponent {
     sustentoId: number | null,
   ): EventoPeriodoRequest {
     const raw = this.form.getRawValue();
-    const base: EventoPeriodoRequest = {
+    return {
       empleadoId,
       tipoEventoId: tipo.id,
       fechaInicio: this.toIso(raw.fechaInicio),
       fechaFin: this.toIso(raw.fechaFin),
+      diasAfectos: raw.diasAfectos ?? null,
       sustentoLegajoDocId: sustentoId,
       observacion: raw.observacion || null,
     };
-
-    if (this.esMaternidad()) {
-      const inicio = raw.fechaInicio;
-      const duracion = normalizarDuracionLegal(raw.duracionLegal);
-      const fin = inicio && duracion
-        ? calcularFechaFinMaternidad(inicio, duracion)
-        : raw.fechaFin;
-      return {
-        ...base,
-        fechaFin: this.toIso(fin),
-        diasAfectos: raw.duracionLegal,
-        duracionLegal: raw.duracionLegal,
-        motivoExtension: raw.duracionLegal === 128 ? raw.motivoExtension : null,
-        fechaProbableParto: this.toIso(raw.fechaProbableParto),
-        difierePrenatalPostnatal: raw.difierePrenatalPostnatal,
-        tipoDocumento: raw.tipoDocumento,
-        nroCitt: raw.nroCitt.trim(),
-        fechaEmisionDoc: this.toIso(raw.fechaEmisionDoc),
-        distribucionMensual: [...this.distribucion()],
-      };
-    }
-
-    return {
-      ...base,
-      diasAfectos: this.form.controls.diasAfectos.value ?? null,
-    };
-  }
-
-  private escucharCambioTipo(): void {
-    this.form.controls.tipoEventoId.valueChanges
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => {
-        const esMat = this.esMaternidad();
-        if (this.modoMaternidadAnterior && !esMat) {
-          this.limpiarCamposMaternidad();
-          this.snack.open(
-            'Se limpiaron los datos específicos de maternidad porque el tipo de evento seleccionado cambió.',
-            'Cerrar',
-            { duration: 6000 },
-          );
-        }
-        if (esMat) {
-          this.activarModoMaternidad(true);
-        } else {
-          this.desactivarModoMaternidad(true);
-        }
-        this.modoMaternidadAnterior = esMat;
-      });
-  }
-
-  private escucharCalculoMaternidad(): void {
-    this.form.controls.fechaInicio.valueChanges
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => this.recalcularMaternidad());
-    this.form.controls.duracionLegal.valueChanges
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => {
-        const duracion = this.form.controls.duracionLegal.value;
-        const motivo = this.form.controls.motivoExtension;
-        if (duracion === 128) {
-          motivo.setValidators([Validators.required]);
-        } else {
-          motivo.clearValidators();
-          motivo.setValue(null);
-        }
-        motivo.updateValueAndValidity();
-        this.recalcularMaternidad();
-      });
-  }
-
-  private recalcularMaternidad(): void {
-    if (!this.esMaternidad()) {
-      this.maternidadResumen.set({ fechaFinTexto: '', totalDias: null });
-      return;
-    }
-    const inicio = this.form.controls.fechaInicio.value;
-    const duracion = normalizarDuracionLegal(this.form.controls.duracionLegal.value);
-    if (!inicio || !duracion) {
-      this.maternidadResumen.set({ fechaFinTexto: '', totalDias: duracion });
-      return;
-    }
-    const fin = calcularFechaFinMaternidad(inicio, duracion);
-    this.form.controls.fechaFin.setValue(fin, { emitEvent: false });
-    this.maternidadResumen.set({
-      fechaFinTexto: formatearFechaEs(this.toIso(fin)),
-      totalDias: duracion,
-    });
-    const tramos = calcularDistribucionMensual(inicio, fin);
-    this.distribucion.set(tramos);
-    this.preview.set(construirPreviewMaternidad(inicio, duracion));
-  }
-
-  private activarModoMaternidad(restaurarGenerales: boolean): void {
-    this.form.controls.fechaFin.disable({ emitEvent: false });
-    this.form.controls.diasAfectos.clearValidators();
-    this.form.controls.diasAfectos.setValue(null, { emitEvent: false });
-
-    this.form.controls.fechaProbableParto.setValidators([Validators.required]);
-    this.form.controls.duracionLegal.setValidators([Validators.required]);
-    this.form.controls.difierePrenatalPostnatal.setValidators([Validators.required]);
-    this.form.controls.tipoDocumento.setValidators([Validators.required]);
-    this.form.controls.nroCitt.setValidators([Validators.required]);
-    this.form.controls.fechaEmisionDoc.setValidators([Validators.required]);
-
-    const duracionActual = normalizarDuracionLegal(this.form.controls.duracionLegal.value);
-    if (!duracionActual) {
-      this.form.controls.duracionLegal.setValue(98 as DuracionLegalMaternidad);
-    }
-    this.form.updateValueAndValidity();
-    this.recalcularMaternidad();
-  }
-
-  private desactivarModoMaternidad(restaurarGenerales: boolean): void {
-    this.form.controls.fechaFin.enable({ emitEvent: false });
-    this.form.controls.fechaFin.setValidators([Validators.required]);
-    this.form.controls.diasAfectos.clearValidators();
-
-    this.limpiarValidatorsMaternidad();
-    this.distribucion.set([]);
-    this.preview.set(null);
-    this.previewVisible.set(false);
-    this.maternidadResumen.set({ fechaFinTexto: '', totalDias: null });
-    this.form.updateValueAndValidity();
-  }
-
-  private limpiarCamposMaternidad(): void {
-    this.form.patchValue({
-      fechaProbableParto: null,
-      duracionLegal: null,
-      motivoExtension: null,
-      difierePrenatalPostnatal: 'NO',
-      tipoDocumento: null,
-      nroCitt: '',
-      fechaEmisionDoc: null,
-    });
-    this.limpiarValidatorsMaternidad();
-    this.distribucion.set([]);
-    this.preview.set(null);
-    this.previewVisible.set(false);
-    this.maternidadResumen.set({ fechaFinTexto: '', totalDias: null });
-  }
-
-  private limpiarValidatorsMaternidad(): void {
-    const campos = [
-      'fechaProbableParto',
-      'duracionLegal',
-      'motivoExtension',
-      'difierePrenatalPostnatal',
-      'tipoDocumento',
-      'nroCitt',
-      'fechaEmisionDoc',
-    ] as const;
-    for (const c of campos) {
-      this.form.controls[c].clearValidators();
-      this.form.controls[c].updateValueAndValidity({ emitEvent: false });
-    }
   }
 
   private resolverCategoriaParaTipo(tipo: TipoEvento): number {
@@ -577,9 +313,7 @@ export class EventoPeriodoFormDialogComponent {
       );
 
     let cat: LegajoCategoria | undefined;
-    if (codigo === 'MATERNIDAD' || codigo === 'ENFERMEDAD' || codigo === 'LACTANCIA') {
-      cat = buscar('Subsidios');
-    } else if (codigo.startsWith('LICENCIA') || codigo === 'PATERNIDAD' || codigo === 'PERMISO_PERSONAL') {
+    if (codigo.startsWith('LICENCIA') || codigo === 'PATERNIDAD' || codigo === 'PERMISO_PERSONAL') {
       cat = buscar('Permisos y licencias');
     } else if (codigo === 'CESE') {
       cat = buscar('Resoluciones');

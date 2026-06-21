@@ -1,0 +1,317 @@
+<!-- ═══════════════════════════════════════════════════════════════
+     Paso 4 — Corrección de excepciones
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="corr-page">
+
+  <!-- Indicador de proceso (5 pasos completos) -->
+  <nav class="proc-steps" aria-label="Progreso del proceso">
+    <div class="proc-step proc-step--done">
+      <span class="proc-num"><mat-icon>check</mat-icon></span>
+      <span class="proc-label">1. Catálogo destino</span>
+    </div>
+    <div class="proc-sep"></div>
+    <div class="proc-step proc-step--done">
+      <span class="proc-num"><mat-icon>check</mat-icon></span>
+      <span class="proc-label">2. Equivalencias detectadas</span>
+    </div>
+    <div class="proc-sep"></div>
+    <div class="proc-step proc-step--done">
+      <span class="proc-num"><mat-icon>check</mat-icon></span>
+      <span class="proc-label">3. Proceso masivo</span>
+    </div>
+    <div class="proc-sep"></div>
+    <div class="proc-step proc-step--active">
+      <span class="proc-num">4</span>
+      <span class="proc-label">Corrección de excepciones</span>
+    </div>
+    <div class="proc-sep"></div>
+    <div class="proc-step">
+      <span class="proc-num">5</span>
+      <span class="proc-label">Validar y aprobar</span>
+    </div>
+  </nav>
+
+  <!-- Banner informativo -->
+  <div class="info-banner" role="note">
+    <mat-icon class="info-banner-icon">info</mat-icon>
+    <div>
+      <strong>Está corrigiendo los casos excepcionales antes de la publicación.</strong>
+      <p>Solo las filas observadas requieren revisión y corrección manual. Las asignaciones válidas se publicarán automáticamente.</p>
+    </div>
+  </div>
+
+  @if (todosListos) {
+    <!-- Sin excepciones -->
+    <div class="sin-excep">
+      <mat-icon class="sin-excep-icon">check_circle</mat-icon>
+      <h3>Sin excepciones pendientes</h3>
+      <p>Todas las asignaciones se procesaron correctamente. Puede continuar al paso 5.</p>
+      <button mat-flat-button color="primary" (click)="onContinuar()">
+        Continuar al paso 5 <mat-icon iconSuffix>arrow_forward</mat-icon>
+      </button>
+    </div>
+  } @else {
+
+    <!-- ── Filtros + Resumen (fila horizontal) ── -->
+    <div class="filtros-resumen-row">
+      <div class="filtros-wrap">
+        <mat-form-field appearance="outline" subscriptSizing="fixed" class="filtro-sm">
+          <mat-label>Tipo de excepción</mat-label>
+          <mat-select [value]="filtroTipo()" (valueChange)="filtroTipo.set($event); currentPage.set(0)">
+            <mat-option value="TODOS">Todos</mat-option>
+            <mat-option value="SIN_EQUIVALENCIA">Sin coincidencia</mat-option>
+            <mat-option value="META_DESTINO_INACTIVA">Meta anulada</mat-option>
+            <mat-option value="DUPLICADO">Duplicado</mat-option>
+            <mat-option value="OBSERVADO">Observado</mat-option>
+            <mat-option value="EMPLEADO_INACTIVO">Empleado inactivo</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" subscriptSizing="fixed" class="filtro-sm">
+          <mat-label>Estado</mat-label>
+          <mat-select [value]="filtroEstado()" (valueChange)="filtroEstado.set($event); currentPage.set(0)">
+            <mat-option value="TODOS">Todos</mat-option>
+            <mat-option value="PENDIENTE">Pendientes</mat-option>
+            <mat-option value="POR_GUARDAR">Por guardar</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" subscriptSizing="fixed" class="filtro-busqueda">
+          <mat-label>Buscar empleado</mat-label>
+          <input matInput
+            [value]="filtroBusqueda()"
+            (input)="filtroBusqueda.set($any($event.target).value); currentPage.set(0)"
+            placeholder="Buscar por nombre o DNI…">
+          <mat-icon matSuffix>search</mat-icon>
+        </mat-form-field>
+
+        <button mat-stroked-button (click)="limpiarFiltros()" class="btn-limpiar">
+          <mat-icon>filter_list_off</mat-icon>
+          Limpiar filtros
+        </button>
+      </div>
+
+      <!-- Panel de resumen inline -->
+      <div class="resumen-panel">
+        <h4 class="resumen-titulo">Resumen de excepciones</h4>
+        <div class="resumen-stats">
+          <div class="rstat">
+            <span class="rstat-val rstat-val--total">{{ totalObservados }}</span>
+            <span class="rstat-label">Total observadas</span>
+            <span class="rstat-pct rstat-pct--gray">(100%)</span>
+          </div>
+          <div class="rstat">
+            <span class="rstat-val rstat-val--orange">{{ totalPendientes }}</span>
+            <span class="rstat-label">Pendientes</span>
+            <span class="rstat-pct rstat-pct--orange">({{ pctPendientes }}%)</span>
+          </div>
+          <div class="rstat">
+            <span class="rstat-val rstat-val--green">{{ totalCorregidas }}</span>
+            <span class="rstat-label">Corregidas</span>
+            <span class="rstat-pct rstat-pct--green">({{ pctCorregidas }}%)</span>
+          </div>
+          <div class="rstat">
+            <span class="rstat-val rstat-val--red">{{ totalSinResolver }}</span>
+            <span class="rstat-label">Sin resolver</span>
+            <span class="rstat-pct rstat-pct--red">({{ pctSinResolver }}%)</span>
+          </div>
+        </div>
+        <p class="resumen-ts">
+          <mat-icon class="ts-icon">schedule</mat-icon>
+          Última actualización: en esta sesión
+        </p>
+      </div>
+    </div>
+
+    <!-- Botones de acción -->
+    <div class="acciones-row">
+      <button mat-flat-button color="primary"
+        (click)="guardarCorrecciones()"
+        [disabled]="!hayCorrecciones || guardando() || procesando">
+        <mat-icon>save</mat-icon>
+        @if (guardando()) { Guardando… } @else { Guardar correcciones }
+      </button>
+      <button mat-stroked-button
+        (click)="resolverAutoSugerencias()"
+        [disabled]="procesando || guardando()">
+        <mat-icon>auto_fix_high</mat-icon>
+        Resolver automáticamente las sugerencias
+      </button>
+    </div>
+
+    <!-- Tabla principal -->
+    @if (observadosFiltrados.length === 0) {
+      <div class="tabla-empty">
+        <mat-icon>search_off</mat-icon>
+        <p>No hay registros para los filtros aplicados.
+          <button class="link-btn" (click)="limpiarFiltros()">Limpiar filtros</button>
+        </p>
+      </div>
+    } @else {
+      <div class="tabla-wrap">
+        <table mat-table [dataSource]="observadosPaginados" class="exc-table">
+
+          <!-- Empleado -->
+          <ng-container matColumnDef="empleado">
+            <th mat-header-cell *matHeaderCellDef>Empleado</th>
+            <td mat-cell *matCellDef="let d">
+              <p class="emp-nombre">{{ d.empleadoNombre ?? '—' }}</p>
+              <p class="emp-dni">DNI: {{ d.empleadoDni ?? '—' }}</p>
+            </td>
+          </ng-container>
+
+          <!-- Meta origen -->
+          <ng-container matColumnDef="metaOrigen">
+            <th mat-header-cell *matHeaderCellDef>Meta origen</th>
+            <td mat-cell *matCellDef="let d">
+              <span class="cod-badge">{{ d.metaOrigenCodigo ?? '—' }}</span>
+            </td>
+          </ng-container>
+
+          <!-- Meta sugerida -->
+          <ng-container matColumnDef="metaSugerida">
+            <th mat-header-cell *matHeaderCellDef>Meta sugerida</th>
+            <td mat-cell *matCellDef="let d">
+              @if (d.metaDestinoId) {
+                <span class="cod-badge cod-badge--sug">{{ d.metaDestinoCodigo }}</span>
+              } @else {
+                <span class="no-sug">—</span>
+              }
+            </td>
+          </ng-container>
+
+          <!-- Meta corregida (select inline) -->
+          <ng-container matColumnDef="metaCorregida">
+            <th mat-header-cell *matHeaderCellDef>Meta corregida</th>
+            <td mat-cell *matCellDef="let d">
+              <mat-form-field appearance="outline" subscriptSizing="fixed" class="sel-meta">
+                <mat-select
+                  [value]="getMetaSeleccionada(d.id)"
+                  (valueChange)="onSelectMeta(d.id, $event)"
+                  placeholder="Seleccione…">
+                  <mat-option [value]="null">— Sin corrección —</mat-option>
+                  @for (m of metasCatalogo; track m.id) {
+                    <mat-option [value]="m.id">{{ m.metaCodigo }} — {{ m.centroCosto }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+            </td>
+          </ng-container>
+
+          <!-- Motivo de observación -->
+          <ng-container matColumnDef="motivoObservacion">
+            <th mat-header-cell *matHeaderCellDef>Motivo de observación</th>
+            <td mat-cell *matCellDef="let d">
+              <div class="motivo-row">
+                <mat-icon [class]="'motivo-ico ' + motivoIconoClass(d.estadoValidacion)">
+                  {{ motivoIcono(d.estadoValidacion) }}
+                </mat-icon>
+                <div>
+                  <p class="motivo-txt">{{ motivoEtiqueta(d.estadoValidacion) }}</p>
+                  @if (d.mensajeValidacion) {
+                    <p class="motivo-det"
+                      [matTooltip]="d.mensajeValidacion"
+                      matTooltipShowDelay="300">
+                      {{ truncar(d.mensajeValidacion, 38) }}
+                    </p>
+                  }
+                </div>
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Estado corrección -->
+          <ng-container matColumnDef="estadoCorreccion">
+            <th mat-header-cell *matHeaderCellDef>Estado</th>
+            <td mat-cell *matCellDef="let d">
+              <span class="est-badge" [class]="estadoCorreccionClass(d)">
+                {{ estadoCorreccionLabel(d) }}
+              </span>
+            </td>
+          </ng-container>
+
+          <!-- Acciones -->
+          <ng-container matColumnDef="acciones">
+            <th mat-header-cell *matHeaderCellDef>Acciones</th>
+            <td mat-cell *matCellDef="let d">
+              <div class="acc-row">
+                <button mat-icon-button
+                  [matTooltip]="d.mensajeValidacion ?? 'Sin detalle'"
+                  matTooltipShowDelay="200"
+                  class="acc-btn">
+                  <mat-icon>visibility</mat-icon>
+                </button>
+                @if (correccionesLocales().has(d.id)) {
+                  <button mat-icon-button
+                    (click)="onSelectMeta(d.id, null)"
+                    matTooltip="Descartar corrección"
+                    class="acc-btn acc-btn--warn">
+                    <mat-icon>undo</mat-icon>
+                  </button>
+                }
+              </div>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+          <tr mat-row *matRowDef="let d; columns: columnas;"
+            [class.fila-corregida]="correccionesLocales().has(d.id)"></tr>
+        </table>
+      </div>
+
+      <!-- Paginación -->
+      <div class="pag-row">
+        <span class="pag-info">Mostrando {{ inicioReg }} a {{ finReg }} de {{ observadosFiltrados.length }} resultados</span>
+        <mat-paginator
+          [length]="observadosFiltrados.length"
+          [pageSize]="pageSize"
+          [pageIndex]="currentPage()"
+          [hidePageSize]="true"
+          (page)="onPage($event)">
+        </mat-paginator>
+      </div>
+    }
+
+    <!-- Sección inferior: reglas + advertencia -->
+    <div class="bottom-row">
+      <div class="reglas-card">
+        <h4 class="reglas-titulo">
+          <mat-icon class="reglas-icon">security</mat-icon>
+          Reglas de validación
+        </h4>
+        <ul class="reglas-lista">
+          <li><mat-icon class="r-ok">check</mat-icon> No permitir meta destino anulada.</li>
+          <li><mat-icon class="r-ok">check</mat-icon> No permitir meta de otro año fiscal.</li>
+          <li><mat-icon class="r-ok">check</mat-icon> No duplicar asignación activa por empleado y año.</li>
+        </ul>
+      </div>
+
+      @if (totalPendientes > 0 || totalSinResolver > 0) {
+        <div class="warn-bottom" role="alert">
+          <mat-icon class="warn-ico">warning_amber</mat-icon>
+          <div>
+            <strong>Aún existen excepciones sin resolver. La publicación se bloqueará hasta corregir o resolver todos los casos.</strong>
+            <p>Revise las filas en estado "Pendiente" o "Requiere revisión".</p>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Navegación -->
+  <div class="nav-row">
+    <button mat-stroked-button (click)="onAtras()" [disabled]="guardando()">
+      <mat-icon>arrow_back</mat-icon> Volver
+    </button>
+    <button mat-flat-button color="primary"
+      (click)="onContinuar()"
+      [disabled]="guardando() || procesando">
+      Continuar al paso 5
+      <mat-icon iconSuffix>arrow_forward</mat-icon>
+    </button>
+  </div>
+
+  <p class="norm-note">
+    Base normativa: D.S. 068-2024-EF — Directiva N.° 005-2024-EF/50.01 · Clasificador MEF vigente
+  </p>
+</div>

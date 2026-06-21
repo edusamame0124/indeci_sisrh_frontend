@@ -176,6 +176,11 @@
   color: var(--sisrh-primary);
 }
 
+.evento-tipo__flag--legacy {
+  color: var(--sisrh-warning, #b7791f);
+  font-style: italic;
+}
+
 .evento-fechas-sep {
   margin: 0 6px;
   color: var(--sisrh-text-muted);

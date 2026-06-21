@@ -1,0 +1,231 @@
+<div class="page">
+  <mat-card class="page-card sisrh-elevated">
+    <mat-card-header>
+      <mat-card-title>Jornada y tolerancias por régimen</mat-card-title>
+      <mat-card-subtitle>
+        Define el horario y las tolerancias por régimen laboral. Alimentan el cálculo de tardanzas;
+        el descuento sigue siendo proporcional a la remuneración (D.Leg. 276 Art. 24).
+      </mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content>
+      @if (cargandoRegimenes()) {
+        <div class="jr-loading" aria-busy="true">
+          <mat-progress-spinner mode="indeterminate" diameter="44" aria-label="Cargando régimenes" />
+        </div>
+      } @else {
+        <mat-form-field appearance="outline" class="jr-regimen">
+          <mat-label>Régimen laboral</mat-label>
+          <mat-select
+            [value]="regimenSeleccionado()"
+            (selectionChange)="onRegimenChange($event.value)"
+            aria-label="Seleccionar régimen laboral"
+          >
+            @for (r of regimenes(); track r.id) {
+              <mat-option [value]="r.id">{{ r.codigo }} — {{ r.nombre }}</mat-option>
+            }
+          </mat-select>
+          <mat-hint>Elija el régimen para configurar su jornada.</mat-hint>
+        </mat-form-field>
+
+        @if (cargandoConfig()) {
+          <div class="jr-loading" aria-busy="true">
+            <mat-progress-spinner mode="indeterminate" diameter="36" aria-label="Cargando configuración" />
+          </div>
+        } @else if (hayRegimen()) {
+          <section class="jr-seccion" aria-label="Jornada">
+            <h3 class="jr-seccion__titulo">Jornada</h3>
+            <div class="jr-grid">
+              <mat-form-field appearance="outline">
+                <mat-label>Hora de ingreso</mat-label>
+                <input
+                  matInput
+                  type="time"
+                  required
+                  [ngModel]="horaIngreso()"
+                  (ngModelChange)="horaIngreso.set($event)"
+                />
+                @if (horaIngreso().trim() === '') {
+                  <mat-error>La hora de ingreso es obligatoria.</mat-error>
+                }
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Hora de salida</mat-label>
+                <input
+                  matInput
+                  type="time"
+                  required
+                  [ngModel]="horaSalida()"
+                  (ngModelChange)="horaSalida.set($event)"
+                />
+                @if (horaSalida().trim() === '') {
+                  <mat-error>La hora de salida es obligatoria.</mat-error>
+                }
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Inicio de refrigerio</mat-label>
+                <input matInput type="time" [ngModel]="refrigerioInicio()" (ngModelChange)="refrigerioInicio.set($event)" />
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Fin de refrigerio</mat-label>
+                <input matInput type="time" [ngModel]="refrigerioFin()" (ngModelChange)="refrigerioFin.set($event)" />
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Jornada (horas/día)</mat-label>
+                <input
+                  matInput
+                  type="number"
+                  min="1"
+                  max="24"
+                  step="0.5"
+                  [ngModel]="jornadaHoras()"
+                  (ngModelChange)="jornadaHoras.set($event)"
+                />
+                <mat-hint>Divisor del descuento (remun / 30 / jornada / 60).</mat-hint>
+              </mat-form-field>
+            </div>
+          </section>
+
+          <section class="jr-seccion" aria-label="Tolerancias">
+            <h3 class="jr-seccion__titulo">Tolerancias</h3>
+            <div class="jr-grid">
+              <mat-form-field appearance="outline">
+                <mat-label>Tolerancia de ingreso (min)</mat-label>
+                <input
+                  matInput
+                  type="number"
+                  min="0"
+                  required
+                  [ngModel]="toleranciaIngresoMin()"
+                  (ngModelChange)="toleranciaIngresoMin.set($event)"
+                />
+                <mat-hint>Gracia tras la hora de ingreso antes de contar tardanza.</mat-hint>
+                @if (toleranciaIngresoMin() == null) {
+                  <mat-error>La tolerancia de ingreso es obligatoria.</mat-error>
+                }
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Tolerancia de regreso de almuerzo (min)</mat-label>
+                <input
+                  matInput
+                  type="number"
+                  min="0"
+                  [ngModel]="toleranciaAlmuerzoMin()"
+                  (ngModelChange)="toleranciaAlmuerzoMin.set($event)"
+                />
+                <mat-hint>Gracia tras el fin de refrigerio antes de contar tardanza.</mat-hint>
+              </mat-form-field>
+            </div>
+          </section>
+
+          <div class="jr-acciones">
+            <button
+              mat-flat-button
+              color="primary"
+              type="button"
+              [disabled]="guardando() || !formularioValido()"
+              (click)="guardar()"
+            >
+              <mat-icon fontIcon="save" aria-hidden="true" />
+              Guardar configuración
+            </button>
+            @if (!formularioValido()) {
+              <p class="jr-req" role="note">
+                * Obligatorios: hora de ingreso, hora de salida y tolerancia de ingreso.
+              </p>
+            }
+          </div>
+        } @else {
+          <p class="jr-empty" role="status">Seleccione un régimen laboral para configurar su jornada.</p>
+        }
+      }
+
+      <section class="jr-tabla" aria-label="Configuraciones registradas">
+        <h3 class="jr-seccion__titulo">Configuraciones registradas</h3>
+        @if (cargandoConfigs()) {
+          <div class="jr-loading" aria-busy="true">
+            <mat-progress-spinner mode="indeterminate" diameter="32" aria-label="Cargando configuraciones" />
+          </div>
+        } @else if (configs().length === 0) {
+          <p class="jr-empty" role="status">
+            Aún no hay jornadas configuradas. Complete el formulario y guarde.
+          </p>
+        } @else {
+          <div class="jr-tabla-scroll">
+            <table mat-table [dataSource]="configsPaginadas()" class="jr-table">
+              <ng-container matColumnDef="regimen">
+                <th mat-header-cell *matHeaderCellDef scope="col">Régimen</th>
+                <td mat-cell *matCellDef="let c">{{ c.regimenCodigo }} — {{ c.regimenNombre }}</td>
+              </ng-container>
+              <ng-container matColumnDef="ingreso">
+                <th mat-header-cell *matHeaderCellDef scope="col">Ingreso</th>
+                <td mat-cell *matCellDef="let c">{{ c.horaIngreso || '—' }}</td>
+              </ng-container>
+              <ng-container matColumnDef="salida">
+                <th mat-header-cell *matHeaderCellDef scope="col">Salida</th>
+                <td mat-cell *matCellDef="let c">{{ c.horaSalida || '—' }}</td>
+              </ng-container>
+              <ng-container matColumnDef="refrigerio">
+                <th mat-header-cell *matHeaderCellDef scope="col">Refrigerio</th>
+                <td mat-cell *matCellDef="let c">
+                  {{ (c.refrigerioInicio || '—') + ' - ' + (c.refrigerioFin || '—') }}
+                </td>
+              </ng-container>
+              <ng-container matColumnDef="tolIngreso">
+                <th mat-header-cell *matHeaderCellDef scope="col" class="jr-num">Tol. ingreso</th>
+                <td mat-cell *matCellDef="let c" class="jr-num">{{ c.toleranciaIngresoMin }} min</td>
+              </ng-container>
+              <ng-container matColumnDef="tolAlmuerzo">
+                <th mat-header-cell *matHeaderCellDef scope="col" class="jr-num">Tol. almuerzo</th>
+                <td mat-cell *matCellDef="let c" class="jr-num">{{ c.toleranciaAlmuerzoMin }} min</td>
+              </ng-container>
+              <ng-container matColumnDef="jornada">
+                <th mat-header-cell *matHeaderCellDef scope="col" class="jr-num">Jornada</th>
+                <td mat-cell *matCellDef="let c" class="jr-num">{{ c.jornadaHoras }} h</td>
+              </ng-container>
+              <ng-container matColumnDef="acciones">
+                <th mat-header-cell *matHeaderCellDef scope="col">Acciones</th>
+                <td mat-cell *matCellDef="let c">
+                  <button
+                    mat-icon-button
+                    type="button"
+                    matTooltip="Editar configuración"
+                    aria-label="Editar configuración"
+                    (click)="editar(c)"
+                  >
+                    <mat-icon fontIcon="edit" />
+                  </button>
+                  <button
+                    mat-icon-button
+                    type="button"
+                    color="warn"
+                    matTooltip="Eliminar configuración"
+                    aria-label="Eliminar configuración"
+                    (click)="eliminar(c)"
+                  >
+                    <mat-icon fontIcon="delete" />
+                  </button>
+                </td>
+              </ng-container>
+              <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+              <tr mat-row *matRowDef="let row; columns: columnas"></tr>
+            </table>
+          </div>
+          <mat-paginator
+            [length]="configs().length"
+            [pageIndex]="pageIndex()"
+            [pageSize]="pageSize()"
+            [pageSizeOptions]="[5, 10, 25]"
+            aria-label="Paginación de configuraciones"
+            (page)="onPage($event)"
+          />
+        }
+      </section>
+
+      <p class="jr-nota">
+        Base: D.Leg. 276 Art. 24 (LEY-04). Las tolerancias y la jornada se aplican al cálculo de
+        tardanzas; el monto del descuento se determina al generar la planilla.
+      </p>
+    </mat-card-content>
+  </mat-card>
+</div>

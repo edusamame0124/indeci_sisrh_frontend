@@ -1,9 +1,9 @@
-﻿<div class="page">
+<div class="page">
   <mat-card class="page-card sisrh-elevated">
     <mat-card-header>
-      <mat-card-title>Carga individual</mat-card-title>
+      <mat-card-title>Asistencia por empleado</mat-card-title>
       <mat-card-subtitle>
-        Calendario mensual por empleado: tipo de dÃ­a, tardanzas, faltas y validaciÃ³n manual.
+        Consulta y ajuste de la asistencia mensual por empleado: tipo de día, tardanzas, faltas y validación.
       </mat-card-subtitle>
     </mat-card-header>
     <mat-card-content>
@@ -13,11 +13,11 @@
         </div>
       } @else if (periodos().length === 0) {
         <p class="empty" role="status">
-          AÃºn no hay periodos registrados. Crea uno desde
+          Aún no hay periodos registrados. Crea uno desde
           <a mat-button routerLink="/planilla/periodos">Periodos</a>.
         </p>
       } @else {
-        <!-- Selectores perÃ­odo + empleado -->
+        <!-- Selectores período + empleado -->
         <div class="selectores">
           <mat-form-field appearance="outline" class="sel-periodo">
             <mat-label>Periodo</mat-label>
@@ -27,7 +27,7 @@
               aria-label="Seleccionar periodo"
             >
               @for (p of periodos(); track p.id) {
-                <mat-option [value]="p.periodo">{{ p.periodo }} â€” {{ p.estado }}</mat-option>
+                <mat-option [value]="p.periodo">{{ p.periodo }} — {{ p.estado }}</mat-option>
               }
             </mat-select>
           </mat-form-field>
@@ -41,7 +41,7 @@
               aria-label="Seleccionar empleado"
             >
               @for (e of empleados(); track e.empleadoId) {
-                <mat-option [value]="e.empleadoId">{{ e.nombre }} â€” DNI {{ e.dni }}</mat-option>
+                <mat-option [value]="e.empleadoId">{{ e.nombre }} — DNI {{ e.dni }}</mat-option>
               }
             </mat-select>
           </mat-form-field>
@@ -49,7 +49,7 @@
 
         @if (!cargandoEmpleados() && empleados().length === 0) {
           <p class="empty" role="status">
-            No hay empleados registrados. RegÃ­stralos desde
+            No hay empleados registrados. Regístralos desde
             <a mat-button routerLink="/empleados/personas">Datos personales</a>.
           </p>
         }
@@ -59,20 +59,19 @@
             <mat-progress-spinner mode="indeterminate" diameter="40" aria-label="Cargando calendario" />
           </div>
         } @else if (calendarioListo()) {
-          <!-- Controles: remuneraciÃ³n base + import CSV -->
+          <!-- Controles: remuneración base (solo lectura, viene de la configuración del empleado) -->
           <div class="controles">
             <mat-form-field appearance="outline" class="ctrl-remun">
-              <mat-label>RemuneraciÃ³n base (S/)</mat-label>
+              <mat-label>Remuneración base (S/)</mat-label>
               <input
                 matInput
-                type="number"
-                min="0"
-                step="0.01"
-                [ngModel]="remuneracionBase()"
-                (ngModelChange)="remuneracionBase.set($event)"
-                aria-label="RemuneraciÃ³n mensual base del descuento"
+                type="text"
+                readonly
+                [value]="'S/ ' + fmtMonto(remuneracionBase())"
+                aria-label="Remuneración mensual base del descuento (solo lectura)"
               />
-              <mat-hint>Base del descuento â€” D.Leg. 276 Art. 24.</mat-hint>
+              <mat-icon matSuffix fontIcon="lock" aria-hidden="true" />
+              <mat-hint>Configurada según el sueldo básico del empleado — solo lectura.</mat-hint>
             </mat-form-field>
           </div>
 
@@ -80,7 +79,7 @@
           <div class="resumen" role="status">
             <div class="resumen-item">
               <span class="resumen-item__valor">{{ resumen().diasLaborados }}</span>
-              <span class="resumen-item__label">DÃ­as laborados</span>
+              <span class="resumen-item__label">Días laborados</span>
             </div>
             <div class="resumen-item">
               <span class="resumen-item__valor">{{ resumen().diasFalta }}</span>
@@ -103,6 +102,10 @@
               <span class="resumen-item__label">Descuento total</span>
             </div>
           </div>
+
+          <p class="resumen-nota" role="note">
+            Montos referenciales. El descuento definitivo se aplica al generar la planilla del periodo.
+          </p>
 
           <!-- Leyenda de colores -->
           <div class="leyenda">
@@ -132,8 +135,8 @@
                         type="button"
                         class="cal-celda__btn"
                         (click)="cycleTipo(dia)"
-                        [matTooltip]="dia.dia + ' â€” ' + dia.tipoDia + ' (clic para cambiar)'"
-                        [attr.aria-label]="'DÃ­a ' + numeroDia(dia) + ', tipo ' + dia.tipoDia"
+                        [matTooltip]="tooltipDia(dia)"
+                        [attr.aria-label]="'Día ' + numeroDia(dia) + ', tipo ' + dia.tipoDia"
                       >
                         <span class="cal-celda__num">{{ numeroDia(dia) }}</span>
                         <span class="cal-celda__tipo">{{ dia.tipoDia }}</span>
@@ -146,9 +149,17 @@
                           step="5"
                           [value]="dia.minutosTardanza"
                           (input)="onMinutosInput(dia, $event)"
-                          [attr.aria-label]="'Minutos de tardanza dÃ­a ' + numeroDia(dia)"
+                          [attr.aria-label]="'Minutos de tardanza día ' + numeroDia(dia)"
                           placeholder="min"
                         />
+                      }
+                      @if (descuentoDia(dia) > 0) {
+                        <span
+                          class="cal-celda__desc sisrh-tabular"
+                          [attr.aria-label]="'Descuento referencial del día: S/ ' + fmtMonto(descuentoDia(dia))"
+                        >
+                          S/ {{ fmtMonto(descuentoDia(dia)) }}
+                        </span>
                       }
                     </div>
                   }
@@ -157,16 +168,16 @@
             }
           </div>
 
-          <!-- ObservaciÃ³n + estado + guardar -->
+          <!-- Observación + estado + guardar -->
           <div class="acciones">
             <mat-form-field appearance="outline" class="acc-obs">
-              <mat-label>ObservaciÃ³n</mat-label>
+              <mat-label>Observación</mat-label>
               <input
                 matInput
                 [ngModel]="observacion()"
                 (ngModelChange)="observacion.set($event)"
                 maxlength="500"
-                aria-label="ObservaciÃ³n de la asistencia"
+                aria-label="Observación de la asistencia"
               />
             </mat-form-field>
 
@@ -194,30 +205,41 @@
               Guardar asistencia
             </button>
 
-            @if (pdfUrl(); as url) {
-              <a
+            <button
+              mat-stroked-button
+              type="button"
+              [disabled]="recalculando()"
+              (click)="recalcular()"
+              matTooltip="Recalcula tardanzas y descuentos con la jornada vigente del régimen"
+              aria-label="Recalcular tardanzas con la jornada vigente"
+            >
+              <mat-icon fontIcon="calculate" aria-hidden="true" />
+              Recalcular
+            </button>
+
+            @if (puedeDescargarPdf()) {
+              <button
                 mat-stroked-button
                 class="acciones__pdf"
-                [href]="url"
-                target="_blank"
-                rel="noopener"
+                type="button"
+                [disabled]="descargandoPdf()"
+                (click)="descargarPdf()"
                 aria-label="Descargar PDF de asistencia del empleado seleccionado"
               >
                 <mat-icon fontIcon="picture_as_pdf" aria-hidden="true" />
                 Descargar PDF
-              </a>
+              </button>
             }
           </div>
         }
 
         <p class="ref-nota">
-          Base: SPEC Â§12.2 PANTALLA-02 â€” Carga de Asistencia Â· descuento por
-          tardanzas y faltas segÃºn D.Leg. 276 Art. 24 (REGLA 276-02:
-          descuento = (remuneraciÃ³n / 30 / 8 / 60) Ã— minutos). El consumo de la
-          asistencia validada por el motor M05 se habilitarÃ¡ con el PASO 7.
+          Base: SPEC §12.2 PANTALLA-02 — Carga de Asistencia · descuento por
+          tardanzas y faltas según D.Leg. 276 Art. 24 (REGLA 276-02:
+          descuento = (remuneración / 30 / 8 / 60) × minutos). El consumo de la
+          asistencia validada por el motor M05 se habilitará con el PASO 7.
         </p>
       }
     </mat-card-content>
   </mat-card>
 </div>
-

@@ -1,0 +1,48 @@
+:host {
+  --sisrh-primary: #1f3a5f;
+  --sisrh-bg: #f5f7fa;
+  --sisrh-surface: #ffffff;
+  --sisrh-border: #d9e1ea;
+  --sisrh-text: #1f2937;
+  --sisrh-text-muted: #64748b;
+  --sisrh-text-soft: #94a3b8;
+}
+
+.subsidios-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 16px 24px 32px;
+  background: var(--sisrh-bg);
+  min-height: 100%;
+  max-width: 1280px;
+}
+
+.subsidios-page__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.subsidios-page__title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--sisrh-primary);
+}
+
+.subsidios-page__subtitle {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--sisrh-text-muted);
+  max-width: 720px;
+  line-height: 1.5;
+}
+
+.subsidios-page__ref {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--sisrh-text-soft);
+}

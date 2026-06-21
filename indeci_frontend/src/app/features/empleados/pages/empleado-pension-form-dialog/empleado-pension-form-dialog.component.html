@@ -1,0 +1,217 @@
+<h2 mat-dialog-title class="dialog-title">
+  <mat-icon fontIcon="savings" class="dialog-title__icon" aria-hidden="true" />
+  Registrar pensión
+</h2>
+
+<mat-dialog-content class="dialog-content">
+  <p class="dialog-subtitle">{{ data.personaLabel }}</p>
+  <p class="dialog-ref">Régimen pensionario AFP u ONP según normativa vigente · Ley 19990 / TUO SPP</p>
+
+  @if (pageLoading()) {
+    <div class="loading" aria-busy="true">
+      <mat-progress-spinner mode="indeterminate" diameter="40" aria-label="Cargando catálogos" />
+    </div>
+  } @else {
+    <form [formGroup]="form" id="pension-form" novalidate>
+      <div class="grid">
+
+        <!-- ── Régimen pensionario ── -->
+        <mat-form-field appearance="outline" class="full">
+          <mat-label>Régimen pensionario</mat-label>
+          <mat-select formControlName="regimenPensionarioId" aria-label="Régimen pensionario">
+            @for (r of regimenes(); track r.id) {
+              <mat-option [value]="r.id">{{ r.nombre }} ({{ r.tipo }})</mat-option>
+            }
+          </mat-select>
+          @if (form.controls.regimenPensionarioId.hasError('required')) {
+            <mat-error>Selecciona el régimen pensionario</mat-error>
+          }
+        </mat-form-field>
+
+        <!-- ── ONP: chip informativo ── -->
+        @if (esOnp()) {
+          <div class="info-chip full" role="note">
+            <mat-icon fontIcon="info" class="info-chip__icon" aria-hidden="true" />
+            <span><strong>Aporte 13% — Ley 19990.</strong> Sin comisión ni prima de seguro.</span>
+          </div>
+        }
+
+        <!-- ── AFP: comisión, CUSPP, tasas ── -->
+        @if (esAfp()) {
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>Tipo de comisión AFP</mat-label>
+            <mat-select formControlName="tipoComisionAfpId" aria-label="Tipo de comisión AFP">
+              @for (t of tiposComision(); track t.id) {
+                <mat-option [value]="t.id">{{ t.nombre }}</mat-option>
+              }
+            </mat-select>
+            @if (form.controls.tipoComisionAfpId.hasError('required')) {
+              <mat-error>Selecciona el tipo de comisión</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>CUSPP</mat-label>
+            <input
+              matInput
+              formControlName="cuspp"
+              maxlength="12"
+              autocomplete="off"
+              inputmode="text"
+              class="cuspp-input"
+              (input)="onCusppInput($event)"
+              aria-describedby="cuspp-hint"
+            />
+            <mat-hint id="cuspp-hint">12 caracteres alfanuméricos (A–Z y 0–9)</mat-hint>
+            @if (form.controls.cuspp.hasError('required')) {
+              <mat-error>CUSPP requerido para AFP</mat-error>
+            }
+            @if (form.controls.cuspp.hasError('pattern')) {
+              <mat-error>Debe tener exactamente 12 caracteres (mayúsculas y números)</mat-error>
+            }
+          </mat-form-field>
+
+          <!-- Tasas vigentes -->
+          <section class="tasas-block full" aria-labelledby="tasas-title">
+            <header class="tasas-block__header">
+              <h3 id="tasas-title" class="tasas-block__title">Tasas vigentes</h3>
+              <button
+                type="button"
+                mat-button
+                class="tasas-block__toggle"
+                (click)="togglePersonalizar()"
+                [attr.aria-pressed]="personalizarTasas()"
+              >
+                {{ personalizarTasas() ? 'Usar tasas del catálogo' : 'Personalizar tasas' }}
+              </button>
+            </header>
+
+            @if (tasasLoading()) {
+              <p class="hint">Cargando tasas vigentes…</p>
+            } @else if (tasasError()) {
+              <p class="warn" role="alert">
+                No se pudo cargar las tasas. Usa "Personalizar tasas" para ingresarlas.
+              </p>
+            } @else if (tasasVigentes() && !tasasVigentes()!.comisionParametrizada && !personalizarTasas()) {
+              <p class="warn" role="alert">
+                La comisión para esta AFP + tipo no está parametrizada. Usa "Personalizar tasas".
+              </p>
+            }
+
+            <div class="grid">
+              <mat-form-field appearance="outline" class="third">
+                <mat-label>% Aporte</mat-label>
+                <input matInput type="number" formControlName="porcentajeAporte" step="0.01" min="0" max="100" />
+                <mat-hint>TUO SPP — 10%</mat-hint>
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="third">
+                <mat-label>% Comisión</mat-label>
+                <input matInput type="number" formControlName="porcentajeComision" step="0.01" min="0" max="100" />
+                <mat-hint>Por AFP + tipo</mat-hint>
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="third">
+                <mat-label>% Prima seguro</mat-label>
+                <input matInput type="number" formControlName="porcentajeSeguro" step="0.01" min="0" max="100" />
+                <mat-hint>1.37% (con tope SPP)</mat-hint>
+              </mat-form-field>
+            </div>
+          </section>
+
+          <!-- ── Condición especial AFP ── -->
+          <section class="condicion-block full" aria-labelledby="condicion-title">
+            <h3 id="condicion-title" class="condicion-block__title">Condición especial AFP</h3>
+            <p class="condicion-block__desc">
+              Seleccione la condición previsional del trabajador:
+            </p>
+
+            <mat-radio-group
+              formControlName="condicionEspecialAfp"
+              class="radio-group"
+              aria-label="Condición especial AFP"
+            >
+              <label class="radio-option">
+                <mat-radio-button value="NO_APLICA" />
+                <span class="radio-option__body">
+                  <strong class="radio-option__label">No aplica</strong>
+                  <span class="radio-option__desc">Trabajador AFP aportante regular</span>
+                </span>
+              </label>
+
+              <label class="radio-option">
+                <mat-radio-button value="RETIRO_955" />
+                <span class="radio-option__body">
+                  <strong class="radio-option__label">Retiro 95.5%</strong>
+                  <span class="radio-option__desc">
+                    No corresponde descuento AFP desde la fecha sustentada (Art. 40 TUO SPP)
+                  </span>
+                </span>
+              </label>
+
+              <label class="radio-option">
+                <mat-radio-button value="PENSIONISTA_SPP" />
+                <span class="radio-option__body">
+                  <strong class="radio-option__label">Pensionista SPP</strong>
+                  <span class="radio-option__desc">
+                    No corresponde descuento AFP desde la fecha sustentada
+                  </span>
+                </span>
+              </label>
+            </mat-radio-group>
+
+            <!-- Campos de sustento — visibles solo si condición especial -->
+            @if (condicionRequiereSustento()) {
+              <div class="sustento-block" role="region" aria-label="Sustento documental">
+                <mat-form-field appearance="outline" class="full">
+                  <mat-label>Fecha de la condición</mat-label>
+                  <input
+                    matInput
+                    [matDatepicker]="picker"
+                    formControlName="fechaCondicionAfp"
+                    placeholder="DD/MM/YYYY"
+                    aria-label="Fecha de la condición especial AFP"
+                  />
+                  <mat-datepicker-toggle matIconSuffix [for]="picker" />
+                  <mat-datepicker #picker />
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="full">
+                  <mat-label>Observación / referencia de sustento</mat-label>
+                  <textarea
+                    matInput
+                    formControlName="observacionCondicionAfp"
+                    rows="3"
+                    maxlength="500"
+                    placeholder="Ej.: Resolución SBS N° 1234-2026, notaría Lima 15/06/2026"
+                    aria-label="Observación de sustento documental"
+                  ></textarea>
+                  @if (form.hasError('sustentoRequerido')) {
+                    <mat-error>La condición seleccionada requiere sustento documental</mat-error>
+                  }
+                </mat-form-field>
+              </div>
+            }
+          </section>
+        }
+      </div>
+    </form>
+  }
+</mat-dialog-content>
+
+<mat-dialog-actions class="dialog-actions">
+  <button mat-button type="button" (click)="cancelar()" [disabled]="guardando()">
+    Cancelar
+  </button>
+  <button
+    mat-flat-button
+    color="primary"
+    type="submit"
+    form="pension-form"
+    (click)="guardar()"
+    [disabled]="pageLoading() || guardando()"
+  >
+    @if (guardando()) {
+      <mat-progress-spinner diameter="18" mode="indeterminate" class="btn-spinner" />
+    }
+    Guardar
+  </button>
+</mat-dialog-actions>

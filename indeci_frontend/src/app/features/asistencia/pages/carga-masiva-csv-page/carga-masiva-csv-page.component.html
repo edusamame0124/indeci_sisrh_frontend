@@ -1,5 +1,5 @@
 <section class="masiva">
-  <mat-stepper linear orientation="horizontal" aria-label="Importación masiva de asistencia">
+  <mat-stepper #stepper linear orientation="horizontal" aria-label="Importación masiva de asistencia">
     <mat-step [completed]="periodoSeleccionado() != null">
       <ng-template matStepLabel>Periodo</ng-template>
       <div class="masiva__step">
@@ -62,87 +62,276 @@
         </button>
 
         @if (procesandoPreview()) {
-          <mat-progress-spinner mode="indeterminate" diameter="40" aria-label="Validando archivo" />
+          <div class="masiva__loading" role="status">
+            <mat-progress-spinner mode="indeterminate" diameter="40" aria-label="Validando archivo" />
+            <span>Leyendo y validando el archivo…</span>
+          </div>
         }
 
-        @if (preview(); as data) {
-          <div class="masiva__stats" role="status">
-            <span>Total: {{ data.filasTotal }}</span>
-            <span>Válidas limpias: {{ data.filasValidasLimpias }}</span>
-            <span>Con advertencia: {{ data.filasAdvertencia }}</span>
-            <span>Observadas: {{ data.filasObservadas }}</span>
-            <span>Errores: {{ data.filasError }}</span>
-          </div>
+        @if (resumen(); as r) {
+          @if (r.duplicadoHashPrevio) {
+            <p class="masiva__banner masiva__banner--warn" role="alert">
+              <mat-icon fontIcon="history" aria-hidden="true" />
+              <span>
+                Este archivo (hash {{ r.hashArchivo.slice(0, 12) }}…) ya fue cargado anteriormente.
+                Verifique que no se trate de una importación duplicada antes de confirmar.
+              </span>
+            </p>
+          }
 
-          <section class="masiva__employee-card" aria-label="Resumen de empleados del archivo">
-            <div>
-              <span class="masiva__employee-label">N° Empleados importables</span>
-              <strong>{{ data.empleadosDetectados }}</strong>
+          <section class="masiva__resumen" aria-label="Resumen de la importación">
+            <div class="masiva__resumen-item">
+              <span class="masiva__resumen-label">Archivo</span>
+              <strong class="masiva__resumen-valor" [title]="r.nombreArchivo">{{ r.nombreArchivo }}</strong>
+              <span class="masiva__resumen-sub">{{ fmtBytes(r.tamanoBytes) }}</span>
             </div>
-            <div>
-              <span class="masiva__employee-label">N° Empleados con error</span>
-              <strong>{{ data.empleadosConError }}</strong>
+            <div class="masiva__resumen-item">
+              <span class="masiva__resumen-label">Periodo detectado</span>
+              <strong class="masiva__resumen-valor">
+                {{ r.periodoDetectadoIni ?? '—' }} → {{ r.periodoDetectadoFin ?? '—' }}
+              </strong>
+              <span class="masiva__resumen-sub">Periodo: {{ r.periodo }}</span>
+            </div>
+            <div class="masiva__resumen-item">
+              <span class="masiva__resumen-label">Filas leídas</span>
+              <strong class="masiva__resumen-valor">{{ r.filasLeidas }}</strong>
+            </div>
+            <div class="masiva__resumen-item masiva__resumen-item--ok">
+              <span class="masiva__resumen-label">Válidas</span>
+              <strong class="masiva__resumen-valor">{{ r.filasValidas }}</strong>
+            </div>
+            <div class="masiva__resumen-item masiva__resumen-item--warn">
+              <span class="masiva__resumen-label">Observadas</span>
+              <strong class="masiva__resumen-valor">{{ r.filasObservadas }}</strong>
+            </div>
+            <div class="masiva__resumen-item masiva__resumen-item--error">
+              <span class="masiva__resumen-label">Con error</span>
+              <strong class="masiva__resumen-valor">{{ r.filasError }}</strong>
+            </div>
+            <div class="masiva__resumen-item">
+              <span class="masiva__resumen-label">Empleados</span>
+              <strong class="masiva__resumen-valor">{{ r.empleadosDetectados }}</strong>
             </div>
           </section>
+        }
 
-          @if (data.errores.length > 0) {
-            <div class="masiva__filters" aria-label="Filtrar filas validadas">
-              @for (filtro of filtrosPreview; track filtro.value) {
-                <button
-                  mat-stroked-button
-                  type="button"
-                  [class.masiva__filter--active]="filtroPreview() === filtro.value"
-                  (click)="cambiarFiltro(filtro.value)"
-                >
-                  {{ filtro.label }} ({{ totalFiltro(filtro.value) }})
-                </button>
-              }
+        @if (hayObservadas()) {
+          <section class="masiva__aceptar" aria-label="Aceptar filas observadas">
+            <div class="masiva__aceptar-texto">
+              <strong>Filas observadas pendientes</strong>
+              <span>
+                Las filas observadas no se migran a la asistencia final hasta que RR. HH. las
+                acepte expresamente. Indique el motivo y acéptelas para incluirlas.
+              </span>
             </div>
+            <mat-form-field appearance="outline" class="masiva__aceptar-motivo">
+              <mat-label>Motivo de aceptación</mat-label>
+              <input
+                matInput
+                [ngModel]="motivoAceptacion()"
+                (ngModelChange)="motivoAceptacion.set($event)"
+                maxlength="500"
+                placeholder="Ej.: marca manual validada por jefatura"
+              />
+            </mat-form-field>
+            <button
+              mat-flat-button
+              color="primary"
+              type="button"
+              [disabled]="aceptandoObservadas() || motivoAceptacion().trim().length === 0"
+              (click)="aceptarObservadas()"
+            >
+              <mat-icon fontIcon="task_alt" aria-hidden="true" />
+              Aceptar observadas
+            </button>
+          </section>
+        }
+
+        @if (preview() != null) {
+          <div class="masiva__filtros" role="search">
+            <mat-form-field appearance="outline" class="masiva__filtro masiva__filtro--sm">
+              <mat-label>DNI</mat-label>
+              <input
+                matInput
+                inputmode="numeric"
+                maxlength="8"
+                [ngModel]="filtroDni()"
+                (ngModelChange)="filtroDni.set($event); onFiltroTextoChange()"
+                placeholder="Buscar por DNI"
+              />
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="masiva__filtro">
+              <mat-label>Nombre</mat-label>
+              <input
+                matInput
+                [ngModel]="filtroNombre()"
+                (ngModelChange)="filtroNombre.set($event); onFiltroTextoChange()"
+                placeholder="Buscar por nombre"
+              />
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="masiva__filtro masiva__filtro--sm">
+              <mat-label>Estado</mat-label>
+              <mat-select [value]="filtroEstado()" (selectionChange)="onFiltroEstadoChange($event.value)">
+                @for (opt of estadosFiltro; track opt.value) {
+                  <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+            <mat-slide-toggle
+              class="masiva__toggle"
+              [checked]="soloErrores()"
+              (change)="onSoloErroresChange($event.checked)"
+            >
+              Solo errores/observados
+            </mat-slide-toggle>
+
+            <button
+              mat-stroked-button
+              type="button"
+              class="masiva__export"
+              [disabled]="exportando() || !hayExportables()"
+              (click)="exportarErrores()"
+              matTooltip="Descarga en Excel las filas con error, observación o advertencia"
+            >
+              <mat-icon fontIcon="download" aria-hidden="true" />
+              Exportar errores/observados
+            </button>
+          </div>
+
+          <div class="masiva__table-wrap">
             <div class="masiva__table-scroll">
-              <table mat-table [dataSource]="filasPaginadas()" class="masiva__table">
-                <ng-container matColumnDef="linea">
-                  <th mat-header-cell *matHeaderCellDef scope="col">Línea</th>
-                  <td mat-cell *matCellDef="let row">{{ row.linea }}</td>
-                </ng-container>
-                <ng-container matColumnDef="dni">
-                  <th mat-header-cell *matHeaderCellDef scope="col">DNI</th>
-                  <td mat-cell *matCellDef="let row">{{ row.dni || '-' }}</td>
-                </ng-container>
-                <ng-container matColumnDef="fecha">
-                  <th mat-header-cell *matHeaderCellDef scope="col">Fecha</th>
-                  <td mat-cell *matCellDef="let row">{{ row.fecha || '-' }}</td>
-                </ng-container>
-                <ng-container matColumnDef="severidad">
+              <table mat-table [dataSource]="detalleRows()" class="masiva__table masiva__table--detalle">
+                <ng-container matColumnDef="estado" sticky>
                   <th mat-header-cell *matHeaderCellDef scope="col">Estado</th>
                   <td mat-cell *matCellDef="let row">
                     <span
                       class="masiva__badge"
-                      [class.masiva__badge--valid]="row.severidad === 'VALIDA'"
-                      [class.masiva__badge--warn]="row.severidad === 'WARN'"
-                      [class.masiva__badge--observed]="row.severidad === 'OBSERVADA'"
-                      [class.masiva__badge--error]="row.severidad === 'ERROR'"
+                      [class.masiva__badge--valid]="row.estado === 'VALIDA'"
+                      [class.masiva__badge--warn]="row.estado === 'WARN'"
+                      [class.masiva__badge--observed]="row.estado === 'OBSERVADA'"
+                      [class.masiva__badge--error]="row.estado === 'ERROR'"
                     >
-                      {{ badgeLabel(row.severidad) }}
+                      {{ badgeLabel(row.estado) }}
                     </span>
                   </td>
                 </ng-container>
-                <ng-container matColumnDef="mensaje">
-                  <th mat-header-cell *matHeaderCellDef scope="col">Mensaje</th>
-                  <td mat-cell *matCellDef="let row">{{ row.mensaje }}</td>
+                <ng-container matColumnDef="dni" sticky>
+                  <th mat-header-cell *matHeaderCellDef scope="col">DNI</th>
+                  <td mat-cell *matCellDef="let row">{{ row.dni || '—' }}</td>
                 </ng-container>
-                <tr mat-header-row *matHeaderRowDef="columnasErrores"></tr>
-                <tr mat-row *matRowDef="let row; columns: columnasErrores"></tr>
+                <ng-container matColumnDef="empleadoSistema">
+                  <th mat-header-cell *matHeaderCellDef scope="col">Empleado (sistema)</th>
+                  <td mat-cell *matCellDef="let row">{{ row.empleadoSistema || '—' }}</td>
+                </ng-container>
+                <ng-container matColumnDef="nombreCsv">
+                  <th mat-header-cell *matHeaderCellDef scope="col">Nombre (CSV)</th>
+                  <td mat-cell *matCellDef="let row">{{ row.nombreCsv || '—' }}</td>
+                </ng-container>
+                <ng-container matColumnDef="fecha">
+                  <th mat-header-cell *matHeaderCellDef scope="col">Fecha</th>
+                  <td mat-cell *matCellDef="let row">{{ row.fecha || '—' }}</td>
+                </ng-container>
+                <ng-container matColumnDef="dia">
+                  <th mat-header-cell *matHeaderCellDef scope="col">Día</th>
+                  <td mat-cell *matCellDef="let row">{{ row.dia || '—' }}</td>
+                </ng-container>
+                <ng-container matColumnDef="entradaProg">
+                  <th mat-header-cell *matHeaderCellDef scope="col">Entrada prog.</th>
+                  <td mat-cell *matCellDef="let row">{{ row.entradaProg || '—' }}</td>
+                </ng-container>
+                <ng-container matColumnDef="salidaProg">
+                  <th mat-header-cell *matHeaderCellDef scope="col">Salida prog.</th>
+                  <td mat-cell *matCellDef="let row">{{ row.salidaProg || '—' }}</td>
+                </ng-container>
+                <ng-container matColumnDef="marca1">
+                  <th mat-header-cell *matHeaderCellDef scope="col">Marca 1</th>
+                  <td mat-cell *matCellDef="let row">{{ row.marca1 || '—' }}</td>
+                </ng-container>
+                <ng-container matColumnDef="marca2">
+                  <th mat-header-cell *matHeaderCellDef scope="col">Marca 2</th>
+                  <td mat-cell *matCellDef="let row">{{ row.marca2 || '—' }}</td>
+                </ng-container>
+                <ng-container matColumnDef="marca3">
+                  <th mat-header-cell *matHeaderCellDef scope="col">Marca 3</th>
+                  <td mat-cell *matCellDef="let row">{{ row.marca3 || '—' }}</td>
+                </ng-container>
+                <ng-container matColumnDef="marca4">
+                  <th mat-header-cell *matHeaderCellDef scope="col">Marca 4</th>
+                  <td mat-cell *matCellDef="let row">{{ row.marca4 || '—' }}</td>
+                </ng-container>
+                <ng-container matColumnDef="tardanza">
+                  <th mat-header-cell *matHeaderCellDef scope="col" class="masiva__num">Tardanza</th>
+                  <td mat-cell *matCellDef="let row" class="masiva__num">{{ fmtMin(row.tardanzaMin) }}</td>
+                </ng-container>
+                <ng-container matColumnDef="refrigerio">
+                  <th mat-header-cell *matHeaderCellDef scope="col" class="masiva__num">Refrigerio</th>
+                  <td mat-cell *matCellDef="let row" class="masiva__num">{{ fmtMin(row.refrigerioMin) }}</td>
+                </ng-container>
+                <ng-container matColumnDef="excesoRefrig">
+                  <th mat-header-cell *matHeaderCellDef scope="col" class="masiva__num">Exc. refrig.</th>
+                  <td mat-cell *matCellDef="let row" class="masiva__num">{{ fmtMin(row.excesoRefrigMin) }}</td>
+                </ng-container>
+                <ng-container matColumnDef="tiempoRefrig">
+                  <th mat-header-cell *matHeaderCellDef scope="col" class="masiva__num">T. refrig.</th>
+                  <td mat-cell *matCellDef="let row" class="masiva__num">{{ fmtMin(row.tiempoRefrigMin) }}</td>
+                </ng-container>
+                <ng-container matColumnDef="tiempoAntesSal">
+                  <th mat-header-cell *matHeaderCellDef scope="col" class="masiva__num">T. antes salida</th>
+                  <td mat-cell *matCellDef="let row" class="masiva__num">{{ fmtMin(row.tiempoAntesSalMin) }}</td>
+                </ng-container>
+                <ng-container matColumnDef="horasTrab">
+                  <th mat-header-cell *matHeaderCellDef scope="col" class="masiva__num">H. trabajadas</th>
+                  <td mat-cell *matCellDef="let row" class="masiva__num">{{ fmtMin(row.horasTrabMin) }}</td>
+                </ng-container>
+                <ng-container matColumnDef="he25">
+                  <th mat-header-cell *matHeaderCellDef scope="col" class="masiva__num">HE 25%</th>
+                  <td mat-cell *matCellDef="let row" class="masiva__num">{{ fmtMin(row.horasExtra25Min) }}</td>
+                </ng-container>
+                <ng-container matColumnDef="he35">
+                  <th mat-header-cell *matHeaderCellDef scope="col" class="masiva__num">HE 35%</th>
+                  <td mat-cell *matCellDef="let row" class="masiva__num">{{ fmtMin(row.horasExtra35Min) }}</td>
+                </ng-container>
+                <ng-container matColumnDef="he100">
+                  <th mat-header-cell *matHeaderCellDef scope="col" class="masiva__num">HE 100%</th>
+                  <td mat-cell *matCellDef="let row" class="masiva__num">{{ fmtMin(row.horasExtra100Min) }}</td>
+                </ng-container>
+                <ng-container matColumnDef="heTotal">
+                  <th mat-header-cell *matHeaderCellDef scope="col" class="masiva__num">HE total</th>
+                  <td mat-cell *matCellDef="let row" class="masiva__num">{{ fmtMin(row.horasExtraTotalMin) }}</td>
+                </ng-container>
+                <ng-container matColumnDef="observaciones">
+                  <th mat-header-cell *matHeaderCellDef scope="col">Observaciones</th>
+                  <td mat-cell *matCellDef="let row">{{ row.observaciones || '—' }}</td>
+                </ng-container>
+                <ng-container matColumnDef="mensaje">
+                  <th mat-header-cell *matHeaderCellDef scope="col">Mensaje de validación</th>
+                  <td mat-cell *matCellDef="let row" class="masiva__msg">{{ row.mensajeValidacion || '—' }}</td>
+                </ng-container>
+                <tr mat-header-row *matHeaderRowDef="columnasDetalle; sticky: true"></tr>
+                <tr mat-row *matRowDef="let row; columns: columnasDetalle"></tr>
               </table>
-              <mat-paginator
-                [length]="filasFiltradas().length"
-                [pageIndex]="pageIndex()"
-                [pageSize]="pageSize()"
-                [pageSizeOptions]="[10, 25, 50, 100]"
-                aria-label="Paginación de filas validadas"
-                (page)="onPage($event)"
-              />
             </div>
-          }
+
+            @if (cargandoDetalle()) {
+              <div class="masiva__table-loading" role="status">
+                <mat-progress-spinner mode="indeterminate" diameter="32" aria-label="Cargando registros" />
+              </div>
+            } @else if (detalleRows().length === 0) {
+              <p class="masiva__empty" role="status">
+                No se encontraron registros con los filtros aplicados. Ajuste el DNI, el nombre o el estado.
+              </p>
+            }
+
+            <mat-paginator
+              [length]="detalleTotal()"
+              [pageIndex]="detallePage()"
+              [pageSize]="detalleSize()"
+              [pageSizeOptions]="[25, 50, 100]"
+              showFirstLastButtons
+              aria-label="Paginación de registros importados"
+              (page)="onDetallePage($event)"
+            />
+          </div>
         }
 
         <div class="masiva__actions">
@@ -213,38 +402,152 @@
     <mat-step>
       <ng-template matStepLabel>Confirmar</ng-template>
       <div class="masiva__step">
-        @if (tieneConflictos()) {
-          <mat-form-field appearance="outline" class="masiva__field">
-            <mat-label>Estrategia ante asistencia existente</mat-label>
-            <mat-select [value]="estrategia()" (selectionChange)="estrategia.set($event.value)">
-              @for (item of estrategias; track item.value) {
-                <mat-option [value]="item.value">{{ item.label }}</mat-option>
-              }
-            </mat-select>
-            <mat-hint>{{ estrategiaSeleccionada().hint }}</mat-hint>
-          </mat-form-field>
+        @if (!confirmado()) {
+          @if (tieneConflictos()) {
+            <mat-form-field appearance="outline" class="masiva__field">
+              <mat-label>Estrategia ante asistencia existente</mat-label>
+              <mat-select [value]="estrategia()" (selectionChange)="estrategia.set($event.value)">
+                @for (item of estrategias; track item.value) {
+                  <mat-option [value]="item.value">{{ item.label }}</mat-option>
+                }
+              </mat-select>
+              <mat-hint>{{ estrategiaSeleccionada().hint }}</mat-hint>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="masiva__field">
+              <mat-label>Motivo de rectificación</mat-label>
+              <input
+                matInput
+                [ngModel]="motivoRectificacion()"
+                (ngModelChange)="motivoRectificacion.set($event)"
+                maxlength="500"
+                placeholder="Requerido al reemplazar asistencia ya validada"
+              />
+              <mat-hint>
+                Reemplazar asistencia ya validada requiere un usuario con rol autorizado y este motivo.
+                El sistema valida el rol; sin permiso, esos empleados quedarán bloqueados.
+              </mat-hint>
+            </mat-form-field>
+          }
+          @if (estrategia() === 'REEMPLAZAR_PERIODO_COMPLETO') {
+            <p class="masiva__alert masiva__alert--strong" role="alert">
+              Esta accion reemplazara la asistencia del periodo para todos los empleados validos del archivo.
+              Revise el resumen antes de confirmar.
+            </p>
+          }
+          @if (tieneErroresBloqueantes()) {
+            <p class="masiva__alert" role="alert">
+              No se puede confirmar porque existen filas con errores. Corrija el archivo y vuelva a validar.
+            </p>
+          }
+          <button
+            mat-flat-button
+            color="primary"
+            type="button"
+            [disabled]="confirmando() || preview() == null || tieneErroresBloqueantes()"
+            (click)="confirmar()"
+          >
+            <mat-icon fontIcon="check_circle" aria-hidden="true" />
+            Confirmar importación
+          </button>
+        } @else {
+          @if (confirmadoSinEfecto()) {
+            <section class="masiva__exito masiva__exito--warn" role="status">
+              <mat-icon fontIcon="info" class="masiva__exito-icon" aria-hidden="true" />
+              <div class="masiva__exito-texto">
+                <h3>No se cargó asistencia nueva</h3>
+                <p>{{ preview()?.mensaje }}</p>
+                <p class="masiva__exito-estado">
+                  Los empleados del archivo ya tienen asistencia registrada en este periodo. Para
+                  reemplazarla, inicie una nueva importación y elija la estrategia
+                  «Reemplazar empleados del archivo».
+                </p>
+                <div class="masiva__exito-acciones">
+                  <button mat-stroked-button type="button" (click)="verAsistencia()">
+                    <mat-icon fontIcon="event_available" aria-hidden="true" />
+                    Ver asistencia cargada
+                  </button>
+                  <button mat-button type="button" (click)="nuevaImportacion()">
+                    <mat-icon fontIcon="refresh" aria-hidden="true" />
+                    Nueva importación
+                  </button>
+                </div>
+              </div>
+            </section>
+          } @else {
+            <section class="masiva__exito" role="status">
+              <mat-icon fontIcon="check_circle" class="masiva__exito-icon" aria-hidden="true" />
+              <div class="masiva__exito-texto">
+                @if (validacionResultado(); as v) {
+                  <h3>Confirmada y validada</h3>
+                  <p>{{ plural(empleadosProcesados(), 'empleado cargado', 'empleados cargados') }} · {{ preview()?.mensaje }}</p>
+                  <p class="masiva__exito-ok-line">
+                    <mat-icon fontIcon="verified" aria-hidden="true" />
+                    {{ plural(v.validadas, 'cabecera habilitada', 'cabeceras habilitadas') }} para planilla.
+                    El motor ya puede consumir esta asistencia.
+                  </p>
+                  <div class="masiva__exito-acciones">
+                    <button mat-stroked-button type="button" (click)="verAsistencia()">
+                      <mat-icon fontIcon="event_available" aria-hidden="true" />
+                      Ver asistencia cargada
+                    </button>
+                    <button mat-stroked-button type="button" (click)="verRegistroDiario()">
+                      <mat-icon fontIcon="table_view" aria-hidden="true" />
+                      Ver registro del día
+                    </button>
+                    <button mat-button type="button" (click)="nuevaImportacion()">
+                      <mat-icon fontIcon="refresh" aria-hidden="true" />
+                      Nueva importación
+                    </button>
+                  </div>
+                } @else {
+                  <h3>Importación confirmada</h3>
+                  <p>{{ plural(empleadosProcesados(), 'empleado cargado', 'empleados cargados') }} · {{ preview()?.mensaje }}</p>
+                  <div class="masiva__siguiente-inline">
+                    <span>Siguiente paso: ejecute el cálculo para que la planilla use esta asistencia.</span>
+                    <button
+                      mat-flat-button
+                      color="primary"
+                      type="button"
+                      [disabled]="validandoCabeceras()"
+                      (click)="validarCabeceras()"
+                    >
+                      <mat-icon fontIcon="calculate" aria-hidden="true" />
+                      Ejecutar Cálculo
+                    </button>
+                  </div>
+                }
+              </div>
+            </section>
+          }
+
+          <div class="masiva__anular">
+            <mat-form-field appearance="outline" class="masiva__field">
+              <mat-label>Motivo de anulación</mat-label>
+              <input
+                matInput
+                [ngModel]="motivoAnulacion()"
+                (ngModelChange)="motivoAnulacion.set($event)"
+                maxlength="500"
+                placeholder="Ej.: archivo cargado por error"
+              />
+              <mat-hint>
+                Anular una importación ya confirmada revierte el versionado y solo es posible si el
+                periodo sigue ABIERTO.
+              </mat-hint>
+            </mat-form-field>
+            <button
+              mat-stroked-button
+              color="warn"
+              type="button"
+              [disabled]="anulando() || preview() == null || motivoAnulacion().trim().length === 0"
+              (click)="anular()"
+            >
+              <mat-icon fontIcon="block" aria-hidden="true" />
+              Anular importación
+            </button>
+          </div>
         }
-        @if (estrategia() === 'REEMPLAZAR_PERIODO_COMPLETO') {
-          <p class="masiva__alert masiva__alert--strong" role="alert">
-            Esta accion reemplazara la asistencia del periodo para todos los empleados validos del archivo.
-            Revise el resumen antes de confirmar.
-          </p>
-        }
-        @if (tieneErroresBloqueantes()) {
-          <p class="masiva__alert" role="alert">
-            No se puede confirmar porque existen filas con errores. Corrija el archivo y vuelva a validar.
-          </p>
-        }
-        <button
-          mat-flat-button
-          color="primary"
-          type="button"
-          [disabled]="confirmando() || preview() == null || tieneErroresBloqueantes()"
-          (click)="confirmar()"
-        >
-          <mat-icon fontIcon="check_circle" aria-hidden="true" />
-          Confirmar importación
-        </button>
       </div>
     </mat-step>
   </mat-stepper>

@@ -1,0 +1,221 @@
+<h2 mat-dialog-title class="dialog-titulo">
+  <mat-icon class="titulo-icon">upload_file</mat-icon>
+  Importar catálogo desde CSV
+</h2>
+
+<mat-dialog-content class="dialog-body">
+
+  <!-- ═══ PASO 1: Seleccionar archivo ═══ -->
+  @if (paso() === 'seleccionar') {
+    <div class="paso-seleccionar">
+
+      <div class="instrucciones">
+        <mat-icon class="instr-icon">info_outline</mat-icon>
+        <div>
+          <p class="instr-titulo">Formato de archivo esperado</p>
+          <p class="instr-texto">
+            El archivo CSV debe tener las siguientes columnas en la primera fila
+            (el orden no importa, el sistema mapea automáticamente):
+          </p>
+          <code class="instr-code">meta, centro_de_costo, categoria_presupuestal, producto, actividad, finalidad, fuente</code>
+          <p class="instr-nota">
+            Para exportar desde Excel: <strong>Archivo → Guardar como → CSV UTF-8 (delimitado por comas)</strong>
+          </p>
+        </div>
+      </div>
+
+      <div class="regla-unicidad">
+        <mat-icon>key</mat-icon>
+        <div>
+          <strong>Regla de unicidad:</strong> El sistema identifica cada meta por
+          <span class="mono">AÑO FISCAL + CÓDIGO DE META</span>.
+          Si el Excel contiene la misma meta repetida (porque varios empleados la usan),
+          se fusionará en una sola entrada del catálogo.
+        </div>
+      </div>
+
+      <!-- Drop zone / File input -->
+      <label class="dropzone" for="file-input">
+        @if (cargando()) {
+          <mat-spinner diameter="36"></mat-spinner>
+          <span>Procesando archivo…</span>
+        } @else if (archivoNombre()) {
+          <mat-icon class="dropzone-icon dropzone-icon--ok">check_circle</mat-icon>
+          <span class="dropzone-nombre">{{ archivoNombre() }}</span>
+          <span class="dropzone-hint">Haga clic para cambiar el archivo</span>
+        } @else {
+          <mat-icon class="dropzone-icon">upload_file</mat-icon>
+          <span class="dropzone-texto">Haga clic para seleccionar archivo CSV</span>
+          <span class="dropzone-hint">Formatos aceptados: .csv</span>
+        }
+        <input
+          id="file-input"
+          type="file"
+          accept=".csv"
+          class="file-input-hidden"
+          (change)="onArchivoSeleccionado($event)"
+        />
+      </label>
+
+      @if (errorArchivo()) {
+        <div class="error-archivo">
+          <mat-icon>error_outline</mat-icon>
+          <span>{{ errorArchivo() }}</span>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- ═══ PASO 2: Preview y resumen ═══ -->
+  @if (paso() === 'preview') {
+    <div class="paso-preview">
+
+      <!-- Tarjetas de resumen -->
+      @if (resumen(); as r) {
+        <div class="resumen-grid">
+          <div class="res-card">
+            <span class="res-n">{{ r.filasLeidas }}</span>
+            <span class="res-lbl">Filas leídas</span>
+          </div>
+          <div class="res-card res-card--ok">
+            <span class="res-n">{{ r.metasNuevas }}</span>
+            <span class="res-lbl">Metas nuevas</span>
+          </div>
+          <div class="res-card res-card--info">
+            <span class="res-n">{{ r.metasReutilizadas }}</span>
+            <span class="res-lbl">Ya existentes</span>
+          </div>
+          <div class="res-card res-card--gray">
+            <span class="res-n">{{ r.duplicadosInformativos }}</span>
+            <span class="res-lbl">Duplicados omitidos</span>
+          </div>
+        </div>
+
+        @if (r.metasNuevas === 0) {
+          <div class="aviso-todo-existe">
+            <mat-icon>info</mat-icon>
+            <span>Todas las metas del archivo ya existen en el catálogo {{ data.anioFiscal }}. No se crearán registros nuevos.</span>
+          </div>
+        }
+      }
+
+      <!-- Tabla preview (solo metas nuevas) -->
+      @if (filasPreview().length > 0) {
+        <p class="preview-titulo">
+          Vista previa — <strong>{{ filasPreview().length }}</strong> metas únicas identificadas
+          <span class="preview-hint">(las ya existentes aparecen atenuadas)</span>
+        </p>
+        <div class="tabla-wrap">
+          <table mat-table [dataSource]="filasPreview()" class="preview-table">
+
+            <ng-container matColumnDef="metaCodigo">
+              <th mat-header-cell *matHeaderCellDef>Meta</th>
+              <td mat-cell *matCellDef="let f" class="col-mono">{{ f.metaCodigo }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="centroCosto">
+              <th mat-header-cell *matHeaderCellDef>Centro de costo</th>
+              <td mat-cell *matCellDef="let f" class="col-long">{{ f.centroCosto || '—' }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="categoriaPresupuestal">
+              <th mat-header-cell *matHeaderCellDef>Categoría ptal.</th>
+              <td mat-cell *matCellDef="let f" class="col-long">{{ f.categoriaPresupuestal || '—' }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="producto">
+              <th mat-header-cell *matHeaderCellDef>Producto</th>
+              <td mat-cell *matCellDef="let f" class="col-long">{{ f.producto || '—' }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="actividad">
+              <th mat-header-cell *matHeaderCellDef>Actividad</th>
+              <td mat-cell *matCellDef="let f" class="col-long">{{ f.actividad || '—' }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="finalidad">
+              <th mat-header-cell *matHeaderCellDef>Finalidad</th>
+              <td mat-cell *matCellDef="let f" class="col-long">{{ f.finalidad || '—' }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="tipo">
+              <th mat-header-cell *matHeaderCellDef>Tipo</th>
+              <td mat-cell *matCellDef="let f">
+                @if (f.esNueva) {
+                  <span class="badge badge-ok">Nueva</span>
+                } @else {
+                  <span class="badge badge-gray">Ya existe</span>
+                }
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="columnasPreview; sticky: true"></tr>
+            <tr mat-row *matRowDef="let row; columns: columnasPreview;"
+                class="fila-preview"
+                [class.fila-existente]="!row.esNueva"></tr>
+          </table>
+        </div>
+      }
+
+      <!-- Opción sobreescribir -->
+      <div class="opcion-sobreescribir">
+        <mat-checkbox [formControl]="form.controls.sobreescribir" color="primary">
+          Sobreescribir metas ya existentes con los datos del archivo
+        </mat-checkbox>
+        <p class="sobr-hint">
+          Si está marcado, las metas que ya existen actualizarán sus campos con los valores del CSV.
+          De lo contrario, solo se crearán las metas nuevas.
+        </p>
+      </div>
+
+    </div>
+  }
+
+  <!-- ═══ PASO 3: Resultado ═══ -->
+  @if (paso() === 'resultado') {
+    <div class="paso-resultado">
+      @if (resultadoFinal(); as r) {
+        <mat-icon class="res-icon">check_circle</mat-icon>
+        <h3 class="res-titulo">Importación completada</h3>
+        <p class="res-desc">
+          <strong>{{ r.exitosos }}</strong> metas nuevas creadas en el catálogo {{ data.anioFiscal }}.
+          @if (r.omitidos > 0) {
+            <br>{{ r.omitidos }} metas ya existentes fueron conservadas sin cambios.
+          }
+        </p>
+      }
+    </div>
+  }
+
+</mat-dialog-content>
+
+<mat-dialog-actions align="end" class="dialog-actions">
+  @if (paso() === 'seleccionar') {
+    <button mat-stroked-button (click)="cancelar()">Cancelar</button>
+  }
+
+  @if (paso() === 'preview') {
+    <button mat-stroked-button (click)="volverASeleccionar()">
+      <mat-icon>arrow_back</mat-icon> Cambiar archivo
+    </button>
+    <button
+      mat-flat-button
+      color="primary"
+      [disabled]="cargando() || filasParaEnviar.length === 0"
+      (click)="confirmarImportacion()"
+    >
+      @if (cargando()) {
+        <mat-spinner diameter="18"></mat-spinner>
+      } @else {
+        <mat-icon>cloud_upload</mat-icon>
+      }
+      {{ cargando() ? 'Importando…' : 'Confirmar importación' }}
+    </button>
+  }
+
+  @if (paso() === 'resultado') {
+    <button mat-flat-button color="primary" (click)="cerrarConExito()">
+      <mat-icon>done</mat-icon> Cerrar y actualizar
+    </button>
+  }
+</mat-dialog-actions>

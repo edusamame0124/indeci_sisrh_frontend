@@ -1,4 +1,13 @@
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnDestroy,
+  OnInit,
+  ViewChild,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { MatButtonModule } from '@angular/material/button';
@@ -9,22 +18,27 @@ import { MatInputModule } from '@angular/material/input';
 import { MatPaginatorModule, type PageEvent } from '@angular/material/paginator';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { MatStepperModule } from '@angular/material/stepper';
+import { MatStepper, MatStepperModule } from '@angular/material/stepper';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { PeriodoPlanillaApiService } from '../../../planilla/services/periodo-planilla-api.service';
 import { ErrorMessageService } from '../../../../core/services/error-message.service';
 import { isErrorResponse } from '../../../../core/models/error-response.model';
 import { AsistenciaImportApiService } from '../../services/asistencia-import-api.service';
+import { AsistenciaTabService } from '../../services/asistencia-tab.service';
 import type { PeriodoPlanillaRow } from '../../../planilla/models/periodo-planilla.model';
 import type {
-  AsistenciaImportFilaError,
+  AsistenciaImportFilaDetalle,
   AsistenciaImportPreview,
+  AsistenciaImportResumen,
+  AsistenciaValidacionBatch,
   EstrategiaConflicto,
 } from '../../models/asistencia-import.model';
 
-type FiltroPreview = 'TODOS' | AsistenciaImportFilaError['severidad'];
+type EstadoFila = AsistenciaImportFilaDetalle['estado'];
+type FiltroEstado = 'TODOS' | EstadoFila;
 
 @Component({
   selector: 'app-carga-masiva-csv-page',
@@ -39,6 +53,7 @@ type FiltroPreview = 'TODOS' | AsistenciaImportFilaError['severidad'];
     MatPaginatorModule,
     MatProgressSpinnerModule,
     MatSelectModule,
+    MatSlideToggleModule,
     MatStepperModule,
     MatTableModule,
     MatTooltipModule,
@@ -47,21 +62,34 @@ type FiltroPreview = 'TODOS' | AsistenciaImportFilaError['severidad'];
   styleUrl: './carga-masiva-csv-page.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class CargaMasivaCsvPageComponent implements OnInit {
+export class CargaMasivaCsvPageComponent implements OnInit, OnDestroy {
   private readonly periodoApi = inject(PeriodoPlanillaApiService);
   private readonly importApi = inject(AsistenciaImportApiService);
+  private readonly tabs = inject(AsistenciaTabService);
   private readonly snack = inject(MatSnackBar);
   private readonly errors = inject(ErrorMessageService);
 
+  @ViewChild('stepper') private stepper?: MatStepper;
+
+  /** Resumen por empleado (paso "Resumen"). */
   readonly columnasResumen = ['empleado', 'dias', 'tardanza', 'descuento', 'estado', 'conflicto'] as const;
-  readonly columnasErrores = ['linea', 'dni', 'fecha', 'severidad', 'mensaje'] as const;
-  readonly filtrosPreview: readonly { value: FiltroPreview; label: string }[] = [
-    { value: 'TODOS', label: 'Todos' },
+
+  /** Detalle server-side por empleado y día (paso "Validar") — 24 columnas. */
+  readonly columnasDetalle = [
+    'estado', 'dni', 'empleadoSistema', 'nombreCsv', 'fecha', 'dia',
+    'entradaProg', 'salidaProg', 'marca1', 'marca2', 'marca3', 'marca4',
+    'tardanza', 'refrigerio', 'excesoRefrig', 'tiempoRefrig', 'tiempoAntesSal',
+    'horasTrab', 'he25', 'he35', 'he100', 'heTotal', 'observaciones', 'mensaje',
+  ] as const;
+
+  readonly estadosFiltro: readonly { value: FiltroEstado; label: string }[] = [
+    { value: 'TODOS', label: 'Todos los estados' },
     { value: 'VALIDA', label: 'Válidas' },
-    { value: 'ERROR', label: 'Errores' },
-    { value: 'WARN', label: 'Advertencias' },
+    { value: 'WARN', label: 'Con advertencia' },
     { value: 'OBSERVADA', label: 'Observadas' },
+    { value: 'ERROR', label: 'Con error' },
   ];
+
   readonly estrategias: readonly { value: EstrategiaConflicto; label: string; hint: string }[] = [
     {
       value: 'OMITIR_EXISTENTES',
@@ -90,12 +118,56 @@ export class CargaMasivaCsvPageComponent implements OnInit {
   readonly archivo = signal<File | null>(null);
   readonly preview = signal<AsistenciaImportPreview | null>(null);
   readonly estrategia = signal<EstrategiaConflicto>('OMITIR_EXISTENTES');
-  readonly filtroPreview = signal<FiltroPreview>('TODOS');
-  readonly pageIndex = signal(0);
-  readonly pageSize = signal(10);
+
+  // ---- Detalle server-side ----
+  readonly resumen = signal<AsistenciaImportResumen | null>(null);
+  readonly detalleRows = signal<readonly AsistenciaImportFilaDetalle[]>([]);
+  readonly detalleTotal = signal(0);
+  readonly detallePage = signal(0);
+  readonly detalleSize = signal(25);
+  readonly filtroDni = signal('');
+  readonly filtroNombre = signal('');
+  readonly filtroEstado = signal<FiltroEstado>('TODOS');
+  readonly soloErrores = signal(false);
+  readonly cargandoDetalle = signal(false);
+
   readonly loadingPeriodos = signal(true);
   readonly procesandoPreview = signal(false);
   readonly confirmando = signal(false);
+  readonly exportando = signal(false);
+
+  // ---- F5: aceptación de observadas / rectificación / anulación ----
+  readonly motivoAceptacion = signal('');
+  readonly aceptandoObservadas = signal(false);
+  readonly motivoRectificacion = signal('');
+  readonly motivoAnulacion = signal('');
+  readonly anulando = signal(false);
+
+  // ---- F5: estado post-confirmación + validación de cabeceras ----
+  readonly validandoCabeceras = signal(false);
+  readonly validacionResultado = signal<AsistenciaValidacionBatch | null>(null);
+  /** Empleados efectivamente migrados en la confirmación (null = aún no confirmado). */
+  readonly empleadosProcesados = signal<number | null>(null);
+
+  readonly hayObservadas = computed(() => (this.resumen()?.filasObservadas ?? 0) > 0);
+
+  /** La importación ya fue confirmada (CONFIRMADA o PARCIAL). */
+  readonly confirmado = computed(() => {
+    const estado = this.preview()?.estadoImportacion;
+    return estado === 'CONFIRMADA' || estado === 'PARCIAL';
+  });
+
+  /** Confirmada pero sin migrar ningún empleado (todos omitidos/bloqueados). */
+  readonly confirmadoSinEfecto = computed(() => this.empleadosProcesados() === 0);
+
+  /** Hay filas exportables (error / observada / advertencia). */
+  readonly hayExportables = computed(() => {
+    const p = this.preview();
+    if (p == null) {
+      return false;
+    }
+    return (p.filasError + p.filasObservadas + p.filasAdvertencia) > 0;
+  });
 
   readonly tieneErroresBloqueantes = computed(() => (this.preview()?.filasError ?? 0) > 0);
   readonly tieneConflictos = computed(
@@ -104,18 +176,17 @@ export class CargaMasivaCsvPageComponent implements OnInit {
   readonly estrategiaSeleccionada = computed(() =>
     this.estrategias.find((item) => item.value === this.estrategia()) ?? this.estrategias[0],
   );
-  readonly filasFiltradas = computed(() => {
-    const filas = this.preview()?.errores ?? [];
-    const filtro = this.filtroPreview();
-    return filtro === 'TODOS' ? filas : filas.filter((fila) => fila.severidad === filtro);
-  });
-  readonly filasPaginadas = computed(() => {
-    const start = this.pageIndex() * this.pageSize();
-    return this.filasFiltradas().slice(start, start + this.pageSize());
-  });
+
+  private debounce: ReturnType<typeof setTimeout> | null = null;
 
   ngOnInit(): void {
     this.cargarPeriodos();
+  }
+
+  ngOnDestroy(): void {
+    if (this.debounce != null) {
+      clearTimeout(this.debounce);
+    }
   }
 
   onPeriodoChange(periodo: string): void {
@@ -141,10 +212,13 @@ export class CargaMasivaCsvPageComponent implements OnInit {
     this.importApi.preview(periodo, archivo).subscribe({
       next: (preview) => {
         this.preview.set(preview);
-        this.filtroPreview.set('TODOS');
-        this.pageIndex.set(0);
+        this.resetFiltros();
         this.procesandoPreview.set(false);
         this.snack.open(preview.mensaje ?? 'Vista previa generada.', 'Cerrar', { duration: 5000 });
+        if (preview.importacionId != null) {
+          this.cargarResumen(preview.importacionId);
+          this.cargarDetalle();
+        }
       },
       error: (err: HttpErrorResponse) => {
         this.procesandoPreview.set(false);
@@ -159,17 +233,251 @@ export class CargaMasivaCsvPageComponent implements OnInit {
       return;
     }
     this.confirmando.set(true);
-    this.importApi.confirmar(preview.importacionId, this.estrategia()).subscribe({
+    const motivo = this.motivoRectificacion().trim() || undefined;
+    this.importApi.confirmar(preview.importacionId, this.estrategia(), motivo).subscribe({
       next: (resultado) => {
         this.confirmando.set(false);
+        this.empleadosProcesados.set(resultado.empleadosDetectados ?? 0);
         this.preview.set({ ...preview, mensaje: resultado.mensaje, estadoImportacion: resultado.estadoImportacion });
         this.snack.open(resultado.mensaje ?? 'Importación confirmada.', 'Cerrar', { duration: 6000 });
+        this.cargarResumen(preview.importacionId!);
       },
       error: (err: HttpErrorResponse) => {
         this.confirmando.set(false);
         this.onHttpSnack(err);
       },
     });
+  }
+
+  /**
+   * Promueve las cabeceras de esta importación a estado VALIDADA, que es el único
+   * estado que el motor de planilla (M05) consume. CTA del cierre del flujo.
+   */
+  validarCabeceras(): void {
+    const id = this.preview()?.importacionId;
+    if (id == null) {
+      return;
+    }
+    this.validandoCabeceras.set(true);
+    this.importApi.validarCabeceras(id).subscribe({
+      next: (resultado) => {
+        this.validandoCabeceras.set(false);
+        this.validacionResultado.set(resultado);
+        this.snack.open(
+          `Asistencia validada: ${resultado.validadas} cabecera(s) habilitadas para planilla.`,
+          'Cerrar',
+          { duration: 6000 },
+        );
+      },
+      error: (err: HttpErrorResponse) => {
+        this.validandoCabeceras.set(false);
+        this.onHttpSnack(err);
+      },
+    });
+  }
+
+  /** P3 — acepta todas las filas observadas con el motivo indicado. */
+  aceptarObservadas(): void {
+    const id = this.preview()?.importacionId;
+    if (id == null) {
+      return;
+    }
+    const motivo = this.motivoAceptacion().trim();
+    if (motivo.length === 0) {
+      this.snack.open('Indique el motivo de aceptación de las filas observadas.', 'Cerrar', { duration: 5000 });
+      return;
+    }
+    this.aceptandoObservadas.set(true);
+    this.importApi.aceptarObservadas(id, [], motivo).subscribe({
+      next: (aceptadas) => {
+        this.aceptandoObservadas.set(false);
+        this.motivoAceptacion.set('');
+        this.snack.open(`${aceptadas} fila(s) observada(s) aceptada(s).`, 'Cerrar', { duration: 5000 });
+        this.cargarResumen(id);
+        this.cargarDetalle();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.aceptandoObservadas.set(false);
+        this.onHttpSnack(err);
+      },
+    });
+  }
+
+  /** P4 — anula la importación con motivo. */
+  anular(): void {
+    const preview = this.preview();
+    if (preview?.importacionId == null) {
+      return;
+    }
+    const id = preview.importacionId;
+    const motivo = this.motivoAnulacion().trim();
+    if (motivo.length === 0) {
+      this.snack.open('Indique el motivo de la anulación.', 'Cerrar', { duration: 5000 });
+      return;
+    }
+    this.anulando.set(true);
+    this.importApi.anular(id, motivo).subscribe({
+      next: (res) => {
+        this.anulando.set(false);
+        this.motivoAnulacion.set('');
+        this.preview.set({ ...preview, mensaje: res.mensaje, estadoImportacion: res.estadoImportacion });
+        this.snack.open(res.mensaje ?? 'Importación anulada.', 'Cerrar', { duration: 6000 });
+        this.cargarResumen(id);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.anulando.set(false);
+        this.onHttpSnack(err);
+      },
+    });
+  }
+
+  // ============ Filtros + paginación server-side ============
+
+  onFiltroTextoChange(): void {
+    this.detallePage.set(0);
+    this.recargarConDebounce();
+  }
+
+  onFiltroEstadoChange(valor: FiltroEstado): void {
+    this.filtroEstado.set(valor);
+    this.detallePage.set(0);
+    this.cargarDetalle();
+  }
+
+  onSoloErroresChange(valor: boolean): void {
+    this.soloErrores.set(valor);
+    this.detallePage.set(0);
+    this.cargarDetalle();
+  }
+
+  onDetallePage(event: PageEvent): void {
+    this.detallePage.set(event.pageIndex);
+    this.detalleSize.set(event.pageSize);
+    this.cargarDetalle();
+  }
+
+  private recargarConDebounce(): void {
+    if (this.debounce != null) {
+      clearTimeout(this.debounce);
+    }
+    this.debounce = setTimeout(() => this.cargarDetalle(), 300);
+  }
+
+  private cargarDetalle(): void {
+    const id = this.preview()?.importacionId;
+    if (id == null) {
+      return;
+    }
+    const estado = this.filtroEstado();
+    this.cargandoDetalle.set(true);
+    this.importApi
+      .detalles(
+        id,
+        {
+          dni: this.filtroDni(),
+          nombre: this.filtroNombre(),
+          estado: estado === 'TODOS' ? undefined : estado,
+          soloErrores: this.soloErrores(),
+        },
+        this.detallePage(),
+        this.detalleSize(),
+      )
+      .subscribe({
+        next: (page) => {
+          this.detalleRows.set(page.content);
+          this.detalleTotal.set(page.totalElements);
+          this.cargandoDetalle.set(false);
+        },
+        error: (err: HttpErrorResponse) => {
+          this.cargandoDetalle.set(false);
+          this.detalleRows.set([]);
+          this.detalleTotal.set(0);
+          this.onHttpSnack(err);
+        },
+      });
+  }
+
+  private cargarResumen(importacionId: number): void {
+    this.importApi.resumen(importacionId).subscribe({
+      next: (resumen) => this.resumen.set(resumen),
+      error: () => this.resumen.set(null),
+    });
+  }
+
+  exportarErrores(): void {
+    const id = this.preview()?.importacionId;
+    if (id == null) {
+      return;
+    }
+    this.exportando.set(true);
+    this.importApi.descargarErroresXlsx(id).subscribe({
+      next: (blob) => {
+        this.descargarBlob(blob, `asistencia-importacion-${id}-errores.xlsx`);
+        this.exportando.set(false);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.exportando.set(false);
+        this.onHttpSnack(err);
+      },
+    });
+  }
+
+  private descargarBlob(blob: Blob, nombre: string): void {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = nombre;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  /**
+   * Acción de cierre: abre "Asistencia por empleado" con el periodo preseleccionado. Si la
+   * importación cargó un único empleado, también lo preselecciona; con varios, el
+   * usuario elige en el dropdown (la vista completa por empleado está en "Resumen"/"Historial").
+   */
+  verAsistencia(): void {
+    const periodo = this.periodoSeleccionado();
+    const empleados = this.preview()?.empleados ?? [];
+    const unico = empleados.length === 1 ? empleados[0].empleadoId : null;
+    this.tabs.irACargaIndividual(periodo, unico);
+  }
+
+  /** Abre la consulta diaria con fecha del periodo (o hoy) y DNI si hubo un solo empleado. */
+  verRegistroDiario(): void {
+    const periodo = this.periodoSeleccionado();
+    const empleados = this.preview()?.empleados ?? [];
+    const dni = empleados.length === 1 ? empleados[0].dni : null;
+    this.tabs.irAConsultaDiaria(this.fechaReferenciaConsulta(periodo), dni);
+  }
+
+  private fechaReferenciaConsulta(periodo: string | null): string {
+    const hoy = new Date();
+    const hoyIso = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
+    if (!periodo) return hoyIso;
+    const parts = periodo.split('-');
+    if (parts.length < 2) return hoyIso;
+    const y = Number(parts[0]);
+    const m = Number(parts[1]);
+    if (Number.isNaN(y) || Number.isNaN(m)) return hoyIso;
+    if (hoy.getFullYear() === y && hoy.getMonth() + 1 === m) return hoyIso;
+    const lastDay = new Date(y, m, 0).getDate();
+    return `${y}-${String(m).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+  }
+
+  /** Acción de cierre: reinicia el asistente para una nueva importación. */
+  nuevaImportacion(): void {
+    this.archivo.set(null);
+    this.limpiarPreview();
+    this.stepper?.reset();
+  }
+
+  // ============ Formato ============
+
+  /** Pluralización correcta: "1 empleado cargado" / "3 empleados cargados". */
+  plural(n: number | null | undefined, singular: string, plural: string): string {
+    const cantidad = n ?? 0;
+    return `${cantidad} ${cantidad === 1 ? singular : plural}`;
   }
 
   fmtMonto(value: number | null | undefined): string {
@@ -179,26 +487,32 @@ export class CargaMasivaCsvPageComponent implements OnInit {
     }).format(value ?? 0);
   }
 
-  cambiarFiltro(filtro: FiltroPreview): void {
-    this.filtroPreview.set(filtro);
-    this.pageIndex.set(0);
-  }
-
-  onPage(event: PageEvent): void {
-    this.pageIndex.set(event.pageIndex);
-    this.pageSize.set(event.pageSize);
-  }
-
-  totalFiltro(filtro: FiltroPreview): number {
-    const preview = this.preview();
-    if (preview == null) {
-      return 0;
+  /** Minutos → "Xh Ym" (o "—" si nulo/cero). */
+  fmtMin(value: number | null | undefined): string {
+    if (value == null || value === 0) {
+      return '—';
     }
-    return switchFiltro(filtro, preview);
+    const h = Math.trunc(value / 60);
+    const m = value % 60;
+    if (h === 0) {
+      return `${m}m`;
+    }
+    return m === 0 ? `${h}h` : `${h}h ${m}m`;
   }
 
-  badgeLabel(severidad: AsistenciaImportFilaError['severidad']): string {
-    switch (severidad) {
+  fmtBytes(value: number | null | undefined): string {
+    if (value == null) {
+      return '—';
+    }
+    if (value < 1024) {
+      return `${value} B`;
+    }
+    const kb = value / 1024;
+    return kb < 1024 ? `${kb.toFixed(1)} KB` : `${(kb / 1024).toFixed(1)} MB`;
+  }
+
+  badgeLabel(estado: EstadoFila): string {
+    switch (estado) {
       case 'VALIDA':
         return 'Válida';
       case 'WARN':
@@ -230,8 +544,23 @@ export class CargaMasivaCsvPageComponent implements OnInit {
 
   private limpiarPreview(): void {
     this.preview.set(null);
-    this.filtroPreview.set('TODOS');
-    this.pageIndex.set(0);
+    this.resumen.set(null);
+    this.detalleRows.set([]);
+    this.detalleTotal.set(0);
+    this.validacionResultado.set(null);
+    this.empleadosProcesados.set(null);
+    this.motivoRectificacion.set('');
+    this.motivoAnulacion.set('');
+    this.resetFiltros();
+  }
+
+  private resetFiltros(): void {
+    this.filtroDni.set('');
+    this.filtroNombre.set('');
+    this.filtroEstado.set('TODOS');
+    this.soloErrores.set(false);
+    this.detallePage.set(0);
+    this.detalleSize.set(25);
   }
 
   private onHttpSnack(err: HttpErrorResponse): void {
@@ -240,20 +569,5 @@ export class CargaMasivaCsvPageComponent implements OnInit {
       ? this.errors.translate(body.mensaje)
       : this.errors.translate(null);
     this.snack.open(msg, 'Cerrar', { duration: 7000 });
-  }
-}
-
-function switchFiltro(filtro: FiltroPreview, preview: AsistenciaImportPreview): number {
-  switch (filtro) {
-    case 'TODOS':
-      return preview.filasTotal;
-    case 'VALIDA':
-      return preview.filasValidasLimpias;
-    case 'WARN':
-      return preview.filasAdvertencia;
-    case 'OBSERVADA':
-      return preview.filasObservadas;
-    case 'ERROR':
-      return preview.filasError;
   }
 }

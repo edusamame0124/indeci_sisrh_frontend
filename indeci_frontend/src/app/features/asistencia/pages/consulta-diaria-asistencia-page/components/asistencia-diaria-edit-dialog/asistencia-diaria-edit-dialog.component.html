@@ -1,0 +1,105 @@
+<h2 mat-dialog-title>
+  <mat-icon fontIcon="edit" aria-hidden="true" />
+  Editar asistencia del día
+</h2>
+
+<mat-dialog-content>
+  <p class="edit-dialog__context">
+    {{ data.row.nombreCompleto || 'Empleado' }} · DNI {{ data.row.dni || '—' }} · {{ data.row.fecha }}
+  </p>
+
+  @if (errorMsg(); as err) {
+    <p class="edit-dialog__error" role="alert">{{ err }}</p>
+  }
+
+  <form [formGroup]="form" class="edit-dialog__form" novalidate>
+    @if (tienePapeleta) {
+      <section class="edit-dialog__papeleta edit-dialog__full" aria-labelledby="papeleta-section-title">
+        <h3 id="papeleta-section-title" class="edit-dialog__section-title">Papeleta / Permiso</h3>
+        <dl class="edit-dialog__papeleta-grid">
+          <div><dt>Tipo</dt><dd>{{ data.row.papeletaTipo || '—' }}</dd></div>
+          <div><dt>Motivo</dt><dd>{{ data.row.papeletaMotivo || '—' }}</dd></div>
+          <div><dt>Hora inicio</dt><dd>{{ data.row.papeletaHoraInicio || '—' }}</dd></div>
+          <div><dt>Hora fin</dt><dd>{{ data.row.papeletaHoraFin || '—' }}</dd></div>
+          <div><dt>Cantidad de horas</dt><dd>{{ fmtHoras(data.row.papeletaCantidadHoras) }}</dd></div>
+        </dl>
+      </section>
+
+      <fieldset class="edit-dialog__decision edit-dialog__full">
+        <legend class="edit-dialog__decision-label">Decisión sobre la papeleta *</legend>
+        <mat-radio-group
+          formControlName="papeletaDecision"
+          class="edit-dialog__radio-group"
+          aria-label="Decisión sobre la papeleta"
+          aria-required="true"
+        >
+          <mat-radio-button value="AUTORIZAR">Autorizar</mat-radio-button>
+          <mat-radio-button value="NO_AUTORIZAR">No autorizar</mat-radio-button>
+        </mat-radio-group>
+      </fieldset>
+
+      @if (form.controls.papeletaDecision.value === 'NO_AUTORIZAR') {
+        <mat-form-field appearance="outline" class="edit-dialog__full">
+          <mat-label>Motivo de no autorización</mat-label>
+          <textarea
+            matInput
+            formControlName="papeletaMotivoRechazo"
+            rows="3"
+            maxlength="500"
+            required
+          ></textarea>
+          <mat-hint>Obligatorio. Este día quedará observado y se descuenta como falta.</mat-hint>
+        </mat-form-field>
+      }
+    }
+
+    <mat-form-field appearance="outline" [class.edit-dialog__full]="tienePapeleta">
+      <mat-label>Condición</mat-label>
+      <mat-select formControlName="tipoDia" aria-label="Condición de asistencia">
+        @for (tipo of tiposDia; track tipo) {
+          <mat-option [value]="tipo">{{ labelTipo(tipo) }}</mat-option>
+        }
+      </mat-select>
+      @if (tienePapeleta) {
+        <mat-hint>La condición se define al autorizar o no autorizar la papeleta.</mat-hint>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Hora ingreso</mat-label>
+      <input matInput formControlName="marcaEntrada" maxlength="16" placeholder="HH:MM" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Hora salida</mat-label>
+      <input matInput formControlName="marcaSalida" maxlength="16" placeholder="HH:MM" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Minutos tardanza</mat-label>
+      <input matInput type="number" formControlName="minutosTardanza" min="0" max="480" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="edit-dialog__full">
+      <mat-label>Observación</mat-label>
+      <textarea matInput formControlName="observacion" rows="2" maxlength="500"></textarea>
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button type="button" (click)="cancelar()" [disabled]="saving()">Cancelar</button>
+  <button
+    mat-flat-button
+    color="primary"
+    type="button"
+    (click)="guardar()"
+    [disabled]="form.invalid || saving()"
+  >
+    @if (saving()) {
+      <mat-progress-spinner mode="indeterminate" diameter="18" aria-label="Guardando" />
+    } @else {
+      Guardar
+    }
+  </button>
+</mat-dialog-actions>

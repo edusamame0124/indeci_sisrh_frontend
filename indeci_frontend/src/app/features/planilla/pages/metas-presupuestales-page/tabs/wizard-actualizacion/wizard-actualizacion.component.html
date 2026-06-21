@@ -1,0 +1,350 @@
+<div class="wizard-container">
+
+  <!-- Cabecera -->
+  <div class="wizard-head">
+
+    <!-- Indicador de pasos personalizado -->
+    <nav class="wizard-nav" aria-label="Pasos del proceso masivo">
+
+      <div class="wnav-step"
+           [class.wnav-step--done]="pasoActual() > 0"
+           [class.wnav-step--active]="pasoActual() === 0">
+        <div class="wnav-circle">
+          @if (pasoActual() > 0) { <mat-icon>check</mat-icon> } @else { 1 }
+        </div>
+        <mat-icon class="wnav-icon">settings</mat-icon>
+        <span class="wnav-label">Configurar</span>
+      </div>
+
+      <div class="wnav-line" [class.wnav-line--done]="pasoActual() > 0"></div>
+
+      <div class="wnav-step"
+           [class.wnav-step--done]="pasoActual() > 1"
+           [class.wnav-step--active]="pasoActual() === 1">
+        <div class="wnav-circle">
+          @if (pasoActual() > 1) { <mat-icon>check</mat-icon> } @else { 2 }
+        </div>
+        <mat-icon class="wnav-icon">visibility</mat-icon>
+        <span class="wnav-label">Vista previa</span>
+      </div>
+
+      <div class="wnav-line" [class.wnav-line--done]="pasoActual() > 1"></div>
+
+      <div class="wnav-step"
+           [class.wnav-step--done]="pasoActual() > 2"
+           [class.wnav-step--active]="pasoActual() === 2">
+        <div class="wnav-circle">
+          @if (pasoActual() > 2) { <mat-icon>check</mat-icon> } @else { 3 }
+        </div>
+        <mat-icon class="wnav-icon">manage_search</mat-icon>
+        <span class="wnav-label">Corrección</span>
+      </div>
+
+      <div class="wnav-line" [class.wnav-line--done]="pasoActual() > 2"></div>
+
+      <div class="wnav-step"
+           [class.wnav-step--done]="lote()?.estado === 'PUBLICADO'"
+           [class.wnav-step--active]="pasoActual() === 3">
+        <div class="wnav-circle">
+          @if (lote()?.estado === 'PUBLICADO') { <mat-icon>check</mat-icon> } @else { 4 }
+        </div>
+        <mat-icon class="wnav-icon">task_alt</mat-icon>
+        <span class="wnav-label">Aprobar</span>
+      </div>
+
+    </nav>
+
+    <div class="wizard-head-info">
+      <h2 class="wizard-titulo">
+        @if (pasoActual() === 0) { Proceso masivo — Configurar }
+        @else if (pasoActual() === 1) { Proceso masivo — Vista previa }
+        @else if (pasoActual() === 2) { Proceso masivo — Corrección de excepciones }
+        @else { Proceso masivo — Validar y aprobar }
+      </h2>
+      <p class="wizard-desc">
+        @if (pasoActual() === 0) {
+          Seleccione el tipo de proceso y el año origen. El sistema ejecutará la asignación masiva
+          aplicando las equivalencias vigentes de <strong>{{ anioOrigen() }}</strong> → <strong>{{ anioFiscal }}</strong>.
+        } @else if (pasoActual() === 1) {
+          Revise el resultado del proceso. Los registros observados requieren resolución manual antes de publicar.
+        } @else if (pasoActual() === 2) {
+          Resuelva las excepciones observadas antes de publicar. Solo los registros marcados requieren corrección manual.
+        } @else {
+          Valide el checklist final y publique las metas para que queden disponibles en planilla.
+        }
+      </p>
+    </div>
+
+  </div>
+
+  <!-- Stepper principal -->
+  <mat-stepper
+    [selectedIndex]="pasoActual()"
+    orientation="horizontal"
+    class="wizard-stepper"
+    [linear]="false"
+    aria-label="Pasos del proceso masivo"
+  >
+
+    <!-- ═══ PASO 1: Configurar y ejecutar ═══ -->
+    <mat-step [completed]="pasoActual() > 0">
+      <ng-template mat-step-label>
+        <span class="step-label"><mat-icon class="step-icon">settings</mat-icon> Configurar</span>
+      </ng-template>
+
+      <div class="paso-body">
+
+        <!-- Tipo de proceso -->
+        <div class="config-section">
+          <p class="config-section-label">Tipo de proceso</p>
+          <div class="tipo-proceso-grid">
+            @for (opt of tiposProcesoOpts; track opt.valor) {
+              <div
+                class="tipo-card"
+                [class.tipo-card--selected]="tipoProceso() === opt.valor"
+                (click)="tipoProceso.set(opt.valor)"
+                role="radio"
+                [attr.aria-checked]="tipoProceso() === opt.valor"
+                tabindex="0"
+                (keydown.space)="tipoProceso.set(opt.valor)"
+              >
+                <div class="tipo-card-head">
+                  <mat-icon class="tipo-radio-icon">
+                    {{ tipoProceso() === opt.valor ? 'radio_button_checked' : 'radio_button_unchecked' }}
+                  </mat-icon>
+                  <strong class="tipo-etiqueta">{{ opt.etiqueta }}</strong>
+                </div>
+                <p class="tipo-desc">{{ opt.descripcion }}</p>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Años -->
+        <div class="config-section">
+          <p class="config-section-label">Rango de años</p>
+          <div class="config-grid">
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="anio-origen-field">
+              <mat-label>Año origen (copiar desde)</mat-label>
+              <mat-icon matPrefix>calendar_today</mat-icon>
+              <mat-select [value]="anioOrigen()" (selectionChange)="anioOrigen.set($event.value)">
+                @for (a of [anioFiscal - 3, anioFiscal - 2, anioFiscal - 1]; track a) {
+                  <mat-option [value]="a">{{ a }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+
+            <div class="anio-flecha-destino">
+              <mat-icon class="flecha-icon">arrow_forward</mat-icon>
+              <span class="destino-anio">{{ anioFiscal }}</span>
+              <span class="destino-txt">Año destino</span>
+            </div>
+          </div>
+        </div>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="obs-field">
+          <mat-label>Observación del lote (opcional)</mat-label>
+          <mat-icon matPrefix>notes</mat-icon>
+          <input
+            matInput
+            [value]="observacionLote()"
+            (input)="observacionLote.set($any($event.target).value)"
+            placeholder="Ej. Actualización anual 2026 — proceso ordinario"
+          />
+        </mat-form-field>
+
+        <div class="paso-actions">
+          <button
+            mat-flat-button
+            color="primary"
+            (click)="crearYProcesar()"
+            [disabled]="procesando()"
+            class="btn-ejecutar"
+            aria-label="Ejecutar proceso masivo"
+          >
+            @if (procesando()) {
+              <mat-spinner diameter="18" class="spinner-btn"></mat-spinner>
+            } @else {
+              <mat-icon>play_circle</mat-icon>
+            }
+            {{ procesando() ? 'Procesando…' : 'Ejecutar proceso masivo' }}
+          </button>
+        </div>
+      </div>
+    </mat-step>
+
+    <!-- ═══ PASO 2: Vista previa ═══ -->
+    <mat-step [completed]="pasoActual() > 1">
+      <ng-template mat-step-label>
+        <span class="step-label"><mat-icon class="step-icon">visibility</mat-icon> Vista previa</span>
+      </ng-template>
+
+      @if (lote(); as l) {
+        <div class="paso-body">
+          <!-- Resumen estadístico -->
+          <div class="resumen-lote">
+            <div class="stat">
+              <span class="stat-n">{{ l.totalEmpleados }}</span>
+              <span class="stat-lbl">Total</span>
+            </div>
+            <div class="stat stat--ok">
+              <span class="stat-n">{{ l.totalAsignados }}</span>
+              <span class="stat-lbl">Asignados</span>
+            </div>
+            <div class="stat stat--warn" [class.stat--zero]="l.totalObservados === 0">
+              <span class="stat-n">{{ l.totalObservados }}</span>
+              <span class="stat-lbl">Observados</span>
+            </div>
+            <div class="stat stat--warn" [class.stat--zero]="l.totalSinEquiv === 0">
+              <span class="stat-n">{{ l.totalSinEquiv }}</span>
+              <span class="stat-lbl">Sin equiv.</span>
+            </div>
+            <div class="stat stat--err" [class.stat--zero]="l.totalDuplicados === 0">
+              <span class="stat-n">{{ l.totalDuplicados }}</span>
+              <span class="stat-lbl">Duplicados</span>
+            </div>
+          </div>
+
+          <!-- Tabla de detalles -->
+          <div class="tabla-wrap" role="region" aria-label="Detalle de asignaciones procesadas">
+            <table mat-table [dataSource]="detalles()" class="det-table">
+
+              <ng-container matColumnDef="empleadoDni">
+                <th mat-header-cell *matHeaderCellDef>DNI</th>
+                <td mat-cell *matCellDef="let d" class="col-mono">{{ d.empleadoDni ?? '—' }}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="empleadoNombre">
+                <th mat-header-cell *matHeaderCellDef>Empleado</th>
+                <td mat-cell *matCellDef="let d" class="col-nombre">{{ d.empleadoNombre ?? '—' }}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="metaOrigenCodigo">
+                <th mat-header-cell *matHeaderCellDef>Meta origen</th>
+                <td mat-cell *matCellDef="let d" class="col-codigo">{{ d.metaOrigenCodigo ?? '—' }}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="metaDestinoCodigo">
+                <th mat-header-cell *matHeaderCellDef>Meta destino</th>
+                <td mat-cell *matCellDef="let d" class="col-codigo">{{ d.metaDestinoCodigo ?? '—' }}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="estadoValidacion">
+                <th mat-header-cell *matHeaderCellDef>Resultado</th>
+                <td mat-cell *matCellDef="let d">
+                  <span class="badge" [ngClass]="estadoClass(d.estadoValidacion)">{{ d.estadoValidacion }}</span>
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="mensaje">
+                <th mat-header-cell *matHeaderCellDef>Detalle</th>
+                <td mat-cell *matCellDef="let d" class="col-msg">{{ d.mensajeValidacion ?? '' }}</td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="columnasDet; sticky: true"></tr>
+              <tr mat-row *matRowDef="let row; columns: columnasDet;" class="fila-det"></tr>
+            </table>
+          </div>
+
+          <div class="paso-actions">
+            <button mat-stroked-button (click)="pasoActual.set(0)">
+              <mat-icon>arrow_back</mat-icon> Atrás
+            </button>
+            <button mat-flat-button color="primary" (click)="pasarAExcepciones()">
+              Revisar excepciones <mat-icon>arrow_forward</mat-icon>
+            </button>
+          </div>
+        </div>
+      } @else {
+        <div class="paso-body paso-empty">
+          <mat-icon>info_outline</mat-icon>
+          <p>Ejecute el proceso masivo en el paso anterior para ver el resultado.</p>
+        </div>
+      }
+    </mat-step>
+
+    <!-- ═══ PASO 3: Corrección de excepciones ═══ -->
+    <mat-step [completed]="pasoActual() > 2">
+      <ng-template mat-step-label>
+        <span class="step-label"><mat-icon class="step-icon">manage_search</mat-icon> Corrección</span>
+      </ng-template>
+
+      <div class="paso-body">
+        <app-correccion-excepciones
+          [loteId]="lote()?.id ?? 0"
+          [observados]="observados()"
+          [metasCatalogo]="metasCatalogo()"
+          [procesando]="procesando()"
+          (atras)="pasoActual.set(1)"
+          (continuar)="pasoActual.set(3)"
+          (resolved)="onResuelto()">
+        </app-correccion-excepciones>
+      </div>
+    </mat-step>
+
+    <!-- ═══ PASO 4: Validar y aprobar ═══ -->
+    <mat-step [completed]="lote()?.estado === 'PUBLICADO'">
+      <ng-template mat-step-label>
+        <span class="step-label"><mat-icon class="step-icon">task_alt</mat-icon> Aprobar</span>
+      </ng-template>
+
+      <div class="paso-body">
+        <app-validar-aprobar
+          [lote]="lote()"
+          [detalles]="detalles()"
+          [anioFiscal]="anioFiscal"
+          [procesando]="procesando()"
+          (publicar)="publicar()"
+          (exportar)="exportarActa()"
+          (atras)="pasoActual.set(2)">
+        </app-validar-aprobar>
+      </div>
+    </mat-step>
+
+  </mat-stepper>
+
+  <!-- ═══ HISTORIAL DE LOTES (fuera del stepper) ═══ -->
+  @if (lotesPrevios().length > 0) {
+    <div class="historial-section">
+      <div class="historial-head">
+        <mat-icon class="historial-icon">history</mat-icon>
+        <h3 class="historial-titulo">Historial de procesos — año {{ anioFiscal }}</h3>
+      </div>
+
+      <div class="historial-lista">
+        @for (l of lotesPrevios(); track l.id) {
+          <div class="lote-card">
+            <div class="lote-card-left">
+              <span class="lote-codigo">{{ l.codigoLote }}</span>
+              <span class="badge" [ngClass]="estadoClass(l.estado)">{{ l.estado }}</span>
+            </div>
+            <div class="lote-card-stats">
+              <span class="lote-stat lote-stat--ok">
+                <mat-icon>check</mat-icon> {{ l.totalAsignados }}
+              </span>
+              @if (l.totalObservados > 0) {
+                <span class="lote-stat lote-stat--warn">
+                  <mat-icon>warning_amber</mat-icon> {{ l.totalObservados }}
+                </span>
+              }
+            </div>
+            @if (l.estado !== 'PUBLICADO' && l.estado !== 'ANULADO') {
+              <button
+                mat-stroked-button
+                color="primary"
+                class="btn-continuar"
+                (click)="lote.set(l); pasoActual.set(1); cargarDetalles(l.id)"
+              >
+                <mat-icon>play_arrow</mat-icon> Continuar
+              </button>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <p class="normativa-note">
+    Base normativa: Ley 28411 SGNP · Clasificadores presupuestarios DNPP · D.Leg. 1057 Art. 8 CAS
+  </p>
+</div>

@@ -1,0 +1,94 @@
+<h2 mat-dialog-title class="dlg-title">
+  <mat-icon fontIcon="content_copy" class="dlg-title__icon" aria-hidden="true" />
+  Duplicar vigencia 4ta categoría
+</h2>
+
+<mat-dialog-content>
+
+  <div class="dlg-origen" role="note">
+    <mat-icon fontIcon="info" aria-hidden="true" />
+    <span>
+      Duplicando desde año <strong>{{ data.row.anioFiscal }}</strong> —
+      UIT origen: <strong>S/ {{ data.row.uitVigente | number:'1.2-2' }}</strong>.
+      Actualice los datos para el nuevo año fiscal.
+    </span>
+  </div>
+
+  @if (errorMsg()) {
+    <div class="dlg-error" role="alert">
+      <mat-icon fontIcon="error_outline" aria-hidden="true" />
+      {{ errorMsg() }}
+    </div>
+  }
+
+  <form [formGroup]="form" novalidate class="dlg-form">
+
+    <!-- Año fiscal destino -->
+    <mat-form-field appearance="outline" class="field-full">
+      <mat-label>Año fiscal de destino <span class="req-star">*</span></mat-label>
+      <input matInput type="number" min="2000" max="2100" formControlName="anioFiscal" placeholder="ej. 2027" />
+      @if (form.get('anioFiscal')?.invalid && form.get('anioFiscal')?.touched) {
+        <mat-error>Año fiscal obligatorio.</mat-error>
+      }
+    </mat-form-field>
+
+    <!-- Fechas -->
+    <div class="dlg-row">
+      <mat-form-field appearance="outline" class="field-half">
+        <mat-label>Vigencia inicio <span class="req-star">*</span></mat-label>
+        <input matInput [matDatepicker]="dpIni" formControlName="vigenciaInicio" placeholder="dd/mm/aaaa" [min]="minDate" [max]="maxDate" />
+        <mat-datepicker-toggle matIconSuffix [for]="dpIni" />
+        <mat-datepicker #dpIni startView="year" />
+        @if (form.get('vigenciaInicio')?.invalid && form.get('vigenciaInicio')?.touched) {
+          <mat-error>Fecha de inicio obligatoria.</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="field-half">
+        <mat-label>Vigencia fin (opcional)</mat-label>
+        <input matInput [matDatepicker]="dpFin" formControlName="vigenciaFin" placeholder="dd/mm/aaaa" [min]="minDate" [max]="maxDate" />
+        <mat-datepicker-toggle matIconSuffix [for]="dpFin" />
+        <mat-datepicker #dpFin startView="year" />
+      </mat-form-field>
+    </div>
+
+    <!-- UIT nueva -->
+    <mat-form-field appearance="outline" class="field-full">
+      <mat-label>UIT vigente (S/) <span class="req-star">*</span></mat-label>
+      <span matTextPrefix>S/&nbsp;</span>
+      <input matInput type="number" step="0.01" min="0.01" formControlName="uitVigente" placeholder="ej. 5700.00" />
+      <mat-hint>Actualice según el D.S. que establece la UIT para el nuevo año.</mat-hint>
+      @if (form.get('uitVigente')?.invalid && form.get('uitVigente')?.touched) {
+        <mat-error>Ingrese la UIT vigente (mayor a cero).</mat-error>
+      }
+    </mat-form-field>
+
+    <!-- Fuente normativa -->
+    <mat-form-field appearance="outline" class="field-full">
+      <mat-label>Fuente normativa <span class="req-star">*</span></mat-label>
+      <input matInput formControlName="fuenteOficial" placeholder="ej. D.S. XXX-2026-EF — TUO LIR Art. 33" maxlength="500" />
+      @if (form.get('fuenteOficial')?.invalid && form.get('fuenteOficial')?.touched) {
+        <mat-error>La fuente normativa es obligatoria.</mat-error>
+      }
+    </mat-form-field>
+
+    <!-- Observación -->
+    <mat-form-field appearance="outline" class="field-full">
+      <mat-label>Observación (opcional)</mat-label>
+      <input matInput formControlName="observacion" placeholder="Notas adicionales…" maxlength="200" />
+    </mat-form-field>
+
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-stroked-button (click)="cancelar()" [disabled]="saving()">Cancelar</button>
+  <button
+    mat-flat-button color="primary"
+    (click)="guardar()"
+    [disabled]="form.invalid || saving()"
+  >
+    @if (saving()) { <mat-spinner diameter="18" /> } @else { <mat-icon fontIcon="content_copy" /> }
+    {{ saving() ? 'Duplicando…' : 'Duplicar vigencia' }}
+  </button>
+</mat-dialog-actions>

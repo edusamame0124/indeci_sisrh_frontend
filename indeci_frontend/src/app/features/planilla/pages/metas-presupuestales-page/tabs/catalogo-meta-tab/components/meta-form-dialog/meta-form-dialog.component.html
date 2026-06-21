@@ -1,0 +1,208 @@
+<!-- Título -->
+<h2 mat-dialog-title class="dialog-titulo">
+  <span class="titulo-icono">
+    <mat-icon>{{ esEdicion ? 'edit_note' : 'add_circle_outline' }}</mat-icon>
+  </span>
+  <span>{{ esEdicion ? 'Editar meta presupuestal' : 'Nueva meta presupuestal' }}</span>
+</h2>
+
+<!-- Subtítulo con año fiscal y leyenda de obligatorios -->
+<div class="dialog-meta">
+  <span class="anio-badge">
+    <mat-icon>calendar_today</mat-icon>
+    Año fiscal {{ data.anioFiscal }}
+  </span>
+  <span class="req-nota">
+    <span class="req">*</span> Campos obligatorios
+  </span>
+</div>
+
+<!-- Contenido -->
+<mat-dialog-content [formGroup]="form" class="dialog-body">
+
+  <!-- ── Sección 1: Identificación ── -->
+  <div class="form-seccion">
+    <div class="seccion-header">
+      <mat-icon>tag</mat-icon>
+      <span>Identificación</span>
+    </div>
+
+    <div class="seccion-campos">
+      <mat-form-field appearance="outline" subscriptSizing="fixed" class="field-codigo">
+        <mat-label>Código de meta <span class="req">*</span></mat-label>
+        <input
+          matInput
+          formControlName="metaCodigo"
+          placeholder="Ej. 0074"
+          maxlength="20"
+          autocomplete="off"
+          style="text-transform: uppercase"
+        />
+        <mat-hint align="end">{{ longitudCodigo }}/20</mat-hint>
+        @if (form.controls.metaCodigo.touched && form.controls.metaCodigo.hasError('required')) {
+          <mat-error>El código de meta es obligatorio.</mat-error>
+        } @else if (form.controls.metaCodigo.touched && form.controls.metaCodigo.hasError('minlength')) {
+          <mat-error>Mínimo 2 caracteres.</mat-error>
+        } @else if (form.controls.metaCodigo.touched && form.controls.metaCodigo.hasError('pattern')) {
+          <mat-error>El código no puede comenzar con espacios.</mat-error>
+        } @else if (form.controls.metaCodigo.touched && form.controls.metaCodigo.hasError('duplicado')) {
+          <mat-error>Ya existe una meta con este código para el año {{ data.anioFiscal }}.</mat-error>
+        }
+      </mat-form-field>
+
+      <div class="field-ayuda">
+        <mat-icon class="ayuda-icon">info_outline</mat-icon>
+        <p class="ayuda-texto">
+          El código identifica unívocamente la meta dentro del catálogo del año.
+          Generalmente es un número de 4 dígitos (ej. <strong>0074</strong>).
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Sección 2: Clasificación presupuestal ── -->
+  <div class="form-seccion">
+    <div class="seccion-header">
+      <mat-icon>account_tree</mat-icon>
+      <span>Clasificación presupuestal</span>
+    </div>
+
+    <div class="seccion-campos">
+      <mat-form-field appearance="outline" subscriptSizing="fixed" class="field-full">
+        <mat-label>Centro de costo <span class="req">*</span></mat-label>
+        <input
+          matInput
+          formControlName="centroCosto"
+          placeholder="Ej. IRES - ALMACENES DE DEFENSA CIVIL"
+          maxlength="500"
+        />
+        @if (form.controls.centroCosto.touched && form.controls.centroCosto.hasError('required')) {
+          <mat-error>El centro de costo es obligatorio.</mat-error>
+        } @else if (form.controls.centroCosto.touched && form.controls.centroCosto.hasError('minlength')) {
+          <mat-error>Ingrese al menos 3 caracteres.</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" subscriptSizing="fixed" class="field-full">
+        <mat-label>Categoría presupuestal <span class="req">*</span></mat-label>
+        <input
+          matInput
+          formControlName="categoriaPresupuestal"
+          placeholder="Ej. 0068. REDUCCION DE VULNERABILIDAD Y ATENCION DE EMERGENCIAS"
+          maxlength="500"
+        />
+        @if (form.controls.categoriaPresupuestal.touched && form.controls.categoriaPresupuestal.hasError('required')) {
+          <mat-error>La categoría presupuestal es obligatoria.</mat-error>
+        } @else if (form.controls.categoriaPresupuestal.touched && form.controls.categoriaPresupuestal.hasError('minlength')) {
+          <mat-error>Ingrese al menos 3 caracteres.</mat-error>
+        }
+      </mat-form-field>
+
+      <div class="campo-duo">
+        <mat-form-field appearance="outline" subscriptSizing="fixed" class="field-full">
+          <mat-label>Producto <span class="req">*</span></mat-label>
+          <input
+            matInput
+            formControlName="producto"
+            placeholder="Ej. 3000734. CAPACIDAD INSTALADA"
+            maxlength="500"
+          />
+          @if (form.controls.producto.touched && form.controls.producto.hasError('required')) {
+            <mat-error>El producto es obligatorio.</mat-error>
+          } @else if (form.controls.producto.touched && form.controls.producto.hasError('minlength')) {
+            <mat-error>Ingrese al menos 3 caracteres.</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" subscriptSizing="fixed" class="field-full">
+          <mat-label>Actividad <span class="req">*</span></mat-label>
+          <input
+            matInput
+            formControlName="actividad"
+            placeholder="Ej. 5005611. ADMINISTRACION Y ALMACENAMIENTO"
+            maxlength="500"
+          />
+          @if (form.controls.actividad.touched && form.controls.actividad.hasError('required')) {
+            <mat-error>La actividad es obligatoria.</mat-error>
+          } @else if (form.controls.actividad.touched && form.controls.actividad.hasError('minlength')) {
+            <mat-error>Ingrese al menos 3 caracteres.</mat-error>
+          }
+        </mat-form-field>
+      </div>
+
+      <mat-form-field appearance="outline" subscriptSizing="fixed" class="field-full">
+        <mat-label>Finalidad <span class="req">*</span></mat-label>
+        <input
+          matInput
+          formControlName="finalidad"
+          placeholder="Ej. 0160878. ADMINISTRACION Y ALMACENAMIENTO DE BIENES"
+          maxlength="500"
+        />
+        @if (form.controls.finalidad.touched && form.controls.finalidad.hasError('required')) {
+          <mat-error>La finalidad es obligatoria.</mat-error>
+        } @else if (form.controls.finalidad.touched && form.controls.finalidad.hasError('minlength')) {
+          <mat-error>Ingrese al menos 3 caracteres.</mat-error>
+        }
+      </mat-form-field>
+    </div>
+  </div>
+
+  <!-- ── Sección 3: Información adicional ── -->
+  <div class="form-seccion">
+    <div class="seccion-header">
+      <mat-icon>notes</mat-icon>
+      <span>Información adicional <span class="seccion-opcional">(opcional)</span></span>
+    </div>
+
+    <div class="seccion-campos">
+      <mat-form-field appearance="outline" subscriptSizing="fixed" class="field-full">
+        <mat-label>Fuente de financiamiento</mat-label>
+        <input
+          matInput
+          formControlName="fuente"
+          placeholder="Ej. Recursos Ordinarios"
+          maxlength="200"
+        />
+        @if (form.controls.fuente.hasError('maxlength')) {
+          <mat-error>Máximo 200 caracteres.</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" subscriptSizing="fixed" class="field-full">
+        <mat-label>Observación</mat-label>
+        <textarea
+          matInput
+          formControlName="observacion"
+          rows="2"
+          placeholder="Información adicional u observaciones sobre esta meta…"
+          maxlength="1000"
+        ></textarea>
+        <mat-hint align="end">{{ form.controls.observacion.value.length }}/1000</mat-hint>
+        @if (form.controls.observacion.hasError('maxlength')) {
+          <mat-error>Máximo 1000 caracteres.</mat-error>
+        }
+      </mat-form-field>
+    </div>
+  </div>
+
+</mat-dialog-content>
+
+<!-- Acciones -->
+<mat-dialog-actions align="end" class="dialog-actions">
+  <button mat-stroked-button (click)="cancelar()" [disabled]="guardando()">
+    Cancelar
+  </button>
+  <button
+    mat-flat-button
+    color="primary"
+    (click)="guardar()"
+    [disabled]="guardando()"
+  >
+    @if (guardando()) {
+      <mat-spinner diameter="18" class="spinner-btn"></mat-spinner>
+    } @else {
+      <mat-icon>{{ esEdicion ? 'save' : 'add' }}</mat-icon>
+    }
+    {{ guardando() ? 'Guardando…' : (esEdicion ? 'Guardar cambios' : 'Registrar meta') }}
+  </button>
+</mat-dialog-actions>
