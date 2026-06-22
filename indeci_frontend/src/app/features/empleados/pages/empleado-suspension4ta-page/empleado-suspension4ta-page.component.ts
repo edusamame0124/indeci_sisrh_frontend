@@ -23,8 +23,10 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
+import { MatTabsModule } from '@angular/material/tabs';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { ControlAnualTabComponent } from './components/control-anual-tab/control-anual-tab.component';
 import { sisrhConfirmDialogConfig } from '../../../../core/config/sisrh-dialog.config';
 import { ConfirmDialogComponent } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { EmptyStateComponent } from '../../../../shared/components/empty-state/empty-state.component';
@@ -60,8 +62,10 @@ import type { Suspension4taRow } from '../../models/suspension4ta.model';
     MatNativeDateModule,
     MatDialogModule,
     MatProgressSpinnerModule,
+    MatTabsModule,
     MatTooltipModule,
     EmptyStateComponent,
+    ControlAnualTabComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './empleado-suspension4ta-page.component.html',

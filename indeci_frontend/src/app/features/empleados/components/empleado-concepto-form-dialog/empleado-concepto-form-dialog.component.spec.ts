@@ -77,8 +77,10 @@ describe('EmpleadoConceptoFormDialogComponent (Spec 013/C1 — modal descuento/a
       conceptoPlanillaId: 3,
       monto: 100,
       porcentaje: null,
-      fechaInicio: '2026-05',
-      fechaFin: '',
+      fechaInicioMes: 5,
+      fechaInicioAnio: 2026,
+      fechaFinMes: null,
+      fechaFinAnio: null,
     });
     cmp.onSubmit();
     expect(spy).toHaveBeenCalledWith({
@@ -103,8 +105,10 @@ describe('EmpleadoConceptoFormDialogComponent (Spec 013/C1 — modal descuento/a
       conceptoPlanillaId: 3,
       monto: 100,
       porcentaje: null,
-      fechaInicio: '',
-      fechaFin: '',
+      fechaInicioMes: null,
+      fechaInicioAnio: null,
+      fechaFinMes: null,
+      fechaFinAnio: null,
     });
     cmp.onSubmit();
     expect(spy).not.toHaveBeenCalled();
@@ -121,8 +125,10 @@ describe('EmpleadoConceptoFormDialogComponent (Spec 013/C1 — modal descuento/a
       conceptoPlanillaId: 3,
       monto: null,
       porcentaje: null,
-      fechaInicio: '2026-05',
-      fechaFin: '',
+      fechaInicioMes: 5,
+      fechaInicioAnio: 2026,
+      fechaFinMes: null,
+      fechaFinAnio: null,
     });
     cmp.onSubmit();
     expect(spy).not.toHaveBeenCalled();

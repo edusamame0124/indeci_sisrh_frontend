@@ -39,6 +39,9 @@
         </div>
       }
 
+      <mat-tab-group class="susp-tabs" [mat-stretch-tabs]="false" animationDuration="0ms">
+      <mat-tab label="Datos de constancia">
+       <div class="tab-body">
       <div class="toolbar">
         <a mat-stroked-button routerLink="/empleados/personas">
           <mat-icon>arrow_back</mat-icon> Volver
@@ -166,6 +169,15 @@
           <tr mat-row *matRowDef="let row; columns: columns"></tr>
         </table>
       }
+       </div>
+      </mat-tab>
+
+      <mat-tab label="Control anual">
+        <div class="tab-body">
+          <app-control-anual-tab [empleadoId]="empleadoId()!" />
+        </div>
+      </mat-tab>
+      </mat-tab-group>
     }
   </mat-card-content>
 

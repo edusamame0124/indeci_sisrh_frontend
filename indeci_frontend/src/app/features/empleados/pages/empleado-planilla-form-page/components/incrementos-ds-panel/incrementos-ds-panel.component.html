@@ -1,0 +1,41 @@
+<section class="panel" aria-labelledby="incrementos-ds-heading">
+  <header class="panel__header">
+    <h2 id="incrementos-ds-heading" class="panel__title">Sustento de incrementos</h2>
+    <p class="panel__subtitle">
+      Incrementos automáticos — Negociación Colectiva Centralizada
+    </p>
+  </header>
+
+  @if (loading()) {
+    <div class="panel__loading" aria-busy="true">
+      <mat-progress-spinner diameter="32" mode="indeterminate" aria-label="Calculando incrementos" />
+    </div>
+  } @else if (incrementos()?.aplica) {
+    <div class="panel__scroll sisrh-table-scroll">
+      <table class="tbl">
+        <thead>
+          <tr>
+            <th scope="col">Monto contrato</th>
+            @for (item of incrementos()!.incrementos; track item.codigoParametro) {
+              <th scope="col">{{ item.etiquetaDs }}</th>
+            }
+            <th scope="col">Total incrementos</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="sisrh-tabular">{{ fmtMoney(montoContratado()) }}</td>
+            @for (item of incrementos()!.incrementos; track item.codigoParametro) {
+              <td class="sisrh-tabular">{{ fmtMoney(item.montoMensual) }}</td>
+            }
+            <td class="sisrh-tabular total">{{ fmtMoney(incrementos()!.totalIncrementos) }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  } @else {
+    <p class="panel__empty" role="status">
+      No aplican incrementos DS para la combinación de régimen y condición laboral seleccionada.
+    </p>
+  }
+</section>

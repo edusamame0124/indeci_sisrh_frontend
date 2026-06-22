@@ -34,7 +34,7 @@ describe('EventoPeriodoFormDialogComponent', () => {
   const dialogData: EventoPeriodoDialogData = {
     empleadoId: null,
     tipos,
-    categoriasLegajo: [{ id: 1, nombre: 'Permisos y licencias', activo: 1 }],
+    categoriasLegajo: [{ id: 1, nombre: 'Permisos y licencias', ordenVisual: 1, activo: 1 }],
   };
 
   beforeEach(async () => {

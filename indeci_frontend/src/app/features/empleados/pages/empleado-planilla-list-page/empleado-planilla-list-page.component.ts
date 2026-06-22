@@ -26,6 +26,7 @@ import { ErrorMessageService } from '../../../../core/services/error-message.ser
 import { isErrorResponse } from '../../../../core/models/error-response.model';
 import type { EmpleadoPlanillaRow } from '../../models/empleado-planilla.model';
 import type { PersonaEmpleado } from '../../models/persona-empleado.model';
+import { calcIncrementosDsTotal } from '../../utils/calc-incrementos-ds-total';
 
 @Component({
   selector: 'app-empleado-planilla-list-page',
@@ -111,26 +112,6 @@ import type { PersonaEmpleado } from '../../models/persona-empleado.model';
             } @else {
               <div class="sisrh-table-scroll">
               <table mat-table [dataSource]="pagedRows()" class="tbl">
-                <ng-container matColumnDef="sueldoBasico">
-                  <th mat-header-cell *matHeaderCellDef scope="col">Sueldo básico</th>
-                  <td mat-cell *matCellDef="let row" class="sisrh-tabular">{{ fmtMoney(row.sueldoBasico) }}</td>
-                </ng-container>
-                <ng-container matColumnDef="movilidad">
-                  <th mat-header-cell *matHeaderCellDef scope="col">Movilidad</th>
-                  <td mat-cell *matCellDef="let row" class="sisrh-tabular">{{ fmtMoney(row.movilidad) }}</td>
-                </ng-container>
-                <ng-container matColumnDef="alimentacion">
-                  <th mat-header-cell *matHeaderCellDef scope="col">Alimentación</th>
-                  <td mat-cell *matCellDef="let row" class="sisrh-tabular">{{ fmtMoney(row.alimentacion) }}</td>
-                </ng-container>
-                <ng-container matColumnDef="asigFam">
-                  <th mat-header-cell *matHeaderCellDef scope="col">Asignación familiar</th>
-                  <td mat-cell *matCellDef="let row">{{ row.tieneAsignacionFamiliar === 1 ? 'Sí' : 'No' }}</td>
-                </ng-container>
-                <ng-container matColumnDef="numHijos">
-                  <th mat-header-cell *matHeaderCellDef scope="col">N° hijos</th>
-                  <td mat-cell *matCellDef="let row" class="sisrh-tabular">{{ row.numHijos ?? '—' }}</td>
-                </ng-container>
                 <ng-container matColumnDef="regimen">
                   <th mat-header-cell *matHeaderCellDef scope="col">Régimen</th>
                   <td mat-cell *matCellDef="let row">{{ row.regimenLaboral ?? '—' }}</td>
@@ -143,14 +124,79 @@ import type { PersonaEmpleado } from '../../models/persona-empleado.model';
                   <th mat-header-cell *matHeaderCellDef scope="col">Condición</th>
                   <td mat-cell *matCellDef="let row">{{ row.condicionLaboral ?? '—' }}</td>
                 </ng-container>
+                <ng-container matColumnDef="codigoAirhsp">
+                  <th
+                    mat-header-cell
+                    *matHeaderCellDef
+                    scope="col"
+                    matTooltip="Código AIRHSP"
+                  >
+                    Cód. AIRHSP
+                  </th>
+                  <td mat-cell *matCellDef="let row" class="sisrh-tabular col-airhsp">
+                    {{ fmtAirhsp(row.codigoAirhsp) }}
+                  </td>
+                </ng-container>
+                <ng-container matColumnDef="montoContrato">
+                  <th
+                    mat-header-cell
+                    *matHeaderCellDef
+                    scope="col"
+                    matTooltip="Monto contrato base"
+                  >
+                    Monto contrato base
+                  </th>
+                  <td mat-cell *matCellDef="let row" class="sisrh-tabular">
+                    {{ fmtMoney(row.montoContrato) }}
+                  </td>
+                </ng-container>
+                <ng-container matColumnDef="incrementosDs">
+                  <th
+                    mat-header-cell
+                    *matHeaderCellDef
+                    scope="col"
+                    matTooltip="Incrementos DS (total)"
+                  >
+                    Inc. DS (total)
+                  </th>
+                  <td
+                    mat-cell
+                    *matCellDef="let row"
+                    class="sisrh-tabular"
+                    [matTooltip]="incrementosDsTooltip"
+                  >
+                    {{ fmtIncrementosDs(row) }}
+                  </td>
+                </ng-container>
+                <ng-container matColumnDef="remuneracionMensual">
+                  <th
+                    mat-header-cell
+                    *matHeaderCellDef
+                    scope="col"
+                    matTooltip="Remuneración mensual"
+                  >
+                    Remuneración mensual
+                  </th>
+                  <td mat-cell *matCellDef="let row" class="sisrh-tabular">
+                    {{ fmtMoney(row.sueldoBasico) }}
+                  </td>
+                </ng-container>
+                <ng-container matColumnDef="asigFam">
+                  <th mat-header-cell *matHeaderCellDef scope="col">Asignación familiar</th>
+                  <td mat-cell *matCellDef="let row">{{ row.tieneAsignacionFamiliar === 1 ? 'Sí' : 'No' }}</td>
+                </ng-container>
+                <ng-container matColumnDef="numHijos">
+                  <th mat-header-cell *matHeaderCellDef scope="col">N° hijos</th>
+                  <td mat-cell *matCellDef="let row" class="sisrh-tabular">{{ row.numHijos ?? '—' }}</td>
+                </ng-container>
                 <ng-container matColumnDef="acciones">
-                  <th mat-header-cell *matHeaderCellDef scope="col">Acciones</th>
-                  <td mat-cell *matCellDef="let row">
+                  <th mat-header-cell *matHeaderCellDef scope="col" class="col-sticky">Acciones</th>
+                  <td mat-cell *matCellDef="let row" class="col-sticky">
                     <a
                       mat-icon-button
                       [routerLink]="['/empleados/planilla/personas', personaId(), 'editar', row.id]"
-                      aria-label="Editar configuración"
-                      matTooltip="Editar"
+                      aria-label="Editar configuración remunerativa"
+                      matTooltip="Editar configuración remunerativa"
                     >
                       <mat-icon fontIcon="edit" aria-hidden="true" />
                     </a>
@@ -230,6 +276,17 @@ import type { PersonaEmpleado } from '../../models/persona-empleado.model';
     .tbl {
       width: 100%;
     }
+    .col-airhsp {
+      font-family: var(--sisrh-font-mono, ui-monospace, monospace);
+      letter-spacing: 0.02em;
+    }
+  .col-sticky {
+    position: sticky;
+    right: 0;
+    background: #fff;
+    z-index: 1;
+    box-shadow: -4px 0 8px rgb(15 23 42 / 4%);
+  }
     .empty {
       color: #64748b;
     }
@@ -248,13 +305,16 @@ export class EmpleadoPlanillaListPageComponent implements OnInit {
     'regimen',
     'tipoContrato',
     'condicion',
-    'sueldoBasico',
-    'movilidad',
-    'alimentacion',
+    'codigoAirhsp',
+    'montoContrato',
+    'incrementosDs',
+    'remuneracionMensual',
     'asigFam',
     'numHijos',
     'acciones',
   ] as const;
+  readonly incrementosDsTooltip =
+    'Suma de incrementos DS de negociación colectiva. Detalle en Editar.';
   readonly pageSizeOptions = [10, 20, 50] as const;
 
   readonly personaId = signal(0);
@@ -318,6 +378,17 @@ export class EmpleadoPlanillaListPageComponent implements OnInit {
   fmtMoney(value: number | null): string {
     if (value == null || Number.isNaN(value)) return '—';
     return this.moneyFmt.format(value);
+  }
+
+  fmtAirhsp(value: string | null): string {
+    if (value == null || value.trim() === '') return '—';
+    return value;
+  }
+
+  fmtIncrementosDs(row: EmpleadoPlanillaRow): string {
+    const total = calcIncrementosDsTotal(row.sueldoBasico, row.montoContrato);
+    if (total == null) return '—';
+    return this.moneyFmt.format(total);
   }
 
   confirmEliminar(row: EmpleadoPlanillaRow): void {

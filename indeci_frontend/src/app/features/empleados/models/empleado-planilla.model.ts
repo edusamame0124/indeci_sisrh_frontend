@@ -2,10 +2,14 @@
 export interface EmpleadoPlanillaInput {
   readonly empleadoId: number;
   readonly sueldoBasico: number;
-  readonly movilidad?: number;
-  readonly alimentacion?: number;
+  readonly codigoAirhsp: string;
+  readonly montoContrato: number;
   readonly tieneAsignacionFamiliar?: number;
   readonly numHijos?: number;
+  /** @deprecated UI ya no envía; backend fuerza null. */
+  readonly movilidad?: number;
+  /** @deprecated UI ya no envía; backend fuerza null. */
+  readonly alimentacion?: number;
   readonly descuentoBanco?: number;
   readonly descuentoInstitucion?: number;
   // Configuración laboral (mejora 2026-06-03). Régimen requerido en UI.
@@ -26,19 +30,27 @@ export interface PlanillaConsolidadaRow {
   readonly regimenLaboral: string | null;
   readonly tipoContrato: string | null;
   readonly condicionLaboral: string | null;
+  readonly codigoAirhsp: string | null;
+  readonly montoContrato: number | null;
   readonly sueldoBasico: number | null;
-  readonly movilidad: number | null;
-  readonly alimentacion: number | null;
-  readonly tieneAsignacionFamiliar: number | null;
-  readonly numHijos: number | null;
+  /** @deprecated Ya no se muestra en UI consolidada. */
+  readonly movilidad?: number | null;
+  /** @deprecated Ya no se muestra en UI consolidada. */
+  readonly alimentacion?: number | null;
+  readonly tieneAsignacionFamiliar?: number | null;
+  readonly numHijos?: number | null;
 }
 
 /** Fila listado — espejo de `EmpleadoPlanillaResponseDto`. */
 export interface EmpleadoPlanillaRow {
   readonly id: number;
   readonly sueldoBasico: number;
-  readonly movilidad: number | null;
-  readonly alimentacion: number | null;
+  readonly codigoAirhsp: string | null;
+  readonly montoContrato: number | null;
+  /** @deprecated Ya no se muestra en listado por persona. */
+  readonly movilidad?: number | null;
+  /** @deprecated Ya no se muestra en listado por persona. */
+  readonly alimentacion?: number | null;
   readonly tieneAsignacionFamiliar: number | null;
   readonly numHijos: number | null;
   readonly activo: number;

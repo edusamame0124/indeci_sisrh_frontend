@@ -11,7 +11,7 @@ import { of } from 'rxjs';
 import { EmpleadoPlanillaFormPageComponent } from './empleado-planilla-form-page.component';
 import { EmpleadoFlowBackendSyncService } from '../../services/empleado-flow-backend-sync.service';
 
-describe('EmpleadoPlanillaFormPageComponent (Spec 013/C1 — configuración remunerativa)', () => {
+describe('EmpleadoPlanillaFormPageComponent (config remunerativa DS)', () => {
   let httpMock: HttpTestingController;
   let router: Router;
 
@@ -63,13 +63,24 @@ describe('EmpleadoPlanillaFormPageComponent (Spec 013/C1 — configuración remu
     return TestBed.createComponent(EmpleadoPlanillaFormPageComponent);
   }
 
+  function flushCatalogos(): void {
+    httpMock.expectOne('/api/catalogos/regimenes-laborales').flush({
+      data: [{ id: 1, codigo: '1057', nombre: 'CAS', activo: 1 }],
+    });
+    httpMock.expectOne('/api/catalogos/tipos-contrato').flush({ data: [] });
+    httpMock.expectOne('/api/catalogos/condiciones-laborales').flush({
+      data: [{ id: 2, codigo: 'CAS', nombre: 'CAS', activo: 1 }],
+    });
+  }
+
   afterEach(() => {
     httpMock.verify();
   });
 
-  it('en modo edit, patchea solo los 4 campos base — ignora descuentos y flag', () => {
+  it('en modo edit, patchea campos incluyendo AIRHSP y monto contratado', () => {
     const fixture = buildFixture({ mode: 'edit', personaId: '7', planillaId: '11' });
     fixture.detectChanges();
+    flushCatalogos();
 
     httpMock.expectOne('/api/rrhh/persona/7').flush({
       data: {
@@ -80,132 +91,196 @@ describe('EmpleadoPlanillaFormPageComponent (Spec 013/C1 — configuración remu
         email: 'ana@indeci.gob.pe',
       },
     });
-    // Backend sigue devolviendo descuentos y tieneAsignacionFamiliar para
-    // retrocompatibilidad; el form los ignora (Spec 013/C1).
+
     httpMock.expectOne('/api/rrhh/planilla/42').flush({
       data: [
         {
           id: 11,
-          sueldoBasico: 3500,
-          movilidad: 200,
-          alimentacion: 150,
+          sueldoBasico: 4864.19,
+          codigoAirhsp: '000051',
+          montoContrato: 4500,
+          movilidad: null,
+          alimentacion: null,
           tieneAsignacionFamiliar: 1,
           numHijos: 2,
           activo: 1,
-          descuentoBanco: 320.5,
-          descuentoInstitucion: 80,
+          descuentoBanco: null,
+          descuentoInstitucion: null,
+          regimenLaboralId: 1,
+          condicionLaboralId: 2,
         },
       ],
     });
 
-    const comp = fixture.componentInstance;
-    expect(comp.form.controls.sueldoBasico.value).toBe(3500);
-    expect(comp.form.controls.movilidad.value).toBe(200);
-    expect(comp.form.controls.alimentacion.value).toBe(150);
-    expect(comp.form.controls.numHijos.value).toBe(2);
-    expect(comp.tieneHijos()).toBe(true);
-  });
-
-  it('Spec 013/C1 — el form solo expone los 4 controles maestros', () => {
-    const fixture = buildFixture({ mode: 'create', personaId: '7' });
-    fixture.detectChanges();
-    httpMock.expectOne('/api/rrhh/persona/7').flush({
-      data: { id: 7, empleadoId: 42, nombreCompleto: 'X', dni: '11223344', email: 'x@y.pe' },
-    });
-    const comp = fixture.componentInstance;
-    expect(Object.keys(comp.form.controls).sort()).toEqual(
-      ['alimentacion', 'movilidad', 'numHijos', 'sueldoBasico'],
-    );
-  });
-
-  it('en modo create, sueldoBasico es requerido', () => {
-    const fixture = buildFixture({ mode: 'create', personaId: '7' });
-    fixture.detectChanges();
-
-    httpMock.expectOne('/api/rrhh/persona/7').flush({
+    const incReq = httpMock.expectOne((r) => r.url.includes('/incrementos-ds'));
+    incReq.flush({
       data: {
-        id: 7,
-        empleadoId: 42,
-        nombreCompleto: 'X',
-        dni: '11223344',
-        email: 'x@y.pe',
+        aplica: true,
+        montoContrato: 4500,
+        incrementos: [],
+        totalIncrementos: 364.19,
+        remuneracionMensual: 4864.19,
       },
     });
 
     const comp = fixture.componentInstance;
-    expect(comp.form.controls.sueldoBasico.value).toBeNull();
-    expect(comp.form.controls.sueldoBasico.hasError('required')).toBe(true);
-    expect(comp.tieneHijos()).toBe(false);
-  });
-
-  it('Spec 013/C1 — tieneHijos() se hace true cuando numHijos > 0', () => {
-    const fixture = buildFixture({ mode: 'create', personaId: '7' });
-    fixture.detectChanges();
-    httpMock.expectOne('/api/rrhh/persona/7').flush({
-      data: { id: 7, empleadoId: 42, nombreCompleto: 'X', dni: '11223344', email: 'x@y.pe' },
-    });
-    const comp = fixture.componentInstance;
-
-    expect(comp.tieneHijos()).toBe(false);
-    comp.form.controls.numHijos.setValue(0);
-    expect(comp.tieneHijos()).toBe(false);
-    comp.form.controls.numHijos.setValue(2);
+    expect(comp.form.controls.codigoAirhsp.value).toBe('000051');
+    expect(comp.form.controls.montoContratado.value).toBe(4500);
+    expect(comp.form.controls.sueldoBasico.value).toBe(4864.19);
+    expect(comp.form.controls.numHijos.value).toBe(2);
     expect(comp.tieneHijos()).toBe(true);
-    comp.form.controls.numHijos.setValue(null);
-    expect(comp.tieneHijos()).toBe(false);
   });
 
-  it('sueldoBasico mayor a 99999.99 dispara el validador max', () => {
+  it('expone controles sin movilidad ni alimentacion', () => {
     const fixture = buildFixture({ mode: 'create', personaId: '7' });
     fixture.detectChanges();
+    flushCatalogos();
+    httpMock.expectOne('/api/rrhh/persona/7').flush({
+      data: { id: 7, empleadoId: 42, nombreCompleto: 'X', dni: '11223344', email: 'x@y.pe' },
+    });
+
+    const keys = Object.keys(fixture.componentInstance.form.controls).sort();
+    expect(keys).not.toContain('movilidad');
+    expect(keys).not.toContain('alimentacion');
+    expect(keys).toContain('codigoAirhsp');
+    expect(keys).toContain('montoContratado');
+    expect(keys).toContain('sueldoBasico');
+  });
+
+  it('onCodigoAirhspBlur rellena con ceros a la izquierda', () => {
+    const fixture = buildFixture({ mode: 'create', personaId: '7' });
+    fixture.detectChanges();
+    flushCatalogos();
     httpMock.expectOne('/api/rrhh/persona/7').flush({
       data: { id: 7, empleadoId: 42, nombreCompleto: 'X', dni: '11223344', email: 'x@y.pe' },
     });
 
     const comp = fixture.componentInstance;
-
-    // 5 dígitos exactos: válido.
-    comp.form.controls.sueldoBasico.setValue(99999);
-    expect(comp.form.controls.sueldoBasico.hasError('max')).toBe(false);
-
-    // 5 dígitos + 2 decimales (tope): válido.
-    comp.form.controls.sueldoBasico.setValue(99999.99);
-    expect(comp.form.controls.sueldoBasico.hasError('max')).toBe(false);
-
-    // 6 dígitos enteros: rechazado.
-    comp.form.controls.sueldoBasico.setValue(100000);
-    expect(comp.form.controls.sueldoBasico.hasError('max')).toBe(true);
-
-    // El caso del bug original: cadena enorme.
-    comp.form.controls.sueldoBasico.setValue(6516516516516);
-    expect(comp.form.controls.sueldoBasico.hasError('max')).toBe(true);
+    comp.form.controls.codigoAirhsp.setValue('51');
+    comp.onCodigoAirhspBlur();
+    expect(comp.form.controls.codigoAirhsp.value).toBe('000051');
   });
 
-  it('onSueldoBasicoInput trunca a 5 dígitos enteros y 2 decimales mientras se teclea', () => {
+  it('onMontoContratadoBlur dispara GET incrementos-ds y actualiza sueldoBasico', () => {
     const fixture = buildFixture({ mode: 'create', personaId: '7' });
     fixture.detectChanges();
+    flushCatalogos();
     httpMock.expectOne('/api/rrhh/persona/7').flush({
       data: { id: 7, empleadoId: 42, nombreCompleto: 'X', dni: '11223344', email: 'x@y.pe' },
     });
-    const comp = fixture.componentInstance;
 
-    // Caso 1: pegado de cadena larga sin decimal → solo 5 primeros dígitos.
+    const comp = fixture.componentInstance;
+    comp.form.controls.regimenLaboralId.setValue(1);
+    comp.form.controls.montoContratado.setValue(4500);
+    comp.onMontoContratadoBlur();
+
+    const incReq = httpMock.expectOne((r) => r.url.includes('/incrementos-ds'));
+    expect(incReq.request.params.get('montoContratado')).toBe('4500');
+    incReq.flush({
+      data: {
+        aplica: true,
+        montoContrato: 4500,
+        incrementos: [],
+        totalIncrementos: 364.19,
+        remuneracionMensual: 4864.19,
+      },
+    });
+
+    expect(comp.form.controls.sueldoBasico.value).toBe(4864.19);
+    expect(comp.incrementosDs()?.totalIncrementos).toBe(364.19);
+  });
+
+  it('régimen sin incrementos DS muestra aplica=false en respuesta', () => {
+    const fixture = buildFixture({ mode: 'create', personaId: '7' });
+    fixture.detectChanges();
+    flushCatalogos();
+    httpMock.expectOne('/api/rrhh/persona/7').flush({
+      data: { id: 7, empleadoId: 42, nombreCompleto: 'X', dni: '11223344', email: 'x@y.pe' },
+    });
+
+    const comp = fixture.componentInstance;
+    comp.form.controls.regimenLaboralId.setValue(99);
+    comp.form.controls.montoContratado.setValue(3000);
+    comp.onMontoContratadoBlur();
+
+    const incReq = httpMock.expectOne((r) => r.url.includes('/incrementos-ds'));
+    incReq.flush({
+      data: {
+        aplica: false,
+        montoContrato: 3000,
+        incrementos: [],
+        totalIncrementos: 0,
+        remuneracionMensual: 3000,
+      },
+    });
+
+    expect(comp.incrementosDs()?.aplica).toBe(false);
+    expect(comp.form.controls.sueldoBasico.value).toBe(3000);
+  });
+
+  it('sueldoBasico está deshabilitado (readonly) y montoContratado es editable', () => {
+    const fixture = buildFixture({ mode: 'create', personaId: '7' });
+    fixture.detectChanges();
+    flushCatalogos();
+    httpMock.expectOne('/api/rrhh/persona/7').flush({
+      data: { id: 7, empleadoId: 42, nombreCompleto: 'X', dni: '11223344', email: 'x@y.pe' },
+    });
+
+    const comp = fixture.componentInstance;
+    expect(comp.form.controls.sueldoBasico.disabled).toBe(true);
+    expect(comp.form.controls.montoContratado.disabled).toBe(false);
+  });
+
+  it('onMontoContratadoInput trunca a 5 dígitos enteros y 2 decimales', () => {
+    const fixture = buildFixture({ mode: 'create', personaId: '7' });
+    fixture.detectChanges();
+    flushCatalogos();
+    httpMock.expectOne('/api/rrhh/persona/7').flush({
+      data: { id: 7, empleadoId: 42, nombreCompleto: 'X', dni: '11223344', email: 'x@y.pe' },
+    });
+
+    const comp = fixture.componentInstance;
     let input = document.createElement('input');
     input.value = '6516516516516';
-    comp.onSueldoBasicoInput({ target: input } as unknown as Event);
-    expect(comp.form.controls.sueldoBasico.value).toBe(65165);
+    comp.onMontoContratadoInput({ target: input } as unknown as Event);
+    expect(comp.form.controls.montoContratado.value).toBe(65165);
 
-    // Caso 2: parte entera larga + decimales → entero truncado a 5, 2 decimales preservados.
     input = document.createElement('input');
     input.value = '12345678.456';
-    comp.onSueldoBasicoInput({ target: input } as unknown as Event);
-    expect(comp.form.controls.sueldoBasico.value).toBe(12345.45);
+    comp.onMontoContratadoInput({ target: input } as unknown as Event);
+    expect(comp.form.controls.montoContratado.value).toBe(12345.45);
+  });
 
-    // Caso 3: dentro del tope, no se toca el form.
-    comp.form.controls.sueldoBasico.setValue(3500);
-    input = document.createElement('input');
-    input.value = '3500';
-    comp.onSueldoBasicoInput({ target: input } as unknown as Event);
-    expect(comp.form.controls.sueldoBasico.value).toBe(3500);
+  it('submit incluye codigoAirhsp, montoContrato y sueldoBasico calculado', () => {
+    const fixture = buildFixture({ mode: 'create', personaId: '7' });
+    fixture.detectChanges();
+    flushCatalogos();
+    httpMock.expectOne('/api/rrhh/persona/7').flush({
+      data: { id: 7, empleadoId: 42, nombreCompleto: 'X', dni: '11223344', email: 'x@y.pe' },
+    });
+
+    const comp = fixture.componentInstance;
+    comp.form.patchValue({
+      regimenLaboralId: 1,
+      codigoAirhsp: '000051',
+      montoContratado: 4500,
+      sueldoBasico: 4864.19,
+      numHijos: 1,
+    });
+
+    comp.submit();
+
+    const postReq = httpMock.expectOne('/api/rrhh/planilla');
+    expect(postReq.request.method).toBe('POST');
+    expect(postReq.request.body).toMatchObject({
+      empleadoId: 42,
+      codigoAirhsp: '000051',
+      montoContrato: 4500,
+      sueldoBasico: 4864.19,
+      regimenLaboralId: 1,
+    });
+    expect(postReq.request.body.movilidad).toBeUndefined();
+    expect(postReq.request.body.alimentacion).toBeUndefined();
+    postReq.flush({ data: null });
   });
 });

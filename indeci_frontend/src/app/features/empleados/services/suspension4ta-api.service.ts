@@ -7,6 +7,11 @@ import type {
   Suspension4taInput,
   Suspension4taRow,
 } from '../models/suspension4ta.model';
+import type {
+  Ir4taControlAnual,
+  Ir4taReinicioInput,
+  TipoTopeIr4ta,
+} from '../models/ir4ta-control-anual.model';
 
 /**
  * FASE 1 — API de constancias de suspensión de retención de 4ta categoría (CAS).
@@ -37,6 +42,46 @@ export class Suspension4taApiService {
   anular(id: number): Observable<null> {
     return this.http
       .delete<ApiResponse<null>>(`/api/rrhh/suspension-4ta/${id}`)
+      .pipe(map(extractApiData));
+  }
+
+  // ── Control anual del tope de suspensión (pendiente B2) ───────────────────
+
+  /** Vista de solo lectura del control anual (acumulado, tope, alertas). */
+  controlAnual(empleadoId: number, anio: number): Observable<Ir4taControlAnual> {
+    return this.http
+      .get<ApiResponse<Ir4taControlAnual>>(
+        `/api/rrhh/suspension-4ta/${empleadoId}/control-anual`,
+        { params: { anio } },
+      )
+      .pipe(map(extractApiData));
+  }
+
+  /** Flag manual de RR.HH.: tope aplicable al trabajador. */
+  definirTipoTope(
+    empleadoId: number,
+    anio: number,
+    tipoTope: TipoTopeIr4ta,
+  ): Observable<Ir4taControlAnual> {
+    return this.http
+      .put<ApiResponse<Ir4taControlAnual>>(
+        `/api/rrhh/suspension-4ta/${empleadoId}/control-anual/tipo-tope`,
+        null,
+        { params: { anio, tipoTope } },
+      )
+      .pipe(map(extractApiData));
+  }
+
+  /** Confirma el reinicio de retención tras superar el tope (RR.HH.). */
+  confirmarReinicio(
+    empleadoId: number,
+    body: Ir4taReinicioInput,
+  ): Observable<Ir4taControlAnual> {
+    return this.http
+      .post<ApiResponse<Ir4taControlAnual>>(
+        `/api/rrhh/suspension-4ta/${empleadoId}/control-anual/confirmar-reinicio`,
+        body,
+      )
       .pipe(map(extractApiData));
   }
 }
