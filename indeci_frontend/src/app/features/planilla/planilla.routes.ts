@@ -149,7 +149,7 @@ export const PLANILLA_ROUTES: Routes = [
           import('./pages/configuracion-cas-page/configuracion-cas-page.component').then(
             (m) => m.ConfiguracionCasPageComponent,
           ),
-        title: 'Configuración Anual CAS — SISRH-INDECI',
+        title: 'Configuración Anual — SISRH-INDECI',
       },
 
       /* ——— Metas presupuestales anuales (V010_77) ——— */

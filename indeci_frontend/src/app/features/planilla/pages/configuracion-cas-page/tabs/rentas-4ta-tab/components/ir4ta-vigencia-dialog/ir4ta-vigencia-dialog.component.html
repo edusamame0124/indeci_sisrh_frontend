@@ -119,6 +119,64 @@
       }
     </mat-form-field>
 
+    <!-- Sección 3: Límites de suspensión de retenciones -->
+    <h3 class="dlg-section">Límites de suspensión de retenciones</h3>
+
+    <div class="dlg-row">
+      <mat-form-field appearance="outline" class="field-half">
+        <mat-label>Tope anual general (CAS)</mat-label>
+        <span matTextPrefix>S/&nbsp;</span>
+        <input matInput type="number" step="0.01" min="0" formControlName="topeAnualGeneral" placeholder="ej. 48125.00" />
+        <mat-hint>GENERAL_CAS — referencia 2026: S/ 48,125.00</mat-hint>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="field-half">
+        <mat-label>Tope anual director/similar</mat-label>
+        <span matTextPrefix>S/&nbsp;</span>
+        <input matInput type="number" step="0.01" min="0" formControlName="topeAnualDirector" placeholder="ej. 38500.00" />
+        <mat-hint>DIRECTOR_SIMILAR — referencia 2026: S/ 38,500.00</mat-hint>
+      </mat-form-field>
+    </div>
+
+    <div class="dlg-checks">
+      <mat-checkbox formControlName="aplicaCasGeneral">El tope general aplica a CAS</mat-checkbox>
+      <mat-checkbox formControlName="aplicaCasDirector">El tope director/similar aplica a CAS</mat-checkbox>
+    </div>
+
+    <div class="dlg-row">
+      <mat-form-field appearance="outline" class="field-half">
+        <mat-label>Alerta preventiva (%)</mat-label>
+        <input matInput type="number" step="1" min="0" max="100" formControlName="pctAlertaPrev" placeholder="80" />
+        <mat-hint>Umbral de aviso temprano.</mat-hint>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="field-half">
+        <mat-label>Alerta crítica (%)</mat-label>
+        <input matInput type="number" step="1" min="0" max="100" formControlName="pctAlertaCrit" placeholder="90" />
+        <mat-hint>Umbral cercano al tope.</mat-hint>
+      </mat-form-field>
+    </div>
+
+    <mat-form-field appearance="outline" class="field-full">
+      <mat-label>Código tributo SUNAT/PLAME</mat-label>
+      <input matInput formControlName="codigoSunatPlame" maxlength="10" placeholder="3042" />
+      <mat-hint>Retención de 4.ª categoría — código referencial 3042.</mat-hint>
+    </mat-form-field>
+
+    <!-- Sección 4: Reglas automáticas -->
+    <h3 class="dlg-section">Reglas automáticas</h3>
+    <div class="dlg-rules">
+      <mat-checkbox formControlName="flgCalcAcumulado">Calcular acumulado conocido por INDECI</mat-checkbox>
+      <mat-checkbox formControlName="flgAlerta80">Generar alerta al alcanzar el % preventivo</mat-checkbox>
+      <mat-checkbox formControlName="flgAlerta90">Generar alerta al alcanzar el % crítico</mat-checkbox>
+      <mat-checkbox formControlName="flgMarcarValidacion">Marcar “Requiere validación” si supera el tope</mat-checkbox>
+      <mat-checkbox formControlName="flgRetencionAuto">Activar retención automática sin validación de RR. HH.</mat-checkbox>
+    </div>
+    <p class="dlg-rule-note" role="note">
+      Recomendado: dejar la retención automática desactivada. El reinicio de la retención
+      debe confirmarlo RR. HH. tras superar el tope.
+    </p>
+
     <!-- Observación -->
     <mat-form-field appearance="outline" class="field-full">
       <mat-label>Observación (opcional)</mat-label>

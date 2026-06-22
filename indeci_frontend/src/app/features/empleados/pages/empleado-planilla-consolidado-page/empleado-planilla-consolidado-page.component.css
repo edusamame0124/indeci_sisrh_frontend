@@ -7,6 +7,11 @@
   font-weight: 600;
 }
 
+.col-airhsp {
+  font-family: var(--sisrh-font-mono, ui-monospace, monospace);
+  letter-spacing: 0.02em;
+}
+
 .badge {
   display: inline-block;
   padding: 0.1rem 0.55rem;

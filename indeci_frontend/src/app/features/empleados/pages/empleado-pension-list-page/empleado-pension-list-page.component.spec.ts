@@ -73,6 +73,9 @@ describe('EmpleadoPensionListPageComponent (Hotfix Pensión)', () => {
       activo: 1,
       regimenPensionario: 'INTEGRA',
       tipoComisionAfp: 'POR FLUJO',
+      condicionEspecialAfp: null,
+      fechaCondicionAfp: null,
+      observacionCondicionAfp: null,
     }));
     comp.rows.set(sample);
     comp.pageSize.set(10);

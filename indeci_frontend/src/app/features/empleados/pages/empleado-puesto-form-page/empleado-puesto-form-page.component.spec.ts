@@ -196,7 +196,7 @@ describe('EmpleadoPuestoFormPageComponent (Spec 009 / T135 — catálogos puesto
 
     const comp = fixture.componentInstance;
     comp.form.patchValue({
-      cargo: 'analista',
+      cargoId: 7,
       nivelId: 1,
       dependenciaId: 20,
       estructuraOrganicaId: 30,
@@ -206,7 +206,7 @@ describe('EmpleadoPuestoFormPageComponent (Spec 009 / T135 — catálogos puesto
     const req = httpMock.expectOne('/api/rrhh/puesto');
     expect(req.request.method).toBe('POST');
     const body = req.request.body as Record<string, unknown>;
-    expect(body['cargo']).toBe('ANALISTA');
+    expect(body['cargoId']).toBe(7);
     expect(body['empleadoId']).toBe(42);
     expect(body['nivelId']).toBe(1);
     expect(body['dependenciaId']).toBe(20);
@@ -222,12 +222,12 @@ describe('EmpleadoPuestoFormPageComponent (Spec 009 / T135 — catálogos puesto
     flushBoot();
 
     const comp = fixture.componentInstance;
-    comp.form.patchValue({ cargo: 'coordinador' });
+    comp.form.patchValue({ cargoId: 3 });
     comp.submit();
 
     const req = httpMock.expectOne('/api/rrhh/puesto');
     const body = req.request.body as Record<string, unknown>;
-    expect(body['cargo']).toBe('COORDINADOR');
+    expect(body['cargoId']).toBe(3);
     expect(body['empleadoId']).toBe(42);
     expect(body['nivelId']).toBeUndefined();
     expect(body['sedeId']).toBeUndefined();

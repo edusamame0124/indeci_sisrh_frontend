@@ -1,0 +1,174 @@
+<div class="ctrl-header">
+  <mat-form-field appearance="outline" class="ctrl-anio">
+    <mat-label>Ejercicio fiscal</mat-label>
+    <mat-select [value]="anio()" (valueChange)="cambiarAnio($event)">
+      @for (a of anios; track a) {
+        <mat-option [value]="a">{{ a }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+</div>
+
+@if (loading()) {
+  <div class="ctrl-loading"><mat-spinner diameter="32" /></div>
+} @else if (error()) {
+  <div class="aviso aviso--warn" role="alert">
+    <mat-icon>error_outline</mat-icon>
+    <span>{{ error() }}</span>
+    <button mat-stroked-button (click)="cargar()">Reintentar</button>
+  </div>
+} @else if (control(); as c) {
+
+  @if (!c.aplicaControl) {
+    <div class="aviso aviso--info" role="status">
+      <mat-icon>info</mat-icon>
+      <span>
+        El control anual no aplica: el trabajador no tiene constancia de suspensión vigente
+        para {{ c.anioFiscal }}, o no hay un tope configurado en la vigencia del ejercicio.
+      </span>
+    </div>
+  }
+
+  <div class="ctrl-grid">
+    <!-- BLOQUE resumen / hero -->
+    <section class="ctrl-resumen" aria-live="polite">
+      <div class="ctrl-estado">
+        <span [class]="badgeClass(c.estadoControl)">{{ etiquetaEstado(c.estadoControl) }}</span>
+      </div>
+
+      <p class="ctrl-hero-label">Acumulado conocido por INDECI</p>
+      <p class="ctrl-hero-monto sisrh-tabular">S/ {{ fmtMoneda(c.acumuladoIndeci) }}</p>
+
+      <dl class="ctrl-kv">
+        <div>
+          <dt>Tipo de tope</dt>
+          <dd>{{ c.tipoTope === 'DIRECTOR_SIMILAR' ? 'Director / similar' : 'General CAS' }}</dd>
+        </div>
+        <div>
+          <dt>Tope anual</dt>
+          <dd class="sisrh-tabular">S/ {{ fmtMoneda(c.topeAnual) }}</dd>
+        </div>
+        <div>
+          <dt>Saldo disponible</dt>
+          <dd class="sisrh-tabular">S/ {{ fmtMoneda(c.saldoDisponible) }}</dd>
+        </div>
+        <div>
+          <dt>% consumido</dt>
+          <dd class="sisrh-tabular">{{ fmtPct(c.pctConsumido) }}</dd>
+        </div>
+        <div>
+          <dt>Último período calculado</dt>
+          <dd>{{ c.ultimoPeriodoCalc ?? '—' }}</dd>
+        </div>
+        <div>
+          <dt>Constancia</dt>
+          <dd>{{ c.nroConstancia ?? '—' }} · {{ c.estadoConstancia }}</dd>
+        </div>
+      </dl>
+
+      <!-- Barra de progreso frente al tope (marcadores 80/90) -->
+      <div
+        class="ctrl-bar"
+        role="progressbar"
+        [attr.aria-valuenow]="pctBar()"
+        aria-valuemin="0"
+        aria-valuemax="100"
+        [attr.aria-label]="'Consumo del tope: ' + fmtPct(c.pctConsumido)"
+      >
+        <div class="ctrl-bar__fill" [style.width.%]="pctBar()"></div>
+        <span class="ctrl-bar__tick ctrl-bar__tick--prev" style="left: 80%"></span>
+        <span class="ctrl-bar__tick ctrl-bar__tick--crit" style="left: 90%"></span>
+      </div>
+      <div class="ctrl-bar__legend">
+        <span>S/ 0</span><span>80 %</span><span>90 %</span><span>Tope</span>
+      </div>
+    </section>
+
+    <!-- BLOQUE acción / detalle -->
+    <section class="ctrl-acciones">
+      <!-- Flag manual de tipo de tope (RR.HH.) -->
+      <div class="ctrl-tipo">
+        <mat-form-field appearance="outline" class="field-full">
+          <mat-label>Tipo de tope aplicable</mat-label>
+          <mat-select
+            [value]="c.tipoTope"
+            [disabled]="saving()"
+            (valueChange)="cambiarTipoTope($event)"
+          >
+            <mat-option value="GENERAL_CAS">General CAS</mat-option>
+            <mat-option value="DIRECTOR_SIMILAR">Director / similar</mat-option>
+          </mat-select>
+          <mat-hint>Definido por RR. HH. No editable por el trabajador.</mat-hint>
+        </mat-form-field>
+      </div>
+
+      <!-- Detección de exceso -->
+      @if (c.periodoExceso) {
+        <div class="aviso aviso--warn" role="note">
+          <mat-icon>warning</mat-icon>
+          <span>
+            Exceso detectado en el período <strong>{{ c.periodoExceso }}</strong>
+            ({{ fmtFechaHora(c.fechaDeteccionExceso) }}). Requiere validación de RR. HH.
+          </span>
+        </div>
+      }
+
+      <!-- Confirmación de reinicio (solo si EXCEDE_TOPE_REQUIERE_VALIDACION) -->
+      @if (requiereValidacion()) {
+        <h3 class="ctrl-section">Confirmación de reinicio de retención</h3>
+        <form [formGroup]="form" (ngSubmit)="confirmarReinicio()" class="ctrl-form">
+          <mat-form-field appearance="outline" class="field-full">
+            <mat-label>Período de inicio</mat-label>
+            <input matInput formControlName="periodoReinicio" placeholder="AAAA-MM" maxlength="7" />
+            <mat-hint>Mes desde el cual se reinicia la retención (ej. 2026-12).</mat-hint>
+            @if (form.controls.periodoReinicio.touched && form.controls.periodoReinicio.invalid) {
+              <mat-error>Indique el período en formato AAAA-MM.</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="field-full">
+            <mat-label>Sustento</mat-label>
+            <textarea
+              matInput
+              formControlName="sustento"
+              rows="3"
+              maxlength="1000"
+              placeholder="Justificación documentada del reinicio (oficio, informe, etc.)"
+            ></textarea>
+            @if (form.controls.sustento.touched && form.controls.sustento.invalid) {
+              <mat-error>El sustento es obligatorio.</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="field-full">
+            <mat-label>Observación (opcional)</mat-label>
+            <input matInput formControlName="observacion" maxlength="500" />
+          </mat-form-field>
+
+          <div class="ctrl-form__actions">
+            <button mat-flat-button color="primary" type="submit" [disabled]="saving()">
+              @if (saving()) {
+                <mat-spinner diameter="18" />
+              } @else {
+                <mat-icon>verified</mat-icon>
+              }
+              Guardar validación
+            </button>
+          </div>
+        </form>
+      }
+
+      <!-- Reinicio ya confirmado (solo lectura) -->
+      @if (reinicioConfirmado()) {
+        <div class="aviso aviso--ok" role="status">
+          <mat-icon>verified</mat-icon>
+          <span>
+            Retención reactivada desde <strong>{{ c.periodoReinicio }}</strong>,
+            confirmada por {{ c.confirmadoPor ?? '—' }} el {{ fmtFechaHora(c.confirmadoEn) }}.
+            @if (c.sustentoReinicio) { <br />Sustento: {{ c.sustentoReinicio }} }
+          </span>
+        </div>
+      }
+    </section>
+  </div>
+}

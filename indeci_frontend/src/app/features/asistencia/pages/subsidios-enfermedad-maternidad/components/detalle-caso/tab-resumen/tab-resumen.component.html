@@ -1,169 +1,338 @@
-@if (caso(); as c) {
-  @if (modo() === 'operativo') {
-    <div class="resumen-operativo">
-      <div class="resumen-operativo__grid">
-        <mat-card class="resumen-card page-card sisrh-elevated" appearance="outlined">
-          <mat-card-header class="resumen-card__header">
-            <div mat-card-avatar class="resumen-card__avatar resumen-card__avatar--person" aria-hidden="true">
-              <mat-icon>person</mat-icon>
-            </div>
-            <mat-card-title>Trabajador</mat-card-title>
-            <mat-card-subtitle>Identificación del servidor sujeto al subsidio</mat-card-subtitle>
-          </mat-card-header>
-          <mat-card-content>
-            <p class="resumen-card__destacado">{{ c.nombreEmpleado ?? '—' }}</p>
-            <dl class="resumen-fields">
-              <div class="resumen-fields__item">
-                <dt>DNI</dt>
-                <dd class="sisrh-tabular">{{ c.dniEmpleado ?? '—' }}</dd>
-              </div>
-              <div class="resumen-fields__item">
-                <dt>Código de caso</dt>
-                <dd class="sisrh-tabular">{{ c.codigoCaso }}</dd>
-              </div>
-            </dl>
-          </mat-card-content>
-        </mat-card>
-
-        <mat-card class="resumen-card page-card sisrh-elevated" appearance="outlined">
-          <mat-card-header class="resumen-card__header">
-            <div
-              mat-card-avatar
-              class="resumen-card__avatar resumen-card__avatar--tipo"
-              aria-hidden="true"
-            >
-              <mat-icon>{{ iconoTipo(c.tipoCaso) }}</mat-icon>
-            </div>
-            <mat-card-title>Tipo de subsidio</mat-card-title>
-            <mat-card-subtitle>Clasificación normativa del descanso</mat-card-subtitle>
-          </mat-card-header>
-          <mat-card-content>
-            <mat-chip-set aria-label="Tipo de subsidio">
-              <mat-chip class="resumen-chip">{{ labelTipo(c.tipoCaso) }}</mat-chip>
-            </mat-chip-set>
-            @if (c.modoCalculo === 'SIMULACION') {
-              <p class="resumen-card__alerta" role="status">
-                <mat-icon aria-hidden="true">science</mat-icon>
-                Modo simulación — no afecta la planilla oficial.
-              </p>
-            }
-          </mat-card-content>
-        </mat-card>
-      </div>
-
-      <mat-card class="resumen-card resumen-card--descanso page-card sisrh-elevated" appearance="outlined">
-        <mat-card-header class="resumen-card__header">
-          <div mat-card-avatar class="resumen-card__avatar resumen-card__avatar--descanso" aria-hidden="true">
-            <mat-icon>event_available</mat-icon>
-          </div>
-          <mat-card-title>Descanso médico y contingencia</mat-card-title>
-          <mat-card-subtitle>Fechas que sustentan el cálculo del subsidio</mat-card-subtitle>
-        </mat-card-header>
-        <mat-card-content>
-          <div class="resumen-descanso">
-            <div class="resumen-descanso__rango" aria-label="Rango del descanso médico">
-              <div class="resumen-descanso__fecha">
-                <span class="resumen-descanso__label">Inicio</span>
-                <strong>{{ formatFecha(c.fechaInicio) }}</strong>
-              </div>
-              <div class="resumen-descanso__linea" aria-hidden="true">
-                <span class="resumen-descanso__barra"></span>
-                @if (c.diasContingencia != null) {
-                  <span class="resumen-descanso__dias">{{ c.diasContingencia }} días</span>
-                }
-              </div>
-              <div class="resumen-descanso__fecha">
-                <span class="resumen-descanso__label">Fin</span>
-                <strong>{{ formatFecha(c.fechaFin) }}</strong>
-              </div>
-            </div>
-
-            <mat-divider />
-
-            <dl class="resumen-fields resumen-fields--3">
-              <div class="resumen-fields__item">
-                <dt>Fecha de contingencia</dt>
-                <dd>{{ formatFecha(c.fechaContingencia) }}</dd>
-              </div>
-              <div class="resumen-fields__item">
-                <dt>Días de contingencia</dt>
-                <dd class="resumen-fields__num">{{ c.diasContingencia ?? '—' }}</dd>
-              </div>
-              @if (mostrarPeriodo()) {
-                <div class="resumen-fields__item resumen-fields__item--periodo">
-                  <dt>Período de planilla</dt>
-                  <dd>
-                    <span class="resumen-periodo">
-                      <span class="resumen-periodo__codigo sisrh-tabular">{{ periodoRaw() }}</span>
-                      <span class="resumen-periodo__label">{{ periodoLabel() }}</span>
-                    </span>
-                  </dd>
-                </div>
-              }
-            </dl>
-          </div>
-        </mat-card-content>
-      </mat-card>
-    </div>
-  } @else {
-    <div class="tab-panel tab-panel--completo">
-      <dl class="tab-panel__dl">
-        <div>
-          <dt>Código de caso</dt>
-          <dd>{{ c.codigoCaso }}</dd>
-        </div>
-        <div>
-          <dt>Empleado</dt>
-          <dd>{{ c.nombreEmpleado ?? '—' }}</dd>
-        </div>
-        <div>
-          <dt>DNI</dt>
-          <dd>{{ c.dniEmpleado ?? '—' }}</dd>
-        </div>
-        <div>
-          <dt>Tipo</dt>
-          <dd>{{ labelTipo(c.tipoCaso) }}</dd>
-        </div>
-        <div>
-          <dt>Estado</dt>
-          <dd>{{ labelEstado(c.estado) }}</dd>
-        </div>
-        <div>
-          <dt>Fecha contingencia</dt>
-          <dd>{{ c.fechaContingencia }}</dd>
-        </div>
-        <div>
-          <dt>Descanso médico</dt>
-          <dd>{{ c.fechaInicio }} — {{ c.fechaFin }}</dd>
-        </div>
-        <div>
-          <dt>Días de contingencia</dt>
-          <dd>{{ c.diasContingencia ?? '—' }}</dd>
-        </div>
-        <div>
-          <dt>Certificados CITT</dt>
-          <dd>{{ c.citts.length }}</dd>
-        </div>
-        <div>
-          <dt>Tramos mensuales</dt>
-          <dd>{{ c.tramos.length }}</dd>
-        </div>
-        <div>
-          <dt>Modo de cálculo</dt>
-          <dd>{{ c.modoCalculo === 'SIMULACION' ? 'Simulación' : 'Oficial' }}</dd>
-        </div>
-      </dl>
-      @if (c.observacion) {
-        <section class="tab-panel__obs" aria-labelledby="obs-titulo">
-          <h3 id="obs-titulo">Observación</h3>
-          <p>{{ c.observacion }}</p>
-        </section>
-      }
-      @if (c.modoCalculo === 'SIMULACION') {
-        <p class="tab-panel__alert tab-panel__alert--warn" role="status">
-          Está viendo un cálculo de simulación; no afecta la planilla oficial.
-        </p>
-      }
-    </div>
-  }
-}
+@if (caso(); as c) {
+
+  @if (modo() === 'operativo') {
+
+    <div class="resumen-operativo">
+
+      <div class="resumen-operativo__grid">
+
+        <mat-card class="resumen-card page-card sisrh-elevated" appearance="outlined">
+
+          <mat-card-header class="resumen-card__header">
+
+            <div mat-card-avatar class="resumen-card__avatar resumen-card__avatar--person" aria-hidden="true">
+
+              <mat-icon>person</mat-icon>
+
+            </div>
+
+            <mat-card-title>Trabajador</mat-card-title>
+
+            <mat-card-subtitle>Identificación del servidor sujeto al subsidio</mat-card-subtitle>
+
+          </mat-card-header>
+
+          <mat-card-content>
+
+            <p class="resumen-card__destacado">{{ c.nombreEmpleado ?? '—' }}</p>
+
+            <dl class="resumen-fields">
+
+              <div class="resumen-fields__item">
+
+                <dt>DNI</dt>
+
+                <dd class="sisrh-tabular">{{ c.dniEmpleado ?? '—' }}</dd>
+
+              </div>
+
+              <div class="resumen-fields__item">
+
+                <dt>Código de caso</dt>
+
+                <dd class="sisrh-tabular">{{ c.codigoCaso }}</dd>
+
+              </div>
+
+            </dl>
+
+          </mat-card-content>
+
+        </mat-card>
+
+
+
+        <mat-card class="resumen-card page-card sisrh-elevated" appearance="outlined">
+
+          <mat-card-header class="resumen-card__header">
+
+            <div
+
+              mat-card-avatar
+
+              class="resumen-card__avatar resumen-card__avatar--tipo"
+
+              aria-hidden="true"
+
+            >
+
+              <mat-icon>{{ iconoTipo(c.tipoCaso) }}</mat-icon>
+
+            </div>
+
+            <mat-card-title>Tipo de subsidio</mat-card-title>
+
+            <mat-card-subtitle>Clasificación normativa del descanso</mat-card-subtitle>
+
+          </mat-card-header>
+
+          <mat-card-content>
+
+            <mat-chip-set aria-label="Tipo de subsidio">
+
+              <mat-chip class="resumen-chip">{{ labelTipo(c.tipoCaso) }}</mat-chip>
+
+            </mat-chip-set>
+
+            @if (c.modoCalculo === 'SIMULACION') {
+
+              <p class="resumen-card__alerta" role="status">
+
+                <mat-icon aria-hidden="true">science</mat-icon>
+
+                Modo simulación — no afecta la planilla oficial.
+
+              </p>
+
+            }
+
+          </mat-card-content>
+
+        </mat-card>
+
+      </div>
+
+
+
+      <mat-card class="resumen-card resumen-card--descanso page-card sisrh-elevated" appearance="outlined">
+
+        <mat-card-header class="resumen-card__header">
+
+          <div mat-card-avatar class="resumen-card__avatar resumen-card__avatar--descanso" aria-hidden="true">
+
+            <mat-icon>event_available</mat-icon>
+
+          </div>
+
+          <mat-card-title>Descanso médico y contingencia</mat-card-title>
+
+          <mat-card-subtitle>Fechas que sustentan el cálculo del subsidio</mat-card-subtitle>
+
+        </mat-card-header>
+
+        <mat-card-content>
+
+          <div class="resumen-descanso">
+
+            <div class="resumen-descanso__rango" aria-label="Rango del descanso médico">
+
+              <div class="resumen-descanso__fecha">
+
+                <span class="resumen-descanso__label">Inicio</span>
+
+                <strong>{{ formatFecha(c.fechaInicio) }}</strong>
+
+              </div>
+
+              <div class="resumen-descanso__linea" aria-hidden="true">
+
+                <span class="resumen-descanso__barra"></span>
+
+                @if (c.diasContingencia != null) {
+
+                  <span class="resumen-descanso__dias">{{ c.diasContingencia }} días</span>
+
+                }
+
+              </div>
+
+              <div class="resumen-descanso__fecha">
+
+                <span class="resumen-descanso__label">Fin</span>
+
+                <strong>{{ formatFecha(c.fechaFin) }}</strong>
+
+              </div>
+
+            </div>
+
+
+
+            <mat-divider />
+
+
+
+            <dl class="resumen-fields resumen-fields--3">
+
+              <div class="resumen-fields__item">
+
+                <dt>Fecha de contingencia</dt>
+
+                <dd>{{ formatFecha(c.fechaContingencia) }}</dd>
+
+              </div>
+
+              <div class="resumen-fields__item">
+
+                <dt>Días de contingencia</dt>
+
+                <dd class="resumen-fields__num">{{ c.diasContingencia ?? '—' }}</dd>
+
+              </div>
+
+              @if (mostrarPeriodo()) {
+
+                <div class="resumen-fields__item resumen-fields__item--periodo">
+
+                  <dt>Período de planilla</dt>
+
+                  <dd>
+
+                    <span class="resumen-periodo">
+
+                      <span class="resumen-periodo__codigo sisrh-tabular">{{ periodoRaw() }}</span>
+
+                      <span class="resumen-periodo__label">{{ periodoLabel() }}</span>
+
+                    </span>
+
+                  </dd>
+
+                </div>
+
+              }
+
+            </dl>
+
+          </div>
+
+        </mat-card-content>
+
+      </mat-card>
+
+    </div>
+
+  } @else {
+
+    <div class="tab-panel tab-panel--completo">
+
+      <dl class="tab-panel__dl">
+
+        <div>
+
+          <dt>Código de caso</dt>
+
+          <dd>{{ c.codigoCaso }}</dd>
+
+        </div>
+
+        <div>
+
+          <dt>Empleado</dt>
+
+          <dd>{{ c.nombreEmpleado ?? '—' }}</dd>
+
+        </div>
+
+        <div>
+
+          <dt>DNI</dt>
+
+          <dd>{{ c.dniEmpleado ?? '—' }}</dd>
+
+        </div>
+
+        <div>
+
+          <dt>Tipo</dt>
+
+          <dd>{{ labelTipo(c.tipoCaso) }}</dd>
+
+        </div>
+
+        <div>
+
+          <dt>Estado</dt>
+
+          <dd>{{ labelEstado(c.estado) }}</dd>
+
+        </div>
+
+        <div>
+
+          <dt>Fecha contingencia</dt>
+
+          <dd>{{ c.fechaContingencia }}</dd>
+
+        </div>
+
+        <div>
+
+          <dt>Descanso médico</dt>
+
+          <dd>{{ c.fechaInicio }} — {{ c.fechaFin }}</dd>
+
+        </div>
+
+        <div>
+
+          <dt>Días de contingencia</dt>
+
+          <dd>{{ c.diasContingencia ?? '—' }}</dd>
+
+        </div>
+
+        <div>
+
+          <dt>Certificados CITT</dt>
+
+          <dd>{{ c.citts.length }}</dd>
+
+        </div>
+
+        <div>
+
+          <dt>Tramos mensuales</dt>
+
+          <dd>{{ c.tramos.length }}</dd>
+
+        </div>
+
+        <div>
+
+          <dt>Modo de cálculo</dt>
+
+          <dd>{{ c.modoCalculo === 'SIMULACION' ? 'Simulación' : 'Oficial' }}</dd>
+
+        </div>
+
+      </dl>
+
+      @if (c.observacion) {
+
+        <section class="tab-panel__obs" aria-labelledby="obs-titulo">
+
+          <h3 id="obs-titulo">Observación</h3>
+
+          <p>{{ c.observacion }}</p>
+
+        </section>
+
+      }
+
+      @if (c.modoCalculo === 'SIMULACION') {
+
+        <p class="tab-panel__alert tab-panel__alert--warn" role="status">
+
+          Está viendo un cálculo de simulación; no afecta la planilla oficial.
+
+        </p>
+
+      }
+
+    </div>
+
+  }
+
+}
+
