@@ -1,0 +1,28 @@
+<aside class="resumen sisrh-elevated" aria-labelledby="resumen-rem-heading">
+  <h2 id="resumen-rem-heading" class="resumen__heading">Resumen remunerativo</h2>
+
+  <div class="resumen__hero" aria-live="polite">
+    <span class="resumen__hero-label">Total remuneración mensual (DS incluidos)</span>
+    <span class="resumen__hero-value sisrh-tabular">{{ fmtMoney(remuneracionMensual()) }}</span>
+  </div>
+
+  <ul class="resumen__lines">
+    <li class="resumen__line">
+      <span>Sueldo base contrato</span>
+      <span class="sisrh-tabular">{{ fmtMoney(montoContratado()) }}</span>
+    </li>
+    <li class="resumen__line">
+      <span>Total incrementos DS</span>
+      <span class="sisrh-tabular">{{ fmtMoney(totalIncrementos()) }}</span>
+    </li>
+    @if (muestraAsigFamiliar()) {
+      <li class="resumen__line resumen__line--info">
+        <span>Asignación familiar proyectada</span>
+        <span class="sisrh-tabular">{{ fmtMoney(asigFamiliarProyectada()) }}</span>
+      </li>
+      <li class="resumen__note" role="note">
+        La asignación familiar no está incluida en el total anterior; el motor la agrega en planilla.
+      </li>
+    }
+  </ul>
+</aside>

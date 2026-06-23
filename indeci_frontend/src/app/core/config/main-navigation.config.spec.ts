@@ -186,7 +186,7 @@ describe('filterVisibleNavItems (Spec 009 — 5 módulos + Inicio)', () => {
     expect(conceptos?.comingSoon).toBeFalsy();
   });
 
-  it('Planilla expone sus sub-items navegables (incluye Configuración Anual CAS, Carga de asistencia + subrama Subsidios, Suspensiones/Licencias y MCPP)', () => {
+  it('Planilla expone sus sub-items navegables (incluye Configuración Anual, Carga de asistencia + subrama Subsidios, Suspensiones/Licencias y MCPP)', () => {
     const r = filterVisibleNavItems(MAIN_NAV_ITEMS, [], ['ADMIN']);
     const pla = r.find((i) => i.label === 'Planilla');
     expect(pla?.children?.length).toBe(11);

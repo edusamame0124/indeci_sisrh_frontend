@@ -42,7 +42,7 @@ describe('EmpleadoPuestoApiService', () => {
   });
 
   it('guardar POST', () => {
-    const body: EmpleadoPuestoInput = { empleadoId: 1, cargo: 'COORDINADOR' };
+    const body: EmpleadoPuestoInput = { empleadoId: 1, cargoId: 7 };
     let done = false;
     service.guardar(body).subscribe(() => {
       done = true;
@@ -55,7 +55,7 @@ describe('EmpleadoPuestoApiService', () => {
   });
 
   it('actualizar PUT', () => {
-    const body: EmpleadoPuestoInput = { empleadoId: 1, cargo: 'PROGRAMADOR' };
+    const body: EmpleadoPuestoInput = { empleadoId: 1, cargoId: 9 };
     let done = false;
     service.actualizar(5, body).subscribe(() => {
       done = true;

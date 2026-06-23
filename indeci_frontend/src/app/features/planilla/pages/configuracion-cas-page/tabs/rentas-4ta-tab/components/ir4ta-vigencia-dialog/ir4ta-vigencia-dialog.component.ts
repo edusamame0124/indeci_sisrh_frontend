@@ -8,6 +8,7 @@ import {
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
@@ -46,6 +47,7 @@ function toIsoDate(date: Date | null): string | null {
     ReactiveFormsModule,
     MatDialogModule,
     MatButtonModule,
+    MatCheckboxModule,
     MatDatepickerModule,
     MatFormFieldModule,
     MatInputModule,
@@ -78,6 +80,20 @@ export class Ir4taVigenciaDialogComponent implements OnInit {
     baseInafectaIr4ta: [null as number | null, [Validators.min(0)]],
     fuenteOficial:     ['', [Validators.required, Validators.maxLength(500)]],
     observacion:       [null as string | null, [Validators.maxLength(200)]],
+    // V010_93 — Límites de suspensión.
+    topeAnualGeneral:  [null as number | null, [Validators.min(0)]],
+    topeAnualDirector: [null as number | null, [Validators.min(0)]],
+    aplicaCasGeneral:  [true],
+    aplicaCasDirector: [false],
+    pctAlertaPrev:     [80 as number | null, [Validators.min(0), Validators.max(100)]],
+    pctAlertaCrit:     [90 as number | null, [Validators.min(0), Validators.max(100)]],
+    codigoSunatPlame:  ['3042' as string | null, [Validators.maxLength(10)]],
+    // V010_93 — Reglas automáticas.
+    flgCalcAcumulado:    [true],
+    flgAlerta80:         [true],
+    flgAlerta90:         [true],
+    flgMarcarValidacion: [true],
+    flgRetencionAuto:    [false],
   });
 
   get readonly()    { return this.data.modo === 'ver'; }
@@ -96,6 +112,18 @@ export class Ir4taVigenciaDialogComponent implements OnInit {
         baseInafectaIr4ta: r.baseInafectaIr4ta ?? null,
         fuenteOficial:     r.fuenteOficial,
         observacion:       r.observacion ?? null,
+        topeAnualGeneral:  r.topeAnualGeneral ?? null,
+        topeAnualDirector: r.topeAnualDirector ?? null,
+        aplicaCasGeneral:  r.aplicaCasGeneral ?? true,
+        aplicaCasDirector: r.aplicaCasDirector ?? false,
+        pctAlertaPrev:     r.pctAlertaPrev ?? 80,
+        pctAlertaCrit:     r.pctAlertaCrit ?? 90,
+        codigoSunatPlame:  r.codigoSunatPlame ?? '3042',
+        flgCalcAcumulado:    r.flgCalcAcumulado ?? true,
+        flgAlerta80:         r.flgAlerta80 ?? true,
+        flgAlerta90:         r.flgAlerta90 ?? true,
+        flgMarcarValidacion: r.flgMarcarValidacion ?? true,
+        flgRetencionAuto:    r.flgRetencionAuto ?? false,
       });
     }
     if (this.readonly) this.form.disable();
@@ -124,6 +152,18 @@ export class Ir4taVigenciaDialogComponent implements OnInit {
       urlFuenteOficial:  null,
       fechaPublicacion:  null,
       observacion:       v.observacion || null,
+      topeAnualGeneral:  v.topeAnualGeneral != null ? Number(v.topeAnualGeneral) : null,
+      topeAnualDirector: v.topeAnualDirector != null ? Number(v.topeAnualDirector) : null,
+      aplicaCasGeneral:  v.aplicaCasGeneral,
+      aplicaCasDirector: v.aplicaCasDirector,
+      pctAlertaPrev:     v.pctAlertaPrev != null ? Number(v.pctAlertaPrev) : null,
+      pctAlertaCrit:     v.pctAlertaCrit != null ? Number(v.pctAlertaCrit) : null,
+      codigoSunatPlame:  v.codigoSunatPlame || null,
+      flgCalcAcumulado:    v.flgCalcAcumulado,
+      flgAlerta80:         v.flgAlerta80,
+      flgAlerta90:         v.flgAlerta90,
+      flgMarcarValidacion: v.flgMarcarValidacion,
+      flgRetencionAuto:    v.flgRetencionAuto,
     };
 
     this.saving.set(true);
@@ -134,9 +174,14 @@ export class Ir4taVigenciaDialogComponent implements OnInit {
 
     obs$.subscribe({
       next:  () => { this.saving.set(false); this.dialogRef.close(true); },
-      error: (err: { error?: { message?: string } }) => {
+      error: (err: { error?: { mensaje?: string; message?: string } }) => {
         this.saving.set(false);
-        this.errorMsg.set(err?.error?.message ?? 'Error al guardar. Verifique los datos e intente nuevamente.');
+        // El backend (ApiResponse de error) envía el detalle en `mensaje`.
+        this.errorMsg.set(
+          err?.error?.mensaje
+            ?? err?.error?.message
+            ?? 'Error al guardar. Verifique los datos e intente nuevamente.',
+        );
       },
     });
   }

@@ -56,9 +56,10 @@ export class EmpleadoPlanillaConsolidadoPageComponent implements OnInit {
     'empleado',
     'dni',
     'regimen',
-    'tipoContrato',
     'condicion',
-    'sueldo',
+    'airhsp',
+    'montoBase',
+    'remMensual',
     'estado',
     'acciones',
   ] as const;
@@ -105,6 +106,11 @@ export class EmpleadoPlanillaConsolidadoPageComponent implements OnInit {
   fmtMoney(v: number | null): string {
     if (v == null || Number.isNaN(v)) return '—';
     return v.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  fmtAirhsp(v: string | null): string {
+    if (v == null || v.trim() === '') return '—';
+    return v;
   }
 
   reload(): void {

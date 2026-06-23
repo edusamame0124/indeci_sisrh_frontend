@@ -12,6 +12,19 @@ export interface Ir4taConfigRow {
   urlFuenteOficial: string | null;
   fechaPublicacion: string | null;
   observacion: string | null;
+  // V010_93 — Límites de suspensión y reglas de alerta.
+  topeAnualGeneral: number | null;
+  topeAnualDirector: number | null;
+  aplicaCasGeneral: boolean;
+  aplicaCasDirector: boolean;
+  pctAlertaPrev: number | null;
+  pctAlertaCrit: number | null;
+  codigoSunatPlame: string | null;
+  flgCalcAcumulado: boolean;
+  flgAlerta80: boolean;
+  flgAlerta90: boolean;
+  flgMarcarValidacion: boolean;
+  flgRetencionAuto: boolean;
   estado: EstadoIr4ta;
   bloqueadoPorPlanilla: boolean;
   creadoPor: string;
@@ -31,6 +44,19 @@ export interface Ir4taConfigInput {
   urlFuenteOficial: string | null;
   fechaPublicacion: string | null;
   observacion: string | null;
+  // V010_93 — Límites de suspensión y reglas (opcionales en el input).
+  topeAnualGeneral: number | null;
+  topeAnualDirector: number | null;
+  aplicaCasGeneral: boolean | null;
+  aplicaCasDirector: boolean | null;
+  pctAlertaPrev: number | null;
+  pctAlertaCrit: number | null;
+  codigoSunatPlame: string | null;
+  flgCalcAcumulado: boolean | null;
+  flgAlerta80: boolean | null;
+  flgAlerta90: boolean | null;
+  flgMarcarValidacion: boolean | null;
+  flgRetencionAuto: boolean | null;
 }
 
 export interface Ir4taConfigAnularInput {

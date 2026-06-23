@@ -3,6 +3,13 @@
   margin: 1rem auto;
 }
 
+.susp-tabs {
+  margin-top: 0.5rem;
+}
+.tab-body {
+  padding-top: 1rem;
+}
+
 .loading {
   display: flex;
   justify-content: center;

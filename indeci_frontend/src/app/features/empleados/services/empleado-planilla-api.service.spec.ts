@@ -4,6 +4,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { EmpleadoPlanillaApiService } from './empleado-planilla-api.service';
 import type { EmpleadoPlanillaInput, EmpleadoPlanillaRow } from '../models/empleado-planilla.model';
+import type { IncrementosDsResponse } from '../models/incrementos-ds.model';
 
 describe('EmpleadoPlanillaApiService', () => {
   let service: EmpleadoPlanillaApiService;
@@ -23,7 +24,9 @@ describe('EmpleadoPlanillaApiService', () => {
     const data: EmpleadoPlanillaRow[] = [
       {
         id: 1,
-        sueldoBasico: 3500,
+        sueldoBasico: 4864.19,
+        codigoAirhsp: '000051',
+        montoContrato: 4500,
         movilidad: null,
         alimentacion: 100,
         tieneAsignacionFamiliar: 1,
@@ -52,7 +55,9 @@ describe('EmpleadoPlanillaApiService', () => {
   it('guardar POST', () => {
     const body: EmpleadoPlanillaInput = {
       empleadoId: 1,
-      sueldoBasico: 3000,
+      codigoAirhsp: '000051',
+      montoContrato: 4500,
+      sueldoBasico: 4864.19,
       tieneAsignacionFamiliar: 0,
       regimenLaboralId: 3,
     };
@@ -70,7 +75,9 @@ describe('EmpleadoPlanillaApiService', () => {
   it('actualizar PUT', () => {
     const body: EmpleadoPlanillaInput = {
       empleadoId: 1,
-      sueldoBasico: 3200,
+      codigoAirhsp: '000051',
+      montoContrato: 4500,
+      sueldoBasico: 4864.19,
       regimenLaboralId: 3,
     };
     let done = false;
@@ -82,5 +89,35 @@ describe('EmpleadoPlanillaApiService', () => {
     expect(req.request.body).toEqual(body);
     req.flush({ estado: 'OK', mensaje: 'ok', data: null });
     expect(done).toBe(true);
+  });
+
+  it('calcularIncrementosDs GET con query params', () => {
+    const data: IncrementosDsResponse = {
+      aplica: true,
+      montoContrato: 4500,
+      incrementos: [],
+      totalIncrementos: 364.19,
+      remuneracionMensual: 4864.19,
+    };
+    let out: IncrementosDsResponse | undefined;
+    service
+      .calcularIncrementosDs({
+        regimenLaboralId: 3,
+        condicionLaboralId: 2,
+        montoContratado: 4500,
+      })
+      .subscribe((x) => {
+        out = x;
+      });
+    const req = httpMock.expectOne(
+      (r) =>
+        r.url === '/api/rrhh/planilla/incrementos-ds' &&
+        r.params.get('regimenLaboralId') === '3' &&
+        r.params.get('condicionLaboralId') === '2' &&
+        r.params.get('montoContratado') === '4500',
+    );
+    expect(req.request.method).toBe('GET');
+    req.flush({ estado: 'OK', mensaje: 'ok', data });
+    expect(out).toEqual(data);
   });
 });

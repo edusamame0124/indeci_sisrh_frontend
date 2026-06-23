@@ -157,7 +157,7 @@ export const MAIN_NAV_ITEMS: readonly MainNavItem[] = [
     icon: 'calculate',
     requiredAnyRole: [...PLANILLA_OPERATIVA_ROLES],
     children: [
-      { label: 'Configuración Anual CAS', route: '/planilla/configuracion-cas', icon: 'settings' },
+      { label: 'Configuración Anual', route: '/planilla/configuracion-cas', icon: 'settings' },
       { label: 'Periodos', route: '/planilla/periodos', icon: 'event' },
       { label: 'Carga de asistencia', route: '/asistencia/carga', icon: 'event_available' },
       {
