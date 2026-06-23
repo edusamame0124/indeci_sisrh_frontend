@@ -76,7 +76,9 @@
 
             <div>
               <span>Correo</span>
-              <strong>{{ legajo.persona?.correo || '-' }}</strong>
+              <strong>
+                {{ legajo.persona?.email || legajo.persona?.correoInstitucional || '-' }}
+              </strong>
             </div>
 
             <div>
@@ -152,9 +154,10 @@
                       @if (item.legajoDocumentoId) {
                         <button
                           mat-icon-button
+                          type="button"
                           matTooltip="Ver sustento"
-                          [disabled]="!item.legajoDocumentoId"
-                          (click)="verSustento(item.legajoDocumentoId)"
+                          [disabled]="!obtenerDocumentoActualId(item)"
+                          (click)="legajoState.descargarDocumento(obtenerDocumentoActualId(item))"
                         >
                           <mat-icon>visibility</mat-icon>
                         </button>
@@ -166,6 +169,7 @@
                       <button
                         mat-icon-button
                         type="button"
+                        matTooltip="Editar"
                         (click)="editarRegistro('FORMACION', item)"
                       >
                         <mat-icon>edit</mat-icon>
@@ -173,8 +177,19 @@
 
                       <button
                         mat-icon-button
+                        type="button"
+                        [disabled]="reemplazandoSustento() || !obtenerDocumentoActualId(item)"
+                        matTooltip="Cambiar sustento"
+                        (click)="cambiarSustento('FORMACION', item)"
+                      >
+                        <mat-icon>upload_file</mat-icon>
+                      </button>
+
+                      <button
+                        mat-icon-button
                         color="warn"
                         type="button"
+                        matTooltip="Eliminar"
                         (click)="eliminarRegistro('FORMACION', item.id)"
                       >
                         <mat-icon>delete</mat-icon>
@@ -235,9 +250,10 @@
                       @if (item.legajoDocumentoId) {
                         <button
                           mat-icon-button
+                          type="button"
                           matTooltip="Ver sustento"
-                          [disabled]="!item.legajoDocumentoId"
-                          (click)="verSustento(item.legajoDocumentoId)"
+                          [disabled]="!obtenerDocumentoActualId(item)"
+                          (click)="legajoState.descargarDocumento(obtenerDocumentoActualId(item))"
                         >
                           <mat-icon>visibility</mat-icon>
                         </button>
@@ -253,7 +269,15 @@
                       >
                         <mat-icon>edit</mat-icon>
                       </button>
-
+                      <button
+                        mat-icon-button
+                        type="button"
+                        [disabled]="reemplazandoSustento()"
+                        matTooltip="Cambiar sustento"
+                        (click)="cambiarSustento('CAPACITACION', item)"
+                      >
+                        <mat-icon>upload_file</mat-icon>
+                      </button>
                       <button
                         mat-icon-button
                         color="warn"
@@ -316,9 +340,10 @@
                       @if (item.legajoDocumentoId) {
                         <button
                           mat-icon-button
+                          type="button"
                           matTooltip="Ver sustento"
-                          [disabled]="!item.legajoDocumentoId"
-                          (click)="verSustento(item.legajoDocumentoId)"
+                          [disabled]="!obtenerDocumentoActualId(item)"
+                          (click)="legajoState.descargarDocumento(obtenerDocumentoActualId(item))"
                         >
                           <mat-icon>visibility</mat-icon>
                         </button>
@@ -334,7 +359,15 @@
                       >
                         <mat-icon>edit</mat-icon>
                       </button>
-
+                      <button
+                        mat-icon-button
+                        type="button"
+                        [disabled]="reemplazandoSustento() || !obtenerDocumentoActualId(item)"
+                        matTooltip="Cambiar sustento"
+                        (click)="cambiarSustento('IDIOMA', item)"
+                      >
+                        <mat-icon>upload_file</mat-icon>
+                      </button>
                       <button
                         mat-icon-button
                         color="warn"
@@ -393,9 +426,10 @@
                       @if (item.legajoDocumentoId) {
                         <button
                           mat-icon-button
+                          type="button"
                           matTooltip="Ver sustento"
-                          [disabled]="!item.legajoDocumentoId"
-                          (click)="verSustento(item.legajoDocumentoId)"
+                          [disabled]="!obtenerDocumentoActualId(item)"
+                          (click)="legajoState.descargarDocumento(obtenerDocumentoActualId(item))"
                         >
                           <mat-icon>visibility</mat-icon>
                         </button>
@@ -411,7 +445,15 @@
                       >
                         <mat-icon>edit</mat-icon>
                       </button>
-
+                      <button
+                        mat-icon-button
+                        type="button"
+                        [disabled]="reemplazandoSustento() || !obtenerDocumentoActualId(item)"
+                        matTooltip="Cambiar sustento"
+                        (click)="cambiarSustento('CONOCIMIENTO', item)"
+                      >
+                        <mat-icon>upload_file</mat-icon>
+                      </button>
                       <button
                         mat-icon-button
                         color="warn"
@@ -542,9 +584,10 @@
                       @if (item.legajoDocumentoId) {
                         <button
                           mat-icon-button
+                          type="button"
                           matTooltip="Ver sustento"
-                          [disabled]="!item.legajoDocumentoId"
-                          (click)="verSustento(item.legajoDocumentoId)"
+                          [disabled]="!obtenerDocumentoActualId(item)"
+                          (click)="legajoState.descargarDocumento(obtenerDocumentoActualId(item))"
                         >
                           <mat-icon>visibility</mat-icon>
                         </button>
@@ -560,7 +603,15 @@
                       >
                         <mat-icon>edit</mat-icon>
                       </button>
-
+                      <button
+                        mat-icon-button
+                        type="button"
+                        [disabled]="reemplazandoSustento() || !obtenerDocumentoActualId(item)"
+                        matTooltip="Cambiar sustento"
+                        (click)="cambiarSustento('EXPERIENCIA', item)"
+                      >
+                        <mat-icon>upload_file</mat-icon>
+                      </button>
                       <button
                         mat-icon-button
                         color="warn"
@@ -619,9 +670,10 @@
                       @if (item.legajoDocumentoId) {
                         <button
                           mat-icon-button
+                          type="button"
                           matTooltip="Ver sustento"
-                          [disabled]="!item.legajoDocumentoId"
-                          (click)="verSustento(item.legajoDocumentoId)"
+                          [disabled]="!obtenerDocumentoActualId(item)"
+                          (click)="legajoState.descargarDocumento(obtenerDocumentoActualId(item))"
                         >
                           <mat-icon>visibility</mat-icon>
                         </button>
@@ -637,7 +689,15 @@
                       >
                         <mat-icon>edit</mat-icon>
                       </button>
-
+                      <button
+                        mat-icon-button
+                        type="button"
+                        [disabled]="reemplazandoSustento() || !obtenerDocumentoActualId(item)"
+                        matTooltip="Cambiar sustento"
+                        (click)="cambiarSustento('RECONOCIMIENTO', item)"
+                      >
+                        <mat-icon>upload_file</mat-icon>
+                      </button>
                       <button
                         mat-icon-button
                         color="warn"
@@ -702,11 +762,13 @@
                     <td>
                       @if (item.legajoDocumentoId) {
                         <button
-                          mat-button
+                          mat-icon-button
                           type="button"
-                          (click)="legajoState.descargarDocumento(item.legajoDocumentoId)"
+                          matTooltip="Ver sustento"
+                          [disabled]="!obtenerDocumentoActualId(item)"
+                          (click)="legajoState.descargarDocumento(obtenerDocumentoActualId(item))"
                         >
-                          Ver sustento
+                          <mat-icon>visibility</mat-icon>
                         </button>
                       } @else {
                         -
@@ -720,7 +782,15 @@
                       >
                         <mat-icon>edit</mat-icon>
                       </button>
-
+                      <button
+                        mat-icon-button
+                        type="button"
+                        [disabled]="reemplazandoSustento() || !obtenerDocumentoActualId(item)"
+                        matTooltip="Cambiar sustento"
+                        (click)="cambiarSustento('MEDIDA', item)"
+                      >
+                        <mat-icon>upload_file</mat-icon>
+                      </button>
                       <button
                         mat-icon-button
                         color="warn"

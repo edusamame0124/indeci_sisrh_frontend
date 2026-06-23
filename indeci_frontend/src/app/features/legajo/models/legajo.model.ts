@@ -30,7 +30,9 @@ export interface PersonaLegajo {
 
   fechaNacimiento?: string;
   telefono?: string;
-  correo?: string;
+  email?: string | null;
+  correoInstitucional?: string | null;
+
   direccion?: string;
 
   foto?: string | null;
@@ -189,6 +191,7 @@ export interface LegajoDocumento {
 
   rutaArchivo?: string;
   createdAt?: string;
+  activo?: number;
 }
 export interface TrabajadorLegajoItem {
   empleadoId: number;

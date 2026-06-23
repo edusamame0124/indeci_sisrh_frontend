@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -9,15 +9,20 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
-import { LegajoApiService } from '../../services/legajo-api';
-import { MedidaDisciplinaria } from '../../models/legajo.model';
-import { LegajoDocumento } from '../../models/legajo.model';
 import { finalize, Observable, of, switchMap } from 'rxjs';
-import { LegajoDocumentoService } from '../../services/legajo-documento';
-import { LegajoDocumentoOrigen } from '../../services/legajo-documento';
+
+import { LegajoApiService } from '../../services/legajo-api';
+import { LegajoDocumento, MedidaDisciplinaria } from '../../models/legajo.model';
+
+import {
+  LegajoDocumentoOrigen,
+  LegajoDocumentoService,
+} from '../../services/legajo-documento';
 
 export interface MedidaDisciplinariaDialogData {
   empleadoId: number;
+  modo: 'CREAR' | 'EDITAR';
+  item?: MedidaDisciplinaria | null;
 }
 
 @Component({
@@ -37,15 +42,17 @@ export interface MedidaDisciplinariaDialogData {
   templateUrl: './medida-disciplinaria-dialog.html',
   styleUrl: './medida-disciplinaria-dialog.scss',
 })
-export class MedidaDisciplinariaDialog {
+export class MedidaDisciplinariaDialog implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly api = inject(LegajoApiService);
-  private readonly dialogRef = inject(MatDialogRef<MedidaDisciplinariaDialog>);
-  private readonly data = inject<MedidaDisciplinariaDialogData>(MAT_DIALOG_DATA);
   private readonly documentoService = inject(LegajoDocumentoService);
+  private readonly dialogRef = inject(MatDialogRef<MedidaDisciplinariaDialog>);
+
+  readonly data = inject<MedidaDisciplinariaDialogData>(MAT_DIALOG_DATA);
 
   readonly guardando = signal(false);
   readonly error = signal<string | null>(null);
+
   archivoSustento: File | null = null;
 
   readonly form = this.fb.group({
@@ -60,12 +67,122 @@ export class MedidaDisciplinariaDialog {
     observacionDocumento: [''],
   });
 
+  ngOnInit(): void {
+    if (this.esEdicion) {
+      const item = this.data.item;
+
+      this.form.patchValue({
+        tipoMedida: item?.tipoMedida ?? '',
+        descripcion: item?.descripcion ?? '',
+        fechaInicio: item?.fechaInicio ?? '',
+        fechaFin: item?.fechaFin ?? '',
+        legajoDocumentoId: item?.legajoDocumentoId ?? null,
+
+        nombreDocumento: '',
+        fechaDocumento: '',
+        observacionDocumento: '',
+      });
+    }
+  }
+
+  get esEdicion(): boolean {
+    return this.data?.modo === 'EDITAR' && !!this.data?.item?.id;
+  }
+
+  get titulo(): string {
+    return this.esEdicion ? 'Editar medida disciplinaria' : 'Agregar medida disciplinaria';
+  }
+
   cancelar(): void {
     this.dialogRef.close(false);
   }
+
   seleccionarArchivo(event: Event): void {
     const input = event.target as HTMLInputElement;
     this.archivoSustento = input.files?.[0] ?? null;
+  }
+
+  guardar(): void {
+    this.error.set(null);
+
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      this.error.set('Complete los campos obligatorios.');
+      return;
+    }
+
+    if (!this.data.empleadoId) {
+      this.error.set('No se encontró el empleadoId.');
+      return;
+    }
+
+    const raw = this.form.getRawValue();
+
+    this.guardando.set(true);
+
+    if (this.esEdicion) {
+      const request: MedidaDisciplinaria = {
+        empleadoId: this.data.empleadoId,
+        tipoMedida: raw.tipoMedida?.trim() ?? '',
+        descripcion: raw.descripcion?.trim() ?? '',
+        fechaInicio: raw.fechaInicio ?? '',
+        fechaFin: raw.fechaFin || undefined,
+
+        // En edición NO se cambia el documento.
+        // Se conserva el sustento actual.
+        legajoDocumentoId: this.data.item?.legajoDocumentoId ?? null,
+      };
+
+      this.api
+        .actualizarMedidaDisciplinaria(this.data.item!.id!, request)
+        .pipe(finalize(() => this.guardando.set(false)))
+        .subscribe({
+          next: () => this.dialogRef.close(true),
+          error: (err) => {
+            console.error('Error actualizando medida disciplinaria:', err);
+            this.error.set(
+              this.obtenerMensajeError(
+                err,
+                'No se pudo actualizar la medida disciplinaria.',
+              ),
+            );
+          },
+        });
+
+      return;
+    }
+
+    this.subirSustento$(
+      'MEDIDA_DISCIPLINARIA',
+      `Sustento de medida disciplinaria - ${raw.tipoMedida}`,
+    )
+      .pipe(
+        switchMap((documento) => {
+          const request: MedidaDisciplinaria = {
+            empleadoId: this.data.empleadoId,
+            tipoMedida: raw.tipoMedida?.trim() ?? '',
+            descripcion: raw.descripcion?.trim() ?? '',
+            fechaInicio: raw.fechaInicio ?? '',
+            fechaFin: raw.fechaFin || undefined,
+            legajoDocumentoId: documento?.id ?? null,
+          };
+
+          return this.api.registrarMedidaDisciplinaria(request);
+        }),
+        finalize(() => this.guardando.set(false)),
+      )
+      .subscribe({
+        next: () => this.dialogRef.close(true),
+        error: (err) => {
+          console.error('Error guardando medida disciplinaria:', err);
+          this.error.set(
+            this.obtenerMensajeError(
+              err,
+              'No se pudo guardar la medida disciplinaria.',
+            ),
+          );
+        },
+      });
   }
 
   private subirSustento$(
@@ -93,53 +210,6 @@ export class MedidaDisciplinariaDialog {
 
   private obtenerMensajeError(err: any, mensajeDefault: string): string {
     return err?.error?.mensaje ?? err?.error?.message ?? mensajeDefault;
-  }
-  guardar(): void {
-    this.error.set(null);
-
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
-      this.error.set('Complete los campos obligatorios.');
-      return;
-    }
-
-    if (!this.data.empleadoId) {
-      this.error.set('No se encontró el empleadoId.');
-      return;
-    }
-
-    const raw = this.form.getRawValue();
-
-    this.guardando.set(true);
-
-    this.subirSustento$(
-      'MEDIDA_DISCIPLINARIA',
-      `Sustento de medida disciplinaria - ${raw.tipoMedida}`,
-    )
-      .pipe(
-        switchMap((documento) => {
-          const request: MedidaDisciplinaria = {
-            empleadoId: this.data.empleadoId,
-            tipoMedida: raw.tipoMedida?.trim() ?? '',
-            descripcion: raw.descripcion?.trim() ?? '',
-            fechaInicio: raw.fechaInicio ?? '',
-            fechaFin: raw.fechaFin || undefined,
-            legajoDocumentoId: documento?.id ?? null,
-          };
-
-          return this.api.registrarMedidaDisciplinaria(request);
-        }),
-        finalize(() => this.guardando.set(false)),
-      )
-      .subscribe({
-        next: () => this.dialogRef.close(true),
-        error: (err) => {
-          console.error('Error guardando medida disciplinaria:', err);
-          this.error.set(
-            this.obtenerMensajeError(err, 'No se pudo guardar la medida disciplinaria.'),
-          );
-        },
-      });
   }
 
   campoInvalido(nombre: string): boolean {

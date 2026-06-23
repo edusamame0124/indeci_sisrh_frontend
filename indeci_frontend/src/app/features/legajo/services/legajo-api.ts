@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { map, Observable } from 'rxjs';
+import { map, Observable, switchMap, throwError } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { TrabajadorLegajoItem } from '../models/legajo.model';
 
@@ -272,6 +272,134 @@ export class LegajoApiService {
 
     return this.http
       .post<ApiResponse<LegajoDocumento>>(`${this.baseUrl}/legajo/upload`, formData)
+      .pipe(map((resp) => this.unwrap(resp)));
+  }
+  obtenerDocumento(id: number): Observable<LegajoDocumento> {
+    return this.http
+      .get<ApiResponse<LegajoDocumento>>(`${this.apiUrl}/rrhh/legajo/${id}`)
+      .pipe(map((resp) => this.unwrap(resp)));
+  }
+  reemplazarSustento(params: {
+    tipo: string;
+    registroId: number;
+    empleadoId: number;
+    categoriaId: number;
+    subcategoriaId?: number | null;
+    nombreDocumento?: string | null;
+    fechaDocumento?: string | null;
+    observacion?: string | null;
+    file: File;
+  }): Observable<LegajoDocumento> {
+    const formData = new FormData();
+
+    formData.append('empleadoId', String(params.empleadoId));
+    formData.append('categoriaId', String(params.categoriaId));
+    formData.append('file', params.file);
+
+    if (params.subcategoriaId != null) {
+      formData.append('subcategoriaId', String(params.subcategoriaId));
+    }
+
+    if (params.nombreDocumento) {
+      formData.append('nombreDocumento', params.nombreDocumento);
+    }
+
+    if (params.fechaDocumento) {
+      formData.append('fechaDocumento', params.fechaDocumento);
+    }
+
+    if (params.observacion) {
+      formData.append('observacion', params.observacion);
+    }
+
+    return this.http
+      .put<
+        ApiResponse<LegajoDocumento>
+      >(`${this.apiUrl}/rrhh/legajo/sustento/${params.tipo}/${params.registroId}`, formData)
+      .pipe(map((resp) => this.unwrap(resp)));
+  }
+  reemplazarSustentoUsandoDocumentoActual(params: {
+    tipo: string;
+    registroId: number;
+    empleadoId: number;
+    documentoActualId: number;
+    file: File;
+    nombreDocumento?: string | null;
+    fechaDocumento?: string | null;
+    observacion?: string | null;
+  }): Observable<LegajoDocumento> {
+    return this.obtenerDocumento(params.documentoActualId).pipe(
+      switchMap((documentoActual) => {
+        const categoriaId = documentoActual.categoriaId;
+
+        if (!categoriaId) {
+          return throwError(() => new Error('No se encontró la categoría del documento actual.'));
+        }
+
+        return this.reemplazarSustento({
+          tipo: params.tipo,
+          registroId: params.registroId,
+          empleadoId: params.empleadoId,
+          categoriaId,
+          subcategoriaId: documentoActual.subcategoriaId ?? null,
+          nombreDocumento:
+            params.nombreDocumento ||
+            documentoActual.nombreDocumento ||
+            documentoActual.nombreArchivo ||
+            'Documento sustentatorio',
+          fechaDocumento: params.fechaDocumento || documentoActual.fechaDocumento || null,
+          observacion: params.observacion || documentoActual.observacion || null,
+          file: params.file,
+        });
+      }),
+    );
+  }
+
+  actualizarFormacion(id: number, request: any): Observable<void> {
+    return this.http
+      .put<ApiResponse<void>>(`${this.apiUrl}/rrhh/formacion-academica/${id}`, request)
+      .pipe(map((resp) => this.unwrap(resp)));
+  }
+
+  actualizarCapacitacion(id: number, request: any): Observable<void> {
+    return this.http
+      .put<ApiResponse<void>>(`${this.apiUrl}/rrhh/capacitaciones/${id}`, request)
+      .pipe(map((resp) => this.unwrap(resp)));
+  }
+
+  actualizarIdioma(id: number, request: any): Observable<void> {
+    return this.http
+      .put<ApiResponse<void>>(`${this.apiUrl}/rrhh/idiomas/${id}`, request)
+      .pipe(map((resp) => this.unwrap(resp)));
+  }
+
+  actualizarConocimiento(id: number, request: any): Observable<void> {
+    return this.http
+      .put<ApiResponse<void>>(`${this.apiUrl}/rrhh/conocimientos-informaticos/${id}`, request)
+      .pipe(map((resp) => this.unwrap(resp)));
+  }
+
+  actualizarFamiliar(id: number, request: any): Observable<void> {
+    return this.http
+      .put<ApiResponse<void>>(`${this.apiUrl}/rrhh/familiares/${id}`, request)
+      .pipe(map((resp) => this.unwrap(resp)));
+  }
+
+  actualizarExperienciaLaboral(id: number, request: any): Observable<void> {
+    return this.http
+      .put<ApiResponse<void>>(`${this.apiUrl}/rrhh/experiencias-laborales/${id}`, request)
+      .pipe(map((resp) => this.unwrap(resp)));
+  }
+
+  actualizarReconocimiento(id: number, request: any): Observable<void> {
+    return this.http
+      .put<ApiResponse<void>>(`${this.apiUrl}/rrhh/reconocimientos/${id}`, request)
+      .pipe(map((resp) => this.unwrap(resp)));
+  }
+
+  actualizarMedidaDisciplinaria(id: number, request: any): Observable<void> {
+    return this.http
+      .put<ApiResponse<void>>(`${this.apiUrl}/rrhh/medidas-disciplinarias/${id}`, request)
       .pipe(map((resp) => this.unwrap(resp)));
   }
 }

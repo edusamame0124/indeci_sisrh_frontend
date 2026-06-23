@@ -1,0 +1,214 @@
+.asistencia-page {
+  padding: 1rem;
+}
+
+.asistencia-card {
+  border-radius: 16px;
+}
+
+.header {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.acciones-mes {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.titulo-mes {
+  min-width: 180px;
+  text-align: center;
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.nota {
+  margin: 1rem 0 0.5rem;
+  color: #64748b;
+  font-size: 0.85rem;
+}
+
+.leyenda {
+  display: flex;
+  gap: 0.85rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.leyenda-item {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  color: #475569;
+}
+
+.leyenda-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  display: inline-block;
+}
+
+.calendario {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(130px, 1fr));
+  gap: 0.5rem;
+  overflow-x: auto;
+}
+
+.dia-semana {
+  text-align: center;
+  font-weight: 700;
+  color: #64748b;
+  font-size: 0.85rem;
+  padding-bottom: 0.25rem;
+}
+
+.dia-card {
+  min-height: 108px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  padding: 0.6rem;
+  background: #fff;
+  position: relative;
+  overflow: hidden;
+}
+
+.dia-card.otro-mes {
+  opacity: 0.35;
+}
+
+.dia-numero {
+  font-weight: 700;
+  color: #334155;
+  margin-bottom: 0.35rem;
+}
+
+.dia-estado {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  margin-bottom: 0.35rem;
+}
+
+.sin-registro-label {
+  color: #94a3b8;
+}
+
+.horas {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  font-size: 0.72rem;
+  color: #334155;
+}
+
+.detalle {
+  margin-top: 0.35rem;
+  padding: 0.2rem 0.45rem;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.75);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.monto {
+  margin-top: 0.3rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #92400e;
+}
+
+.observacion {
+  margin-top: 0.3rem;
+  font-size: 0.7rem;
+  color: #475569;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.estado-carga,
+.estado-error {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1.5rem 0;
+}
+
+.estado-error {
+  color: #b91c1c;
+}
+
+/* Estados */
+
+.laboral,
+.leyenda-color.laboral {
+  background: #dcfce7;
+  border-color: #86efac;
+}
+
+.tardanza,
+.leyenda-color.tardanza {
+  background: #fef3c7;
+  border-color: #fbbf24;
+}
+
+.falta,
+.leyenda-color.falta {
+  background: #fee2e2;
+  border-color: #fca5a5;
+}
+
+.licencia,
+.leyenda-color.licencia {
+  background: #dbeafe;
+  border-color: #93c5fd;
+}
+
+.vacaciones,
+.leyenda-color.vacaciones {
+  background: #ede9fe;
+  border-color: #c4b5fd;
+}
+
+.descanso,
+.leyenda-color.descanso {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.feriado,
+.leyenda-color.feriado {
+  background: #e0f2fe;
+  border-color: #7dd3fc;
+}
+
+.observado,
+.leyenda-color.observado {
+  background: #ffedd5;
+  border-color: #fdba74;
+}
+
+.sin-registro {
+  background: #ffffff;
+  border-color: #e2e8f0;
+}
+
+@media (max-width: 900px) {
+  .calendario {
+    grid-template-columns: repeat(7, minmax(115px, 1fr));
+  }
+
+  .dia-card {
+    min-height: 100px;
+  }
+}
