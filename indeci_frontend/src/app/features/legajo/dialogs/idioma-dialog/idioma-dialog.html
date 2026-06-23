@@ -1,4 +1,4 @@
-<h2 mat-dialog-title>Agregar idioma</h2>
+<h2 mat-dialog-title>{{ titulo }}</h2>
 
 <mat-dialog-content class="dialog-content">
   <form [formGroup]="form" class="form-grid">
@@ -38,30 +38,32 @@
       }
     </mat-form-field>
 
-    <div class="sustento full-width">
-      <h3>Sustento documental</h3>
+    @if (!esEdicion) {
+      <div class="sustento full-width">
+        <h3>Sustento documental</h3>
 
-      <mat-form-field appearance="outline">
-        <mat-label>Nombre del documento</mat-label>
-        <input matInput formControlName="nombreDocumento" />
-      </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Nombre del documento</mat-label>
+          <input matInput formControlName="nombreDocumento" />
+        </mat-form-field>
 
-      <mat-form-field appearance="outline">
-        <mat-label>Fecha del documento</mat-label>
-        <input matInput type="date" formControlName="fechaDocumento" />
-      </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Fecha del documento</mat-label>
+          <input matInput type="date" formControlName="fechaDocumento" />
+        </mat-form-field>
 
-      <mat-form-field appearance="outline" class="full-width">
-        <mat-label>Observación del documento</mat-label>
-        <textarea matInput rows="2" formControlName="observacionDocumento"></textarea>
-      </mat-form-field>
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Observación del documento</mat-label>
+          <textarea matInput rows="2" formControlName="observacionDocumento"></textarea>
+        </mat-form-field>
 
-      <div class="file-row full-width">
-        <label>Archivo sustentatorio</label>
+        <div class="file-row full-width">
+          <label>Archivo sustentatorio</label>
 
-        <input type="file" accept=".pdf,image/*" (change)="seleccionarArchivo($event)" />
+          <input type="file" accept=".pdf,image/*" (change)="seleccionarArchivo($event)" />
+        </div>
       </div>
-    </div>
+    }
 
     <div class="checkbox-row">
       <mat-checkbox formControlName="certificado"> Cuenta con certificado </mat-checkbox>
@@ -82,15 +84,15 @@
     mat-flat-button
     color="primary"
     type="button"
-    (click)="guardar()"
     [disabled]="guardando()"
+    (click)="guardar()"
   >
     @if (guardando()) {
-      <mat-spinner diameter="18"></mat-spinner>
+      Guardando...
+    } @else if (esEdicion) {
+      Actualizar
     } @else {
-      <mat-icon>save</mat-icon>
+      Guardar
     }
-
-    Guardar
   </button>
 </mat-dialog-actions>

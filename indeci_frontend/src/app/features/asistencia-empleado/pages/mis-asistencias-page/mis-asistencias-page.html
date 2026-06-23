@@ -1,0 +1,115 @@
+<section class="asistencia-page">
+  <mat-card class="asistencia-card">
+    <mat-card-header>
+      <div class="header">
+        <div>
+          <mat-card-title>Mis asistencias</mat-card-title>
+          <mat-card-subtitle>
+            Consulta mensual de asistencia, tardanzas, faltas, descansos y licencias.
+          </mat-card-subtitle>
+        </div>
+
+        <div class="acciones-mes">
+          <button mat-icon-button type="button" (click)="mesAnterior()">
+            <mat-icon>chevron_left</mat-icon>
+          </button>
+
+          <div class="titulo-mes">
+            {{ tituloMes() | titlecase }}
+          </div>
+
+          <button mat-icon-button type="button" (click)="mesSiguiente()">
+            <mat-icon>chevron_right</mat-icon>
+          </button>
+
+          <button mat-stroked-button type="button" (click)="irMesActual()">
+            Hoy
+          </button>
+        </div>
+      </div>
+    </mat-card-header>
+
+    <mat-card-content>
+      <p class="nota">
+        Montos referenciales. El descuento definitivo se aplica al generar la planilla del periodo.
+      </p>
+
+      <div class="leyenda">
+        @for (item of leyenda; track item.estado) {
+          <div class="leyenda-item">
+            <span class="leyenda-color" [class]="item.className"></span>
+            <span>{{ item.label }}</span>
+          </div>
+        }
+      </div>
+
+      @if (cargando()) {
+        <div class="estado-carga">
+          <mat-spinner diameter="36"></mat-spinner>
+          <span>Cargando asistencias...</span>
+        </div>
+      } @else if (error()) {
+        <div class="estado-error">
+          <mat-icon>error</mat-icon>
+          <span>{{ error() }}</span>
+        </div>
+      } @else {
+        <div class="calendario">
+          @for (dia of diasSemana; track dia) {
+            <div class="dia-semana">
+              {{ dia }}
+            </div>
+          }
+
+          @for (dia of diasCalendario(); track dia.fecha) {
+            <div [class]="obtenerClaseDia(dia)">
+              <div class="dia-numero">
+                {{ dia.dia }}
+              </div>
+
+              @if (dia.estado !== 'SIN_REGISTRO') {
+                <div class="dia-estado">
+                  {{ dia.estado.replace('_', ' ') }}
+                </div>
+              } @else {
+                <div class="dia-estado sin-registro-label">
+                  Sin registro
+                </div>
+              }
+
+              @if (dia.asistencia?.horaIngreso || dia.asistencia?.horaSalida) {
+                <div class="horas">
+                  @if (dia.asistencia?.horaIngreso) {
+                    <span>Ingreso: {{ dia.asistencia?.horaIngreso }}</span>
+                  }
+
+                  @if (dia.asistencia?.horaSalida) {
+                    <span>Salida: {{ dia.asistencia?.horaSalida }}</span>
+                  }
+                </div>
+              }
+
+              @if (obtenerMinutosTardanza(dia.asistencia) > 0) {
+                <div class="detalle">
+                  {{ obtenerMinutosTardanza(dia.asistencia) }} min
+                </div>
+              }
+
+              @if (obtenerMontoDescuento(dia.asistencia) > 0) {
+                <div class="monto">
+                  S/ {{ obtenerMontoDescuento(dia.asistencia) | number:'1.2-2' }}
+                </div>
+              }
+
+              @if (dia.asistencia?.observacion) {
+                <div class="observacion">
+                  {{ dia.asistencia?.observacion }}
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+    </mat-card-content>
+  </mat-card>
+</section>

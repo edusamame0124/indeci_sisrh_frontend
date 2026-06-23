@@ -92,3 +92,21 @@ th {
   color: #777;
   padding: 28px 12px;
 }
+.filtros {
+  display: grid;
+  grid-template-columns: minmax(240px, 1fr) 180px 160px auto;
+  gap: 12px;
+  align-items: center;
+  padding: 16px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.filtros mat-form-field {
+  width: 100%;
+}
+
+@media (max-width: 900px) {
+  .filtros {
+    grid-template-columns: 1fr;
+  }
+}

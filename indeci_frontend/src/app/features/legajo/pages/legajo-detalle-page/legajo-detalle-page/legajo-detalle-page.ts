@@ -38,7 +38,8 @@ export class LegajoDetallePage implements OnInit {
   private readonly router = inject(Router);
   private readonly dialog = inject(MatDialog);
   private readonly legajoApiService = inject(LegajoApiService);
-private readonly legajoDocumentoService = inject(LegajoApiService);
+  readonly reemplazandoSustento = signal(false);
+  private readonly legajoDocumentoService = inject(LegajoApiService);
   ngOnInit(): void {
     const personaIdParam = this.route.snapshot.paramMap.get('personaId');
     const personaId = Number(personaIdParam);
@@ -97,52 +98,54 @@ private readonly legajoDocumentoService = inject(LegajoApiService);
     });
   }
 
-  agregarFormacion(): void {
+  agregarFormacion(item?: any): void {
     const empleadoId = this.legajoState.empleadoId();
 
     if (!empleadoId) {
-      this.legajoState.error.set('No se encontró el empleadoId del trabajador.');
+      this.legajoState.error.set('No se encontró el empleadoId.');
       return;
     }
 
-    import('../../../dialogs/formacion-academica-dialog/formacion-academica-dialog').then(
-      ({ FormacionAcademicaDialog }) => {
-        const ref = this.dialog.open(FormacionAcademicaDialog, {
-          width: '720px',
-          maxWidth: '92vw',
-          maxHeight: '90vh',
-          disableClose: true,
-          data: {
-            empleadoId,
-          },
-        });
+    import('../../../dialogs/formacion-academica-dialog/formacion-academica-dialog').then(({ FormacionAcademicaDialog }) => {
+      const ref = this.dialog.open(FormacionAcademicaDialog, {
+        width: '760px',
+        maxWidth: '95vw',
+        maxHeight: '92vh',
+        disableClose: true,
+        data: {
+          empleadoId,
+          modo: item ? 'EDITAR' : 'CREAR',
+          item: item ?? null,
+        },
+      });
 
-        ref.afterClosed().subscribe((guardado) => {
-          if (guardado) {
-            this.legajoState.recargar();
-          }
-        });
-      },
-    );
+      ref.afterClosed().subscribe((guardado) => {
+        if (guardado) {
+          this.legajoState.recargar();
+        }
+      });
+    });
   }
 
-  agregarCapacitacion(): void {
+  agregarCapacitacion(item?: any): void {
     const empleadoId = this.legajoState.empleadoId();
 
     if (!empleadoId) {
-      this.legajoState.error.set('No se encontró el empleadoId del trabajador.');
+      this.legajoState.error.set('No se encontró el empleadoId.');
       return;
     }
 
     import('../../../dialogs/capacitacion-dialog/capacitacion-dialog').then(
       ({ CapacitacionDialog }) => {
         const ref = this.dialog.open(CapacitacionDialog, {
-          width: '720px',
-          maxWidth: '92vw',
-          maxHeight: '90vh',
+          width: '760px',
+          maxWidth: '95vw',
+          maxHeight: '92vh',
           disableClose: true,
           data: {
             empleadoId,
+            modo: item ? 'EDITAR' : 'CREAR',
+            item: item ?? null,
           },
         });
 
@@ -155,22 +158,24 @@ private readonly legajoDocumentoService = inject(LegajoApiService);
     );
   }
 
-  agregarIdioma(): void {
+  agregarIdioma(item?: any): void {
     const empleadoId = this.legajoState.empleadoId();
 
     if (!empleadoId) {
-      this.legajoState.error.set('No se encontró el empleadoId del trabajador.');
+      this.legajoState.error.set('No se encontró el empleadoId.');
       return;
     }
 
     import('../../../dialogs/idioma-dialog/idioma-dialog').then(({ IdiomaDialog }) => {
       const ref = this.dialog.open(IdiomaDialog, {
-        width: '680px',
-        maxWidth: '92vw',
-        maxHeight: '90vh',
+        width: '700px',
+        maxWidth: '95vw',
+        maxHeight: '92vh',
         disableClose: true,
         data: {
           empleadoId,
+          modo: item ? 'EDITAR' : 'CREAR',
+          item: item ?? null,
         },
       });
 
@@ -182,51 +187,56 @@ private readonly legajoDocumentoService = inject(LegajoApiService);
     });
   }
 
-  agregarConocimiento(): void {
-    const empleadoId = this.legajoState.empleadoId();
+  agregarConocimiento(item?: any): void {
+  const empleadoId = this.legajoState.empleadoId();
 
-    if (!empleadoId) {
-      this.legajoState.error.set('No se encontró el empleadoId del trabajador.');
-      return;
-    }
-
-    import('../../../dialogs/conocimiento-informatico-dialog/conocimiento-informatico-dialog').then(
-      ({ ConocimientoInformaticoDialog }) => {
-        const ref = this.dialog.open(ConocimientoInformaticoDialog, {
-          width: '680px',
-          maxWidth: '92vw',
-          maxHeight: '90vh',
-          disableClose: true,
-          data: {
-            empleadoId,
-          },
-        });
-
-        ref.afterClosed().subscribe((guardado) => {
-          if (guardado) {
-            this.legajoState.recargar();
-          }
-        });
-      },
-    );
+  if (!empleadoId) {
+    this.legajoState.error.set('No se encontró el empleadoId.');
+    return;
   }
 
-  agregarFamiliar(): void {
-    const empleadoId = this.legajoState.empleadoId();
+  import('../../../dialogs/conocimiento-informatico-dialog/conocimiento-informatico-dialog').then(
+    ({ ConocimientoInformaticoDialog }) => {
+      const ref = this.dialog.open(ConocimientoInformaticoDialog, {
+        width: '700px',
+        maxWidth: '95vw',
+        maxHeight: '92vh',
+        disableClose: true,
+        data: {
+          empleadoId,
+          modo: item ? 'EDITAR' : 'CREAR',
+          item: item ?? null,
+        },
+      });
 
-    if (!empleadoId) {
-      this.legajoState.error.set('No se encontró el empleadoId del trabajador.');
-      return;
-    }
+      ref.afterClosed().subscribe((guardado) => {
+        if (guardado) {
+          this.legajoState.recargar();
+        }
+      });
+    },
+  );
+}
 
-    import('../../../dialogs/familiar-dialog/familiar-dialog').then(({ FamiliarDialog }) => {
+  agregarFamiliar(item?: any): void {
+  const empleadoId = this.legajoState.empleadoId();
+
+  if (!empleadoId) {
+    this.legajoState.error.set('No se encontró el empleadoId.');
+    return;
+  }
+
+  import('../../../dialogs/familiar-dialog/familiar-dialog').then(
+    ({ FamiliarDialog }) => {
       const ref = this.dialog.open(FamiliarDialog, {
-        width: '720px',
-        maxWidth: '92vw',
-        maxHeight: '90vh',
+        width: '760px',
+        maxWidth: '95vw',
+        maxHeight: '92vh',
         disableClose: true,
         data: {
           empleadoId,
+          modo: item ? 'EDITAR' : 'CREAR',
+          item: item ?? null,
         },
       });
 
@@ -235,102 +245,150 @@ private readonly legajoDocumentoService = inject(LegajoApiService);
           this.legajoState.recargar();
         }
       });
-    });
+    },
+  );
+}
+
+ agregarExperiencia(item?: any): void {
+  const empleadoId = this.legajoState.empleadoId();
+
+  if (!empleadoId) {
+    this.legajoState.error.set('No se encontró el empleadoId.');
+    return;
   }
 
-  agregarExperiencia(): void {
-    const empleadoId = this.legajoState.empleadoId();
+  import('../../../dialogs/experiencia-laboral-dialog/experiencia-laboral-dialog').then(
+    ({ ExperienciaLaboralDialog }) => {
+      const ref = this.dialog.open(ExperienciaLaboralDialog, {
+        width: '820px',
+        maxWidth: '95vw',
+        maxHeight: '92vh',
+        disableClose: true,
+        data: {
+          empleadoId,
+          modo: item ? 'EDITAR' : 'CREAR',
+          item: item ?? null,
+        },
+      });
 
-    if (!empleadoId) {
-      this.legajoState.error.set('No se encontró el empleadoId del trabajador.');
-      return;
-    }
+      ref.afterClosed().subscribe((guardado) => {
+        if (guardado) {
+          this.legajoState.recargar();
+        }
+      });
+    },
+  );
+}
 
-    import('../../../dialogs/experiencia-laboral-dialog/experiencia-laboral-dialog').then(
-      ({ ExperienciaLaboralDialog }) => {
-        const ref = this.dialog.open(ExperienciaLaboralDialog, {
-          width: '720px',
-          maxWidth: '92vw',
-          maxHeight: '90vh',
-          disableClose: true,
-          data: {
-            empleadoId,
-          },
-        });
+  agregarReconocimiento(item?: any): void {
+  const empleadoId = this.legajoState.empleadoId();
 
-        ref.afterClosed().subscribe((guardado) => {
-          if (guardado) {
-            this.legajoState.recargar();
-          }
-        });
-      },
-    );
+  if (!empleadoId) {
+    this.legajoState.error.set('No se encontró el empleadoId.');
+    return;
   }
 
-  agregarReconocimiento(): void {
-    const empleadoId = this.legajoState.empleadoId();
+  import('../../../dialogs/reconocimiento-dialog/reconocimiento-dialog').then(
+    ({ ReconocimientoDialog }) => {
+      const ref = this.dialog.open(ReconocimientoDialog, {
+        width: '720px',
+        maxWidth: '95vw',
+        maxHeight: '92vh',
+        disableClose: true,
+        data: {
+          empleadoId,
+          modo: item ? 'EDITAR' : 'CREAR',
+          item: item ?? null,
+        },
+      });
 
-    if (!empleadoId) {
-      this.legajoState.error.set('No se encontró el empleadoId del trabajador.');
-      return;
-    }
+      ref.afterClosed().subscribe((guardado) => {
+        if (guardado) {
+          this.legajoState.recargar();
+        }
+      });
+    },
+  );
+}
 
-    import('../../../dialogs/reconocimiento-dialog/reconocimiento-dialog').then(
-      ({ ReconocimientoDialog }) => {
-        const ref = this.dialog.open(ReconocimientoDialog, {
-          width: '720px',
-          maxWidth: '92vw',
-          maxHeight: '90vh',
-          disableClose: true,
-          data: {
-            empleadoId,
-          },
-        });
+  agregarMedidaDisciplinaria(item?: any): void {
+  const empleadoId = this.legajoState.empleadoId();
 
-        ref.afterClosed().subscribe((guardado) => {
-          if (guardado) {
-            this.legajoState.recargar();
-          }
-        });
-      },
-    );
+  if (!empleadoId) {
+    this.legajoState.error.set('No se encontró el empleadoId.');
+    return;
   }
 
-  agregarMedidaDisciplinaria(): void {
-    const empleadoId = this.legajoState.empleadoId();
+  import('../../../dialogs/medida-disciplinaria-dialog/medida-disciplinaria-dialog').then(
+    ({ MedidaDisciplinariaDialog }) => {
+      const ref = this.dialog.open(MedidaDisciplinariaDialog, {
+        width: '760px',
+        maxWidth: '95vw',
+        maxHeight: '92vh',
+        disableClose: true,
+        data: {
+          empleadoId,
+          modo: item ? 'EDITAR' : 'CREAR',
+          item: item ?? null,
+        },
+      });
 
-    if (!empleadoId) {
-      this.legajoState.error.set('No se encontró el empleadoId del trabajador.');
-      return;
-    }
-
-    import('../../../dialogs/medida-disciplinaria-dialog/medida-disciplinaria-dialog').then(
-      ({ MedidaDisciplinariaDialog }) => {
-        const ref = this.dialog.open(MedidaDisciplinariaDialog, {
-          width: '720px',
-          maxWidth: '92vw',
-          maxHeight: '90vh',
-          disableClose: true,
-          data: {
-            empleadoId,
-          },
-        });
-
-        ref.afterClosed().subscribe((guardado) => {
-          if (guardado) {
-            this.legajoState.recargar();
-          }
-        });
-      },
-    );
-  }
+      ref.afterClosed().subscribe((guardado) => {
+        if (guardado) {
+          this.legajoState.recargar();
+        }
+      });
+    },
+  );
+}
 
   subirDocumento(): void {
     console.log('Pendiente modal de documento');
   }
 
-  editarRegistro(tipo: string, item: unknown): void {
-    console.log('Pendiente editar:', tipo, item);
+  editarRegistro(tipo: string, item: any): void {
+    if (!item?.id) {
+      this.legajoState.error.set('No se encontró el ID del registro.');
+      return;
+    }
+
+    switch (tipo) {
+      case 'FORMACION':
+        this.agregarFormacion(item);
+        break;
+
+      case 'CAPACITACION':
+        this.agregarCapacitacion(item);
+        break;
+
+      case 'IDIOMA':
+        this.agregarIdioma(item);
+        break;
+
+      case 'CONOCIMIENTO':
+        this.agregarConocimiento(item);
+        break;
+
+      case 'FAMILIAR':
+        this.agregarFamiliar(item);
+        break;
+
+      case 'EXPERIENCIA':
+        this.agregarExperiencia(item);
+        break;
+
+      case 'RECONOCIMIENTO':
+        this.agregarReconocimiento(item);
+        break;
+
+      case 'MEDIDA':
+        this.agregarMedidaDisciplinaria(item);
+        break;
+
+      default:
+        this.legajoState.error.set('Tipo de registro no soportado para edición.');
+        break;
+    }
   }
 
   eliminarRegistro(tipo: string, id?: number): void {
@@ -407,5 +465,95 @@ private readonly legajoDocumentoService = inject(LegajoApiService);
     }
 
     this.legajoState.descargarDocumento(documentoId);
+  }
+  cambiarSustento(
+    tipo: string,
+    item: any,
+    nombreDocumento?: string | null,
+    fechaDocumento?: string | null,
+  ): void {
+    const empleadoId = this.legajoState.empleadoId();
+    const registroId = item?.id;
+    const documentoActualId = this.obtenerDocumentoActualId(item);
+
+    if (!empleadoId) {
+      this.legajoState.error.set('No se encontró el empleadoId.');
+      return;
+    }
+
+    if (!registroId) {
+      this.legajoState.error.set('No se encontró el ID del registro.');
+      return;
+    }
+
+    if (!documentoActualId) {
+      this.legajoState.error.set('Este registro no tiene documento vinculado para reemplazar.');
+      return;
+    }
+
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'application/pdf,image/jpeg,image/png';
+
+    input.onchange = () => {
+      const file = input.files?.[0];
+
+      if (!file) {
+        return;
+      }
+
+      const confirmado = window.confirm(
+        '¿Está seguro de reemplazar el sustento actual? El documento anterior quedará inactivo.',
+      );
+
+      if (!confirmado) {
+        return;
+      }
+
+      this.reemplazandoSustento.set(true);
+      this.legajoState.error.set(null);
+
+      this.legajoDocumentoService
+        .reemplazarSustentoUsandoDocumentoActual({
+          tipo,
+          registroId,
+          empleadoId,
+          documentoActualId,
+          file,
+          nombreDocumento,
+          fechaDocumento,
+          observacion: 'Reemplazo de sustento desde legajo',
+        })
+        .subscribe({
+          next: () => {
+            this.reemplazandoSustento.set(false);
+            this.legajoState.recargar();
+          },
+          error: async (error) => {
+            console.error('Error reemplazando sustento:', error);
+
+            let mensaje = 'No se pudo reemplazar el sustento.';
+
+            if (error.error instanceof Blob) {
+              try {
+                const text = await error.error.text();
+                const json = JSON.parse(text);
+                mensaje = json.mensaje || json.message || mensaje;
+                console.error('Mensaje backend:', json);
+              } catch {
+                // queda mensaje genérico
+              }
+            }
+
+            this.reemplazandoSustento.set(false);
+            this.legajoState.error.set(mensaje);
+          },
+        });
+    };
+
+    input.click();
+  }
+  obtenerDocumentoActualId(item: any): number | null {
+    return item?.legajoDocumentoId ?? item?.documentoId ?? item?.legajoDocumento?.id ?? null;
   }
 }

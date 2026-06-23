@@ -38,7 +38,11 @@ export const MAIN_NAV_ITEMS: readonly MainNavItem[] = [
           { label: 'Tipo de documento', route: '/catalogos/tipo-documento', icon: 'fingerprint' },
           { label: 'Tipo de personal', route: '/catalogos/tipo-personal', icon: 'engineering' },
           { label: 'Profesión', route: '/catalogos/profesion', icon: 'school' },
-          { label: 'Grado académico', route: '/catalogos/grado-academico', icon: 'workspace_premium' },
+          {
+            label: 'Grado académico',
+            route: '/catalogos/grado-academico',
+            icon: 'workspace_premium',
+          },
           { label: 'Nivel', route: '/catalogos/nivel', icon: 'stairs' },
         ],
       },
@@ -49,7 +53,11 @@ export const MAIN_NAV_ITEMS: readonly MainNavItem[] = [
           { label: 'Sede', route: '/catalogos/sede', icon: 'business' },
           { label: 'Oficina', route: '/catalogos/oficina', icon: 'meeting_room' },
           { label: 'Dependencia', route: '/catalogos/dependencia', icon: 'domain' },
-          { label: 'Estructura orgánica', route: '/catalogos/estructura-organica', icon: 'account_tree' },
+          {
+            label: 'Estructura orgánica',
+            route: '/catalogos/estructura-organica',
+            icon: 'account_tree',
+          },
         ],
       },
       {
@@ -59,9 +67,17 @@ export const MAIN_NAV_ITEMS: readonly MainNavItem[] = [
           { label: 'Régimen laboral', route: '/catalogos/regimen-laboral', icon: 'work' },
           { label: 'Tipo de contrato', route: '/catalogos/tipo-contrato', icon: 'description' },
           { label: 'Condición laboral', route: '/catalogos/condicion-laboral', icon: 'rule' },
-          { label: 'Régimen pensionario', route: '/catalogos/regimen-pensionario', icon: 'account_balance_wallet' },
+          {
+            label: 'Régimen pensionario',
+            route: '/catalogos/regimen-pensionario',
+            icon: 'account_balance_wallet',
+          },
           { label: 'Tipo de comisión AFP', route: '/catalogos/tipo-comision-afp', icon: 'percent' },
-          { label: 'Conceptos de planilla', route: '/catalogos/conceptos-planilla', icon: 'receipt_long' },
+          {
+            label: 'Conceptos de planilla',
+            route: '/catalogos/conceptos-planilla',
+            icon: 'receipt_long',
+          },
         ],
       },
     ],
@@ -86,7 +102,11 @@ export const MAIN_NAV_ITEMS: readonly MainNavItem[] = [
     requiredAnyRole: [...EMPLEADOS_ACCESS_ROLES],
     children: [
       { label: 'Gestión del empleado', route: '/gestiones-personal/empleado', icon: 'badge' },
-      { label: 'Gestión del jefe inmediato', route: '/gestiones-personal/jefe-inmediato', icon: 'supervisor_account' },
+      {
+        label: 'Gestión del jefe inmediato',
+        route: '/gestiones-personal/jefe-inmediato',
+        icon: 'supervisor_account',
+      },
       { label: 'Gestión de RRHH', route: '/gestiones-personal/rrhh', icon: 'diversity_3' },
     ],
   },
@@ -97,17 +117,37 @@ export const MAIN_NAV_ITEMS: readonly MainNavItem[] = [
     icon: 'folder_shared',
     requiredAnyRole: [...EMPLEADOS_ACCESS_ROLES],
     children: [
-      { label: 'Datos Generales', route: '/legajo/datos-generales', icon: 'person' },
-      { label: 'Vinculación Laboral', route: '/legajo/vinculacion-laboral', icon: 'work' },
-      { label: 'Formación y Desarrollo', route: '/legajo/formacion-desarrollo', icon: 'school' },
-      { label: 'Trayectoria Laboral', route: '/legajo/trayectoria-laboral', icon: 'work_history' },
-      { label: 'Compensaciones y Beneficios', route: '/legajo/compensaciones-beneficios', icon: 'payments' },
-      { label: 'Evaluación y Desarrollo de Carrera', route: '/legajo/evaluacion-carrera', icon: 'trending_up' },
-      { label: 'Disciplina y Reconocimientos', route: '/legajo/disciplina-reconocimientos', icon: 'military_tech' },
-      { label: 'Relaciones Laborales', route: '/legajo/relaciones-laborales', icon: 'groups' },
-      { label: 'Seguridad, Salud y Bienestar', route: '/legajo/seguridad-salud-bienestar', icon: 'health_and_safety' },
-      { label: 'Desvinculación', route: '/legajo/desvinculacion', icon: 'logout' },
-      { label: 'Documentos Complementarios', route: '/legajo/documentos-complementarios', icon: 'description' },
+      {
+        label: 'Legajo',
+        route: '/legajo',
+        icon: 'folder_shared',
+      },
+    ],
+  },
+  {
+    label: 'Teletrabajo',
+    route: '',
+    icon: 'folder_shared',
+    requiredAnyRole: [...EMPLEADOS_ACCESS_ROLES],
+    children: [
+      {
+        label: 'teletrabajo',
+        route: '/teletrabajo',
+        icon: 'folder_shared',
+      },
+    ],
+  },
+  {
+    label: 'Mis asistencias',
+    route: '',
+    icon: 'folder_shared',
+    requiredAnyRole: [...EMPLEADOS_ACCESS_ROLES],
+    children: [
+      {
+        label: 'Mis Asistencias',
+        route: '/asistencia-empleado/mis-asistencias',
+        icon: 'event_available',
+      },
     ],
   },
 
@@ -128,14 +168,16 @@ export const MAIN_NAV_ITEMS: readonly MainNavItem[] = [
       { label: 'Centro de Validaciones', route: '/planilla/validaciones', icon: 'rule' },
       { label: 'Asistente de Recálculo', route: '/planilla/recalculo', icon: 'tune' },
       { label: 'Generación masiva', route: '/planilla/generacion-masiva', icon: 'group_work' },
-      { label: 'Generación individual', route: '/planilla/generacion-individual', icon: 'person_add' },
+      {
+        label: 'Generación individual',
+        route: '/planilla/generacion-individual',
+        icon: 'person_add',
+      },
       { label: 'Movimientos', route: '/planilla/movimientos', icon: 'list' },
       { label: 'Suspensiones / Licencias', route: '/planilla/suspensiones', icon: 'event_busy' },
       { label: 'MCPP', route: '/planilla/mcpp', icon: 'receipt' },
     ],
   },
-
- 
 
   {
     label: 'Reportes',

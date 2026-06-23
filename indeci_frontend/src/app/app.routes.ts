@@ -78,6 +78,13 @@ export const routes: Routes = [
         loadChildren: () =>
           import('./features/teletrabajo/teletrabajo.routes').then((m) => m.TELETRABAJO_ROUTES),
       },
+      {
+        path: 'asistencia-empleado/mis-asistencias',
+        loadComponent: () =>
+          import('./features/asistencia-empleado/pages/mis-asistencias-page/mis-asistencias-page').then(
+            (m) => m.MisAsistenciasPage,
+          ),
+      },
     ],
   },
   {

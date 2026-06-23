@@ -149,19 +149,43 @@ export class LegajoStateService {
         this.cargando.set(false);
       },
     });
-  };
+  }
+  obtenerDocumentoActualId(item: any): number | null {
+    return item?.legajoDocumentoId ?? item?.documentoId ?? item?.legajoDocumento?.id ?? null;
+  }
 
   descargarDocumento(documentoId?: number | null): void {
-    if (!documentoId) return;
+    if (!documentoId) {
+      this.error.set('Este registro no tiene documento sustentatorio vinculado.');
+      return;
+    }
 
     this.api.descargarDocumento(documentoId).subscribe({
       next: (blob) => {
         const url = window.URL.createObjectURL(blob);
         window.open(url, '_blank');
+
+        setTimeout(() => {
+          window.URL.revokeObjectURL(url);
+        }, 1000);
       },
-      error: (err) => {
+      error: async (err) => {
         console.error('Error descargando documento:', err);
-        this.error.set('No se pudo descargar el documento.');
+
+        let mensaje = 'No se pudo descargar el documento.';
+
+        if (err.error instanceof Blob) {
+          try {
+            const text = await err.error.text();
+            const json = JSON.parse(text);
+            mensaje = json.mensaje || json.message || mensaje;
+            console.error('Mensaje backend:', json);
+          } catch {
+            // dejamos el mensaje genérico
+          }
+        }
+
+        this.error.set(mensaje);
       },
     });
   }

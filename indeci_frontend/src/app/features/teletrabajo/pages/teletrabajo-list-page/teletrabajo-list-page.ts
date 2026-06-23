@@ -9,6 +9,11 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 
+import { FormsModule } from '@angular/forms';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
+
 import { TeletrabajoApiService } from '../../services/teletrabajo-api';
 import { TeletrabajoResumen } from '../../models/teletrabajo.model';
 
@@ -24,6 +29,11 @@ import { MatDialog, MatDialogModule } from '@angular/material/dialog';
     MatProgressSpinnerModule,
     MatTooltipModule,
     MatDialogModule,
+
+    FormsModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatSelectModule,
   ],
   templateUrl: './teletrabajo-list-page.html',
   styleUrl: './teletrabajo-list-page.scss',
@@ -37,6 +47,26 @@ export class TeletrabajoListPage implements OnInit {
   readonly reportes = signal<TeletrabajoResumen[]>([]);
 
   private readonly dialog = inject(MatDialog);
+
+  readonly filtroTexto = signal('');
+  readonly filtroMes = signal<number | null>(null);
+  readonly filtroAnio = signal<number | null>(null);
+
+  readonly meses = [
+    { id: 1, nombre: 'Enero' },
+    { id: 2, nombre: 'Febrero' },
+    { id: 3, nombre: 'Marzo' },
+    { id: 4, nombre: 'Abril' },
+    { id: 5, nombre: 'Mayo' },
+    { id: 6, nombre: 'Junio' },
+    { id: 7, nombre: 'Julio' },
+    { id: 8, nombre: 'Agosto' },
+    { id: 9, nombre: 'Septiembre' },
+    { id: 10, nombre: 'Octubre' },
+    { id: 11, nombre: 'Noviembre' },
+    { id: 12, nombre: 'Diciembre' },
+  ];
+
   ngOnInit(): void {
     this.cargarReportes();
   }
@@ -156,5 +186,34 @@ export class TeletrabajoListPage implements OnInit {
 
   trabajadorTexto(reporte: TeletrabajoResumen): string {
     return reporte.trabajador || `Empleado ID: ${reporte.empleadoId}`;
+  }
+
+  reportesFiltrados(): TeletrabajoResumen[] {
+    const texto = this.filtroTexto().trim().toUpperCase();
+    const mes = this.filtroMes();
+    const anio = this.filtroAnio();
+
+    return this.reportes().filter((reporte) => {
+      const trabajador = this.trabajadorTexto(reporte).toUpperCase();
+      const modalidad = (reporte.modalidad || '').toUpperCase();
+      const estado = (reporte.estado || '').toUpperCase();
+
+      const coincideTexto =
+        !texto ||
+        trabajador.includes(texto) ||
+        modalidad.includes(texto) ||
+        estado.includes(texto) ||
+        String(reporte.empleadoId || '').includes(texto);
+
+      const coincideMes = !mes || reporte.mes === mes;
+      const coincideAnio = !anio || reporte.anio === anio;
+
+      return coincideTexto && coincideMes && coincideAnio;
+    });
+  }
+  limpiarFiltros(): void {
+    this.filtroTexto.set('');
+    this.filtroMes.set(null);
+    this.filtroAnio.set(null);
   }
 }

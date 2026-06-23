@@ -13,6 +13,7 @@ import {
   TeletrabajoReporte,
   TeletrabajoResumen,
   TeletrabajoTrabajadorItem,
+  TeletrabajoPersonaPage,
 } from '../models/teletrabajo.model';
 
 type BackendResponse<T> =
@@ -34,15 +35,14 @@ export class TeletrabajoApiService {
 
   buscarTrabajadores(filtro: string): Observable<TeletrabajoTrabajadorItem[]> {
     return this.http
-      .get<BackendResponse<TeletrabajoTrabajadorItem[]>>(
-        `${environment.apiUrl}/rrhh/empleados/buscar`,
-        {
-          params: {
-            filtro,
-          },
+      .get<BackendResponse<TeletrabajoPersonaPage>>(`${environment.apiUrl}/rrhh/persona/page`, {
+        params: {
+          q: filtro,
+          page: '0',
+          size: '20',
         },
-      )
-      .pipe(map((resp) => this.unwrap(resp)));
+      })
+      .pipe(map((resp) => this.unwrap(resp).content ?? []));
   }
 
   listarReportes(): Observable<TeletrabajoResumen[]> {

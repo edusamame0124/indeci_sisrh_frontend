@@ -22,7 +22,7 @@ export interface TeletrabajoResumen {
   estado?: string | null;
   activo?: number;
 
-  // Estos campos los podemos llenar luego desde otro endpoint de trabajador
+
   trabajador?: string | null;
   dni?: string | null;
   cargo?: string | null;
@@ -78,13 +78,25 @@ export interface GuardarTeletrabajoDetalleRequest {
   incidenciaObservacion?: string | null;
   conformidadId: number;
 }
+
+
 export interface TeletrabajoTrabajadorItem {
-  id?: number;
+  id?: number; // personaId
   empleadoId?: number;
   personaId?: number;
   nombreCompleto?: string | null;
   trabajador?: string | null;
   dni?: string | null;
+  codigoInterno?: string | null;
+  estado?: string | null;
   cargo?: string | null;
   regimenLaboral?: string | null;
+}
+
+export interface TeletrabajoPersonaPage {
+  content: TeletrabajoTrabajadorItem[];
+  totalElements: number;
+  totalPages: number;
+  pageNumber: number;
+  pageSize: number;
 }
