@@ -26,19 +26,19 @@ import { RouterOutlet } from '@angular/router';
   `,
   styles: [
     `
-      :host {
-        display: block;
-        min-height: 100vh;
-        background: #f8fafc;
-        font-family: var(--sisrh-font-sans, 'Source Sans 3', 'Segoe UI', system-ui, sans-serif);
-      }
-      .auth-layout {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        min-height: 100vh;
-        padding: 2rem 1rem;
-      }
+:host {
+  display: block;
+  height: 100vh;
+
+  background-image: url('/img/fondo_indeci1.png');
+  background-size: cover;
+  background-position: 70% center;
+  background-repeat: no-repeat;
+}
+.auth-layout {
+  min-height: 100vh;
+  overflow: hidden;
+}
       .auth-layout__header {
         text-align: center;
         margin-bottom: 1.75rem;
@@ -67,14 +67,9 @@ import { RouterOutlet } from '@angular/router';
         font-size: 0.9375rem;
         font-weight: 400;
       }
-      .auth-layout__content {
-        flex: 1;
-        width: 100%;
-        max-width: 920px;
-        display: flex;
-        align-items: flex-start;
-        justify-content: center;
-      }
+.auth-layout__content {
+  transform: translate(600px, 220px);
+}
       .auth-layout__footer {
         margin-top: 2rem;
         color: #94a3b8;

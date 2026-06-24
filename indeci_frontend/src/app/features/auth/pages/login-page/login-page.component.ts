@@ -89,11 +89,16 @@ import { LoginRequest } from '../../models/login.model';
   `,
   styles: [
     `
-      :host {
-        display: block;
-        width: 100%;
-        font-family: var(--sisrh-font-sans, 'Source Sans 3', 'Segoe UI', system-ui, sans-serif);
-      }
+:host {
+  display: block;
+  width: 100%;
+  min-height: 100vh;
+
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+      
       .login-card {
         width: 100%;
         max-width: 420px;
