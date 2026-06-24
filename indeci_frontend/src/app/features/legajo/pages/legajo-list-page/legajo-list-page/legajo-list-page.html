@@ -56,45 +56,45 @@
     </div>
 
     <div class="table-wrapper">
-      <table>
-        <thead>
-          <tr>
-            <th>DNI</th>
-            <th>Trabajador</th>
-            <th>Código interno</th>
-            <th>Régimen laboral</th>
-            <th>Estado</th>
-            <th>Persona ID</th>
-            <th>Empleado ID</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
+  <table>
+    <thead>
+      <tr>
+        <th>DNI</th>
+        <th>Trabajador</th>
+        <th>Código interno</th>
+        <th>Régimen laboral</th>
+        <th>Estado</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
 
-        <tbody>
-          @for (item of personas(); track item.id) {
-            <tr>
-              <td>{{ item.dni || '-' }}</td>
-              <td>{{ item.nombreCompleto || '-' }}</td>
-              <td>{{ item.codigoInterno || '-' }}</td>
-              <td>{{ item.regimenLaboral || '-' }}</td>
-              <td>{{ item.estado || '-' }}</td>
-              <td>{{ item.id }}</td>
-              <td>{{ item.empleadoId || '-' }}</td>
-              <td>
-                <button mat-stroked-button color="primary" type="button" (click)="verLegajo(item)">
-                  <mat-icon>folder_open</mat-icon>
-                  Ver legajo
-                </button>
-              </td>
-            </tr>
-          } @empty {
-            <tr>
-              <td colspan="8" class="empty">No hay trabajadores para mostrar.</td>
-            </tr>
-          }
-        </tbody>
-      </table>
-    </div>
+    <tbody>
+      @for (item of personas(); track item.id) {
+        <tr>
+          <td>{{ item.dni || '-' }}</td>
+          <td>{{ item.nombreCompleto || '-' }}</td>
+          <td>{{ item.codigoInterno || '-' }}</td>
+          <td>{{ item.regimenLaboral || '-' }}</td>
+          <td>{{ item.estado || '-' }}</td>
+          <td>
+            <button
+              mat-stroked-button
+              color="primary"
+              type="button"
+              (click)="verLegajo(item)">
+              <mat-icon>folder_open</mat-icon>
+              Ver legajo
+            </button>
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="6" class="empty">No hay trabajadores para mostrar.</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
 
     <mat-paginator
       [length]="totalElements()"

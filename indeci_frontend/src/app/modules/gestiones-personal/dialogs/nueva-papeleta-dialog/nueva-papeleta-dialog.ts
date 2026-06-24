@@ -149,7 +149,7 @@ export class NuevaPapeletaDialogComponent implements OnInit {
       return;
     }
 
-    if (!this.motivo.trim()) {
+    if (this.requiereMotivo() && !this.motivo.trim()) {
       this.error.set('Ingrese el motivo de la solicitud.');
       return;
     }
@@ -205,8 +205,8 @@ export class NuevaPapeletaDialogComponent implements OnInit {
       fechaInicio: this.fechaInicio,
       fechaFin: this.fechaFin,
       cantidadDias: this.mostrarHoras() ? null : this.cantidadDias,
-      motivo: this.motivo.trim(),
-      observacion: this.observacion.trim(),
+      motivo: this.requiereMotivo() ? this.motivo.trim() : null,
+      observacion: this.requiereObservacion() ? this.observacion.trim() : null,
       horaInicio: this.mostrarHoras() ? this.horaInicio : null,
       horaFin: this.mostrarHoras() ? this.horaFin : null,
       cantidadHoras: this.mostrarHoras() ? this.cantidadHoras : null,
@@ -253,5 +253,14 @@ export class NuevaPapeletaDialogComponent implements OnInit {
   onArchivoSeleccionado(event: Event): void {
     const input = event.target as HTMLInputElement;
     this.archivoSustento = input.files?.[0] ?? null;
+  }
+  codigoTipoSolicitud(): string {
+    return String(this.tipoSeleccionado()?.codigo ?? '').padStart(3, '0');
+  }
+
+  requiereMotivo(): boolean {
+    const codigosQueRequierenMotivo = ['007'];
+
+    return codigosQueRequierenMotivo.includes(this.codigoTipoSolicitud());
   }
 }

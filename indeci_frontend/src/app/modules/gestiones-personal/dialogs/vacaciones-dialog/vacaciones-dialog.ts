@@ -22,6 +22,12 @@ interface DetalleVacacionForm {
   totalDias: number | null;
 }
 
+interface VacacionesDialogData {
+  tipoSolicitud: TipoSolicitudRrhh;
+  tipoVacacionCodigo?: string;
+  tipoVacacionNombre?: string;
+}
+
 @Component({
   selector: 'app-vacaciones-dialog',
   standalone: true,
@@ -47,10 +53,22 @@ export class VacacionesDialog implements OnInit {
   observacion = '';
   archivoSustento: File | null = null;
 
+  tipoSolicitud!: TipoSolicitudRrhh;
+  tipoVacacionCodigoInicial: string | null = null;
+  tipoVacacionNombre: string | null = null;
+
   constructor(
     @Inject(MAT_DIALOG_DATA)
-    public tipoSolicitud: TipoSolicitudRrhh,
+    public data: TipoSolicitudRrhh | VacacionesDialogData,
   ) {
+    if ('tipoSolicitud' in data) {
+      this.tipoSolicitud = data.tipoSolicitud;
+      this.tipoVacacionCodigoInicial = data.tipoVacacionCodigo ?? null;
+      this.tipoVacacionNombre = data.tipoVacacionNombre ?? null;
+    } else {
+      this.tipoSolicitud = data;
+    }
+
     this.tituloDialog = this.tipoSolicitud?.nombre ?? 'Solicitud de vacaciones';
   }
 
@@ -66,6 +84,8 @@ export class VacacionesDialog implements OnInit {
         const activos = (resp.data ?? []).filter((x) => Number(x.activo ?? 1) === 1);
         this.tiposVacacion.set(activos);
         this.cargandoTipos.set(false);
+
+        this.seleccionarTipoVacacionInicial();
       },
       error: () => {
         this.error.set('No se pudo cargar el catálogo de tipos de vacación.');
@@ -74,33 +94,124 @@ export class VacacionesDialog implements OnInit {
     });
   }
 
-  tipoVacacionSeleccionado(): TipoVacacion | null {
-    return this.tiposVacacion().find((x) => Number(x.id) === Number(this.tipoVacacionId)) ?? null;
-  }
-
-  codigoTipoVacacion(): string {
-    const tipo = this.tipoVacacionSeleccionado();
-
-    if (tipo?.codigo) {
-      return String(tipo.codigo).padStart(3, '0');
-    }
-
-    const nombre = this.normalizarTexto(tipo?.nombre);
-
-    if (nombre.includes('PROGRAM')) return '001';
-    if (nombre.includes('ADELANTO')) return '002';
-    if (nombre.includes('REPROGRAM')) return '003';
-    if (nombre.includes('FRACCION')) return '004';
-
-    return '';
-  }
-
-  normalizarTexto(valor: string | null | undefined): string {
+  normalizarTexto(valor: string | number | null | undefined): string {
     return String(valor ?? '')
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '')
       .toUpperCase()
       .trim();
+  }
+
+  private codigoDesdeValor(valor: string | number | null | undefined): string {
+    const texto = this.normalizarTexto(valor);
+
+    if (!texto) {
+      return '';
+    }
+
+    const soloNumeros = texto.replace(/\D/g, '');
+
+    if (soloNumeros && soloNumeros.length <= 3) {
+      return soloNumeros.padStart(3, '0');
+    }
+
+    // IMPORTANTE:
+    // REPROGRAMACION contiene PROGRAMACION.
+    // Por eso REPROGRAM debe evaluarse antes que PROGRAM.
+    if (texto.includes('REPROGRAM')) return '003';
+    if (texto.includes('FRACCION')) return '004';
+    if (texto.includes('ADELANTO')) return '002';
+    if (texto.includes('PROGRAM')) return '001';
+
+    return '';
+  }
+
+  private codigoDesdeTipoVacacion(tipo: TipoVacacion | null | undefined): string {
+    if (!tipo) {
+      return '';
+    }
+
+    const codigoPorCampo = this.codigoDesdeValor(tipo.codigo);
+
+    if (codigoPorCampo) {
+      return codigoPorCampo;
+    }
+
+    return this.codigoDesdeValor(tipo.nombre);
+  }
+
+  private codigoInicialSolicitado(): string {
+    const codigoPorMenu = this.codigoDesdeValor(this.tipoVacacionCodigoInicial);
+
+    if (codigoPorMenu) {
+      return codigoPorMenu;
+    }
+
+    return this.codigoDesdeValor(this.tipoVacacionNombre);
+  }
+
+  tipoVacacionSeleccionado(): TipoVacacion | null {
+    return this.tiposVacacion().find((x) => Number(x.id) === Number(this.tipoVacacionId)) ?? null;
+  }
+
+  tipoVacacionSeleccionadoNombre(): string {
+    return this.tipoVacacionSeleccionado()?.nombre ?? this.tipoVacacionNombre ?? '-';
+  }
+
+  nombreTipoVacacionSeleccionado(): string {
+    return this.tipoVacacionSeleccionado()?.nombre ?? this.tipoVacacionNombre ?? '-';
+  }
+  codigoTipoSolicitud(): string {
+    return String(this.tipoSolicitud?.codigo ?? '').padStart(3, '0');
+  }
+
+  requiereMotivo(): boolean {
+    const codigosQueRequierenMotivo = ['007'];
+
+    return codigosQueRequierenMotivo.includes(this.codigoTipoSolicitud());
+  }
+  seleccionarTipoVacacionInicial(): void {
+    if (!this.tipoVacacionCodigoInicial && !this.tipoVacacionNombre) {
+      return;
+    }
+
+    const codigoEsperado = this.codigoInicialSolicitado();
+    const nombreEsperado = this.normalizarTexto(this.tipoVacacionNombre);
+
+    let tipo: TipoVacacion | undefined;
+
+    if (codigoEsperado) {
+      tipo = this.tiposVacacion().find((x) => this.codigoDesdeTipoVacacion(x) === codigoEsperado);
+    }
+
+    if (!tipo && nombreEsperado) {
+      tipo = this.tiposVacacion().find((x) => this.normalizarTexto(x.nombre) === nombreEsperado);
+    }
+
+    if (!tipo && nombreEsperado) {
+      tipo = this.tiposVacacion().find((x) => {
+        const nombre = this.normalizarTexto(x.nombre);
+
+        // Solo comparamos en una dirección para evitar que
+        // REPROGRAMACION coincida con PROGRAMACION.
+        return nombre.includes(nombreEsperado);
+      });
+    }
+
+    if (!tipo) {
+      const solicitado = this.tipoVacacionNombre ?? this.tipoVacacionCodigoInicial ?? '-';
+      this.error.set(`No se encontró el tipo de vacación: ${solicitado}.`);
+      return;
+    }
+
+    this.tipoVacacionId = Number(tipo.id);
+    this.tituloDialog = `${this.tipoSolicitud.nombre} - ${tipo.nombre}`;
+
+    this.onTipoVacacionChange();
+  }
+
+  codigoTipoVacacion(): string {
+    return this.codigoDesdeTipoVacacion(this.tipoVacacionSeleccionado());
   }
 
   requiereSustento(): boolean {
@@ -201,6 +312,7 @@ export class VacacionesDialog implements OnInit {
   puedeAgregarReprogramacion(): boolean {
     const codigo = this.codigoTipoVacacion();
     const nuevos = this.detallesVacacion.filter((x) => x.tipo === 'REPROG_NUEVO').length;
+
     return codigo === '003' && nuevos < 2;
   }
 
@@ -217,60 +329,55 @@ export class VacacionesDialog implements OnInit {
       totalDias: null,
     });
   }
+
   esFraccionNueva(tipo: string): boolean {
-  return /^FRACC_\d+$/.test(tipo);
-}
-
-puedeAgregarFraccion(): boolean {
-  const codigo = this.codigoTipoVacacion();
-
-  const fracciones = this.detallesVacacion.filter((x) =>
-    this.esFraccionNueva(x.tipo),
-  ).length;
-
-  return codigo === '004' && fracciones < 4;
-}
-
-agregarFraccion(): void {
-  if (!this.puedeAgregarFraccion()) return;
-
-  const numero =
-    this.detallesVacacion.filter((x) => this.esFraccionNueva(x.tipo)).length + 1;
-
-  this.detallesVacacion.push({
-    tipo: `FRACC_${numero}`,
-    titulo: `Fracción ${numero}`,
-    fechaInicio: '',
-    fechaFin: '',
-    totalDias: null,
-  });
-}
-
-quitarUltimoDetalle(): void {
-  const ultimo = this.detallesVacacion[this.detallesVacacion.length - 1];
-
-  if (!ultimo) return;
-
-  if (ultimo.tipo === 'REPROG_NUEVO') {
-    const nuevos = this.detallesVacacion.filter((x) => x.tipo === 'REPROG_NUEVO').length;
-
-    if (nuevos > 1) {
-      this.detallesVacacion.pop();
-    }
-
-    return;
+    return /^FRACC_\d+$/.test(tipo);
   }
 
-  if (this.esFraccionNueva(ultimo.tipo)) {
-    const fracciones = this.detallesVacacion.filter((x) =>
-      this.esFraccionNueva(x.tipo),
-    ).length;
+  puedeAgregarFraccion(): boolean {
+    const codigo = this.codigoTipoVacacion();
+    const fracciones = this.detallesVacacion.filter((x) => this.esFraccionNueva(x.tipo)).length;
 
-    if (fracciones > 1) {
-      this.detallesVacacion.pop();
+    return codigo === '004' && fracciones < 4;
+  }
+
+  agregarFraccion(): void {
+    if (!this.puedeAgregarFraccion()) return;
+
+    const numero = this.detallesVacacion.filter((x) => this.esFraccionNueva(x.tipo)).length + 1;
+
+    this.detallesVacacion.push({
+      tipo: `FRACC_${numero}`,
+      titulo: `Fracción ${numero}`,
+      fechaInicio: '',
+      fechaFin: '',
+      totalDias: null,
+    });
+  }
+
+  quitarUltimoDetalle(): void {
+    const ultimo = this.detallesVacacion[this.detallesVacacion.length - 1];
+
+    if (!ultimo) return;
+
+    if (ultimo.tipo === 'REPROG_NUEVO') {
+      const nuevos = this.detallesVacacion.filter((x) => x.tipo === 'REPROG_NUEVO').length;
+
+      if (nuevos > 1) {
+        this.detallesVacacion.pop();
+      }
+
+      return;
+    }
+
+    if (this.esFraccionNueva(ultimo.tipo)) {
+      const fracciones = this.detallesVacacion.filter((x) => this.esFraccionNueva(x.tipo)).length;
+
+      if (fracciones > 1) {
+        this.detallesVacacion.pop();
+      }
     }
   }
-}
 
   detallePrincipal(): DetalleVacacionForm | null {
     const codigo = this.codigoTipoVacacion();
@@ -331,7 +438,7 @@ quitarUltimoDetalle(): void {
       }
     }
 
-    if (!this.motivo.trim()) {
+    if (this.requiereMotivo() && !this.motivo.trim()) {
       this.error.set('Ingrese el motivo de la solicitud.');
       return;
     }
@@ -372,8 +479,8 @@ quitarUltimoDetalle(): void {
       fechaFin: principal.fechaFin,
       cantidadDias: principal.totalDias,
 
-      motivo: this.motivo.trim(),
-      observacion: this.observacion.trim(),
+      motivo: this.requiereMotivo() ? this.motivo.trim() : null,
+      observacion: this.requiereObservacion() ? this.observacion.trim() : null,
 
       horaInicio: null,
       horaFin: null,

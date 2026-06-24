@@ -49,14 +49,14 @@ export class LactanciaDialog {
   motivo = '';
   observacion = '';
   archivoSustento: File | null = null;
-tituloDialog = 'Permiso';
+  tituloDialog = 'Permiso';
   constructor(
-  @Inject(MAT_DIALOG_DATA)
-  public tipoSolicitud: TipoSolicitudRrhh,
-) {
-  this.tituloDialog = this.tipoSolicitud?.nombre ?? 'Permiso por lactancia';
-}
-/** 
+    @Inject(MAT_DIALOG_DATA)
+    public tipoSolicitud: TipoSolicitudRrhh,
+  ) {
+    this.tituloDialog = this.tipoSolicitud?.nombre ?? 'Permiso por lactancia';
+  }
+  /** 
   get tipoSolicitud(): TipoSolicitudRrhh {
     return this.data.tipoSolicitud;
   }
@@ -72,7 +72,15 @@ tituloDialog = 'Permiso';
   requiereObservacion(): boolean {
     return Number(this.tipoSolicitud?.requiereObservacion ?? 0) === 1;
   }
+  codigoTipoSolicitud(): string {
+    return String(this.tipoSolicitud?.codigo ?? '').padStart(3, '0');
+  }
 
+  requiereMotivo(): boolean {
+    const codigosQueRequierenMotivo = ['007'];
+
+    return codigosQueRequierenMotivo.includes(this.codigoTipoSolicitud());
+  }
   usarFraccionado(): boolean {
     return this.modoLactancia === 'FRACCIONADO';
   }
@@ -212,12 +220,10 @@ tituloDialog = 'Permiso';
       this.minutosIngreso = null;
       this.minutosSalida = null;
     }
-
-    if (!this.motivo.trim()) {
+    if (this.requiereMotivo() && !this.motivo.trim()) {
       this.error.set('Ingrese el motivo de la solicitud.');
       return;
     }
-
     if (this.requiereSustento() && !this.archivoSustento) {
       this.error.set('Debe adjuntar el documento de sustento.');
       return;
@@ -239,8 +245,8 @@ tituloDialog = 'Permiso';
       fechaFin: this.fechaFin,
       cantidadDias: null,
 
-      motivo: this.motivo.trim(),
-      observacion: this.observacion.trim(),
+      motivo: this.requiereMotivo() ? this.motivo.trim() : null,
+      observacion: this.requiereObservacion() ? this.observacion.trim() : null,
 
       fechaNacimientoHijo: this.fechaNacimientoHijo,
       fechaFinPostnatal: this.fechaFinPostnatal,

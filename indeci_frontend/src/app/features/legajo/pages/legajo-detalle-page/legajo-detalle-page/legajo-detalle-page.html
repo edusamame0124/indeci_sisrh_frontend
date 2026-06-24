@@ -43,52 +43,160 @@
           <h1>{{ legajoState.nombreCompleto() }}</h1>
           <p>Detalle integral del legajo personal del trabajador.</p>
 
-          <div class="datos-grid">
-            <div>
-              <span>DNI</span>
-              <strong>{{ legajo.persona?.dni || '-' }}</strong>
-            </div>
+          <div class="datos-section">
+            <h3>Datos de persona</h3>
 
-            <div>
-              <span>Persona ID</span>
-              <strong>{{ legajoState.personaId() || '-' }}</strong>
-            </div>
+            <div class="datos-grid">
+              <div>
+                <span>DNI</span>
+                <strong>{{ legajo.persona?.dni || '-' }}</strong>
+              </div>
 
-            <div>
-              <span>Empleado ID</span>
-              <strong>{{ legajoState.empleadoId() || '-' }}</strong>
-            </div>
+              <div>
+                <span>Tipo de documento</span>
+                <strong>{{ legajo.persona?.tipoDocumento || '-' }}</strong>
+              </div>
 
-            <div>
-              <span>Estado</span>
-              <strong>{{ legajo.empleado?.estado || '-' }}</strong>
-            </div>
+              <div>
+                <span>Fecha de nacimiento</span>
+                <strong>
+                  {{
+                    legajo.persona?.fechaNacimiento
+                      ? (legajo.persona?.fechaNacimiento | slice: 0 : 10)
+                      : '-'
+                  }}
+                </strong>
+              </div>
 
-            <div>
-              <span>Código interno</span>
-              <strong>{{ legajo.empleado?.codigoInterno || '-' }}</strong>
-            </div>
+              <div>
+                <span>Sexo</span>
+                <strong>{{ legajo.persona?.sexo || '-' }}</strong>
+              </div>
 
-            <div>
-              <span>Código SISPER</span>
-              <strong>{{ legajo.empleado?.codigoSisper || '-' }}</strong>
-            </div>
+              <div>
+                <span>Estado civil</span>
+                <strong>{{ legajo.persona?.estadoCivil || '-' }}</strong>
+              </div>
 
-            <div>
-              <span>Correo</span>
-              <strong>
-                {{ legajo.persona?.email || legajo.persona?.correoInstitucional || '-' }}
-              </strong>
-            </div>
+              <div>
+                <span>Nacionalidad</span>
+                <strong>{{ legajo.persona?.nacionalidad || '-' }}</strong>
+              </div>
 
-            <div>
-              <span>Teléfono</span>
-              <strong>{{ legajo.persona?.telefono || '-' }}</strong>
-            </div>
+              <div>
+                <span>RUC</span>
+                <strong>{{ legajo.persona?.ruc || '-' }}</strong>
+              </div>
 
-            <div>
-              <span>Dirección</span>
-              <strong>{{ legajo.persona?.direccion || '-' }}</strong>
+              <div>
+                <span>Correo personal</span>
+                <strong>{{ legajo.persona?.email || '-' }}</strong>
+              </div>
+
+              <div>
+                <span>Correo institucional</span>
+                <strong>{{ legajo.persona?.correoInstitucional || '-' }}</strong>
+              </div>
+
+              <div>
+                <span>Teléfono</span>
+                <strong>{{ legajo.persona?.telefono || '-' }}</strong>
+              </div>
+
+              <div>
+                <span>Teléfono fijo</span>
+                <strong>{{ legajo.persona?.telefonoFijo || '-' }}</strong>
+              </div>
+
+              <div>
+                <span>Dirección</span>
+                <strong>{{ legajo.persona?.direccion || '-' }}</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="datos-section">
+            <h3>Datos del empleado</h3>
+
+            <div class="datos-grid">
+              <div>
+                <span>Estado del trabajador</span>
+                <strong>{{ legajo.empleado?.estado || '-' }}</strong>
+              </div>
+
+              <div>
+                <span>Código interno</span>
+                <strong>{{ legajo.empleado?.codigoInterno || '-' }}</strong>
+              </div>
+
+              <div>
+                <span>Código SISPER</span>
+                <strong>{{ legajo.empleado?.codigoSisper || '-' }}</strong>
+              </div>
+
+              <div>
+                <span>Tipo de personal</span>
+                <strong>{{ legajo.empleado?.tipoPersonal || '-' }}</strong>
+              </div>
+
+              <div>
+                <span>Régimen laboral</span>
+                <strong>{{ legajo.empleado?.regimenLaboral || '-' }}</strong>
+              </div>
+
+              <div>
+                <span>Profesión</span>
+                <strong>{{ legajo.empleado?.profesion || '-' }}</strong>
+              </div>
+
+              <div>
+                <span>Grado académico</span>
+                <strong>{{ legajo.empleado?.gradoAcademico || '-' }}</strong>
+              </div>
+
+              <div>
+                <span>Registro AIRHSP</span>
+                <strong>{{ legajo.empleado?.registroAirhsp || '-' }}</strong>
+              </div>
+
+              <div>
+                <span>Código CONADIS</span>
+                <strong>{{ legajo.empleado?.conadisCodigo || '-' }}</strong>
+              </div>
+
+              <div>
+                <span>Tiene EPS</span>
+                <strong>
+                  {{
+                    legajo.empleado?.hasEps === 'S' || legajo.empleado?.hasEps === 1
+                      ? 'Sí'
+                      : legajo.empleado?.hasEps === 'N' || legajo.empleado?.hasEps === 0
+                        ? 'No'
+                        : '-'
+                  }}
+                </strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="datos-section">
+            <h3>Contacto de emergencia</h3>
+
+            <div class="datos-grid">
+              <div>
+                <span>Nombre</span>
+                <strong>{{ legajo.persona?.contactoEmergenciaNombre || '-' }}</strong>
+              </div>
+
+              <div>
+                <span>Parentesco</span>
+                <strong>{{ legajo.persona?.contactoEmergenciaParentesco || '-' }}</strong>
+              </div>
+
+              <div>
+                <span>Teléfono</span>
+                <strong>{{ legajo.persona?.contactoEmergenciaTelefono || '-' }}</strong>
+              </div>
             </div>
           </div>
         </div>

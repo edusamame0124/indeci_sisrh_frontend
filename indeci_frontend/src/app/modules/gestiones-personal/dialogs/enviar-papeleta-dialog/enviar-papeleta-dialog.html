@@ -7,8 +7,8 @@
     <strong>Estado actual:</strong> {{ solicitud.estadoSolicitud }}
   </div>
 
-  <label class="field">
-    <span>Archivo PDF firmado</span>
+  <label class="field field--full">
+    <span>Papeleta firmada PDF <small>(opcional)</small></span>
     <input type="file" accept="application/pdf" (change)="seleccionarArchivo($event)" />
   </label>
 

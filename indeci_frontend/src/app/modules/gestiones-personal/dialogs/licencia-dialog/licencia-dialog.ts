@@ -12,7 +12,10 @@ import {
   TipoLicencia,
   TipoSolicitudRrhh,
 } from '../../services/solicitudes-rrhh';
-
+interface LicenciaDialogData {
+  tipoSolicitud: TipoSolicitudRrhh;
+  tipoLicenciaNombre?: string;
+}
 @Component({
   selector: 'app-licencia-dialog',
   standalone: true,
@@ -46,10 +49,20 @@ export class LicenciaDialog implements OnInit {
 
   archivoSustento: File | null = null;
 
+  tipoSolicitud!: TipoSolicitudRrhh;
+  tipoLicenciaNombre: string | null = null;
+
   constructor(
     @Inject(MAT_DIALOG_DATA)
-    public tipoSolicitud: TipoSolicitudRrhh,
+    public data: TipoSolicitudRrhh | LicenciaDialogData,
   ) {
+    if ('tipoSolicitud' in data) {
+      this.tipoSolicitud = data.tipoSolicitud;
+      this.tipoLicenciaNombre = data.tipoLicenciaNombre ?? null;
+    } else {
+      this.tipoSolicitud = data;
+    }
+
     this.tituloDialog = this.tipoSolicitud?.nombre ?? 'Licencia';
   }
 
@@ -65,6 +78,8 @@ export class LicenciaDialog implements OnInit {
         const activos = (resp.data ?? []).filter((x) => Number(x.activo ?? 1) === 1);
         this.tiposLicencia.set(activos);
         this.cargandoTipos.set(false);
+
+        this.seleccionarTipoLicenciaInicial();
       },
       error: () => {
         this.error.set('No se pudo cargar el catálogo de tipos de licencia.');
@@ -72,7 +87,50 @@ export class LicenciaDialog implements OnInit {
       },
     });
   }
+  normalizarTexto(valor: string | null | undefined): string {
+    return String(valor ?? '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toUpperCase()
+      .trim();
+  }
 
+  seleccionarTipoLicenciaInicial(): void {
+    if (!this.tipoLicenciaNombre) {
+      return;
+    }
+
+    const esperado = this.normalizarTexto(this.tipoLicenciaNombre);
+
+    const tipo = this.tiposLicencia().find((x) => {
+      const nombre = this.normalizarTexto(x.nombre);
+      return nombre.includes(esperado) || esperado.includes(nombre);
+    });
+
+    if (!tipo) {
+      this.error.set(`No se encontró el tipo de licencia: ${this.tipoLicenciaNombre}.`);
+      return;
+    }
+
+    this.tipoLicenciaId = Number(tipo.id);
+    this.tituloDialog = `${this.tipoSolicitud.nombre} - ${tipo.nombre}`;
+  }
+  codigoTipoSolicitud(): string {
+    return String(this.tipoSolicitud?.codigo ?? '').padStart(3, '0');
+  }
+
+  requiereMotivo(): boolean {
+    const codigosQueRequierenMotivo = ['007'];
+
+    return codigosQueRequierenMotivo.includes(this.codigoTipoSolicitud());
+  }
+  tipoLicenciaSeleccionado(): TipoLicencia | null {
+    return this.tiposLicencia().find((x) => Number(x.id) === Number(this.tipoLicenciaId)) ?? null;
+  }
+
+  nombreTipoLicenciaSeleccionado(): string {
+    return this.tipoLicenciaSeleccionado()?.nombre ?? this.tipoLicenciaNombre ?? '-';
+  }
   requiereSustento(): boolean {
     return Number(this.tipoSolicitud?.requiereSustento ?? 0) === 1;
   }
@@ -133,7 +191,7 @@ export class LicenciaDialog implements OnInit {
       return;
     }
 
-    if (!this.motivo.trim()) {
+    if (this.requiereMotivo() && !this.motivo.trim()) {
       this.error.set('Ingrese el motivo de la licencia.');
       return;
     }
@@ -170,8 +228,8 @@ export class LicenciaDialog implements OnInit {
       fechaFin: this.fechaFin,
       cantidadDias: this.cantidadDias,
 
-      motivo: this.motivo.trim(),
-      observacion: this.observacion.trim(),
+      motivo: this.requiereMotivo() ? this.motivo.trim() : null,
+      observacion: this.requiereObservacion() ? this.observacion.trim() : null,
 
       horaInicio: null,
       horaFin: null,

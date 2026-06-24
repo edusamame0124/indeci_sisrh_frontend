@@ -1,20 +1,13 @@
 <h2 mat-dialog-title>{{ tituloDialog }}</h2>
 
 <mat-dialog-content class="dialog-body">
-  <div *ngIf="cargandoTipos()" class="loading">
-    Cargando tipos de descanso médico...
-  </div>
+  <div *ngIf="cargandoTipos()" class="loading">Cargando tipos de descanso médico...</div>
 
   <div class="grid">
-    <label class="field field--full">
+    <div class="field field--full">
       <span>Expedido por</span>
-      <select [(ngModel)]="tipoDescansoMedicoId" (ngModelChange)="onTipoDescansoChange($event)">
-        <option [ngValue]="null">Seleccione</option>
-        <option *ngFor="let tipo of tiposDescanso()" [ngValue]="tipo.id">
-          {{ tipo.nombre }}
-        </option>
-      </select>
-    </label>
+      <strong>{{ nombreTipoDescansoSeleccionado() }}</strong>
+    </div>
 
     <label class="field">
       <span>Fecha inicio</span>
@@ -41,8 +34,8 @@
       <input type="text" [(ngModel)]="numeroColegiatura" />
     </label>
 
-    <label class="field field--full">
-      <span>Motivo</span>
+    <label class="field field--full" *ngIf="requiereMotivo()">
+      <span>Motivo *</span>
       <textarea rows="3" [(ngModel)]="motivo"></textarea>
     </label>
 
@@ -67,11 +60,8 @@
       <input type="file" (change)="onDocumentoSeleccionado($event, doc)" />
     </div>
 
-    <label class="field field--full">
-      <span>
-        Observación
-        <strong *ngIf="requiereObservacion()">*</strong>
-      </span>
+    <label class="field field--full" *ngIf="requiereObservacion()">
+      <span>Observación *</span>
       <textarea rows="3" [(ngModel)]="observacion"></textarea>
     </label>
   </div>
@@ -86,7 +76,13 @@
     Cancelar
   </button>
 
-  <button mat-flat-button color="primary" type="button" (click)="guardar()" [disabled]="guardando()">
+  <button
+    mat-flat-button
+    color="primary"
+    type="button"
+    (click)="guardar()"
+    [disabled]="guardando()"
+  >
     <mat-icon>save</mat-icon>
     {{ guardando() ? 'Guardando...' : 'Guardar borrador' }}
   </button>

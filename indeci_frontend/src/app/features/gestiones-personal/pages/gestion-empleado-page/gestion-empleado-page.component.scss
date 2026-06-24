@@ -40,17 +40,37 @@
 }
 
 .toolbar {
+  width: 100%;
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
+  align-items: stretch;
   gap: 1rem;
   margin: 1.25rem 0;
+}
+
+.toolbar__main {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.65rem;
   flex-wrap: wrap;
 }
 
-.toolbar__filters,
-.toolbar__actions {
+.btn-nueva-papeleta {
+  flex-shrink: 0;
+}
+
+.btn-regresar {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.toolbar__filters {
+  width: 100%;
   display: flex;
   align-items: center;
+  justify-content: flex-start;
   gap: 0.65rem;
   flex-wrap: wrap;
 }
@@ -181,14 +201,15 @@ tbody tr:hover {
     padding: 0.75rem;
   }
 
-  .toolbar {
+  .toolbar__main,
+  .toolbar__filters {
+    width: 100%;
     flex-direction: column;
     align-items: stretch;
   }
 
-  .toolbar__filters,
-  .toolbar__actions {
-    width: 100%;
+  .btn-regresar {
+    margin-left: 0;
   }
 
   .toolbar input,

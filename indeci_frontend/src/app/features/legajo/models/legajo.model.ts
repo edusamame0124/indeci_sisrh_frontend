@@ -23,20 +23,34 @@ export interface PersonaLegajo {
   personaId?: number;
   empleadoId?: number;
 
-  dni?: string;
-  nombres?: string;
-  apellidos?: string;
-  nombreCompleto?: string;
+  dni?: string | null;
+  nombres?: string | null;
+  apellidos?: string | null;
+  nombreCompleto?: string | null;
 
-  fechaNacimiento?: string;
-  telefono?: string;
+  tipoDocumento?: string | null;
+  fechaNacimiento?: string | null;
+  sexo?: string | null;
+  estadoCivil?: string | null;
+  nacionalidad?: string | null;
+  ruc?: string | null;
+
+  telefono?: string | null;
+  telefonoFijo?: string | null;
   email?: string | null;
   correoInstitucional?: string | null;
+  direccion?: string | null;
 
-  direccion?: string;
+  distrito?: string | null;
+  provincia?: string | null;
+  departamento?: string | null;
 
   foto?: string | null;
   fotoPerfil?: string | null;
+
+  contactoEmergenciaNombre?: string | null;
+  contactoEmergenciaParentesco?: string | null;
+  contactoEmergenciaTelefono?: string | null;
 
   [key: string]: any;
 }
@@ -46,19 +60,25 @@ export interface EmpleadoLegajo {
   empleadoId?: number;
   personaId?: number;
 
-  codigoInterno?: string;
-  codigoSisper?: string;
-  estado?: string;
+  codigoInterno?: string | null;
+  codigoSisper?: string | null;
+  estado?: string | null;
 
-  conadisCodigo?: string;
-  hasEps?: number;
-  dniReemplazado?: string;
-  registroAirhsp?: string;
-  airhspMonto?: number;
+  conadisCodigo?: string | null;
+  hasEps?: number | string | null;
+  dniReemplazado?: string | null;
+  registroAirhsp?: string | null;
+  airhspMonto?: number | null;
 
-  tipoPersonalId?: number;
-  profesionId?: number;
-  gradoAcademicoId?: number;
+  tipoPersonalId?: number | null;
+  profesionId?: number | null;
+  gradoAcademicoId?: number | null;
+
+  tipoPersonal?: string | null;
+  profesion?: string | null;
+  gradoAcademico?: string | null;
+  regimenLaboral?: string | null;
+  dependencia?: string | null;
 
   [key: string]: any;
 }

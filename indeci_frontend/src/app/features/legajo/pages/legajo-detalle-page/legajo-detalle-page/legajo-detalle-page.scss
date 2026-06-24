@@ -1,7 +1,18 @@
 .legajo-detalle-page {
   padding: 24px;
 }
+.datos-section {
+  margin-top: 18px;
+}
 
+.datos-section h3 {
+  margin: 0 0 12px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #263238;
+  border-bottom: 1px solid #e0e0e0;
+  padding-bottom: 6px;
+}
 .top-actions {
   display: flex;
   justify-content: space-between;

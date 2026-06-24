@@ -52,7 +52,7 @@ import {
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './gestion-empleado-page.component.html',
-  styleUrl: './gestion-empleado-page.component.css',
+  styleUrl: './gestion-empleado-page.component.scss',
 })
 export class GestionEmpleadoPageComponent implements OnInit {
   private readonly service = inject(SolicitudesRrhhService);
@@ -119,6 +119,7 @@ export class GestionEmpleadoPageComponent implements OnInit {
     this.service.listarMisSolicitudes().subscribe({
       next: (resp) => {
         this.solicitudes.set(resp.data ?? []);
+
         this.cargando.set(false);
       },
       error: () => {
@@ -154,7 +155,12 @@ export class GestionEmpleadoPageComponent implements OnInit {
     );
   }
 
-  abrirDialogoPorCodigo(codigo: string, componente: any, width: string): void {
+  abrirDialogoPorCodigo(
+    codigo: string,
+    componente: any,
+    width: string,
+    extraData?: Record<string, unknown>,
+  ): void {
     const tipoSolicitud = this.buscarTipoPorCodigo(codigo);
 
     if (!tipoSolicitud) {
@@ -162,11 +168,18 @@ export class GestionEmpleadoPageComponent implements OnInit {
       return;
     }
 
+    const data = extraData
+      ? {
+          tipoSolicitud,
+          ...extraData,
+        }
+      : tipoSolicitud;
+
     const ref = this.dialog.open(componente, {
       width,
       maxWidth: '95vw',
       disableClose: true,
-      data: tipoSolicitud,
+      data,
     });
 
     ref.afterClosed().subscribe((actualizar: boolean) => {
@@ -186,19 +199,23 @@ export class GestionEmpleadoPageComponent implements OnInit {
     this.abrirDialogoPorCodigo(codigo, LactanciaDialog, '900px');
   }
 
-  // FORMATO 4: código 010
-  abrirDescansoMedico(): void {
-    this.abrirDialogoPorCodigo('010', DescansoMedicoDialog, '900px');
+  abrirDescansoMedico(expedidoPorNombre: string): void {
+    this.abrirDialogoPorCodigo('010', DescansoMedicoDialog, '900px', {
+      expedidoPorNombre,
+    });
   }
 
-  // FORMATO 3: código 011
-  abrirLicencia(): void {
-    this.abrirDialogoPorCodigo('011', LicenciaDialog, '900px');
+  abrirLicencia(tipoLicenciaNombre: string): void {
+    this.abrirDialogoPorCodigo('011', LicenciaDialog, '900px', {
+      tipoLicenciaNombre,
+    });
   }
 
-  // FORMATO 5: código 012
-  abrirVacaciones(): void {
-    this.abrirDialogoPorCodigo('012', VacacionesDialog, '1100px');
+  abrirVacaciones(tipoVacacionCodigo: string, tipoVacacionNombre: string): void {
+    this.abrirDialogoPorCodigo('012', VacacionesDialog, '1100px', {
+      tipoVacacionCodigo,
+      tipoVacacionNombre,
+    });
   }
 
   // FORMATO 6: código 013
@@ -259,7 +276,8 @@ export class GestionEmpleadoPageComponent implements OnInit {
   }
 
   getNombreEmpleado(): string {
-    return this.solicitudes()[0]?.empleado ?? 'Empleado';
+    const primeraSolicitud = this.solicitudes()[0];
+    return primeraSolicitud?.empleado ?? 'Empleado';
   }
 
   claseEstado(estado: string): string {
