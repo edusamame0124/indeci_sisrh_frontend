@@ -9,11 +9,7 @@
 
     <label class="field">
       <span>Fecha de nacimiento del hijo(a)</span>
-      <input
-        type="date"
-        [(ngModel)]="fechaNacimientoHijo"
-        (change)="calcularFechaPrimerAnio()"
-      />
+      <input type="date" [(ngModel)]="fechaNacimientoHijo" (change)="calcularFechaPrimerAnio()" />
     </label>
 
     <label class="field">
@@ -63,8 +59,8 @@
       </label>
     </ng-container>
 
-    <label class="field field--full">
-      <span>Motivo</span>
+    <label class="field field--full" *ngIf="requiereMotivo()">
+      <span>Motivo *</span>
       <textarea rows="3" [(ngModel)]="motivo"></textarea>
     </label>
 
@@ -73,11 +69,8 @@
       <input type="file" (change)="onArchivoSeleccionado($event)" />
     </label>
 
-    <label class="field field--full">
-      <span>
-        Observación
-        <strong *ngIf="requiereObservacion()">*</strong>
-      </span>
+    <label class="field field--full" *ngIf="requiereObservacion()">
+      <span>Observación *</span>
       <textarea rows="3" [(ngModel)]="observacion"></textarea>
     </label>
   </div>
@@ -92,7 +85,13 @@
     Cancelar
   </button>
 
-  <button mat-flat-button color="primary" type="button" (click)="guardar()" [disabled]="guardando()">
+  <button
+    mat-flat-button
+    color="primary"
+    type="button"
+    (click)="guardar()"
+    [disabled]="guardando()"
+  >
     <mat-icon>save</mat-icon>
     {{ guardando() ? 'Guardando...' : 'Guardar borrador' }}
   </button>

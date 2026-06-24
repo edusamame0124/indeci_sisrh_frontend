@@ -13,7 +13,11 @@ import {
   TipoDescansoMedico,
   TipoSolicitudRrhh,
 } from '../../services/solicitudes-rrhh';
-
+interface DescansoMedicoDialogData {
+  tipoSolicitud: TipoSolicitudRrhh;
+  expedidoPorNombre?: string;
+  tipoDescansoNombre?: string;
+}
 @Component({
   selector: 'app-descanso-medico-dialog',
   standalone: true,
@@ -49,10 +53,22 @@ export class DescansoMedicoDialog implements OnInit {
 
   archivosDocumentos = new Map<number, File>();
 
+  tipoSolicitud!: TipoSolicitudRrhh;
+  tipoDescansoNombre: string | null = null;
+
+  expedidoPorNombre: string | null = null;
+
   constructor(
     @Inject(MAT_DIALOG_DATA)
-    public tipoSolicitud: TipoSolicitudRrhh,
+    public data: TipoSolicitudRrhh | DescansoMedicoDialogData,
   ) {
+    if ('tipoSolicitud' in data) {
+      this.tipoSolicitud = data.tipoSolicitud;
+      this.expedidoPorNombre = data.expedidoPorNombre ?? data.tipoDescansoNombre ?? null;
+    } else {
+      this.tipoSolicitud = data;
+    }
+
     this.tituloDialog = this.tipoSolicitud?.nombre ?? 'Descanso médico';
   }
 
@@ -68,12 +84,63 @@ export class DescansoMedicoDialog implements OnInit {
         const activos = (resp.data ?? []).filter((x) => Number(x.activo ?? 1) === 1);
         this.tiposDescanso.set(activos);
         this.cargandoTipos.set(false);
+
+        this.seleccionarTipoDescansoInicial();
       },
       error: () => {
         this.error.set('No se pudo cargar el catálogo de descanso médico.');
         this.cargandoTipos.set(false);
       },
     });
+  }
+  normalizarTexto(valor: string | null | undefined): string {
+    return String(valor ?? '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toUpperCase()
+      .trim();
+  }
+
+  seleccionarTipoDescansoInicial(): void {
+    if (!this.expedidoPorNombre) {
+      return;
+    }
+
+    const esperado = this.normalizarTexto(this.expedidoPorNombre);
+
+    const tipo = this.tiposDescanso().find((x) => {
+      const nombre = this.normalizarTexto(x.nombre);
+      return nombre.includes(esperado) || esperado.includes(nombre);
+    });
+
+    if (!tipo) {
+      this.error.set(`No se encontró el tipo de descanso médico: ${this.expedidoPorNombre}.`);
+      return;
+    }
+
+    this.tipoDescansoMedicoId = Number(tipo.id);
+    this.tituloDialog = `${this.tipoSolicitud.nombre} - ${tipo.nombre}`;
+
+    // Importante: mantiene la lógica actual de documentos requeridos
+    this.onTipoDescansoChange(Number(tipo.id));
+  }
+
+  tipoDescansoSeleccionado(): TipoDescansoMedico | null {
+    return (
+      this.tiposDescanso().find((x) => Number(x.id) === Number(this.tipoDescansoMedicoId)) ?? null
+    );
+  }
+  codigoTipoSolicitud(): string {
+    return String(this.tipoSolicitud?.codigo ?? '').padStart(3, '0');
+  }
+
+  requiereMotivo(): boolean {
+    const codigosQueRequierenMotivo = ['007'];
+
+    return codigosQueRequierenMotivo.includes(this.codigoTipoSolicitud());
+  }
+  nombreTipoDescansoSeleccionado(): string {
+    return this.tipoDescansoSeleccionado()?.nombre ?? this.expedidoPorNombre ?? '-';
   }
 
   onTipoDescansoChange(tipoId: number | null): void {
@@ -220,7 +287,7 @@ export class DescansoMedicoDialog implements OnInit {
       return;
     }
 
-    if (!this.motivo.trim()) {
+    if (this.requiereMotivo() && !this.motivo.trim()) {
       this.error.set('Ingrese el motivo de la solicitud.');
       return;
     }
@@ -262,8 +329,8 @@ export class DescansoMedicoDialog implements OnInit {
       fechaFin: this.fechaFin,
       cantidadDias: this.cantidadDias,
 
-      motivo: this.motivo.trim(),
-      observacion: this.observacion.trim(),
+      motivo: this.requiereMotivo() ? this.motivo.trim() : null,
+      observacion: this.requiereObservacion() ? this.observacion.trim() : null,
 
       horaInicio: null,
       horaFin: null,

@@ -1,12 +1,10 @@
 <h2 mat-dialog-title>{{ tituloDialog }}</h2>
 
 <mat-dialog-content class="dialog-body">
-  <div *ngIf="cargandoTipos()" class="loading">
-    Cargando tipos de vacación...
-  </div>
+  <div *ngIf="cargandoTipos()" class="loading">Cargando tipos de vacación...</div>
 
   <div class="grid">
-    <label class="field field--full">
+    <label class="field field--full" *ngIf="!tipoVacacionNombre">
       <span>Tipo de vacación</span>
       <select [(ngModel)]="tipoVacacionId" (ngModelChange)="onTipoVacacionChange()">
         <option [ngValue]="null">Seleccione</option>
@@ -16,26 +14,23 @@
       </select>
     </label>
 
+    <div class="field field--full" *ngIf="tipoVacacionNombre">
+      <span>Tipo de vacación</span>
+      <strong>{{ tipoVacacionSeleccionadoNombre() }}</strong>
+    </div>
+
     <div class="field field--full" *ngFor="let detalle of detallesVacacion">
       <strong>{{ detalle.titulo }}</strong>
 
       <div class="grid">
         <label class="field">
           <span>Desde</span>
-          <input
-            type="date"
-            [(ngModel)]="detalle.fechaInicio"
-            (change)="calcularDias(detalle)"
-          />
+          <input type="date" [(ngModel)]="detalle.fechaInicio" (change)="calcularDias(detalle)" />
         </label>
 
         <label class="field">
           <span>Hasta</span>
-          <input
-            type="date"
-            [(ngModel)]="detalle.fechaFin"
-            (change)="calcularDias(detalle)"
-          />
+          <input type="date" [(ngModel)]="detalle.fechaFin" (change)="calcularDias(detalle)" />
         </label>
 
         <label class="field">
@@ -59,18 +54,15 @@
       </button>
     </div>
 
-    <div
-      class="field field--full"
-      *ngIf="detallesVacacion.length > 2"
-    >
+    <div class="field field--full" *ngIf="detallesVacacion.length > 2">
       <button mat-stroked-button type="button" (click)="quitarUltimoDetalle()">
         <mat-icon>remove</mat-icon>
         Quitar último periodo
       </button>
     </div>
 
-    <label class="field field--full">
-      <span>Motivo</span>
+    <label class="field field--full" *ngIf="requiereMotivo()">
+      <span>Motivo *</span>
       <textarea rows="3" [(ngModel)]="motivo"></textarea>
     </label>
 
@@ -79,11 +71,8 @@
       <input type="file" (change)="onArchivoSeleccionado($event)" />
     </label>
 
-    <label class="field field--full">
-      <span>
-        Observación
-        <strong *ngIf="requiereObservacion()">*</strong>
-      </span>
+    <label class="field field--full" *ngIf="requiereObservacion()">
+      <span>Observación *</span>
       <textarea rows="3" [(ngModel)]="observacion"></textarea>
     </label>
   </div>
@@ -98,7 +87,13 @@
     Cancelar
   </button>
 
-  <button mat-flat-button color="primary" type="button" (click)="guardar()" [disabled]="guardando()">
+  <button
+    mat-flat-button
+    color="primary"
+    type="button"
+    (click)="guardar()"
+    [disabled]="guardando()"
+  >
     <mat-icon>save</mat-icon>
     {{ guardando() ? 'Guardando...' : 'Guardar borrador' }}
   </button>

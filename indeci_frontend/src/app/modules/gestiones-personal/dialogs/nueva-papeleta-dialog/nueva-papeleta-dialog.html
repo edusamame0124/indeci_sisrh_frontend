@@ -24,8 +24,7 @@
       />
     </label>
 
-
-    <label  class="field" *ngIf="!mostrarHoras()">
+    <label class="field" *ngIf="!mostrarHoras()">
       <span>Fecha fin</span>
       <input
         type="date"
@@ -58,8 +57,8 @@
       </label>
     </ng-container>
 
-    <label class="field field--full">
-      <span>Motivo</span>
+    <label class="field field--full" *ngIf="requiereMotivo()">
+      <span>Motivo *</span>
       <textarea rows="3" [(ngModel)]="motivo"></textarea>
     </label>
     <label class="field field--full" *ngIf="requiereLugar()">
@@ -71,11 +70,8 @@
       <span>Documento de sustento</span>
       <input type="file" (change)="onArchivoSeleccionado($event)" />
     </label>
-    <label class="field field--full">
-      <span>
-        Observación
-        <strong *ngIf="requiereObservacion()">*</strong>
-      </span>
+    <label class="field field--full" *ngIf="requiereObservacion()">
+      <span>Observación *</span>
       <textarea rows="3" [(ngModel)]="observacion"></textarea>
     </label>
   </div>

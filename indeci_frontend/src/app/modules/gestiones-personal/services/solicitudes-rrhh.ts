@@ -20,8 +20,8 @@ export interface SolicitudRrhh {
   fechaInicio: string;
   fechaFin: string;
   cantidadDias: number | null;
-  motivo: string;
-  observacion: string;
+  motivo?: string | null;
+  observacion?: string | null;
   aprobadoPor?: string | null;
   aprobadoPorNombre?: string | null;
   fechaAprobacion?: string | null;
@@ -111,8 +111,8 @@ export interface CrearSolicitudRrhhRequest {
   fechaInicio: string;
   fechaFin: string;
   cantidadDias?: number | null;
-  motivo: string;
-  observacion: string;
+  motivo?: string | null;
+  observacion?: string | null;
   horaInicio?: string | null;
   horaFin?: string | null;
   cantidadHoras?: number | null;
@@ -276,13 +276,16 @@ export class SolicitudesRrhhService {
 
   enviarPapeletaFirmada(
     idPapeleta: number,
-    file: File,
-    observacion: string,
+    file: File | null,
+    observacion?: string | null,
   ): Observable<ApiResponse<unknown>> {
     const formData = new FormData();
 
-    formData.append('file', file);
-    formData.append('observacion', observacion);
+    if (file) {
+      formData.append('file', file, file.name);
+    }
+
+    formData.append('observacion', observacion?.trim() ?? '');
 
     return this.http.put<ApiResponse<unknown>>(
       `${this.apiUrl}/rrhh/solicitudes/enviar/${idPapeleta}`,

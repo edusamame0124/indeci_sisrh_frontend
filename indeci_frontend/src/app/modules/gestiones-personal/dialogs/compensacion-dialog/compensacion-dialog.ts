@@ -73,7 +73,15 @@ export class CompensacionDialog {
   requiereObservacion(): boolean {
     return Number(this.tipoSolicitud?.requiereObservacion ?? 0) === 1;
   }
+  codigoTipoSolicitud(): string {
+    return String(this.tipoSolicitud?.codigo ?? '').padStart(3, '0');
+  }
 
+  requiereMotivo(): boolean {
+    const codigosQueRequierenMotivo = ['007'];
+
+    return codigosQueRequierenMotivo.includes(this.codigoTipoSolicitud());
+  }
   onFechaInicioChange(): void {
     this.fechaFin = this.fechaInicio;
   }
@@ -111,7 +119,9 @@ export class CompensacionDialog {
     if (horas <= 0) {
       detalle.cantidadHoras = null;
       detalle.cantidadHorasTexto = '';
-      this.error.set('En la compensación, la hora fin no puede ser menor o igual que la hora inicio.');
+      this.error.set(
+        'En la compensación, la hora fin no puede ser menor o igual que la hora inicio.',
+      );
       return;
     }
 
@@ -201,7 +211,7 @@ export class CompensacionDialog {
       return;
     }
 
-    if (!this.motivo.trim()) {
+    if (this.requiereMotivo() && !this.motivo.trim()) {
       this.error.set('Ingrese el motivo de la solicitud.');
       return;
     }
@@ -262,8 +272,8 @@ export class CompensacionDialog {
       fechaFin: this.fechaFin,
       cantidadDias: null,
 
-      motivo: this.motivo.trim(),
-      observacion: this.observacion.trim(),
+      motivo: this.requiereMotivo() ? this.motivo.trim() : null,
+      observacion: this.requiereObservacion() ? this.observacion.trim() : null,
 
       horaInicio: this.horaInicio,
       horaFin: this.horaFin,

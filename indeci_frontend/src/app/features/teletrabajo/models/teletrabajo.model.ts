@@ -14,6 +14,16 @@ export interface TeletrabajoCatalogo {
 export interface TeletrabajoResumen {
   id: number;
   empleadoId: number;
+
+  trabajador?: string | null;
+  nombreCompleto?: string | null;
+  empleado?: string | null;
+  nombreEmpleado?: string | null;
+
+  dni?: string | null;
+  cargo?: string | null;
+  regimenLaboral?: string | null;
+
   mes: number;
   anio: number;
   modalidadId?: number | null;
@@ -21,12 +31,6 @@ export interface TeletrabajoResumen {
   fechaReporte?: string | null;
   estado?: string | null;
   activo?: number;
-
-
-  trabajador?: string | null;
-  dni?: string | null;
-  cargo?: string | null;
-  regimenLaboral?: string | null;
 }
 
 export interface TeletrabajoReporte {
@@ -78,7 +82,6 @@ export interface GuardarTeletrabajoDetalleRequest {
   incidenciaObservacion?: string | null;
   conformidadId: number;
 }
-
 
 export interface TeletrabajoTrabajadorItem {
   id?: number; // personaId

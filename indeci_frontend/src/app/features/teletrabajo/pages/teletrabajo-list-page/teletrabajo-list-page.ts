@@ -185,7 +185,13 @@ export class TeletrabajoListPage implements OnInit {
   }
 
   trabajadorTexto(reporte: TeletrabajoResumen): string {
-    return reporte.trabajador || `Empleado ID: ${reporte.empleadoId}`;
+    return (
+      reporte.trabajador ||
+      reporte.nombreCompleto ||
+      reporte.empleado ||
+      reporte.nombreEmpleado ||
+      '-'
+    );
   }
 
   reportesFiltrados(): TeletrabajoResumen[] {

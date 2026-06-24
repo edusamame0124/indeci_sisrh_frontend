@@ -50,13 +50,15 @@ export class PermisoComunDialog {
     this.tituloDialog = this.tipoSolicitud?.nombre ?? 'Permiso';
   }
 
-  /**get tipoSolicitud(): TipoSolicitudRrhh {
-    return this.data.tipoSolicitud;
+  codigoTipoSolicitud(): string {
+    return String(this.tipoSolicitud?.codigo ?? '').padStart(3, '0');
   }
 
-  get tituloDialog(): string {
-    return this.tipoSolicitud?.nombre ?? 'Permiso';
-  }*/
+  requiereMotivo(): boolean {
+    const codigosQueRequierenMotivo = ['007'];
+
+    return codigosQueRequierenMotivo.includes(this.codigoTipoSolicitud());
+  }
 
   requiereSustento(): boolean {
     return Number(this.tipoSolicitud?.requiereSustento ?? 0) === 1;
@@ -136,7 +138,7 @@ export class PermisoComunDialog {
       return;
     }
 
-    if (!this.motivo.trim()) {
+    if (this.requiereMotivo() && !this.motivo.trim()) {
       this.error.set('Ingrese el motivo de la solicitud.');
       return;
     }
@@ -165,8 +167,8 @@ export class PermisoComunDialog {
       fechaInicio: this.fechaInicio,
       fechaFin: this.fechaFin,
       cantidadDias: null,
-      motivo: this.motivo.trim(),
-      observacion: this.observacion.trim(),
+      motivo: this.requiereMotivo() ? this.motivo.trim() : null,
+      observacion: this.requiereObservacion() ? this.observacion.trim() : null,
       horaInicio: this.horaInicio,
       horaFin: this.horaFin,
       cantidadHoras: this.cantidadHoras,

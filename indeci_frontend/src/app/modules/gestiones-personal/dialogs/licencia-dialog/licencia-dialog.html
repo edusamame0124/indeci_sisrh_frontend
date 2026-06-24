@@ -1,13 +1,11 @@
 <h2 mat-dialog-title>{{ tituloDialog }}</h2>
 
 <mat-dialog-content class="dialog-body">
-  <div *ngIf="cargandoTipos()" class="loading">
-    Cargando tipos de licencia...
-  </div>
+  <div *ngIf="cargandoTipos()" class="loading">Cargando tipos de licencia...</div>
 
   <div class="grid">
     <!-- TIPO DE LICENCIA -->
-    <label class="field field--full">
+    <label class="field field--full" *ngIf="!tipoLicenciaNombre">
       <span>Tipo de licencia</span>
       <select [(ngModel)]="tipoLicenciaId">
         <option [ngValue]="null">Seleccione</option>
@@ -17,41 +15,30 @@
       </select>
     </label>
 
+    <div class="field field--full" *ngIf="tipoLicenciaNombre">
+      <span>Tipo de licencia</span>
+      <strong>{{ nombreTipoLicenciaSeleccionado() }}</strong>
+    </div>
     <!-- PERIODO DE LICENCIA -->
     <label class="field">
       <span>Fecha de inicio de la licencia</span>
-      <input
-        type="date"
-        [(ngModel)]="fechaInicio"
-        (change)="calcularDias()"
-      />
+      <input type="date" [(ngModel)]="fechaInicio" (change)="calcularDias()" />
     </label>
 
     <label class="field">
       <span>Fecha de fin de la licencia</span>
-      <input
-        type="date"
-        [(ngModel)]="fechaFin"
-        (change)="calcularDias()"
-      />
+      <input type="date" [(ngModel)]="fechaFin" (change)="calcularDias()" />
     </label>
 
     <label class="field">
       <span>Total de días</span>
-      <input
-        type="number"
-        [ngModel]="cantidadDias"
-        disabled
-      />
+      <input type="number" [ngModel]="cantidadDias" disabled />
     </label>
 
     <!-- MOTIVO -->
-    <label class="field field--full">
-      <span>Motivo de la licencia</span>
-      <textarea
-        rows="3"
-        [(ngModel)]="motivo"
-      ></textarea>
+    <label class="field field--full" *ngIf="requiereMotivo()">
+      <span>Motivo *</span>
+      <textarea rows="3" [(ngModel)]="motivo"></textarea>
     </label>
 
     <!-- DOCUMENTOS PRESENTADOS -->
@@ -66,41 +53,24 @@
 
     <label class="field field--full">
       <span>Documento presentado 2</span>
-      <input
-        type="text"
-        [(ngModel)]="documento2"
-        placeholder="Opcional"
-      />
+      <input type="text" [(ngModel)]="documento2" placeholder="Opcional" />
     </label>
 
     <label class="field">
       <span>Total de folios</span>
-      <input
-        type="number"
-        min="1"
-        [(ngModel)]="totalFolios"
-      />
+      <input type="number" min="1" [(ngModel)]="totalFolios" />
     </label>
 
     <!-- ARCHIVO DE SUSTENTO -->
     <label class="field field--full" *ngIf="requiereSustento()">
       <span>Archivo de sustento</span>
-      <input
-        type="file"
-        (change)="onArchivoSeleccionado($event)"
-      />
+      <input type="file" (change)="onArchivoSeleccionado($event)" />
     </label>
 
     <!-- OBSERVACIÓN -->
-    <label class="field field--full">
-      <span>
-        Observación
-        <strong *ngIf="requiereObservacion()">*</strong>
-      </span>
-      <textarea
-        rows="3"
-        [(ngModel)]="observacion"
-      ></textarea>
+    <label class="field field--full" *ngIf="requiereObservacion()">
+      <span>Observación *</span>
+      <textarea rows="3" [(ngModel)]="observacion"></textarea>
     </label>
   </div>
 
@@ -110,12 +80,7 @@
 </mat-dialog-content>
 
 <mat-dialog-actions align="end">
-  <button
-    mat-stroked-button
-    type="button"
-    (click)="cerrar()"
-    [disabled]="guardando()"
-  >
+  <button mat-stroked-button type="button" (click)="cerrar()" [disabled]="guardando()">
     Cancelar
   </button>
 

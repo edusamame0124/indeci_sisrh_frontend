@@ -4,73 +4,42 @@
   <div class="grid">
     <label class="field">
       <span>Fecha del permiso</span>
-      <input
-        type="date"
-        [(ngModel)]="fechaInicio"
-        (ngModelChange)="onFechaInicioChange()"
-      />
+      <input type="date" [(ngModel)]="fechaInicio" (ngModelChange)="onFechaInicioChange()" />
     </label>
 
     <label class="field">
       <span>Hora de salida</span>
-      <input
-        type="time"
-        [(ngModel)]="horaInicio"
-        (change)="calcularHoras()"
-      />
+      <input type="time" [(ngModel)]="horaInicio" (change)="calcularHoras()" />
     </label>
 
     <label class="field">
       <span>Hora de ingreso</span>
-      <input
-        type="time"
-        [(ngModel)]="horaFin"
-        (change)="calcularHoras()"
-      />
+      <input type="time" [(ngModel)]="horaFin" (change)="calcularHoras()" />
     </label>
 
     <label class="field">
       <span>Cantidad de horas</span>
-      <input
-        type="text"
-        [value]="cantidadHorasTexto"
-        disabled
-      />
+      <input type="text" [value]="cantidadHorasTexto" disabled />
     </label>
 
     <label class="field field--full" *ngIf="requiereLugar()">
       <span>Lugar de comisión</span>
-      <input
-        type="text"
-        [(ngModel)]="lugarComision"
-      />
+      <input type="text" [(ngModel)]="lugarComision" />
     </label>
 
-    <label class="field field--full">
-      <span>Motivo</span>
-      <textarea
-        rows="3"
-        [(ngModel)]="motivo">
-      </textarea>
+    <label class="field field--full" *ngIf="requiereMotivo()">
+      <span>Motivo *</span>
+      <textarea rows="3" [(ngModel)]="motivo"></textarea>
     </label>
 
     <label class="field field--full" *ngIf="requiereSustento()">
       <span>Documento de sustento</span>
-      <input
-        type="file"
-        (change)="onArchivoSeleccionado($event)"
-      />
+      <input type="file" (change)="onArchivoSeleccionado($event)" />
     </label>
 
-    <label class="field field--full">
-      <span>
-        Observación
-        <strong *ngIf="requiereObservacion()">*</strong>
-      </span>
-      <textarea
-        rows="3"
-        [(ngModel)]="observacion">
-      </textarea>
+    <label class="field field--full" *ngIf="requiereObservacion()">
+      <span>Observación *</span>
+      <textarea rows="3" [(ngModel)]="observacion"></textarea>
     </label>
   </div>
 
@@ -80,12 +49,7 @@
 </mat-dialog-content>
 
 <mat-dialog-actions align="end">
-  <button
-    mat-stroked-button
-    type="button"
-    (click)="cerrar()"
-    [disabled]="guardando()"
-  >
+  <button mat-stroked-button type="button" (click)="cerrar()" [disabled]="guardando()">
     Cancelar
   </button>
 

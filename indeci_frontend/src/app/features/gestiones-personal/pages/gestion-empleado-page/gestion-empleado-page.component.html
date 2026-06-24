@@ -21,6 +21,142 @@
 
     <mat-card-content>
       <section class="toolbar">
+        <div class="toolbar__main">
+          <button
+            class="btn-nueva-papeleta"
+            mat-flat-button
+            color="primary"
+            type="button"
+            [matMenuTriggerFor]="menuPapeletas"
+          >
+            <mat-icon>add</mat-icon>
+            Nueva papeleta
+          </button>
+
+          <button class="btn-regresar" mat-stroked-button routerLink="/">
+            <mat-icon>arrow_back</mat-icon>
+            Regresar
+          </button>
+
+          <mat-menu #menuPapeletas="matMenu">
+            <button mat-menu-item [matMenuTriggerFor]="menuPermisos">
+              <mat-icon>description</mat-icon>
+              <span>Permisos</span>
+            </button>
+
+            <button mat-menu-item [matMenuTriggerFor]="menuLactancia">
+              <mat-icon>child_care</mat-icon>
+              <span>Lactancia</span>
+            </button>
+
+            <button mat-menu-item [matMenuTriggerFor]="menuDescansoMedico">
+              <mat-icon>medical_services</mat-icon>
+              <span>Descanso médico</span>
+            </button>
+
+            <button mat-menu-item [matMenuTriggerFor]="menuLicencias">
+              <mat-icon>assignment</mat-icon>
+              <span>Licencia</span>
+            </button>
+
+            <button mat-menu-item [matMenuTriggerFor]="menuVacaciones">
+              <mat-icon>beach_access</mat-icon>
+              <span>Vacaciones</span>
+            </button>
+
+            <button mat-menu-item (click)="abrirCompensacion()">
+              <mat-icon>schedule</mat-icon>
+              <span>Permiso compensable</span>
+            </button>
+          </mat-menu>
+
+          <mat-menu #menuPermisos="matMenu">
+            <button mat-menu-item (click)="abrirPermisoComun('001')">
+              <span>Permiso por asuntos personales</span>
+            </button>
+
+            <button mat-menu-item (click)="abrirPermisoComun('002')">
+              <span>Permiso por cita médica</span>
+            </button>
+
+            <button mat-menu-item (click)="abrirPermisoComun('003')">
+              <span>Citación judicial/militar</span>
+            </button>
+
+            <button mat-menu-item (click)="abrirPermisoComun('004')">
+              <span>Omisión de registro de asistencia</span>
+            </button>
+
+            <button mat-menu-item (click)="abrirPermisoComun('005')">
+              <span>Ingreso por tardanza</span>
+            </button>
+
+            <button mat-menu-item (click)="abrirPermisoComun('006')">
+              <span>Comisión de servicio</span>
+            </button>
+
+            <button mat-menu-item (click)="abrirPermisoComun('007')">
+              <span>Otros permisos por horas</span>
+            </button>
+          </mat-menu>
+
+          <mat-menu #menuLactancia="matMenu">
+            <button mat-menu-item (click)="abrirLactancia('008')">
+              <span>Primera solicitud</span>
+            </button>
+
+            <button mat-menu-item (click)="abrirLactancia('009')">
+              <span>Modificación de horario</span>
+            </button>
+          </mat-menu>
+
+          <mat-menu #menuDescansoMedico="matMenu">
+            <button mat-menu-item (click)="abrirDescansoMedico('ESSALUD')">
+              <span>ESSALUD</span>
+            </button>
+
+            <button mat-menu-item (click)="abrirDescansoMedico('MINSA')">
+              <span>MINSA</span>
+            </button>
+
+            <button mat-menu-item (click)="abrirDescansoMedico('MEDICO PARTICULAR')">
+              <span>Médico particular</span>
+            </button>
+          </mat-menu>
+
+          <mat-menu #menuLicencias="matMenu">
+            <button mat-menu-item (click)="abrirLicencia('A CUENTA DEL PERIODO VACACIONAL')">
+              <span>A cuenta del periodo vacacional</span>
+            </button>
+
+            <button mat-menu-item (click)="abrirLicencia('CON GOCE DE REMUNERACIONES')">
+              <span>Con goce de remuneraciones</span>
+            </button>
+
+            <button mat-menu-item (click)="abrirLicencia('SIN GOCE DE REMUNERACIONES')">
+              <span>Sin goce de remuneraciones</span>
+            </button>
+          </mat-menu>
+
+          <mat-menu #menuVacaciones="matMenu">
+            <button mat-menu-item (click)="abrirVacaciones('001', 'PROGRAMACION DE VACACIONES')">
+              <span>Programación de vacaciones</span>
+            </button>
+
+            <button mat-menu-item (click)="abrirVacaciones('002', 'ADELANTO DE VACACIONES')">
+              <span>Adelanto de vacaciones</span>
+            </button>
+
+            <button mat-menu-item (click)="abrirVacaciones('003', 'REPROGRAMACION DE VACACIONES')">
+              <span>Reprogramación de vacaciones</span>
+            </button>
+
+            <button mat-menu-item (click)="abrirVacaciones('004', 'FRACCIONAMIENTO DE VACACIONES')">
+              <span>Fraccionamiento de vacaciones</span>
+            </button>
+          </mat-menu>
+        </div>
+
         <div class="toolbar__filters">
           <input
             type="text"
@@ -44,90 +180,6 @@
             Limpiar
           </button>
         </div>
-
-        <div class="toolbar__actions">
-            <button mat-flat-button color="primary" [matMenuTriggerFor]="menuPapeletas">
-              <mat-icon>add</mat-icon>
-              Nueva papeleta
-            </button>
-
-            <mat-menu #menuPapeletas="matMenu">
-              <button mat-menu-item [matMenuTriggerFor]="menuPermisos">
-                <mat-icon>description</mat-icon>
-                <span>Permisos</span>
-              </button>
-
-              <button mat-menu-item [matMenuTriggerFor]="menuLactancia">
-                <mat-icon>child_care</mat-icon>
-                <span>Lactancia</span>
-              </button>
-
-              <button mat-menu-item (click)="abrirDescansoMedico()">
-                <mat-icon>medical_services</mat-icon>
-                <span>Descanso médico</span>
-              </button>
-
-              <button mat-menu-item (click)="abrirLicencia()">
-                <mat-icon>assignment</mat-icon>
-                <span>Licencia</span>
-              </button>
-
-              <button mat-menu-item (click)="abrirVacaciones()">
-                <mat-icon>beach_access</mat-icon>
-                <span>Vacaciones</span>
-              </button>
-
-              <button mat-menu-item (click)="abrirCompensacion()">
-                <mat-icon>schedule</mat-icon>
-                <span>Permiso compensable</span>
-              </button>
-            </mat-menu>
-
-            <mat-menu #menuPermisos="matMenu">
-              <button mat-menu-item (click)="abrirPermisoComun('001')">
-                <span>Permiso por asuntos personales</span>
-              </button>
-
-              <button mat-menu-item (click)="abrirPermisoComun('002')">
-                <span>Permiso por cita médica</span>
-              </button>
-
-              <button mat-menu-item (click)="abrirPermisoComun('003')">
-                <span>Citación judicial/militar</span>
-              </button>
-
-              <button mat-menu-item (click)="abrirPermisoComun('004')">
-                <span>Omisión de registro de asistencia</span>
-              </button>
-
-              <button mat-menu-item (click)="abrirPermisoComun('005')">
-                <span>Ingreso por tardanza</span>
-              </button>
-
-              <button mat-menu-item (click)="abrirPermisoComun('006')">
-                <span>Comisión de servicio</span>
-              </button>
-
-              <button mat-menu-item (click)="abrirPermisoComun('007')">
-                <span>Otros permisos por horas</span>
-              </button>
-            </mat-menu>
-
-            <mat-menu #menuLactancia="matMenu">
-              <button mat-menu-item (click)="abrirLactancia('008')">
-                <span>Primera solicitud</span>
-              </button>
-
-              <button mat-menu-item (click)="abrirLactancia('009')">
-                <span>Modificación de horario</span>
-              </button>
-            </mat-menu>
-
-            <button mat-stroked-button routerLink="/">
-              <mat-icon>arrow_back</mat-icon>
-              Regresar
-            </button>
-          </div>
       </section>
 
       <div *ngIf="cargando()" class="loading">
@@ -158,25 +210,36 @@
           <tbody>
             <tr *ngFor="let item of solicitudesFiltradas()">
               <td>{{ item.id }}</td>
-              <td>{{ item.tipoSolicitud }}</td>
+              <td>{{ item.tipoSolicitud || '-' }}</td>
               <td>
                 <span [ngClass]="claseEstado(item.estadoSolicitud)">
-                  {{ item.estadoSolicitud }}
+                  {{ item.estadoSolicitud || '-' }}
                 </span>
               </td>
               <td>{{ item.fechaInicio | date: 'dd/MM/yyyy' }}</td>
               <td>{{ item.fechaFin | date: 'dd/MM/yyyy' }}</td>
               <td>
-                <ng-container *ngIf="item.cantidadDias !== null">
+                <ng-container *ngIf="item.cantidadDias !== null && item.cantidadDias !== undefined">
                   {{ item.cantidadDias }} día(s)
                 </ng-container>
 
-                <ng-container *ngIf="item.cantidadHoras !== null">
+                <ng-container
+                  *ngIf="item.cantidadHoras !== null && item.cantidadHoras !== undefined"
+                >
                   {{ item.cantidadHoras }} hora(s)
                 </ng-container>
+
+                <ng-container
+                  *ngIf="
+                    (item.cantidadDias === null || item.cantidadDias === undefined) &&
+                    (item.cantidadHoras === null || item.cantidadHoras === undefined)
+                  "
+                >
+                  -
+                </ng-container>
               </td>
-              <td>{{ item.motivo }}</td>
-              <td>{{ item.observacion }}</td>
+              <td>{{ item.motivo || '-' }}</td>
+              <td>{{ item.observacion || '-' }}</td>
               <td class="acciones">
                 <button mat-icon-button title="Descargar papeleta" (click)="descargarFormato(item)">
                   <mat-icon>picture_as_pdf</mat-icon>
