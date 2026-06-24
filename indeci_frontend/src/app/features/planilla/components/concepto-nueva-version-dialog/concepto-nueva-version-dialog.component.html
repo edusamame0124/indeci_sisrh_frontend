@@ -1,0 +1,74 @@
+<div class="nv-header">
+  <mat-icon class="nv-header__icon" aria-hidden="true">history_toggle_off</mat-icon>
+  <h2 mat-dialog-title id="concepto-nueva-version-title" class="nv-title">
+    Crear nueva versión vigente
+  </h2>
+  <button
+    type="button"
+    mat-icon-button
+    class="nv-close"
+    (click)="cancelar()"
+    aria-label="Cerrar"
+  >
+    <mat-icon>close</mat-icon>
+  </button>
+</div>
+
+<mat-dialog-content tabindex="0" class="nv-content">
+  <p class="nv-concepto">
+    <span class="nv-concepto__codigo">{{ data.codigo }}</span>
+    <span class="nv-concepto__nombre">{{ data.nombre }}</span>
+    @if (data.versionActual != null) {
+      <span class="nv-concepto__version">Versión vigente: v{{ data.versionActual }}</span>
+    }
+  </p>
+
+  <p class="nv-explica">
+    Use esta acción cuando el concepto <strong>ya fue usado en una planilla
+    cerrada</strong>: no se edita la versión histórica, se crea una nueva versión
+    vigente <strong>hacia adelante</strong> (D5). La nueva versión nace en
+    estado <strong>Borrador</strong> y no afecta la planilla hasta su activación.
+  </p>
+
+  <form [formGroup]="form" class="nv-form" (ngSubmit)="confirmar()">
+    <mat-form-field appearance="outline" class="nv-field">
+      <mat-label>Inicio de vigencia de la nueva versión</mat-label>
+      <input
+        matInput
+        [matDatepicker]="picker"
+        formControlName="fechaVigIni"
+        [min]="minDate"
+        [max]="maxDate"
+        autocomplete="off"
+        aria-label="Fecha de inicio de vigencia de la nueva versión"
+      />
+      <mat-datepicker-toggle matIconSuffix [for]="picker" />
+      <mat-datepicker #picker />
+      <mat-hint align="end">La versión anterior se cierra el día previo</mat-hint>
+      @if (
+        form.controls.fechaVigIni.hasError('required') &&
+        form.controls.fechaVigIni.touched
+      ) {
+        <mat-error>Indique la fecha de inicio de vigencia.</mat-error>
+      }
+    </mat-form-field>
+  </form>
+
+  <p class="nv-spec-note">
+    SPEC_CONCEPTOS_PLANILLA §12 · D.L. 1451 (auditoría)
+  </p>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end" class="nv-actions">
+  <button type="button" mat-button (click)="cancelar()">Cancelar</button>
+  <button
+    type="button"
+    mat-flat-button
+    color="primary"
+    (click)="confirmar()"
+    [disabled]="!puedeGuardar()"
+  >
+    <mat-icon aria-hidden="true">add</mat-icon>
+    Crear nueva versión
+  </button>
+</mat-dialog-actions>

@@ -136,7 +136,11 @@
 
       <mat-tab label="Paso 1 — Datos">
         <div class="detalle__paso detalle__paso--datos">
-          <app-subsidio-tab-resumen [caso]="c" modo="operativo" />
+          <app-subsidio-tab-resumen
+            [caso]="c"
+            modo="operativo"
+            (casoActualizado)="onCasoRefrescado($event)"
+          />
 
           <mat-card class="paso-seccion page-card sisrh-elevated" appearance="outlined">
             <mat-card-header class="paso-seccion__header">

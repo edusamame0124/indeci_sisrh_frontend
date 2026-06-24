@@ -77,27 +77,13 @@
 
           <mat-form-field appearance="outline">
             <mat-label>Fecha de emisión</mat-label>
-            <input matInput [matDatepicker]="dpEmi" formControlName="fechaEmision" />
+            <input matInput [matDatepicker]="dpEmi" formControlName="fechaEmision" required />
             <mat-datepicker-toggle matIconSuffix [for]="dpEmi"></mat-datepicker-toggle>
             <mat-datepicker #dpEmi></mat-datepicker>
-          </mat-form-field>
-
-          <mat-form-field appearance="outline">
-            <mat-label>Vigente desde</mat-label>
-            <input matInput [matDatepicker]="dpIni" formControlName="fechaVigIni" required />
-            <mat-datepicker-toggle matIconSuffix [for]="dpIni"></mat-datepicker-toggle>
-            <mat-datepicker #dpIni></mat-datepicker>
-            @if (form.controls.fechaVigIni.touched && form.controls.fechaVigIni.invalid) {
-              <mat-error>La fecha de inicio de vigencia es obligatoria.</mat-error>
+            <mat-hint>La constancia rige desde esta fecha (vigencia indefinida).</mat-hint>
+            @if (form.controls.fechaEmision.touched && form.controls.fechaEmision.hasError('required')) {
+              <mat-error>Ingresa la fecha de emisión de la constancia.</mat-error>
             }
-          </mat-form-field>
-
-          <mat-form-field appearance="outline">
-            <mat-label>Vigente hasta</mat-label>
-            <input matInput [matDatepicker]="dpFin" formControlName="fechaVigFin" />
-            <mat-datepicker-toggle matIconSuffix [for]="dpFin"></mat-datepicker-toggle>
-            <mat-datepicker #dpFin></mat-datepicker>
-            <mat-hint>Vacío = indefinida (se recomienda setear).</mat-hint>
           </mat-form-field>
 
           <mat-form-field appearance="outline" class="span-2">
@@ -139,12 +125,7 @@
             <td mat-cell *matCellDef="let r">{{ fmtFecha(r.fechaEmision) }}</td>
           </ng-container>
 
-          <ng-container matColumnDef="vigencia">
-            <th mat-header-cell *matHeaderCellDef>Vigencia</th>
-            <td mat-cell *matCellDef="let r">
-              {{ fmtFecha(r.fechaVigIni) }} → {{ r.fechaVigFin ? fmtFecha(r.fechaVigFin) : 'indefinida' }}
-            </td>
-          </ng-container>
+
 
           <ng-container matColumnDef="estadoVigencia">
             <th mat-header-cell *matHeaderCellDef>Estado</th>
@@ -172,11 +153,13 @@
        </div>
       </mat-tab>
 
-      <mat-tab label="Control anual">
-        <div class="tab-body">
-          <app-control-anual-tab [empleadoId]="empleadoId()!" />
-        </div>
-      </mat-tab>
+      @if (tieneConstancia()) {
+        <mat-tab label="Control anual">
+          <div class="tab-body">
+            <app-control-anual-tab [empleadoId]="empleadoId()!" />
+          </div>
+        </mat-tab>
+      }
       </mat-tab-group>
     }
   </mat-card-content>

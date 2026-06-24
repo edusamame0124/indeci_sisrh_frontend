@@ -12,6 +12,26 @@ export const PLANILLA_ROUTES: Routes = [
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'periodos' },
 
+      /* ——— Conceptos de Planilla (SPEC_CONCEPTOS_PLANILLA · P2) ——— */
+      {
+        path: 'conceptos',
+        loadComponent: () =>
+          import('./pages/concepto-planilla-page/concepto-planilla-page.component').then(
+            (m) => m.ConceptoPlanillaPageComponent,
+          ),
+        title: 'Conceptos de Planilla — Planilla — SISRH-INDECI',
+      },
+
+      /* ——— Tipos de planilla (SPEC_CONCEPTOS_PLANILLA §15 · Fase A) ——— */
+      {
+        path: 'tipos-planilla',
+        loadComponent: () =>
+          import('./pages/planilla-tipo-catalog-page/planilla-tipo-catalog-page.component').then(
+            (m) => m.PlanillaTipoCatalogPageComponent,
+          ),
+        title: 'Tipos de planilla — Planilla — SISRH-INDECI',
+      },
+
       /* ——— Centro de Validaciones (F3.3) ——— */
       {
         path: 'validaciones',

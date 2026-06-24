@@ -45,7 +45,11 @@
 .grid-bloque1 {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 0.75rem;
+  // Alinea cada campo al tope de su celda y da aire vertical entre filas, para
+  // que los hints (que pueden partirse en 2 líneas) no se monten sobre el label
+  // de la fila siguiente. Junto con subscriptSizing="dynamic" en los campos.
+  align-items: start;
+  gap: 1.25rem 1rem;
 }
 
 @media (min-width: 960px) {

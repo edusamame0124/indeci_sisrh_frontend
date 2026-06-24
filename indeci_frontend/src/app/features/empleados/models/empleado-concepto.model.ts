@@ -16,7 +16,7 @@ export interface EmpleadoConceptoInput {
  */
 export interface ConceptosAsignables {
   readonly regimenLaboral: string | null;
-  readonly conceptos: readonly import('../../catalogos/models/concepto-planilla.model').ConceptoPlanillaRow[];
+  readonly conceptos: readonly import('../../planilla/models/concepto-planilla.model').ConceptoPlanillaRow[];
 }
 
 /** Mirrors `EmpleadoConceptoResponseDto` (Java). */

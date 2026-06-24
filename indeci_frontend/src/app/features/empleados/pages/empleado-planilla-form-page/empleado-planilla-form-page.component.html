@@ -40,7 +40,7 @@
             <h2 id="bloque-config-heading" class="sr-only">Configuración de plaza y datos laborales</h2>
 
             <div class="grid-bloque1">
-              <mat-form-field appearance="outline">
+              <mat-form-field appearance="outline" subscriptSizing="dynamic">
                 <mat-label>Régimen laboral</mat-label>
                 <mat-select formControlName="regimenLaboralId" required>
                   @for (r of regimenes(); track r.id) {
@@ -53,7 +53,7 @@
                 }
               </mat-form-field>
 
-              <mat-form-field appearance="outline">
+              <mat-form-field appearance="outline" subscriptSizing="dynamic">
                 <mat-label>Tipo de contrato</mat-label>
                 <mat-select formControlName="tipoContratoId">
                   <mat-option [value]="null">— Sin especificar —</mat-option>
@@ -63,7 +63,7 @@
                 </mat-select>
               </mat-form-field>
 
-              <mat-form-field appearance="outline">
+              <mat-form-field appearance="outline" subscriptSizing="dynamic">
                 <mat-label>Condición laboral</mat-label>
                 <mat-select formControlName="condicionLaboralId">
                   <mat-option [value]="null">— Sin especificar —</mat-option>
@@ -73,7 +73,7 @@
                 </mat-select>
               </mat-form-field>
 
-              <mat-form-field appearance="outline">
+              <mat-form-field appearance="outline" subscriptSizing="dynamic">
                 <mat-label>Código AIRHSP</mat-label>
                 <input
                   matInput
@@ -94,7 +94,7 @@
                 }
               </mat-form-field>
 
-              <mat-form-field appearance="outline">
+              <mat-form-field appearance="outline" subscriptSizing="dynamic">
                 <mat-label>Monto contratado base</mat-label>
                 <input
                   matInput
@@ -120,7 +120,7 @@
                 }
               </mat-form-field>
 
-              <mat-form-field appearance="outline">
+              <mat-form-field appearance="outline" subscriptSizing="dynamic">
                 <mat-label>Número de hijos</mat-label>
                 <input
                   matInput
@@ -135,7 +135,7 @@
                 }
               </mat-form-field>
 
-              <mat-form-field appearance="outline" class="grid-bloque1__full">
+              <mat-form-field appearance="outline" subscriptSizing="dynamic" class="grid-bloque1__full">
                 <mat-label>Remuneración mensual</mat-label>
                 <input
                   matInput

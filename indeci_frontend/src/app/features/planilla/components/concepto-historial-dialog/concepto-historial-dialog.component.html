@@ -1,0 +1,122 @@
+<div class="hd-header">
+  <mat-icon class="hd-header__icon" aria-hidden="true">history</mat-icon>
+  <div class="hd-header__titles">
+    <h2 mat-dialog-title id="concepto-historial-title" class="hd-title">
+      Historial / Versiones
+    </h2>
+    <p class="hd-subtitle">
+      <span class="hd-subtitle__codigo">{{ data.codigo }}</span>
+      <span class="hd-subtitle__nombre">{{ data.nombre }}</span>
+    </p>
+  </div>
+  <button
+    type="button"
+    mat-icon-button
+    class="hd-close"
+    (click)="cerrar()"
+    aria-label="Cerrar"
+  >
+    <mat-icon>close</mat-icon>
+  </button>
+</div>
+
+<mat-dialog-content tabindex="0" class="hd-content">
+  @if (loading()) {
+    <div class="hd-loading" aria-busy="true">
+      <mat-progress-spinner
+        mode="indeterminate"
+        diameter="44"
+        aria-label="Cargando historial"
+      />
+    </div>
+  } @else if (loadError()) {
+    <app-empty-state
+      variant="error"
+      icon="error_outline"
+      title="No se pudo cargar el historial"
+      [description]="loadError()!"
+    >
+      <button mat-stroked-button type="button" (click)="cargar()">Reintentar</button>
+    </app-empty-state>
+  } @else {
+    <!-- ───────────── Versiones ───────────── -->
+    <section class="hd-section" aria-labelledby="hd-versiones-title">
+      <h3 id="hd-versiones-title" class="hd-section__title">
+        <mat-icon aria-hidden="true">layers</mat-icon>
+        Versiones por código
+      </h3>
+
+      @if (versiones().length === 0) {
+        <p class="hd-empty">Este concepto tiene una sola versión vigente.</p>
+      } @else {
+        <ol class="hd-timeline">
+          @for (v of versiones(); track v.id) {
+            <li class="hd-timeline__item" [class.hd-timeline__item--vigente]="v.vigente">
+              <span class="hd-timeline__dot" aria-hidden="true"></span>
+              <div class="hd-timeline__body">
+                <div class="hd-timeline__row">
+                  <span class="hd-version">v{{ v.version }}</span>
+                  @if (v.vigente) {
+                    <span class="hd-badge-vigente">
+                      <mat-icon aria-hidden="true">check_circle</mat-icon>
+                      Vigente
+                    </span>
+                  }
+                  <span
+                    class="concepto-chip"
+                    [attr.data-severity]="severityEstado(v.estado)"
+                    [matTooltip]="'Estado de la versión: ' + labelEstado(v.estado)"
+                  >
+                    {{ labelEstado(v.estado) }}
+                  </span>
+                </div>
+                <p class="hd-timeline__vigencia">
+                  <mat-icon aria-hidden="true">event</mat-icon>
+                  {{ rangoVigencia(v) }}
+                </p>
+              </div>
+            </li>
+          }
+        </ol>
+      }
+    </section>
+
+    <!-- ───────────── Auditoría ───────────── -->
+    <section class="hd-section" aria-labelledby="hd-auditoria-title">
+      <h3 id="hd-auditoria-title" class="hd-section__title">
+        <mat-icon aria-hidden="true">fact_check</mat-icon>
+        Auditoría
+      </h3>
+
+      @if (auditoria().length === 0) {
+        <p class="hd-empty">Sin eventos de auditoría registrados.</p>
+      } @else {
+        <ul class="hd-audit">
+          @for (a of auditoria(); track $index) {
+            <li class="hd-audit__item">
+              <div class="hd-audit__head">
+                <span class="hd-audit__accion">{{ a.accion }}</span>
+                <span class="hd-audit__fecha">{{ a.fecha }}</span>
+              </div>
+              <p class="hd-audit__meta">
+                <mat-icon aria-hidden="true">person</mat-icon>
+                {{ a.usuario }}
+              </p>
+              @if (a.detalle) {
+                <p class="hd-audit__detalle">{{ a.detalle }}</p>
+              }
+            </li>
+          }
+        </ul>
+      }
+    </section>
+
+    <p class="hd-spec-note">
+      SPEC_CONCEPTOS_PLANILLA §12 · D.L. 1451 (auditoría)
+    </p>
+  }
+</mat-dialog-content>
+
+<mat-dialog-actions align="end" class="hd-actions">
+  <button type="button" mat-button (click)="cerrar()">Cerrar</button>
+</mat-dialog-actions>

@@ -160,12 +160,11 @@ export const CATALOGOS_ROUTES: Routes = [
         title: 'Tipo de comisión AFP — Catálogos — SISRH-INDECI',
       },
       {
+        // Compatibilidad: el módulo se re-hospedó bajo Planilla
+        // (SPEC_CONCEPTOS_PLANILLA §8/D1). No romper enlaces existentes.
         path: 'conceptos-planilla',
-        loadComponent: () =>
-          import(
-            './pages/concepto-planilla-catalog-page/concepto-planilla-catalog-page.component'
-          ).then((m) => m.ConceptoPlanillaCatalogPageComponent),
-        title: 'Conceptos de planilla — Catálogos — SISRH-INDECI',
+        redirectTo: '/planilla/conceptos',
+        pathMatch: 'full',
       },
     ],
   },

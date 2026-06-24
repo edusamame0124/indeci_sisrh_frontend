@@ -16,13 +16,22 @@
 .selectores {
   display: flex;
   flex-wrap: wrap;
-  gap: 1rem;
-  margin-bottom: 0.5rem;
+  align-items: flex-start;
+  gap: 0.75rem 1.25rem;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--sisrh-border-soft, #e7ecf2);
 }
 
-.sel-periodo,
+.sel-periodo {
+  min-width: 200px;
+}
+
+/* El buscador de empleado crece para ocupar la barra; alineado con Periodo. */
 .sel-empleado {
-  min-width: 220px;
+  flex: 1 1 360px;
+  min-width: 280px;
+  max-width: 560px;
 }
 
 .controles {
@@ -213,6 +222,98 @@
   font-weight: 600;
   line-height: 1.1;
   color: var(--sisrh-status-danger, #A32D2D);
+}
+
+/* Indicador por día — modelo de dos niveles (V010_95) */
+.cal-celda__chip {
+  display: block;
+  margin: 0 0.2rem 0.2rem;
+  padding: 0.05rem 0.2rem;
+  font-size: 0.58rem;
+  font-weight: 600;
+  line-height: 1.2;
+  border-radius: 4px;
+  text-align: center;
+}
+.cal-celda__chip--diario {
+  color: var(--sisrh-danger, #b42318);
+  background: var(--sisrh-danger-100, #fdecec);
+}
+.cal-celda__chip--acumula {
+  color: var(--sisrh-warning, #b7791f);
+  background: var(--sisrh-warning-100, #fff4db);
+}
+
+/* Desglose de descuento por tardanza (espejo Excel) */
+.desglose {
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--sisrh-border-soft, #e7ecf2);
+}
+.desglose__titulo {
+  margin: 0 0 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--sisrh-color-secondary, #1f3a5f);
+}
+.desglose__grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+}
+@media (min-width: 720px) {
+  .desglose__grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+.desglose__bloque {
+  border: 1px solid var(--sisrh-border, #d9e1ea);
+  border-radius: 8px;
+  padding: 0.75rem;
+  background: var(--sisrh-surface-muted, #f8fafc);
+}
+.desglose__bloque--total {
+  background: var(--sisrh-primary-100, #e8eef6);
+  border-color: var(--sisrh-primary-100, #e8eef6);
+}
+.desglose__bloque-titulo {
+  margin: 0 0 0.4rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--sisrh-text-muted, #64748b);
+}
+.desglose__kv {
+  margin: 0;
+  display: grid;
+  gap: 0.2rem;
+}
+.desglose__kv > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.desglose__kv dt {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--sisrh-text-muted, #64748b);
+}
+.desglose__kv dd {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--sisrh-text, #1f2937);
+}
+.desglose__total {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--sisrh-primary, #1f3a5f);
+}
+.desglose__hint {
+  margin: 0.25rem 0 0;
+  font-size: 0.7rem;
+  color: var(--sisrh-text-muted, #64748b);
 }
 
 .resumen-nota {

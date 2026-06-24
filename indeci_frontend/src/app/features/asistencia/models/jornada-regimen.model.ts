@@ -10,6 +10,10 @@ export interface JornadaRegimen {
   readonly refrigerioFin: string | null;
   readonly toleranciaIngresoMin: number;
   readonly toleranciaAlmuerzoMin: number;
+  /** V010_95 — día con tardanza > este umbral se descuenta completo (Descuento 1). */
+  readonly umbralTardanzaDiariaMin: number;
+  /** V010_95 — tope mensual de tardanzas ≤ umbral; el exceso se descuenta (Descuento 2). */
+  readonly topeTardanzaMensualMin: number;
   readonly jornadaHoras: number;
 }
 
@@ -21,5 +25,7 @@ export interface JornadaRegimenInput {
   readonly refrigerioFin: string | null;
   readonly toleranciaIngresoMin: number;
   readonly toleranciaAlmuerzoMin: number;
+  readonly umbralTardanzaDiariaMin: number;
+  readonly topeTardanzaMensualMin: number;
   readonly jornadaHoras: number;
 }
