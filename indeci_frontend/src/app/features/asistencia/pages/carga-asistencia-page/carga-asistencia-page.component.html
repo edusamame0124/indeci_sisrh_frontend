@@ -17,9 +17,9 @@
           <a mat-button routerLink="/planilla/periodos">Periodos</a>.
         </p>
       } @else {
-        <!-- Selectores período + empleado -->
+        <!-- Barra de filtros: período + buscador de empleado -->
         <div class="selectores">
-          <mat-form-field appearance="outline" class="sel-periodo">
+          <mat-form-field appearance="outline" class="sel-periodo" subscriptSizing="dynamic">
             <mat-label>Periodo</mat-label>
             <mat-select
               [value]="periodoSeleccionado()"
@@ -32,19 +32,15 @@
             </mat-select>
           </mat-form-field>
 
-          <mat-form-field appearance="outline" class="sel-empleado">
-            <mat-label>Empleado</mat-label>
-            <mat-select
-              [value]="empleadoSeleccionado()"
-              (selectionChange)="onEmpleadoChange($event.value)"
-              [disabled]="cargandoEmpleados() || empleados().length === 0"
-              aria-label="Seleccionar empleado"
-            >
-              @for (e of empleados(); track e.empleadoId) {
-                <mat-option [value]="e.empleadoId">{{ e.nombre }} — DNI {{ e.dni }}</mat-option>
-              }
-            </mat-select>
-          </mat-form-field>
+          <app-persona-picker
+            class="sel-empleado"
+            [flat]="true"
+            [soloEmpleados]="true"
+            [selected]="personaSeleccionada()"
+            hint=""
+            (seleccionar)="onPersonaPick($event)"
+            (limpiar)="onLimpiarEmpleado()"
+          />
         </div>
 
         @if (!cargandoEmpleados() && empleados().length === 0) {
@@ -107,6 +103,35 @@
             Montos referenciales. El descuento definitivo se aplica al generar la planilla del periodo.
           </p>
 
+          <!-- Desglose de descuento por tardanza (dos niveles, calculado por el sistema) -->
+          @if (hayDesgloseTardanza()) {
+            <div class="desglose" aria-label="Desglose de descuento por tardanza">
+              <h3 class="desglose__titulo">Desglose de descuento por tardanza</h3>
+              <div class="desglose__grid">
+                <div class="desglose__bloque">
+                  <p class="desglose__bloque-titulo">Descuento 1 — diaria (&gt; {{ umbralTardanzaDiaria() }} min)</p>
+                  <dl class="desglose__kv">
+                    <div><dt>Min. diaria</dt><dd class="sisrh-tabular">{{ minTardanzaDiaria() }}</dd></div>
+                    <div><dt>Descuento</dt><dd class="sisrh-tabular">S/ {{ fmtMonto(descTardanzaDiaria()) }}</dd></div>
+                  </dl>
+                </div>
+                <div class="desglose__bloque">
+                  <p class="desglose__bloque-titulo">Descuento 2 — mensual (≤ {{ umbralTardanzaDiaria() }} min)</p>
+                  <dl class="desglose__kv">
+                    <div><dt>Acumulado</dt><dd class="sisrh-tabular">{{ minTardanzaMenorAcum() }} min</dd></div>
+                    <div><dt>Exceso mensual</dt><dd class="sisrh-tabular">{{ minTardanzaExcesoMes() }} min</dd></div>
+                    <div><dt>Descuento</dt><dd class="sisrh-tabular">S/ {{ fmtMonto(descTardanzaMensual()) }}</dd></div>
+                  </dl>
+                </div>
+                <div class="desglose__bloque desglose__bloque--total">
+                  <p class="desglose__bloque-titulo">Total tardanza</p>
+                  <p class="desglose__total sisrh-tabular">S/ {{ fmtMonto(descTardanzaTotalBackend()) }}</p>
+                  <p class="desglose__hint">Descuento 1 + Descuento 2 (lo que toma la planilla).</p>
+                </div>
+              </div>
+            </div>
+          }
+
           <!-- Leyenda de colores -->
           <div class="leyenda">
             @for (t of tiposDia; track t) {
@@ -153,13 +178,24 @@
                           placeholder="min"
                         />
                       }
-                      @if (descuentoDia(dia) > 0) {
-                        <span
-                          class="cal-celda__desc sisrh-tabular"
-                          [attr.aria-label]="'Descuento referencial del día: S/ ' + fmtMonto(descuentoDia(dia))"
-                        >
-                          S/ {{ fmtMonto(descuentoDia(dia)) }}
-                        </span>
+                      @if (clasifTardanza(dia); as clasif) {
+                        @if (clasif === 'DIARIO') {
+                          <span
+                            class="cal-celda__chip cal-celda__chip--diario sisrh-tabular"
+                            matTooltip="Tardanza mayor al umbral: se descuenta el día (Descuento 1)."
+                            [attr.aria-label]="'Descuento diario: S/ ' + fmtMonto(descuentoDia(dia))"
+                          >
+                            S/ {{ fmtMonto(descuentoDia(dia)) }}
+                          </span>
+                        } @else {
+                          <span
+                            class="cal-celda__chip cal-celda__chip--acumula"
+                            matTooltip="Tardanza menor o igual al umbral: acumula al mes (Descuento 2)."
+                            aria-label="Acumula al mes"
+                          >
+                            Acumula
+                          </span>
+                        }
                       }
                     </div>
                   }
@@ -170,16 +206,7 @@
 
           <!-- Observación + estado + guardar -->
           <div class="acciones">
-            <mat-form-field appearance="outline" class="acc-obs">
-              <mat-label>Observación</mat-label>
-              <input
-                matInput
-                [ngModel]="observacion()"
-                (ngModelChange)="observacion.set($event)"
-                maxlength="500"
-                aria-label="Observación de la asistencia"
-              />
-            </mat-form-field>
+         
 
             <mat-form-field appearance="outline" class="acc-estado">
               <mat-label>Estado</mat-label>
@@ -205,18 +232,6 @@
               Guardar asistencia
             </button>
 
-            <button
-              mat-stroked-button
-              type="button"
-              [disabled]="recalculando()"
-              (click)="recalcular()"
-              matTooltip="Recalcula tardanzas y descuentos con la jornada vigente del régimen"
-              aria-label="Recalcular tardanzas con la jornada vigente"
-            >
-              <mat-icon fontIcon="calculate" aria-hidden="true" />
-              Recalcular
-            </button>
-
             @if (puedeDescargarPdf()) {
               <button
                 mat-stroked-button
@@ -234,10 +249,9 @@
         }
 
         <p class="ref-nota">
-          Base: SPEC §12.2 PANTALLA-02 — Carga de Asistencia · descuento por
+          Base:  Carga de Asistencia · descuento por
           tardanzas y faltas según D.Leg. 276 Art. 24 (REGLA 276-02:
-          descuento = (remuneración / 30 / 8 / 60) × minutos). El consumo de la
-          asistencia validada por el motor M05 se habilitará con el PASO 7.
+          descuento = (remuneración / 30 / 8 / 60) × minutos).
         </p>
       }
     </mat-card-content>

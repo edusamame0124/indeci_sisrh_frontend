@@ -63,6 +63,8 @@ export class JornadaRegimenConfigPageComponent implements OnInit {
   readonly refrigerioFin = signal<string>('');
   readonly toleranciaIngresoMin = signal<number>(0);
   readonly toleranciaAlmuerzoMin = signal<number>(0);
+  readonly umbralTardanzaDiariaMin = signal<number>(10);
+  readonly topeTardanzaMensualMin = signal<number>(60);
   readonly jornadaHoras = signal<number>(8);
 
   readonly cargandoRegimenes = signal(true);
@@ -132,6 +134,8 @@ export class JornadaRegimenConfigPageComponent implements OnInit {
         refrigerioFin: this.refrigerioFin() || null,
         toleranciaIngresoMin: Math.max(0, Math.trunc(Number(this.toleranciaIngresoMin()) || 0)),
         toleranciaAlmuerzoMin: Math.max(0, Math.trunc(Number(this.toleranciaAlmuerzoMin()) || 0)),
+        umbralTardanzaDiariaMin: Math.max(0, Math.trunc(Number(this.umbralTardanzaDiariaMin()) || 0)),
+        topeTardanzaMensualMin: Math.max(0, Math.trunc(Number(this.topeTardanzaMensualMin()) || 0)),
         jornadaHoras: Number(this.jornadaHoras()) || 8,
       })
       .subscribe({
@@ -156,6 +160,8 @@ export class JornadaRegimenConfigPageComponent implements OnInit {
     this.refrigerioFin.set(config.refrigerioFin ?? '');
     this.toleranciaIngresoMin.set(config.toleranciaIngresoMin ?? 0);
     this.toleranciaAlmuerzoMin.set(config.toleranciaAlmuerzoMin ?? 0);
+    this.umbralTardanzaDiariaMin.set(config.umbralTardanzaDiariaMin ?? 10);
+    this.topeTardanzaMensualMin.set(config.topeTardanzaMensualMin ?? 60);
     this.jornadaHoras.set(config.jornadaHoras ?? 8);
   }
 
@@ -202,6 +208,8 @@ export class JornadaRegimenConfigPageComponent implements OnInit {
     this.refrigerioFin.set('');
     this.toleranciaIngresoMin.set(0);
     this.toleranciaAlmuerzoMin.set(0);
+    this.umbralTardanzaDiariaMin.set(10);
+    this.topeTardanzaMensualMin.set(60);
     this.jornadaHoras.set(8);
   }
 
@@ -243,6 +251,8 @@ export class JornadaRegimenConfigPageComponent implements OnInit {
         this.refrigerioFin.set(cfg.refrigerioFin ?? '');
         this.toleranciaIngresoMin.set(cfg.toleranciaIngresoMin ?? 0);
         this.toleranciaAlmuerzoMin.set(cfg.toleranciaAlmuerzoMin ?? 0);
+        this.umbralTardanzaDiariaMin.set(cfg.umbralTardanzaDiariaMin ?? 10);
+        this.topeTardanzaMensualMin.set(cfg.topeTardanzaMensualMin ?? 60);
         this.jornadaHoras.set(cfg.jornadaHoras ?? 8);
         this.cargandoConfig.set(false);
       },

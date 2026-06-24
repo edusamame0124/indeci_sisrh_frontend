@@ -1,0 +1,327 @@
+:host {
+  display: block;
+  min-width: min(560px, 94vw);
+  max-width: 640px;
+}
+
+/* ============================ HEADER ============================ */
+
+.hd-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px 20px 12px;
+  background: var(--sisrh-toolbar-bg, #e2e8f0);
+  border-bottom: 1px solid var(--sisrh-color-border, #e2e8f0);
+}
+
+.hd-header__icon {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  font-size: 28px;
+  margin-top: 2px;
+  color: var(--sisrh-primary, #1f3a5f);
+}
+
+.hd-header__titles {
+  flex: 1;
+  min-width: 0;
+}
+
+.hd-title {
+  margin: 0;
+  padding: 0;
+  font-family: var(--sisrh-font-heading, 'Lexend', sans-serif);
+  font-size: 1.0625rem;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--sisrh-color-text, #020617);
+  background: transparent;
+  border: none;
+}
+
+.hd-subtitle {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--sisrh-text-muted, #64748b);
+}
+
+.hd-subtitle__codigo {
+  font-weight: 700;
+  color: var(--sisrh-text, #1f2937);
+  font-variant-numeric: tabular-nums;
+}
+
+.hd-close {
+  flex-shrink: 0;
+  margin: -4px -8px 0 0;
+}
+
+/* ============================ CONTENT ============================ */
+
+.hd-content {
+  padding-top: 16px;
+}
+
+.hd-loading {
+  display: flex;
+  justify-content: center;
+  padding: 32px 0;
+}
+
+.hd-section {
+  margin-bottom: 20px;
+}
+
+.hd-section:last-of-type {
+  margin-bottom: 8px;
+}
+
+.hd-section__title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 12px;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--sisrh-text-muted, #64748b);
+}
+
+.hd-section__title mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+}
+
+.hd-empty {
+  margin: 0;
+  padding: 12px;
+  font-size: 13px;
+  color: var(--sisrh-text-muted, #64748b);
+  background: var(--sisrh-surface-muted, #f8fafc);
+  border: 1px dashed var(--sisrh-border, #d9e1ea);
+  border-radius: 6px;
+}
+
+/* ============================ TIMELINE VERSIONES ============================ */
+
+.hd-timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 0 6px;
+}
+
+.hd-timeline__item {
+  position: relative;
+  display: flex;
+  gap: 14px;
+  padding: 0 0 16px 14px;
+  border-left: 2px solid var(--sisrh-border, #d9e1ea);
+}
+
+.hd-timeline__item:last-child {
+  padding-bottom: 0;
+  border-left-color: transparent;
+}
+
+.hd-timeline__item--vigente {
+  border-left-color: var(--sisrh-success, #157347);
+}
+
+.hd-timeline__dot {
+  position: absolute;
+  left: -7px;
+  top: 2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--sisrh-surface, #fff);
+  border: 2px solid var(--sisrh-border, #d9e1ea);
+}
+
+.hd-timeline__item--vigente .hd-timeline__dot {
+  border-color: var(--sisrh-success, #157347);
+  background: var(--sisrh-success, #157347);
+}
+
+.hd-timeline__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.hd-timeline__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.hd-version {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--sisrh-text, #1f2937);
+  font-variant-numeric: tabular-nums;
+}
+
+.hd-badge-vigente {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--sisrh-success-100, #e7f5ee);
+  color: var(--sisrh-success, #157347);
+}
+
+.hd-badge-vigente mat-icon {
+  font-size: 13px;
+  width: 13px;
+  height: 13px;
+}
+
+.hd-timeline__vigencia {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--sisrh-text-muted, #64748b);
+  font-variant-numeric: tabular-nums;
+}
+
+.hd-timeline__vigencia mat-icon {
+  font-size: 14px;
+  width: 14px;
+  height: 14px;
+}
+
+/* ============================ AUDITORÍA ============================ */
+
+.hd-audit {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.hd-audit__item {
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  background: var(--sisrh-surface-muted, #f8fafc);
+  border: 1px solid var(--sisrh-border-soft, #e7ecf2);
+  border-radius: 6px;
+}
+
+.hd-audit__item:last-child {
+  margin-bottom: 0;
+}
+
+.hd-audit__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 10px;
+}
+
+.hd-audit__accion {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--sisrh-text, #1f2937);
+}
+
+.hd-audit__fecha {
+  font-size: 12px;
+  color: var(--sisrh-text-muted, #64748b);
+  font-variant-numeric: tabular-nums;
+}
+
+.hd-audit__meta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--sisrh-text-muted, #64748b);
+}
+
+.hd-audit__meta mat-icon {
+  font-size: 14px;
+  width: 14px;
+  height: 14px;
+}
+
+.hd-audit__detalle {
+  margin: 6px 0 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--sisrh-text, #1f2937);
+}
+
+/* ============================ CHIP (local — overlay scope) ============================ */
+
+.concepto-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 500;
+  background: var(--sisrh-border-soft, #e7ecf2);
+  color: var(--sisrh-text-muted, #64748b);
+  white-space: nowrap;
+}
+
+.concepto-chip[data-severity='success'] {
+  background: var(--sisrh-success-100, #e7f5ee);
+  color: var(--sisrh-success, #157347);
+}
+
+.concepto-chip[data-severity='warning'] {
+  background: var(--sisrh-warning-100, #fff4db);
+  color: var(--sisrh-warning, #b7791f);
+}
+
+.concepto-chip[data-severity='danger'] {
+  background: var(--sisrh-danger-100, #fdecec);
+  color: var(--sisrh-danger, #b42318);
+}
+
+.concepto-chip[data-severity='info'] {
+  background: var(--sisrh-info-100, #eaf2fb);
+  color: var(--sisrh-info, #2563a6);
+}
+
+.concepto-chip[data-severity='neutral'] {
+  background: var(--sisrh-border-soft, #e7ecf2);
+  color: var(--sisrh-text-muted, #64748b);
+}
+
+/* ============================ SPEC NOTE / ACTIONS ============================ */
+
+.hd-spec-note {
+  margin: 16px 0 0;
+  font-size: 11px;
+  font-style: italic;
+  color: var(--sisrh-text-muted, #64748b);
+}
+
+.hd-actions {
+  padding: 8px 20px 16px;
+}
+
+@media (max-width: 600px) {
+  :host {
+    min-width: 0;
+    max-width: 100%;
+  }
+}

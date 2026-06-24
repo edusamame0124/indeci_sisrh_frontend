@@ -1,0 +1,64 @@
+/* ============================================================================
+ * Catálogo "Tipos de planilla" (SPEC_CONCEPTOS_PLANILLA §15 — Fase A).
+ * Paleta SISRH institucional, alta densidad operativa.
+ * ============================================================================ */
+
+:host {
+  display: block;
+
+  --sisrh-primary: #1f3a5f;
+  --sisrh-border: #d9e1ea;
+  --sisrh-text-muted: #64748b;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 0 8px;
+}
+
+.toolbar__search {
+  flex: 2 1 320px;
+  min-width: 260px;
+}
+
+.toolbar__count {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--sisrh-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.tbl {
+  width: 100%;
+}
+
+.tbl .mat-mdc-header-cell {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--sisrh-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.tbl .mat-mdc-row:hover {
+  background: #f8fafc;
+}
+
+.col-right {
+  text-align: right;
+}
+
+.page-loading {
+  display: flex;
+  justify-content: center;
+  padding: 48px 0;
+}
+
+.page-spec-note {
+  margin: 16px 0 0;
+  font-size: 12px;
+  color: var(--sisrh-text-muted);
+}

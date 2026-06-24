@@ -21,6 +21,8 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { PeriodoPlanillaApiService } from '../../../planilla/services/periodo-planilla-api.service';
 import { PersonaApiService } from '../../../empleados/services/persona-api.service';
+import { PersonaPickerComponent } from '../../../empleados/components/persona-picker/persona-picker.component';
+import type { PersonaEmpleado } from '../../../empleados/models/persona-empleado.model';
 import { AsistenciaApiService } from '../../services/asistencia-api.service';
 import { AsistenciaTabService } from '../../services/asistencia-tab.service';
 import { ErrorMessageService } from '../../../../core/services/error-message.service';
@@ -79,6 +81,7 @@ const TIPOS_LABORADOS: ReadonlySet<TipoDia> = new Set<TipoDia>(['LABORAL', 'TARD
     MatInputModule,
     MatSelectModule,
     MatProgressSpinnerModule,
+    PersonaPickerComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './carga-asistencia-page.component.html',
@@ -101,11 +104,26 @@ export class CargaAsistenciaPageComponent implements OnInit {
   readonly periodoSeleccionado = signal<string | null>(null);
   readonly empleados = signal<readonly EmpleadoOpcion[]>([]);
   readonly empleadoSeleccionado = signal<number | null>(null);
+  /** Persona elegida en el buscador (para el chip del picker). */
+  readonly personaSeleccionada = signal<PersonaEmpleado | null>(null);
 
   readonly dias = signal<readonly AsistenciaDia[]>([]);
   readonly remuneracionBase = signal<number | null>(null);
   readonly observacion = signal<string>('');
   readonly estadoAsistencia = signal<EstadoAsistencia>('BORRADOR');
+
+  // V010_95 — desglose de dos niveles persistido por el backend (Ejecutar Cálculo).
+  readonly umbralTardanzaDiaria = signal<number>(10);
+  readonly minTardanzaDiaria = signal<number>(0);
+  readonly minTardanzaMenorAcum = signal<number>(0);
+  readonly minTardanzaExcesoMes = signal<number>(0);
+  readonly descTardanzaDiaria = signal<number>(0);
+  readonly descTardanzaMensual = signal<number>(0);
+  readonly descTardanzaTotalBackend = signal<number>(0);
+  /** Hay desglose calculado por el sistema para mostrar el espejo del Excel. */
+  readonly hayDesgloseTardanza = computed(
+    () => this.minTardanzaDiaria() > 0 || this.minTardanzaMenorAcum() > 0,
+  );
 
   readonly loading = signal(true);
   readonly cargandoEmpleados = signal(true);
@@ -113,7 +131,6 @@ export class CargaAsistenciaPageComponent implements OnInit {
   readonly guardando = signal(false);
   readonly calendarioListo = signal(false);
   readonly descargandoPdf = signal(false);
-  readonly recalculando = signal(false);
 
   readonly periodoActivo = computed(() => {
     const sel = this.periodoSeleccionado();
@@ -188,10 +205,18 @@ export class CargaAsistenciaPageComponent implements OnInit {
     effect(
       () => {
         const empleadoId = this.tabs.preselectEmpleadoId();
-        if (empleadoId == null || !this.empleados().some((e) => e.empleadoId === empleadoId)) {
+        const op = this.empleados().find((e) => e.empleadoId === empleadoId);
+        if (empleadoId == null || op == null) {
           return;
         }
         this.tabs.preselectEmpleadoId.set(null);
+        // Arma el chip del picker desde la opción preseleccionada.
+        this.personaSeleccionada.set({
+          id: 0,
+          empleadoId: op.empleadoId,
+          nombreCompleto: op.nombre,
+          dni: op.dni,
+        } as PersonaEmpleado);
         this.onEmpleadoChange(empleadoId);
       },
       { allowSignalWrites: true },
@@ -217,6 +242,27 @@ export class CargaAsistenciaPageComponent implements OnInit {
   onEmpleadoChange(empleadoId: number): void {
     this.empleadoSeleccionado.set(empleadoId);
     this.cargarAsistencia();
+  }
+
+  /** Selección desde el buscador autocompletado (app-persona-picker). */
+  onPersonaPick(persona: PersonaEmpleado): void {
+    const eid = persona.empleadoId;
+    if (eid == null || eid < 1) {
+      this.snack.open('La persona seleccionada no tiene empleado vinculado.', 'Cerrar', {
+        duration: 5000,
+      });
+      return;
+    }
+    this.personaSeleccionada.set(persona);
+    this.onEmpleadoChange(eid);
+  }
+
+  /** "Cambiar persona": vuelve al modo búsqueda y limpia el calendario. */
+  onLimpiarEmpleado(): void {
+    this.personaSeleccionada.set(null);
+    this.empleadoSeleccionado.set(null);
+    this.dias.set([]);
+    this.calendarioListo.set(false);
   }
 
   // ============ EdiciÃ³n del calendario ============
@@ -295,35 +341,14 @@ export class CargaAsistenciaPageComponent implements OnInit {
         next: () => {
           this.guardando.set(false);
           this.snack.open('Asistencia guardada.', 'Cerrar', { duration: 4000 });
+          // Refresca calendario + desglose con los valores recalculados al guardar.
+          this.cargarAsistencia();
         },
         error: (err: HttpErrorResponse) => {
           this.guardando.set(false);
           this.onHttpSnack(err);
         },
       });
-  }
-
-  /**
-   * Recalcula la tardanza/descuentos del empleado desde las marcas y la jornada vigente,
-   * sin pasar por "Validar cabeceras". Refresca el calendario al terminar.
-   */
-  recalcular(): void {
-    const empleadoId = this.empleadoSeleccionado();
-    const periodo = this.periodoSeleccionado();
-    if (empleadoId == null || periodo == null) return;
-
-    this.recalculando.set(true);
-    this.asistenciaApi.recalcular(empleadoId, periodo).subscribe({
-      next: () => {
-        this.recalculando.set(false);
-        this.snack.open('Asistencia recalculada con la jornada vigente.', 'Cerrar', { duration: 4000 });
-        this.cargarAsistencia();
-      },
-      error: (err: HttpErrorResponse) => {
-        this.recalculando.set(false);
-        this.onHttpSnack(err);
-      },
-    });
   }
 
   /** Descarga el PDF vía blob (lleva el JWT por el interceptor; el href directo no lo haría). */
@@ -355,6 +380,18 @@ export class CargaAsistenciaPageComponent implements OnInit {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }).format(value ?? 0);
+  }
+
+  /**
+   * Clasificación del día según el modelo de dos niveles (V010_95):
+   * 'DIARIO' si la tardanza supera el umbral (Descuento 1), 'ACUMULA' si es
+   * ≤ umbral (pozo del Descuento 2), o null si no hay tardanza.
+   */
+  clasifTardanza(dia: AsistenciaDia): 'DIARIO' | 'ACUMULA' | null {
+    if (dia.tipoDia !== 'TARDANZA' || !dia.minutosTardanza || dia.minutosTardanza <= 0) {
+      return null;
+    }
+    return dia.minutosTardanza > this.umbralTardanzaDiaria() ? 'DIARIO' : 'ACUMULA';
   }
 
   // ============ Carga de datos ============
@@ -411,6 +448,13 @@ export class CargaAsistenciaPageComponent implements OnInit {
         this.remuneracionBase.set(resp.remuneracionBase);
         this.observacion.set(resp.observacion ?? '');
         this.estadoAsistencia.set(resp.estado || 'BORRADOR');
+        this.umbralTardanzaDiaria.set(resp.umbralTardanzaDiariaMin ?? 10);
+        this.minTardanzaDiaria.set(resp.minTardanzaDiaria ?? 0);
+        this.minTardanzaMenorAcum.set(resp.minTardanzaMenorAcum ?? 0);
+        this.minTardanzaExcesoMes.set(resp.minTardanzaExcesoMes ?? 0);
+        this.descTardanzaDiaria.set(resp.descuentoTardanzaDiaria ?? 0);
+        this.descTardanzaMensual.set(resp.descuentoTardanzaMensual ?? 0);
+        this.descTardanzaTotalBackend.set(resp.descuentoTardanza ?? 0);
         this.dias.set(
           this.construirCalendario(periodo.fechaInicio, periodo.fechaFin, resp.dias),
         );

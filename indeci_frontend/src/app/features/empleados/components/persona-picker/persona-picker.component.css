@@ -28,12 +28,28 @@
   padding: 16px 20px;
 }
 
+/* Variante plana: sin recuadro, para integrarse en una barra de filtros. */
+.pp-host--flat {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+}
+.pp-host--flat .pp-search {
+  gap: 4px;
+}
+
 /* ============================ ESTADO BUSQUEDA ============================ */
 
 .pp-search {
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+/* Evita que el buscador y la persona seleccionada queden visibles a la vez. */
+.pp-search[hidden] {
+  display: none;
 }
 
 .pp-search__field {

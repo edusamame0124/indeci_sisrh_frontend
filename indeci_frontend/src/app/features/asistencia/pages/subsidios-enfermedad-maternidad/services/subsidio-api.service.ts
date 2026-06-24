@@ -5,6 +5,7 @@ import type { ApiResponse } from '../../../../../core/models/api-response.model'
 import { extractApiData } from '../../../../../core/http/map-api-response';
 import type {
   SubsidioBaseHistoricaResponse,
+  SubsidioBaseManualInput,
   SubsidioCasoListParams,
   SubsidioCasoPage,
   SubsidioCasoRequest,
@@ -117,6 +118,27 @@ export class SubsidioApiService {
     return this.http
       .get<ApiResponse<SubsidioBaseHistoricaResponse>>(
         `${this.baseUrl}/casos/${casoId}/base-historica`,
+      )
+      .pipe(map(extractApiData));
+  }
+
+  /** Borrador editable de la base: 12 meses precargados (MIXTA) o en blanco (MANUAL). */
+  borradorBase(casoId: number): Observable<SubsidioBaseHistoricaResponse> {
+    return this.http
+      .get<ApiResponse<SubsidioBaseHistoricaResponse>>(
+        `${this.baseUrl}/casos/${casoId}/base-historica/borrador`,
+      )
+      .pipe(map(extractApiData));
+  }
+
+  guardarBaseManual(
+    casoId: number,
+    input: SubsidioBaseManualInput,
+  ): Observable<SubsidioBaseHistoricaResponse> {
+    return this.http
+      .put<ApiResponse<SubsidioBaseHistoricaResponse>>(
+        `${this.baseUrl}/casos/${casoId}/base-historica/manual`,
+        input,
       )
       .pipe(map(extractApiData));
   }

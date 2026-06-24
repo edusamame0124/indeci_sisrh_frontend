@@ -2,25 +2,27 @@
   <nav class="crumbs sisrh-crumbs" aria-label="Ubicación">
     <a mat-button routerLink="/">Inicio</a>
     <span class="crumbs__sep" aria-hidden="true">/</span>
-    <span class="crumbs__group">Catálogos</span>
+    <span class="crumbs__group">Planilla</span>
     <span class="crumbs__sep" aria-hidden="true">/</span>
-    <span class="crumbs__here">Conceptos de planilla</span>
+    <span class="crumbs__here">Conceptos de Planilla</span>
   </nav>
 
   <mat-card class="page-card sisrh-elevated">
     <mat-card-header>
-      <mat-card-title>Conceptos de planilla</mat-card-title>
+      <mat-card-title>Conceptos de Planilla</mat-card-title>
       <mat-card-subtitle>
-        Catálogo enriquecido con afectaciones (5ta / AFP / ESSALUD), régimen
-        aplicable, prorrateabilidad (Motor v3) y códigos externos PLAME/MCPP.
-        Escritura solo para ADMIN / SUPER_ADMIN.
+        Catálogo del motor: afectaciones (5ta / AFP·ONP / ESSALUD), régimen
+        aplicable, prorrateabilidad (Motor v3) y códigos externos PDT 601 /
+        AIRHSP / PLAME / MCPP. Dominio Planilla: escritura PLA_WRITE, aprobación
+        PLA_APPROVE.
       </mat-card-subtitle>
     </mat-card-header>
     <mat-card-content>
-      @if (!canWrite()) {
+      @if (!canManage()) {
         <p class="page-hint" role="status">
-          Modo consulta: su rol permite ver el catálogo. Para crear, editar o
-          eliminar se requiere rol ADMIN o SUPER_ADMIN.
+          Modo consulta: su rol permite ver el catálogo. Para crear, configurar o
+          cambiar el estado de un concepto se requieren permisos de Planilla
+          (PLA_WRITE / PLA_APPROVE).
         </p>
       }
 
@@ -281,15 +283,39 @@
               </td>
             </ng-container>
 
-            <!-- Activo -->
-            <ng-container matColumnDef="activo">
-              <th mat-header-cell *matHeaderCellDef scope="col" class="col-center">Activo</th>
-              <td mat-cell *matCellDef="let row" class="col-center">
-                @if (row.activo === 1) {
-                  <span class="sisrh-badge sisrh-badge--success">Sí</span>
+            <!-- Planillas asociadas (SPEC §15 — Fase A) -->
+            <ng-container matColumnDef="planillas">
+              <th mat-header-cell *matHeaderCellDef scope="col">Planillas</th>
+              <td mat-cell *matCellDef="let row">
+                @if (planillaNombres(row).length > 0) {
+                  <div class="concepto-regimen">
+                    @for (nombre of planillaNombres(row); track nombre) {
+                      <span
+                        class="concepto-chip concepto-chip--mini"
+                        data-severity="info"
+                        [matTooltip]="'Planilla asociada: ' + nombre"
+                      >
+                        {{ nombre }}
+                      </span>
+                    }
+                  </div>
                 } @else {
-                  <span class="sisrh-badge sisrh-badge--neutral">No</span>
+                  <span class="concepto-afectaciones__vacio">—</span>
                 }
+              </td>
+            </ng-container>
+
+            <!-- Estado (ciclo de vida — P1) -->
+            <ng-container matColumnDef="estado">
+              <th mat-header-cell *matHeaderCellDef scope="col" class="col-center">Estado</th>
+              <td mat-cell *matCellDef="let row" class="col-center">
+                <span
+                  class="concepto-chip"
+                  [attr.data-severity]="severityEstado(estadoDe(row))"
+                  [matTooltip]="'Ciclo de vida del concepto: ' + labelEstado(estadoDe(row))"
+                >
+                  {{ labelEstado(estadoDe(row)) }}
+                </span>
               </td>
             </ng-container>
 
@@ -297,24 +323,99 @@
             <ng-container matColumnDef="acciones">
               <th mat-header-cell *matHeaderCellDef scope="col" class="col-right">Acciones</th>
               <td mat-cell *matCellDef="let row" class="col-right">
+                @if (canWrite()) {
+                  <button
+                    type="button"
+                    mat-icon-button
+                    (click)="openEdit(row)"
+                    [attr.aria-label]="'Configurar concepto ' + row.codigo"
+                    matTooltip="Configurar"
+                  >
+                    <mat-icon fontIcon="edit" aria-hidden="true" />
+                  </button>
+                }
+
+                <!-- Crear nueva versión vigente (P3 §12 · D5) -->
+                @if (canCrearVersion(row)) {
+                  <button
+                    type="button"
+                    mat-icon-button
+                    (click)="openNuevaVersion(row)"
+                    [attr.aria-label]="'Crear nueva versión vigente del concepto ' + row.codigo"
+                    matTooltip="Crear nueva versión vigente"
+                  >
+                    <mat-icon fontIcon="history_toggle_off" aria-hidden="true" />
+                  </button>
+                }
+
+                <!-- Historial / Versiones (solo lectura) -->
                 <button
                   type="button"
                   mat-icon-button
-                  (click)="openEdit(row)"
-                  [attr.aria-label]="'Editar concepto ' + row.codigo"
-                  matTooltip="Editar"
+                  (click)="openHistorial(row)"
+                  [attr.aria-label]="'Ver historial y versiones del concepto ' + row.codigo"
+                  matTooltip="Historial / Versiones"
                 >
-                  <mat-icon fontIcon="edit" aria-hidden="true" />
+                  <mat-icon fontIcon="history" aria-hidden="true" />
                 </button>
-                <button
-                  type="button"
-                  mat-icon-button
-                  (click)="confirmDelete(row)"
-                  [attr.aria-label]="'Dar de baja concepto ' + row.codigo"
-                  matTooltip="Dar de baja"
-                >
-                  <mat-icon fontIcon="delete_outline" aria-hidden="true" />
-                </button>
+
+                <!-- Transiciones de estado (SPEC §8/D1) -->
+                @if (canEnviarRevision(row)) {
+                  <button
+                    type="button"
+                    mat-icon-button
+                    (click)="enviarRevision(row)"
+                    [attr.aria-label]="'Enviar a revisión el concepto ' + row.codigo"
+                    matTooltip="Enviar a revisión"
+                  >
+                    <mat-icon fontIcon="rule" aria-hidden="true" />
+                  </button>
+                }
+                @if (canActivar(row)) {
+                  <button
+                    type="button"
+                    mat-icon-button
+                    (click)="activar(row)"
+                    [attr.aria-label]="'Activar el concepto ' + row.codigo"
+                    matTooltip="Activar"
+                  >
+                    <mat-icon fontIcon="check_circle" aria-hidden="true" />
+                  </button>
+                }
+                @if (canCerrar(row)) {
+                  <button
+                    type="button"
+                    mat-icon-button
+                    (click)="cerrar(row)"
+                    [attr.aria-label]="'Cerrar el concepto ' + row.codigo"
+                    matTooltip="Cerrar"
+                  >
+                    <mat-icon fontIcon="lock" aria-hidden="true" />
+                  </button>
+                }
+                @if (canAnular(row)) {
+                  <button
+                    type="button"
+                    mat-icon-button
+                    (click)="anular(row)"
+                    [attr.aria-label]="'Anular el concepto ' + row.codigo"
+                    matTooltip="Anular"
+                  >
+                    <mat-icon fontIcon="block" aria-hidden="true" />
+                  </button>
+                }
+
+                @if (canWrite()) {
+                  <button
+                    type="button"
+                    mat-icon-button
+                    (click)="confirmDelete(row)"
+                    [attr.aria-label]="'Dar de baja concepto ' + row.codigo"
+                    matTooltip="Dar de baja"
+                  >
+                    <mat-icon fontIcon="delete_outline" aria-hidden="true" />
+                  </button>
+                }
               </td>
             </ng-container>
 
@@ -336,7 +437,7 @@
   </mat-card>
 
   <p class="concepto-spec-note">
-    Spec F3.2 — Catálogo enriquecido. Los chips reflejan flags del backend
-    <code>INDECI_CONCEPTO_PLANILLA</code> consumidos por el Motor v3.
+    SPEC_CONCEPTOS_PLANILLA · PDT 601 INDECI · Ley 32448 (MEF) · LEY-07 (MUC/CUC).
+    Los chips reflejan flags de <code>INDECI_CONCEPTO_PLANILLA</code> que consume el Motor v3.
   </p>
 </div>

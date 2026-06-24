@@ -1,12 +1,27 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router, UrlTree } from '@angular/router';
-import { PLANILLA_OPERATIVA_ROLES } from '../config/sisrh-roles.config';
+import {
+  PLANILLA_APPROVE_ROLES,
+  PLANILLA_OPERATIVA_ROLES,
+  PLANILLA_WRITE_ROLES,
+  hasAnyRole,
+} from '../config/sisrh-roles.config';
 import { AuthService } from '../services/auth.service';
 
-export { PLANILLA_OPERATIVA_ROLES };
+export { PLANILLA_APPROVE_ROLES, PLANILLA_OPERATIVA_ROLES, PLANILLA_WRITE_ROLES };
 
 export function hasPlanillaAccess(roles: ReadonlyArray<string>): boolean {
   return PLANILLA_OPERATIVA_ROLES.some((r) => roles.includes(r));
+}
+
+/** PLA_WRITE — crear borradores, editar configuraciones, enviar a revisión. */
+export function hasPlanillaWrite(roles: ReadonlyArray<string>): boolean {
+  return hasAnyRole(roles, PLANILLA_WRITE_ROLES);
+}
+
+/** PLA_APPROVE — activar / cerrar / anular configuraciones sensibles. */
+export function hasPlanillaApprove(roles: ReadonlyArray<string>): boolean {
+  return hasAnyRole(roles, PLANILLA_APPROVE_ROLES);
 }
 
 /**

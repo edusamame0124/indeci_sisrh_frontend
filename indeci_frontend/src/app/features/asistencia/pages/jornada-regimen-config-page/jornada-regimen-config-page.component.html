@@ -118,6 +118,40 @@
             </div>
           </section>
 
+          <section class="jr-seccion" aria-label="Reglas de descuento por tardanza">
+            <h3 class="jr-seccion__titulo">Reglas de descuento por tardanza</h3>
+            <div class="jr-grid">
+              <mat-form-field appearance="outline">
+                <mat-label>Umbral tardanza diaria (min)</mat-label>
+                <input
+                  matInput
+                  type="number"
+                  min="0"
+                  max="600"
+                  [ngModel]="umbralTardanzaDiariaMin()"
+                  (ngModelChange)="umbralTardanzaDiariaMin.set($event)"
+                />
+                <mat-hint>Día con tardanza mayor a este umbral se descuenta completo (Descuento 1).</mat-hint>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Tope mensual acumulado (min)</mat-label>
+                <input
+                  matInput
+                  type="number"
+                  min="0"
+                  max="6000"
+                  [ngModel]="topeTardanzaMensualMin()"
+                  (ngModelChange)="topeTardanzaMensualMin.set($event)"
+                />
+                <mat-hint>Tardanzas ≤ umbral se acumulan; el exceso sobre el tope se descuenta (Descuento 2).</mat-hint>
+              </mat-form-field>
+            </div>
+            <p class="jr-nota" role="note">
+              Ejemplo: 12 min en un día → Descuento 1 (12 min). Varios días de ≤ 10 min que sumen 70 al
+              mes → Descuento 2 sobre 10 min (70 − 60).
+            </p>
+          </section>
+
           <div class="jr-acciones">
             <button
               mat-flat-button

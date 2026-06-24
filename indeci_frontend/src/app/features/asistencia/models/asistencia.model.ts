@@ -56,6 +56,14 @@ export interface AsistenciaResponse {
   readonly totalMinTardanza: number;
   readonly descuentoTardanza: number;
   readonly descuentoFalta: number;
+  // V010_95 — modelo de dos niveles (Descuento 1 / Descuento 2).
+  readonly minTardanzaDiaria?: number | null;
+  readonly minTardanzaMenorAcum?: number | null;
+  readonly minTardanzaExcesoMes?: number | null;
+  readonly descuentoTardanzaDiaria?: number | null;
+  readonly descuentoTardanzaMensual?: number | null;
+  /** Umbral diario vigente del régimen (clasifica cada día en la UI). */
+  readonly umbralTardanzaDiariaMin?: number | null;
   readonly estado: EstadoAsistencia;
   readonly observacion: string | null;
   readonly dias: readonly AsistenciaDia[];

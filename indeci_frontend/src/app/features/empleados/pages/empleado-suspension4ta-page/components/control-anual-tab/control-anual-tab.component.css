@@ -42,13 +42,15 @@
 .ctrl-hero-label {
   margin: 0;
   font-size: 0.8125rem;
-  color: var(--sisrh-text-muted, #64748b);
+  font-weight: 500;
+  color: var(--text-secondary, #4a5568);
 }
 .ctrl-hero-monto {
   margin: 0.15rem 0 1rem;
   font-size: 1.75rem;
-  font-weight: 700;
-  color: var(--sisrh-primary, #1f3a5f);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--indeci-navy, #0a2240);
 }
 
 .ctrl-kv {
@@ -62,45 +64,60 @@
 }
 .ctrl-kv dt {
   font-size: 0.6875rem;
+  font-weight: 500;
   text-transform: uppercase;
-  letter-spacing: 0.03em;
-  color: var(--sisrh-text-soft, #94a3b8);
+  letter-spacing: 0.04em;
+  color: var(--text-secondary, #4a5568);
 }
 .ctrl-kv dd {
-  margin: 0;
+  margin: 0.15rem 0 0;
   font-size: 0.875rem;
-  color: var(--sisrh-text, #1f2937);
+  font-weight: 500;
+  color: var(--text-primary, #0a1e35);
 }
 
-/* Barra de progreso frente al tope */
+/* Barra de progreso frente al tope.
+   Margen superior/inferior deja aire para que los marcadores sobresalgan. */
 .ctrl-bar {
   position: relative;
   height: 14px;
-  border-radius: 7px;
-  background: var(--sisrh-surface-muted, #f1f5f9);
-  border: 1px solid var(--sisrh-border-soft, #e7ecf2);
-  overflow: hidden;
+  margin: 0.5rem 0 0;
+  border-radius: var(--radius-sm, 5px);
+  /* Riel relleno con gris de borde institucional: el tramo NO consumido se
+     distingue con nitidez sobre la tarjeta blanca. */
+  background: var(--border-main, #e2e6ed);
+  border: 0.5px solid var(--border-subtle, #eef0f4);
 }
 .ctrl-bar__fill {
   height: 100%;
-  background: var(--sisrh-primary-600, #244a78);
-  transition: width 0.3s ease;
+  /* min-width: el relleno se percibe aunque el % sea bajo. */
+  min-width: 4px;
+  border-radius: var(--radius-sm, 5px);
+  background: var(--accent-action, #1565c0);
+  transition: width 0.25s ease;
 }
+/* Marcadores 80 / 90: líneas verticales sólidas que sobresalen 3px por arriba
+   y por abajo del riel → bordes crispados, sin desenfoque ni sombra. */
 .ctrl-bar__tick {
   position: absolute;
-  top: 0;
+  top: -3px;
   width: 2px;
-  height: 100%;
+  height: calc(100% + 6px);
+  z-index: 1;
 }
-.ctrl-bar__tick--prev { background: var(--sisrh-warning, #b7791f); }
-.ctrl-bar__tick--crit { background: var(--sisrh-danger, #b42318); }
+.ctrl-bar__tick--prev { background: var(--status-warn, #854f0b); }
+.ctrl-bar__tick--crit { background: var(--status-danger, #a32d2d); }
 .ctrl-bar__legend {
   display: flex;
   justify-content: space-between;
-  margin-top: 0.25rem;
+  margin-top: 0.5rem;
   font-size: 0.6875rem;
-  color: var(--sisrh-text-soft, #94a3b8);
+  font-weight: 500;
+  color: var(--text-secondary, #4a5568);
 }
+/* Liga la leyenda a los marcadores: 80 % ámbar, 90 % rojo. */
+.ctrl-bar__legend span:nth-child(2) { color: var(--status-warn, #854f0b); }
+.ctrl-bar__legend span:nth-child(3) { color: var(--status-danger, #a32d2d); }
 
 .ctrl-tipo { margin-bottom: 0.5rem; }
 .field-full { width: 100%; }

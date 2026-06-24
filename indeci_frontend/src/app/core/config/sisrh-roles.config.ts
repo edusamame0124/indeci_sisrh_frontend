@@ -52,6 +52,25 @@ export const PLANILLA_OPERATIVA_ROLES = [
   ...RRHH_LEGACY_ROLES,
 ] as const;
 
+/**
+ * Conceptos de Planilla (SPEC_CONCEPTOS_PLANILLA §8/D1) — escritura.
+ * Equivale a PLA_WRITE: crea borradores, edita configuraciones, envía a revisión.
+ * El dominio pertenece a Planilla; reutiliza los roles operativos de planilla
+ * (no `CATALOGOS_WRITE_ROLES`, que era solo TI).
+ */
+export const PLANILLA_WRITE_ROLES = [...PLANILLA_OPERATIVA_ROLES] as const;
+
+/**
+ * Conceptos de Planilla (SPEC_CONCEPTOS_PLANILLA §8/D1) — aprobación.
+ * Equivale a PLA_APPROVE: activa / cierra / anula configuraciones sensibles.
+ * Solo TI (super/admin), jefe RRHH y aprobador de planilla.
+ */
+export const PLANILLA_APPROVE_ROLES = [
+  ...TI_ALL_ROLES,
+  ...RRHH_JEFE_ROLES,
+  ...PLANILLA_APROBADOR_ROLES,
+] as const;
+
 /** Empleados + Portal papeletas: incluye roles operativos TI/RRHH + portal autoservicio.
  *  Usado por empleadosAccessGuard y gestiones-personal. */
 export const EMPLEADOS_ACCESS_ROLES = [

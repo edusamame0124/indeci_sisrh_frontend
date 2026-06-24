@@ -241,3 +241,75 @@
     width: 100%;
   }
 }
+
+/* ── Edición de fechas del descanso (design system INDECI) ────────────────── */
+.descanso-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 12px;
+}
+.descanso-toolbar button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.descanso-edit__hint {
+  margin: 0 0 14px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-secondary, #4a5568);
+}
+
+.descanso-edit__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.descanso-edit__campo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.descanso-edit__campo span {
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--text-secondary, #4a5568);
+}
+.descanso-edit__campo input {
+  height: 36px;
+  box-sizing: border-box;
+  padding: 4px 10px;
+  font-size: 13px;
+  font-family: inherit;
+  border: 0.5px solid var(--border-main, #e2e6ed);
+  border-radius: var(--radius-sm, 5px);
+  background: var(--surface-card, #fff);
+  color: var(--text-primary, #0a1e35);
+}
+.descanso-edit__campo input:focus {
+  outline: none;
+  border-color: var(--accent-action, #1565c0);
+  box-shadow: 0 0 0 2px var(--accent-action-bg, #ebf1fa);
+}
+
+.descanso-edit__acciones {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.descanso-edit__acciones button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+@media (max-width: 720px) {
+  .descanso-edit__grid {
+    grid-template-columns: 1fr;
+  }
+}
