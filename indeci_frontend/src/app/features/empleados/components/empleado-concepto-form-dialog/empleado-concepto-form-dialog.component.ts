@@ -28,7 +28,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
-import type { ConceptoPlanillaRow } from '../../../catalogos/models/concepto-planilla.model';
+import type { ConceptoPlanillaRow } from '../../../planilla/models/concepto-planilla.model';
 import { EmpleadoConceptoApiService } from '../../services/empleado-concepto-api.service';
 import type { EmpleadoConceptoInput, EmpleadoConceptoRow } from '../../models/empleado-concepto.model';
 import { EstimacionNetoApiService } from '../../services/estimacion-neto-api.service';

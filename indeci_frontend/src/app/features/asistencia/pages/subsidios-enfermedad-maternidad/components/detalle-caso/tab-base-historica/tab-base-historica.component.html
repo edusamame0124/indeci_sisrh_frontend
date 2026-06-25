@@ -1,40 +1,145 @@
 <div class="tab-base" [class.tab-base--detalle]="modo() === 'detalle'">
-  @if (modo() !== 'detalle') {
-    <div class="tab-base__acciones">
+  <div class="tab-base__acciones">
+    @if (modo() !== 'detalle' && !editando()) {
       @if (puedeCalcular()) {
         <button mat-flat-button color="primary" type="button" (click)="calcular()" [disabled]="calculando()">
           @if (calculando()) {
             <mat-spinner diameter="18" />
           } @else {
-            <ng-container>
-              <mat-icon>calculate</mat-icon>
-              <span>Calcular base histórica</span>
-            </ng-container>
+            <mat-icon>calculate</mat-icon>
           }
+          <span>Calcular desde planilla</span>
         </button>
       }
+      @if (puedeEditar()) {
+        <button mat-stroked-button type="button" (click)="base() ? editarExistente() : iniciarEdicion()" [disabled]="preparando()">
+          @if (preparando()) {
+            <mat-spinner diameter="18" />
+          } @else {
+            <mat-icon>edit_note</mat-icon>
+          }
+          <span>{{ base() ? 'Editar base manual' : 'Ingresar base manual' }}</span>
+        </button>
+      }
+    }
+    @if (!editando()) {
       <button mat-stroked-button type="button" (click)="cargar()" [disabled]="loading()">
         <mat-icon>refresh</mat-icon>
         Actualizar
       </button>
-    </div>
-  } @else {
-    <div class="tab-base__acciones">
-      <button mat-stroked-button type="button" (click)="cargar()" [disabled]="loading()">
-        <mat-icon>refresh</mat-icon>
-        Actualizar detalle
-      </button>
-    </div>
-  }
+    }
+  </div>
 
   @if (loading()) {
     <div class="tab-base__loading"><mat-spinner diameter="32" /></div>
+  } @else if (editando()) {
+    <!-- ── Editor de base manual / MIXTA ─────────────────────────────────── -->
+    <section class="base-edit" aria-label="Edición de base histórica">
+      <header class="base-edit__head">
+        <div>
+          <h3 class="base-edit__title">Base histórica — captura manual</h3>
+          <p class="base-edit__hint">
+            Ingrese la remuneración realmente pagada cada mes. Los meses en
+            <strong>LSGR/falta</strong> van con su monto real (0 o parcial) y
+            <strong>siguen contando</strong> en el divisor.
+          </p>
+        </div>
+        <span class="base-chip" [attr.data-fuente]="fuenteBorrador()">{{ fuenteBorrador() }}</span>
+      </header>
+
+      <div class="grid-base" role="table" aria-label="Meses de la base">
+        <div class="grid-base__row grid-base__row--head" role="row">
+          <span role="columnheader">Período</span>
+          <span role="columnheader">Remuneración real (S/)</span>
+          <span role="columnheader">Incidencia</span>
+          <span role="columnheader" class="num">Tope del año</span>
+          <span role="columnheader" class="num">Base computable</span>
+        </div>
+        @for (f of filas(); track f.periodo; let i = $index) {
+          <div class="grid-base__row" role="row" [class.grid-base__row--planilla]="!f.esManual">
+            <span class="periodo sisrh-tabular" role="cell">
+              {{ f.periodo }}
+              @if (!f.esManual) { <small class="origen">planilla</small> }
+            </span>
+            <input
+              class="celda-input num"
+              type="number"
+              inputmode="decimal"
+              min="0"
+              step="0.01"
+              [attr.value]="f.remuneracionReal"
+              (input)="onRemuneracion(i, $any($event.target).value)"
+              [attr.aria-label]="'Remuneración ' + f.periodo"
+            />
+            <select
+              class="celda-select"
+              [value]="f.incidencia"
+              (change)="onIncidencia(i, $any($event.target).value)"
+              [attr.aria-label]="'Incidencia ' + f.periodo"
+            >
+              @for (inc of incidencias; track inc) {
+                <option [value]="inc">{{ inc }}</option>
+              }
+            </select>
+            <span class="num sisrh-tabular muted" role="cell">{{ formatMonto(f.topeAplicado) }}</span>
+            <span class="num sisrh-tabular fuerte" role="cell">{{ formatMonto(baseComputable(f)) }}</span>
+          </div>
+        }
+      </div>
+
+      <div class="base-edit__resumen">
+        <div class="resumen-item">
+          <span class="resumen-item__label">Base reconocida</span>
+          <strong class="resumen-item__valor">{{ formatMonto(totalBase()) }}</strong>
+        </div>
+        <div class="resumen-item">
+          <span class="resumen-item__label">Promedio mensual</span>
+          <strong class="resumen-item__valor">{{ formatMonto(promedioMensual()) }}</strong>
+        </div>
+        <div class="resumen-item">
+          <span class="resumen-item__label">Divisor</span>
+          <strong class="resumen-item__valor">{{ divisor() }}</strong>
+        </div>
+        <div class="resumen-item resumen-item--destacado">
+          <span class="resumen-item__label">Subsidio diario estimado</span>
+          <strong class="resumen-item__valor">{{ formatMonto(subsidioDiario()) }}</strong>
+        </div>
+      </div>
+
+      <label class="base-edit__obs">
+        <span>Sustento / observación</span>
+        <textarea
+          rows="2"
+          maxlength="500"
+          [value]="observacion()"
+          (input)="observacion.set($any($event.target).value)"
+          placeholder="Origen de los datos (Excel, planillas previas, oficio…)"
+        ></textarea>
+      </label>
+
+      <div class="base-edit__acciones">
+        <button mat-stroked-button type="button" (click)="cancelarEdicion()" [disabled]="guardando()">
+          Cancelar
+        </button>
+        <button mat-flat-button color="primary" type="button" (click)="guardar()" [disabled]="guardando()">
+          @if (guardando()) {
+            <mat-spinner diameter="18" />
+          } @else {
+            <mat-icon>save</mat-icon>
+          }
+          <span>Guardar base</span>
+        </button>
+      </div>
+    </section>
   } @else if (!base()) {
     <div class="tab-base__empty">
       <mat-icon fontIcon="analytics" aria-hidden="true" />
-      <p>No hay base histórica calculada.</p>
+      <p>No hay base histórica registrada.</p>
       @if (modo() !== 'detalle') {
-        <small>Use el botón Calcular cuando el caso tenga tramos generados.</small>
+        <small>
+          Calcule desde planilla cuando existan movimientos, o ingrese la base
+          manualmente (como en el Excel) si aún no hay historial.
+        </small>
       }
     </div>
   } @else if (base(); as b) {
@@ -56,7 +161,7 @@
         </div>
         <div class="tab-base__field">
           <dt>Fuente de datos</dt>
-          <dd>{{ b.fuente }}</dd>
+          <dd><span class="base-chip" [attr.data-fuente]="b.fuente">{{ b.fuente }}</span></dd>
         </div>
       </dl>
     }

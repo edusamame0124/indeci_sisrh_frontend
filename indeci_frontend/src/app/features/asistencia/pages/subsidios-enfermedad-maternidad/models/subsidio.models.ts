@@ -107,7 +107,23 @@ export interface SubsidioBaseDetalle {
   readonly remuneracionReal: number;
   readonly topeAplicado: number;
   readonly baseComputable: number;
+  readonly incidencia: string | null;
+  readonly esManual: string | null;
   readonly fuenteMovimientoId: number | null;
+}
+
+/** Una fila editable de la base manual/MIXTA enviada al backend. */
+export interface SubsidioBaseDetalleInput {
+  readonly periodo: string;
+  readonly remuneracionReal: number;
+  readonly incidencia: string;
+  readonly topeAplicadoOverride?: number | null;
+  readonly baseComputableOverride?: number | null;
+}
+
+export interface SubsidioBaseManualInput {
+  readonly detalles: readonly SubsidioBaseDetalleInput[];
+  readonly observacion: string | null;
 }
 
 export interface SubsidioBaseHistoricaResponse {

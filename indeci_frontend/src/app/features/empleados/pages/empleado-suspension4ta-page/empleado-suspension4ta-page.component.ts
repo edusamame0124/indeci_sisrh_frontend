@@ -85,7 +85,6 @@ export class EmpleadoSuspension4taPageComponent implements OnInit {
   readonly columns = [
     'nroConstancia',
     'fechaEmision',
-    'vigencia',
     'estadoVigencia',
     'acciones',
   ] as const;
@@ -94,6 +93,13 @@ export class EmpleadoSuspension4taPageComponent implements OnInit {
   readonly empleadoId = signal<number | null>(null);
   readonly persona = signal<PersonaEmpleado | null>(null);
   readonly rows = signal<readonly Suspension4taRow[]>([]);
+
+  /**
+   * El control anual del tope solo tiene sentido si el empleado tiene al menos
+   * una constancia registrada: sin constancia no hay suspensión que controlar,
+   * así que la pestaña "Control anual" se oculta.
+   */
+  readonly tieneConstancia = computed(() => this.rows().length > 0);
 
   readonly pageLoading = signal(true);
   readonly tableLoading = signal(false);
@@ -120,9 +126,11 @@ export class EmpleadoSuspension4taPageComponent implements OnInit {
     // N.° de Orden/Operación de la Constancia de Suspensión 4ta (Formulario
     // Virtual 1609 SUNAT). Es numérico → obligatorio + solo dígitos (4–20).
     nroConstancia: ['', [Validators.required, Validators.pattern(/^\d{4,20}$/)]],
-    fechaEmision: [null as Date | null],
-    fechaVigIni: [null as Date | null, Validators.required],
-    fechaVigFin: [null as Date | null],
+    // La constancia rige DESDE su emisión. La pantalla no pide vigencia: el
+    // payload deriva fechaVigIni = fechaEmision y fechaVigFin = null
+    // (vigencia indefinida), que es lo que el backend/motor requieren. Por eso
+    // la emisión es obligatoria.
+    fechaEmision: [null as Date | null, Validators.required],
     observacion: [''],
   });
 
@@ -179,8 +187,6 @@ export class EmpleadoSuspension4taPageComponent implements OnInit {
     this.form.patchValue({
       nroConstancia: row.nroConstancia ?? '',
       fechaEmision: this.isoToDate(row.fechaEmision),
-      fechaVigIni: this.isoToDate(row.fechaVigIni),
-      fechaVigFin: this.isoToDate(row.fechaVigFin),
       observacion: row.observacion ?? '',
     });
     this.showForm.set(true);
@@ -194,12 +200,16 @@ export class EmpleadoSuspension4taPageComponent implements OnInit {
     }
     this.saving.set(true);
     const v = this.form.getRawValue();
+    // La pantalla no captura vigencia: la constancia rige desde su emisión y de
+    // forma indefinida. fechaVigIni (NOT NULL en BD, requerida por el motor) se
+    // deriva de la fecha de emisión; fechaVigFin queda null (sin caducidad).
+    const fechaEmisionIso = this.toIso(v.fechaEmision);
     const payload = {
       empleadoId: eid,
       nroConstancia: v.nroConstancia.trim() || null,
-      fechaEmision: this.toIso(v.fechaEmision),
-      fechaVigIni: this.toIso(v.fechaVigIni),
-      fechaVigFin: this.toIso(v.fechaVigFin),
+      fechaEmision: fechaEmisionIso,
+      fechaVigIni: fechaEmisionIso,
+      fechaVigFin: null,
       observacion: v.observacion.trim() || null,
     };
     const id = this.editId();

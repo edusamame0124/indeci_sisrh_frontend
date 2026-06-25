@@ -71,6 +71,12 @@ export class PersonaPickerComponent {
   /** Solo personas con empleadoId (typ para módulos que requieren empleado). */
   readonly soloEmpleados = input<boolean>(true);
 
+  /**
+   * Variante "plana": sin el recuadro (borde/padding) del host. Útil para
+   * integrarlo en una barra de filtros junto a otros campos (mismo alto/línea).
+   */
+  readonly flat = input<boolean>(false);
+
   /** Persona seleccionada actual (input controlado opcional). */
   readonly selected = input<PersonaEmpleado | null>(null);
 
@@ -82,8 +88,8 @@ export class PersonaPickerComponent {
 
   // ===================== State =====================
 
-  /** Control del input — recibe texto crudo del usuario. */
-  readonly query = new FormControl<string>('', { nonNullable: true });
+  /** Angular Material escribe temporalmente la persona elegida en este control. */
+  readonly query = new FormControl<string | PersonaEmpleado>('', { nonNullable: true });
 
   readonly loading = signal(true);
   readonly errorMsg = signal<string | null>(null);
@@ -101,7 +107,8 @@ export class PersonaPickerComponent {
 
   /** Lista filtrada por nombre o DNI (case-insensitive, sin acentos básico). */
   readonly opciones = computed<readonly PersonaEmpleado[]>(() => {
-    const q = (this.queryDebounced() ?? '').trim().toLowerCase();
+    const valor = this.queryDebounced();
+    const q = typeof valor === 'string' ? valor.trim().toLowerCase() : '';
     let base = this.personas();
     if (this.soloEmpleados()) {
       base = base.filter((p) => p.empleadoId != null && p.empleadoId > 0);
@@ -149,13 +156,13 @@ export class PersonaPickerComponent {
     if (persona) {
       this.seleccionar.emit(persona);
       // Limpiar el input para no dejar texto residual cuando se renderiza el chip.
-      this.query.setValue('', { emitEvent: false });
+      this.query.setValue('');
     }
   }
 
   onCambiarPersona(): void {
     this.limpiar.emit();
-    this.query.setValue('', { emitEvent: false });
+    this.query.setValue('');
   }
 
   // ===================== Presentación =====================
@@ -164,5 +171,5 @@ export class PersonaPickerComponent {
    * `displayWith` del autocomplete — nunca muestra la persona en el input
    * porque el patrón es chip-on-select. Devuelve string vacío.
    */
-  displayPersona = (_p: PersonaEmpleado | null): string => '';
+  displayPersona = (_p: string | PersonaEmpleado | null): string => '';
 }

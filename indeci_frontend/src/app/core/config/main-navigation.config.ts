@@ -73,11 +73,14 @@ export const MAIN_NAV_ITEMS: readonly MainNavItem[] = [
             icon: 'account_balance_wallet',
           },
           { label: 'Tipo de comisión AFP', route: '/catalogos/tipo-comision-afp', icon: 'percent' },
+<<<<<<< HEAD
           {
             label: 'Conceptos de planilla',
             route: '/catalogos/conceptos-planilla',
             icon: 'receipt_long',
           },
+=======
+>>>>>>> 4a6203e976132c88adffe472ccc84981a18a6ce8
         ],
       },
     ],
@@ -158,6 +161,8 @@ export const MAIN_NAV_ITEMS: readonly MainNavItem[] = [
     requiredAnyRole: [...PLANILLA_OPERATIVA_ROLES],
     children: [
       { label: 'Configuración Anual', route: '/planilla/configuracion-cas', icon: 'settings' },
+      { label: 'Conceptos de Planilla', route: '/planilla/conceptos', icon: 'receipt_long' },
+      { label: 'Tipos de planilla', route: '/planilla/tipos-planilla', icon: 'splitscreen' },
       { label: 'Periodos', route: '/planilla/periodos', icon: 'event' },
       { label: 'Carga de asistencia', route: '/asistencia/carga', icon: 'event_available' },
       {

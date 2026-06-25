@@ -1,4 +1,4 @@
-<section class="pp-host" aria-label="Selector de persona">
+<section class="pp-host" [class.pp-host--flat]="flat()" aria-label="Selector de persona">
   @if (selected(); as s) {
     <!-- ===================== Estado: persona seleccionada (chip) ===================== -->
     <div class="pp-active" role="status" aria-live="polite">
@@ -17,9 +17,12 @@
         <span>Cambiar persona</span>
       </button>
     </div>
-  } @else {
-    <!-- ===================== Estado: búsqueda activa ===================== -->
-    <div class="pp-search">
+  }
+  <!-- ===================== Estado: búsqueda activa =====================
+       Se mantiene SIEMPRE montado y se oculta con [hidden] cuando hay
+       selección (chip). Así no se recrea el mat-form-field y el outline no
+       desaparece al volver con "Cambiar persona". -->
+  <div class="pp-search" [hidden]="selected() !== null">
       <mat-form-field appearance="outline" class="pp-search__field" subscriptSizing="dynamic">
         <mat-label>Buscar persona por nombre o DNI</mat-label>
         <input
@@ -71,5 +74,4 @@
         </p>
       }
     </div>
-  }
 </section>

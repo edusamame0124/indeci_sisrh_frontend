@@ -1,0 +1,24 @@
+:host {
+  display: block;
+  min-width: 320px;
+  max-width: 480px;
+}
+
+.ptd-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 8px;
+}
+
+.ptd-field {
+  width: 100%;
+}
+
+.ptd-field--orden {
+  max-width: 180px;
+}
+
+.ptd-activo {
+  margin-top: 4px;
+}

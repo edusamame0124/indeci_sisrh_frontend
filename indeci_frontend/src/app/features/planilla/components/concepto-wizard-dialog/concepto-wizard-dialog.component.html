@@ -1,0 +1,545 @@
+<h2 mat-dialog-title id="concepto-wizard-title" class="wiz-title">
+  <mat-icon aria-hidden="true">receipt_long</mat-icon>
+  {{ data.title }}
+</h2>
+
+<mat-dialog-content class="wiz-content" tabindex="0">
+  <mat-stepper #stepper labelPosition="bottom" class="wiz-stepper" [animationDuration]="'200'">
+    <!-- ───────────── ① Datos básicos ───────────── -->
+    <mat-step [stepControl]="basicosForm" label="Datos">
+      <form [formGroup]="basicosForm" class="wiz-form">
+        <p class="wiz-step-hint">
+          Identidad del concepto. El <strong>Tipo de Concepto</strong> define qué
+          campos y tabs se habilitan más adelante. El código se asigna
+          automáticamente al registrar.
+        </p>
+
+        <div class="wiz-grid">
+          <mat-form-field appearance="outline">
+            <mat-label>Estado</mat-label>
+            <input matInput [value]="estadoLabel()" disabled aria-label="Estado del concepto" />
+            <mat-hint align="end">No editable: se gobierna por transiciones</mat-hint>
+          </mat-form-field>
+
+          @if (versionLabel()) {
+            <mat-form-field appearance="outline">
+              <mat-label>Versión</mat-label>
+              <input matInput [value]="versionLabel()" disabled aria-label="Versión de la configuración" />
+              <mat-hint align="end">Versión vigente por código (P3)</mat-hint>
+            </mat-form-field>
+          }
+
+          <mat-form-field appearance="outline" class="wiz-col-2">
+            <mat-label>Nombre</mat-label>
+            <input
+              matInput
+              formControlName="nombre"
+              autocomplete="off"
+              maxlength="200"
+              placeholder="Descripción para boleta y reportes"
+            />
+            @if (basicosForm.controls.nombre.hasError('required') && basicosForm.controls.nombre.touched) {
+              <mat-error>El nombre es obligatorio.</mat-error>
+            }
+            @if (basicosForm.controls.nombre.hasError('maxlength')) {
+              <mat-error>Máximo 200 caracteres.</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Abreviatura para boleta</mat-label>
+            <input
+              matInput
+              formControlName="naturaleza"
+              autocomplete="off"
+              maxlength="120"
+              placeholder="Texto corto que aparece en la boleta"
+            />
+            @if (basicosForm.controls.naturaleza.hasError('required') && basicosForm.controls.naturaleza.touched) {
+              <mat-error>La abreviatura es obligatoria.</mat-error>
+            }
+            @if (basicosForm.controls.naturaleza.hasError('maxlength')) {
+              <mat-error>Máximo 120 caracteres.</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="wiz-col-2">
+            <mat-label>Tipo de Concepto</mat-label>
+            <mat-select
+              formControlName="tipoConceptoInterno"
+              aria-label="Tipo de Concepto"
+              [attr.aria-describedby]="clasificacionMotor() ? 'wiz-clasif-motor' : null"
+            >
+              @if (tipoInternoLoading()) {
+                <mat-option disabled>Cargando tipos de concepto…</mat-option>
+              } @else if (tipoInternoError()) {
+                <mat-option disabled>No se pudo cargar el catálogo de tipos.</mat-option>
+              } @else if (tiposConcepto().length === 0) {
+                <mat-option disabled>No hay tipos de concepto disponibles.</mat-option>
+              } @else {
+                @for (t of tiposConcepto(); track t.codigo) {
+                  <mat-option [value]="t.codigo">{{ t.nombre }}</mat-option>
+                }
+              }
+            </mat-select>
+            <mat-hint align="end">Clasificación funcional SISPER</mat-hint>
+            @if (basicosForm.controls.tipoConceptoInterno.hasError('required') && basicosForm.controls.tipoConceptoInterno.touched) {
+              <mat-error>Seleccione el tipo de concepto.</mat-error>
+            }
+          </mat-form-field>
+        </div>
+
+        @if (clasificacionMotor(); as cm) {
+          <p class="wiz-derived" id="wiz-clasif-motor">
+            <mat-icon aria-hidden="true">account_tree</mat-icon>
+            <span>
+              Clasificación del motor: <strong>{{ cm.label }}</strong>.
+              <span class="wiz-derived__efecto">{{ cm.efecto }}</span>
+            </span>
+          </p>
+        }
+
+        <div class="wiz-actions">
+          <span class="wiz-spacer"></span>
+          <button mat-flat-button color="primary" type="button" matStepperNext>
+            Siguiente
+            <mat-icon iconPositionEnd>arrow_forward</mat-icon>
+          </button>
+        </div>
+      </form>
+    </mat-step>
+
+    <!-- ───────────── ② Regla de cálculo ───────────── -->
+    <mat-step [stepControl]="calculoForm" label="Cálculo">
+      <form [formGroup]="calculoForm" class="wiz-form">
+        <p class="wiz-step-hint">
+          Cómo se valoriza y qué bases afecta. Solo se muestran las afectaciones
+          pertinentes al tipo seleccionado.
+        </p>
+
+        <div class="wiz-grid">
+          <mat-form-field appearance="outline" class="wiz-col-2">
+            <mat-label>Modo de cálculo</mat-label>
+            <mat-select formControlName="modoCalculo" aria-label="Modo de cálculo">
+              @for (m of modosCalculo; track m.value) {
+                <mat-option [value]="m.value">
+                  <span class="wiz-modo-opt">
+                    <span class="wiz-modo-opt__label">{{ m.label }}</span>
+                    <span class="wiz-modo-opt__hint">{{ m.hint }}</span>
+                  </span>
+                </mat-option>
+              }
+            </mat-select>
+            <mat-hint align="end">Cómo se origina el monto del concepto</mat-hint>
+          </mat-form-field>
+        </div>
+
+        @if (modoIncoherente(); as aviso) {
+          <p class="wiz-modo-aviso" role="status">
+            <mat-icon aria-hidden="true">lightbulb</mat-icon>
+            <span>{{ aviso }}</span>
+          </p>
+        }
+
+        @if (visibilidad().prorrateable) {
+          <div class="wiz-toggle">
+            <mat-checkbox formControlName="esProrrateable">
+              Prorratear por días laborados
+            </mat-checkbox>
+            <span class="wiz-toggle__help">
+              Motor v3: paga proporcional a los días trabajados en el período.
+            </span>
+          </div>
+        }
+
+        @if (
+          visibilidad().afectoAportePens || visibilidad().afectoEssalud ||
+          visibilidad().afectoIr5ta || visibilidad().mucCuc
+        ) {
+          <fieldset class="wiz-fieldset">
+            <legend>Afectaciones</legend>
+            <div class="wiz-checks">
+              @if (visibilidad().afectoAportePens) {
+                <mat-checkbox formControlName="afectoAportePens">
+                  Afecta aporte pensionario (ONP/AFP)
+                </mat-checkbox>
+              }
+              @if (visibilidad().afectoEssalud) {
+                <mat-checkbox formControlName="afectoEssalud">
+                  Afecta base ESSALUD
+                </mat-checkbox>
+              }
+              @if (visibilidad().afectoIr5ta) {
+                <mat-checkbox formControlName="afectoIr5ta">
+                  Afecta retención IR 5ta categoría
+                </mat-checkbox>
+              }
+              @if (visibilidad().mucCuc) {
+                <mat-checkbox formControlName="esMuc">
+                  MUC — lo recibe el trabajador (LEY-07)
+                </mat-checkbox>
+                <mat-checkbox formControlName="esCuc">
+                  CUC — costo para la entidad (LEY-07)
+                </mat-checkbox>
+              }
+            </div>
+          </fieldset>
+        } @else if (basicosForm.controls.tipoConceptoInterno.value) {
+          <p class="wiz-empty-note">
+            <mat-icon aria-hidden="true">do_not_disturb_on</mat-icon>
+            Este tipo de concepto no requiere afectaciones adicionales.
+          </p>
+        }
+
+        <div class="wiz-actions">
+          <button mat-stroked-button type="button" matStepperPrevious>
+            <mat-icon>arrow_back</mat-icon>
+            Atrás
+          </button>
+          <span class="wiz-spacer"></span>
+          <button mat-flat-button color="primary" type="button" matStepperNext>
+            Siguiente
+            <mat-icon iconPositionEnd>arrow_forward</mat-icon>
+          </button>
+        </div>
+      </form>
+    </mat-step>
+
+    <!-- ───────────── ③ Aplicabilidad ───────────── -->
+    <mat-step [stepControl]="aplicabilidadForm" label="Aplicabilidad">
+      <form [formGroup]="aplicabilidadForm" class="wiz-form">
+        <p class="wiz-step-hint">
+          A qué régimen aplica y desde cuándo está vigente.
+        </p>
+
+        <div class="wiz-grid">
+          <mat-form-field appearance="outline" class="wiz-col-2">
+            <mat-label>Régimen aplicable</mat-label>
+            <mat-select formControlName="regimenAplicable" multiple aria-label="Régimen aplicable">
+              @for (r of regimenes; track r.value) {
+                <mat-option [value]="r.value">{{ r.label }}</mat-option>
+              }
+            </mat-select>
+            <mat-hint align="end">"Todos" cubre cualquier régimen</mat-hint>
+            @if (aplicabilidadForm.controls.regimenAplicable.hasError('required') && aplicabilidadForm.controls.regimenAplicable.touched) {
+              <mat-error>Seleccione al menos un régimen.</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Vigente desde</mat-label>
+            <input matInput type="date" formControlName="fechaVigIni" aria-label="Fecha de inicio de vigencia" />
+            @if (aplicabilidadForm.controls.fechaVigIni.hasError('required') && aplicabilidadForm.controls.fechaVigIni.touched) {
+              <mat-error>Indique la fecha de inicio de vigencia.</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Vigente hasta (opcional)</mat-label>
+            <input matInput type="date" formControlName="fechaVigFin" aria-label="Fecha de fin de vigencia" />
+            <mat-hint align="end">Dejar vacío si no caduca</mat-hint>
+          </mat-form-field>
+        </div>
+
+        <!-- Planillas asociadas (SPEC §15 — Fase A · M:N) -->
+        <fieldset class="wiz-fieldset wiz-planillas">
+          <legend>Planillas asociadas</legend>
+
+          <div class="wiz-planillas__head">
+            <p class="wiz-planillas__hint" id="wiz-planillas-hint">
+              El concepto aparecerá en las planillas seleccionadas.
+            </p>
+            <button
+              type="button"
+              mat-stroked-button
+              class="wiz-planillas__all"
+              (click)="seleccionarTodasPlanillas()"
+              [disabled]="planillaTiposLoading() || planillaTiposError() || planillaTiposCatalogo().length === 0"
+            >
+              <mat-icon aria-hidden="true">done_all</mat-icon>
+              Seleccionar todas
+            </button>
+          </div>
+
+          <mat-form-field appearance="outline" class="wiz-col-2">
+            <mat-label>Tipos de planilla</mat-label>
+            <mat-select
+              formControlName="planillaTipos"
+              multiple
+              aria-label="Tipos de planilla asociados"
+              aria-describedby="wiz-planillas-hint"
+            >
+              @if (planillaTiposLoading()) {
+                <mat-option disabled>Cargando catálogo de planillas…</mat-option>
+              } @else if (planillaTiposError()) {
+                <mat-option disabled>No se pudo cargar el catálogo de planillas.</mat-option>
+              } @else if (planillaTiposCatalogo().length === 0) {
+                <mat-option disabled>No hay tipos de planilla registrados.</mat-option>
+              } @else {
+                @for (p of planillaTiposCatalogo(); track p.codigo) {
+                  <mat-option [value]="p.codigo">{{ p.nombre }}</mat-option>
+                }
+              }
+            </mat-select>
+            <mat-hint align="end">Seleccione una o varias (mínimo una)</mat-hint>
+            @if (
+              aplicabilidadForm.controls.planillaTipos.invalid &&
+              aplicabilidadForm.controls.planillaTipos.touched
+            ) {
+              <mat-error>Seleccione al menos una planilla asociada.</mat-error>
+            }
+          </mat-form-field>
+
+          @if (planillasSeleccionadas().length > 0) {
+            <mat-chip-set class="wiz-planillas__chips" aria-label="Planillas seleccionadas">
+              @for (nombre of planillasSeleccionadas(); track nombre) {
+                <mat-chip disableRipple>{{ nombre }}</mat-chip>
+              }
+            </mat-chip-set>
+          }
+        </fieldset>
+
+        <div class="wiz-actions">
+          <button mat-stroked-button type="button" matStepperPrevious>
+            <mat-icon>arrow_back</mat-icon>
+            Atrás
+          </button>
+          <span class="wiz-spacer"></span>
+          <button mat-flat-button color="primary" type="button" matStepperNext>
+            Siguiente
+            <mat-icon iconPositionEnd>arrow_forward</mat-icon>
+          </button>
+        </div>
+      </form>
+    </mat-step>
+
+    <!-- ───────────── ④ Clasificación externa ───────────── -->
+    <mat-step [stepControl]="clasificacionForm" label="Clasificación">
+      <form [formGroup]="clasificacionForm" class="wiz-form">
+        <p class="wiz-step-hint">
+          Códigos de equivalencia con sistemas externos (PDT 601, AIRHSP, PLAME,
+          MCPP, SUNAT). Solo complete los que apliquen al concepto.
+        </p>
+
+        <!-- Tipo Concepto RTPS (select agrupado con búsqueda) -->
+        <mat-form-field appearance="outline" class="wiz-rtps">
+          <mat-label>Tipo Concepto RTPS (PDT 601)</mat-label>
+          <mat-select formControlName="rtpsCodigo" aria-label="Tipo Concepto RTPS">
+            <div class="wiz-rtps__search" (click)="$event.stopPropagation()">
+              <mat-icon aria-hidden="true">search</mat-icon>
+              <input
+                type="text"
+                [value]="rtpsFilter()"
+                (input)="onRtpsFilter($event)"
+                (keydown)="$event.stopPropagation()"
+                placeholder="Buscar por código o descripción…"
+                aria-label="Buscar tipo concepto RTPS"
+              />
+            </div>
+            <mat-option [value]="null">— Sin clasificación RTPS —</mat-option>
+            @if (rtpsLoading()) {
+              <mat-option disabled>Cargando catálogo PDT 601…</mat-option>
+            } @else if (rtpsError()) {
+              <mat-option disabled>No se pudo cargar el catálogo RTPS.</mat-option>
+            } @else {
+              @for (g of rtpsGrupos(); track g.codigo) {
+                <mat-optgroup [label]="g.codigo + ' · ' + g.descripcion">
+                  @for (item of g.items; track item.codigo) {
+                    <mat-option [value]="item.codigo">
+                      {{ item.codigo }} — {{ item.descripcion }}
+                    </mat-option>
+                  }
+                </mat-optgroup>
+              }
+              @if (rtpsGrupos().length === 0) {
+                <mat-option disabled>Sin coincidencias para la búsqueda.</mat-option>
+              }
+            }
+          </mat-select>
+          <mat-hint align="end">Las cabeceras de grupo no son seleccionables</mat-hint>
+        </mat-form-field>
+
+        <div class="wiz-grid">
+          <mat-form-field appearance="outline">
+            <mat-label>Código MEF / AIRHSP</mat-label>
+            <input matInput formControlName="codigoMef" autocomplete="off" maxlength="20" />
+            @if (visibilidad().codigoMefObligatorio) {
+              <mat-hint align="end">Obligatorio: concepto pagable (Ley 32448)</mat-hint>
+            }
+            @if (clasificacionForm.controls.codigoMef.hasError('required') && clasificacionForm.controls.codigoMef.touched) {
+              <mat-error>El código MEF es obligatorio para conceptos pagables.</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Código SISPER</mat-label>
+            <input matInput formControlName="codigoSisper" autocomplete="off" maxlength="20" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Código PLAME (SUNAT)</mat-label>
+            <input matInput formControlName="codigoPlameSunat" autocomplete="off" maxlength="20" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Código MCPP</mat-label>
+            <input matInput formControlName="codigoMcpp" autocomplete="off" maxlength="20" />
+          </mat-form-field>
+
+          @if (visibilidad().codigoTributoSunat) {
+            <mat-form-field appearance="outline" class="wiz-col-2">
+              <mat-label>Código de tributo SUNAT</mat-label>
+              <input matInput formControlName="codigoTributoSunat" autocomplete="off" maxlength="20" placeholder="Ej.: 3042 (IR 4ta CAS)" />
+              <mat-hint align="end">Retenciones tributarias (no es código MEF)</mat-hint>
+            </mat-form-field>
+          }
+        </div>
+
+        <div class="wiz-actions">
+          <button mat-stroked-button type="button" matStepperPrevious>
+            <mat-icon>arrow_back</mat-icon>
+            Atrás
+          </button>
+          <span class="wiz-spacer"></span>
+          <button mat-flat-button color="primary" type="button" matStepperNext>
+            Revisar
+            <mat-icon iconPositionEnd>arrow_forward</mat-icon>
+          </button>
+        </div>
+      </form>
+    </mat-step>
+
+    <!-- ───────────── ⑤ Revisión ───────────── -->
+    <mat-step label="Revisión">
+      <div class="wiz-form">
+        <p class="wiz-step-hint">
+          Verifique el resumen antes de registrar. El concepto quedará en estado
+          <strong>BORRADOR</strong> y no afectará planilla hasta su activación.
+        </p>
+
+        <dl class="wiz-resumen">
+          @if (data.modo === 'configurar') {
+            <div><dt>Código</dt><dd>{{ data.initial?.codigo || '—' }}</dd></div>
+          }
+          <div><dt>Nombre</dt><dd>{{ basicosForm.controls.nombre.value || '—' }}</dd></div>
+          <div><dt>Abreviatura</dt><dd>{{ basicosForm.controls.naturaleza.value || '—' }}</dd></div>
+          <div>
+            <dt>Tipo de Concepto</dt>
+            <dd>{{ labelTipoConcepto(basicosForm.controls.tipoConceptoInterno.value) }}
+              @if (clasificacionMotor(); as cm) {
+                <span class="wiz-resumen__legacy">(motor: {{ cm.label }})</span>
+              }
+            </dd>
+          </div>
+          <div>
+            <dt>Régimen</dt>
+            <dd>{{ labelRegimen(aplicabilidadForm.controls.regimenAplicable.value) }}</dd>
+          </div>
+          <div>
+            <dt>Vigencia</dt>
+            <dd>
+              {{ aplicabilidadForm.controls.fechaVigIni.value || '—' }}
+              @if (aplicabilidadForm.controls.fechaVigFin.value) {
+                → {{ aplicabilidadForm.controls.fechaVigFin.value }}
+              }
+            </dd>
+          </div>
+          <div>
+            <dt>Planillas asociadas</dt>
+            <dd>
+              @if (planillasSeleccionadas().length > 0) {
+                {{ planillasSeleccionadas().join(', ') }}
+              } @else {
+                <span class="wiz-resumen__legacy">Sin planillas seleccionadas</span>
+              }
+            </dd>
+          </div>
+          @if (rtpsDescripcion(clasificacionForm.controls.rtpsCodigo.value)) {
+            <div><dt>RTPS</dt><dd>{{ rtpsDescripcion(clasificacionForm.controls.rtpsCodigo.value) }}</dd></div>
+          }
+          @if (clasificacionForm.controls.codigoMef.value) {
+            <div><dt>Código MEF</dt><dd>{{ clasificacionForm.controls.codigoMef.value }}</dd></div>
+          }
+          @if (visibilidad().codigoTributoSunat && clasificacionForm.controls.codigoTributoSunat.value) {
+            <div><dt>Tributo SUNAT</dt><dd>{{ clasificacionForm.controls.codigoTributoSunat.value }}</dd></div>
+          }
+        </dl>
+
+        @if (advertencias().length > 0) {
+          <div class="wiz-warn" role="alert">
+            <mat-icon aria-hidden="true">warning</mat-icon>
+            <ul>
+              @for (w of advertencias(); track w) {
+                <li>{{ w }}</li>
+              }
+            </ul>
+          </div>
+        }
+
+        @if (vistaPrevia(); as vp) {
+          <section class="wiz-preview" aria-live="polite" aria-labelledby="wiz-preview-title">
+            <header class="wiz-preview__head">
+              <mat-icon aria-hidden="true">visibility</mat-icon>
+              <h3 id="wiz-preview-title">Vista previa del efecto en planilla</h3>
+            </header>
+
+            <dl class="wiz-preview__grid">
+              <div>
+                <dt>Cómo se valoriza</dt>
+                <dd>{{ vp.valorizacion }}</dd>
+              </div>
+              <div>
+                <dt>Efecto en el neto</dt>
+                <dd>{{ vp.efectoNeto }}</dd>
+              </div>
+              <div>
+                <dt>Origen del monto</dt>
+                <dd>{{ vp.origenMonto }}</dd>
+              </div>
+              <div>
+                <dt>Planillas</dt>
+                <dd>{{ vp.planillas }}</dd>
+              </div>
+              <div>
+                <dt>Bases y reglas que afecta</dt>
+                <dd>
+                  <ul class="wiz-preview__list">
+                    @for (a of vp.afectaciones; track a) {
+                      <li>{{ a }}</li>
+                    }
+                  </ul>
+                </dd>
+              </div>
+            </dl>
+
+            <p class="wiz-preview__resumen">{{ vp.resumen }}</p>
+          </section>
+        }
+
+        <div class="wiz-actions">
+          <button mat-stroked-button type="button" matStepperPrevious>
+            <mat-icon>arrow_back</mat-icon>
+            Atrás
+          </button>
+          <span class="wiz-spacer"></span>
+          <button mat-button type="button" (click)="dialogRef.close()">Cancelar</button>
+          <button
+            mat-flat-button
+            color="primary"
+            type="button"
+            (click)="onSubmit()"
+            [disabled]="!puedeGuardar()"
+          >
+            <mat-icon>save</mat-icon>
+            {{ data.modo === 'crear' ? 'Registrar borrador' : 'Guardar cambios' }}
+          </button>
+        </div>
+      </div>
+    </mat-step>
+  </mat-stepper>
+</mat-dialog-content>
+
+<p class="wiz-spec-note">
+  SPEC_CONCEPTOS_PLANILLA §14 (P4) · PDT 601 INDECI · Ley 32448 (MEF) · LEY-07 (MUC/CUC).
+  La simulación numérica de neto se realiza al asignar el concepto al trabajador.
+</p>

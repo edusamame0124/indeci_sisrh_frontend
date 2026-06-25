@@ -87,7 +87,7 @@ describe('filterVisibleNavItems (Spec 009 — 5 módulos + Inicio)', () => {
     ]);
   });
 
-  it('Catálogos agrupa 20 enlaces en 4 sub-expansiones (Fase 5)', () => {
+  it('Catálogos agrupa 19 enlaces en 4 sub-expansiones (Conceptos re-hospedado bajo Planilla)', () => {
     const r = filterVisibleNavItems(MAIN_NAV_ITEMS, [], ['ADMIN']);
     const cat = r.find((i) => i.label === 'Catálogos');
     expect(cat?.children?.length).toBe(4);
@@ -97,10 +97,11 @@ describe('filterVisibleNavItems (Spec 009 — 5 módulos + Inicio)', () => {
       'Organización',
       'Planilla y legal',
     ]);
-    expect(catalogLeafCount()).toBe(20);
+    expect(catalogLeafCount()).toBe(19);
     const labels = flattenNavLeaves(cat?.children).map((c) => c.label);
     expect(labels).toContain('Bancos');
-    expect(labels).toContain('Conceptos de planilla');
+    // Conceptos de Planilla migró al grupo Planilla (SPEC_CONCEPTOS_PLANILLA §8/D1).
+    expect(labels).not.toContain('Conceptos de planilla');
     expect(labels).toContain('Régimen pensionario');
   });
 
@@ -165,7 +166,7 @@ describe('filterVisibleNavItems (Spec 009 — 5 módulos + Inicio)', () => {
     expect(routes.every((p) => p.startsWith('/empleados/'))).toBe(true);
   });
 
-  it('Spec 009: 17 catálogos extendidos no están comingSoon (rutas T129)', () => {
+  it('Spec 009: 16 catálogos extendidos no están comingSoon (Conceptos migró a Planilla)', () => {
     const r = filterVisibleNavItems(MAIN_NAV_ITEMS, [], ['ADMIN']);
     const cat = r.find((i) => i.label === 'Catálogos');
     const leaves = flattenNavLeaves(cat?.children);
@@ -175,7 +176,7 @@ describe('filterVisibleNavItems (Spec 009 — 5 módulos + Inicio)', () => {
         c.route &&
         !['/catalogos/bancos', '/catalogos/tipos-cuenta', '/catalogos/ubigeo'].includes(c.route),
     );
-    expect(spec009.length).toBe(17);
+    expect(spec009.length).toBe(16);
     expect(spec009.every((c) => !c.comingSoon)).toBe(true);
   });
 
@@ -189,11 +190,13 @@ describe('filterVisibleNavItems (Spec 009 — 5 módulos + Inicio)', () => {
   it('Planilla expone sus sub-items navegables (incluye Configuración Anual, Carga de asistencia + subrama Subsidios, Suspensiones/Licencias y MCPP)', () => {
     const r = filterVisibleNavItems(MAIN_NAV_ITEMS, [], ['ADMIN']);
     const pla = r.find((i) => i.label === 'Planilla');
-    expect(pla?.children?.length).toBe(11);
+    expect(pla?.children?.length).toBe(13);
     expect(pla?.children?.every((c) => !c.comingSoon)).toBe(true);
     expect(pla?.children?.map((c) => c.route).sort()).toEqual(
       [
         '/planilla/configuracion-cas',
+        '/planilla/conceptos',
+        '/planilla/tipos-planilla',
         '/planilla/periodos',
         '/asistencia/carga',
         '/asistencia/subsidios',
