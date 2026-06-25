@@ -73,14 +73,7 @@ export const MAIN_NAV_ITEMS: readonly MainNavItem[] = [
             icon: 'account_balance_wallet',
           },
           { label: 'Tipo de comisión AFP', route: '/catalogos/tipo-comision-afp', icon: 'percent' },
-<<<<<<< HEAD
-          {
-            label: 'Conceptos de planilla',
-            route: '/catalogos/conceptos-planilla',
-            icon: 'receipt_long',
-          },
-=======
->>>>>>> 4a6203e976132c88adffe472ccc84981a18a6ce8
+
         ],
       },
     ],

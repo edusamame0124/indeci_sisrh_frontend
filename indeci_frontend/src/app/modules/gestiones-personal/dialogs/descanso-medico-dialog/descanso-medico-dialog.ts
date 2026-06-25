@@ -260,10 +260,7 @@ export class DescansoMedicoDialog implements OnInit {
       return;
     }
 
-    if (!this.tipoDescansoMedicoId) {
-      this.error.set('Seleccione quién expidió el descanso médico.');
-      return;
-    }
+    
 
     if (!this.fechaInicio || !this.fechaFin) {
       this.error.set('Ingrese la fecha de inicio y la fecha fin.');
