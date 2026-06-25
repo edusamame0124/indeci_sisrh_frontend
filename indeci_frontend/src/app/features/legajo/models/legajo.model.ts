@@ -100,7 +100,7 @@ export interface FormacionAcademica {
   bachiller?: number | boolean;
   titulado?: number | boolean;
 
-  nroTitulo?: string;
+  nroTitulo?: string|null;
   legajoDocumentoId?: number | null;
 }
 
