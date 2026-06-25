@@ -2,6 +2,37 @@
 <mat-dialog-content class="dialog-content">
   <form [formGroup]="form" class="form-grid">
     <mat-form-field appearance="outline">
+      <mat-label>Nivel de instrucción</mat-label>
+
+      <mat-select formControlName="nivelInstruccionId">
+        @for (nivel of nivelesInstruccion(); track nivel.id) {
+          <mat-option [value]="nivel.id">
+            {{ nivel.nombre }}
+          </mat-option>
+        }
+      </mat-select>
+
+      @if (campoInvalido('nivelInstruccionId')) {
+        <mat-error>Seleccione el nivel de instrucción.</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Grado académico</mat-label>
+
+      <mat-select formControlName="gradoAcademicoId">
+        @for (grado of gradosAcademicos(); track grado.id) {
+          <mat-option [value]="grado.id">
+            {{ grado.nombre }}
+          </mat-option>
+        }
+      </mat-select>
+
+      @if (campoInvalido('gradoAcademicoId')) {
+        <mat-error>Seleccione el grado académico.</mat-error>
+      }
+    </mat-form-field>
+    <mat-form-field appearance="outline">
       <mat-label>Institución</mat-label>
       <input matInput formControlName="institucion" />
 
@@ -40,7 +71,7 @@
       <mat-checkbox formControlName="titulado">Titulado</mat-checkbox>
     </div>
 
-        @if (!esEdicion) {
+    @if (!esEdicion) {
       <div class="sustento full-width">
         <h3>Sustento documental</h3>
 
@@ -78,7 +109,7 @@
 <mat-dialog-actions align="end">
   <button mat-button type="button" (click)="cancelar()" [disabled]="guardando()">Cancelar</button>
 
-<button
+  <button
     mat-flat-button
     color="primary"
     type="button"

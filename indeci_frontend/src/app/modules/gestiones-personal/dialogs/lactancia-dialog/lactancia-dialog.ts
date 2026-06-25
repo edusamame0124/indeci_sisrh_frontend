@@ -162,20 +162,19 @@ export class LactanciaDialog {
       return;
     }
 
-    if (!this.fechaInicio) {
-      this.error.set('Ingrese la fecha de inicio del permiso.');
-      return;
-    }
-
     if (!this.fechaNacimientoHijo) {
       this.error.set('Ingrese la fecha de nacimiento del hijo(a).');
       return;
     }
 
-    if (!this.fechaFinPostnatal) {
-      this.error.set('Ingrese la fecha fin de descanso postnatal.');
+    this.fechaInicio = this.fechaNacimientoHijo;
+    this.calcularFechaPrimerAnio();
+
+    if (!this.fechaFin) {
+      this.error.set('No se pudo calcular la fecha en que el hijo(a) cumple 1 año.');
       return;
     }
+
 
     this.calcularFechaPrimerAnio();
 

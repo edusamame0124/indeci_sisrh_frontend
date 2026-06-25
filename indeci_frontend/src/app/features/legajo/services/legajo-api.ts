@@ -402,4 +402,15 @@ export class LegajoApiService {
       .put<ApiResponse<void>>(`${this.apiUrl}/rrhh/medidas-disciplinarias/${id}`, request)
       .pipe(map((resp) => this.unwrap(resp)));
   }
+  listarNivelesInstruccion(): Observable<any[]> {
+    return this.http
+      .get<ApiResponse<any[]>>(`${this.apiUrl}/catalogos/niveles-instruccion`)
+      .pipe(map((resp) => this.unwrap(resp)));
+  }
+
+  listarGradosAcademicos(): Observable<any[]> {
+    return this.http
+      .get<ApiResponse<any[]>>(`${this.apiUrl}/catalogos/grados-academicos`)
+      .pipe(map((resp) => this.unwrap(resp)));
+  }
 }
