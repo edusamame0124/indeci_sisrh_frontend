@@ -254,13 +254,16 @@ export class SolicitudesRrhhService {
 
   aprobarJefe(
     idPapeleta: number,
-    file: File,
+    file: File | null,
     observacion: string,
   ): Observable<ApiResponse<unknown>> {
     const formData = new FormData();
 
-    formData.append('file', file);
-    formData.append('observacion', observacion);
+    if (file) {
+      formData.append('file', file);
+    }
+
+    formData.append('observacion', observacion ?? '');
 
     return this.http.put<ApiResponse<unknown>>(
       `${this.apiUrl}/rrhh/solicitudes/aprobar-jefe/${idPapeleta}`,

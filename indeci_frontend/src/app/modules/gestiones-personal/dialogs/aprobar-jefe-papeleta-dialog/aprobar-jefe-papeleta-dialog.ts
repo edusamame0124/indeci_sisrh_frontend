@@ -61,20 +61,19 @@ export class AprobarJefePapeletaDialogComponent {
     });
   }
 
-  aprobar(): void {
-    if (!this.archivo) {
-      this.error.set('Debe adjuntar la papeleta firmada por el jefe inmediato.');
-      return;
-    }
+aprobar(): void {
+  this.error.set(null);
 
-    this.procesando.set(true);
-    this.error.set(null);
+  if (!this.solicitud?.id) {
+    this.error.set('No se encontró la solicitud seleccionada.');
+    return;
+  }
 
-    this.service.aprobarJefe(
-      this.solicitud.id,
-      this.archivo,
-      this.observacion,
-    ).subscribe({
+  this.procesando.set(true);
+
+  this.service
+    .aprobarJefe(this.solicitud.id, this.archivo, this.observacion)
+    .subscribe({
       next: () => {
         this.procesando.set(false);
         this.dialogRef.close(true);
@@ -90,7 +89,7 @@ export class AprobarJefePapeletaDialogComponent {
         this.error.set(mensaje);
       },
     });
-  }
+}
 
   descargarBlob(blob: Blob, nombreArchivo: string): void {
     const url = window.URL.createObjectURL(blob);
