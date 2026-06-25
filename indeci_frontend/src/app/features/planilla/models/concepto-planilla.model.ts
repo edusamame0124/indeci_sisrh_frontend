@@ -87,6 +87,34 @@ export interface ConceptoPlanillaInput {
    * ramifica por este valor; es metadata/intención registrada.
    */
   modoCalculo?: ConceptoModoCalculo | null;
+
+  /**
+   * Homologación con el catálogo oficial MGRH / MEF
+   * (SPEC_HOMOLOGACION_MGRH §C.2 · §D5). FK única nullable al catálogo:
+   * `null` = Pendiente de homologación; con valor = Homologado. No bloquea
+   * crear/editar/activar el concepto.
+   */
+  catalogoConceptoMgrhId?: number | null;
+
+  /** Observación interna de la homologación MGRH (opcional). */
+  observacionHomologacionMgrh?: string | null;
+
+  /** ¿Se incluye en planilla de pago? 'S' (≥1 planilla) / 'N' (solo config/cálculo/control). */
+  incluyeEnPlanilla?: 'S' | 'N' | null;
+}
+
+/** Estado de homologación derivado por backend (SPEC_HOMOLOGACION_MGRH §D5). */
+export type ConceptoEstadoHomologacionMgrh = 'HOMOLOGADO' | 'PENDIENTE';
+
+/**
+ * Resumen read-only del concepto MGRH homologado, devuelto en la respuesta del
+ * concepto para precargar la pestaña sin volver a buscar (SPEC_HOMOLOGACION_MGRH §F).
+ */
+export interface ConceptoMgrhResumen {
+  readonly id: number;
+  readonly tipo: string;
+  readonly codigoConceptoMgrh: string;
+  readonly descripcionNorma: string | null;
 }
 
 /**
@@ -159,4 +187,17 @@ export interface ConceptoPlanillaRow {
    * faltar en respuestas antiguas; el front lo trata como "sin asociaciones".
    */
   readonly planillaTipos?: readonly string[] | null;
+
+  /**
+   * Homologación MGRH / MEF (SPEC_HOMOLOGACION_MGRH §C.2 · §F). `catalogoConceptoMgrhId`
+   * = FK al catálogo (null = pendiente); `estadoHomologacionMgrh` lo deriva el
+   * backend; `mgrhResumen` permite precargar el detalle sin re-buscar.
+   */
+  readonly catalogoConceptoMgrhId?: number | null;
+  readonly estadoHomologacionMgrh?: ConceptoEstadoHomologacionMgrh | null;
+  readonly mgrhResumen?: ConceptoMgrhResumen | null;
+  /** Observación interna de la homologación MGRH (opcional). */
+  readonly observacionHomologacionMgrh?: string | null;
+  /** ¿Se incluye en planilla de pago? 'S' (≥1 planilla) / 'N' (solo config/cálculo/control). */
+  readonly incluyeEnPlanilla?: 'S' | 'N' | null;
 }

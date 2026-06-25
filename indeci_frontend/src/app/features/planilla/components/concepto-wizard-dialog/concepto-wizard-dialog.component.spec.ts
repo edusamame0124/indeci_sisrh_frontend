@@ -45,6 +45,47 @@ const TIPO_INTERNO_FIXTURE = {
   ],
 };
 
+/** Página Spring del catálogo MGRH (SPEC_HOMOLOGACION_MGRH §E). */
+function mgrhPage(content: unknown[]) {
+  return {
+    estado: 'OK',
+    mensaje: 'ok',
+    data: {
+      content,
+      totalElements: content.length,
+      totalPages: 1,
+      size: 5,
+      number: 0,
+    },
+  };
+}
+
+const MGRH_INGRESO = {
+  id: 11,
+  tipo: 'INGRESOS',
+  codigoConceptoMgrh: '0101',
+  descripcionNorma: 'REMUNERACION PRINCIPAL',
+  detalleNorma: 'Remuneración del cargo',
+  fechaVigenciaTexto: '01/01/2026',
+  fechaVigenciaDate: '2026-01-01',
+  imponible: 'SI',
+  descripcionTipoConcepto: 'REMUNERACION',
+  tipoNorma: 'Permanente',
+  estado: 'Activo',
+  seleccionable: true,
+  anioCatalogo: 2026,
+  vigente: true,
+  fuenteCatalogo: 'Conceptos2026.xls',
+};
+
+const MGRH_APORTE = {
+  ...MGRH_INGRESO,
+  id: 22,
+  tipo: 'APORTES',
+  codigoConceptoMgrh: '0901',
+  descripcionNorma: 'ESSALUD',
+};
+
 function setup(data: ConceptoWizardDialogData) {
   TestBed.configureTestingModule({
     imports: [ConceptoWizardDialogComponent, NoopAnimationsModule],
@@ -197,5 +238,147 @@ describe('ConceptoWizardDialogComponent (SPEC_CONCEPTOS_PLANILLA §3.A/§6/§13 
     expect(payload.tipoConceptoInterno).toBe('REM_FIJA');
     expect(payload.modoCalculo).toBe('MONTO_FIJO'); // edición: se conserva el modo
     expect(payload.planillaTipos).toEqual(['CAS', 'CAS_ADIC']); // §15: se conservan
+  });
+
+  // ─────────── Homologación MGRH / MEF (SPEC_HOMOLOGACION_MGRH §G) ───────────
+
+  it('MGRH: busca con type-ahead, selecciona una opción y la incluye como FK en el payload', async () => {
+    const s = setup({ title: 'Nuevo', modo: 'crear', initial: null });
+    http = s.http;
+
+    expect(s.cmp.mgrhHomologado()).toBe(false);
+    expect(s.cmp.mgrhBusqueda.disabled).toBe(true);
+
+    s.cmp.basicosForm.patchValue({ tipoConceptoInterno: 'REM_FIJA' });
+    s.fixture.detectChanges();
+    expect(s.cmp.mgrhBusqueda.enabled).toBe(true);
+
+    // debounceTime(300) del type-ahead: avanzamos timers (app zoneless, sin fakeAsync).
+    vi.useFakeTimers();
+    s.cmp.mgrhBusqueda.setValue('0101');
+    vi.advanceTimersByTime(300);
+
+    const req = http.expectOne((r) => r.url === '/api/rrhh/catalogo-mgrh');
+    expect(req.request.params.get('texto')).toBe('0101');
+    expect(req.request.params.get('tipoLocal')).toBe('INGRESO');
+    expect(req.request.params.get('soloActivos')).toBe('true');
+    expect(req.request.params.get('limit')).toBe('15');
+    req.flush(mgrhPage([MGRH_INGRESO]));
+    vi.useRealTimers();
+    s.fixture.detectChanges();
+
+    expect(s.cmp.mgrhResultados().length).toBe(1);
+
+    // Paso 1: elegir candidato no homologa todavía.
+    s.cmp.elegirCandidatoMgrh(MGRH_INGRESO as never);
+    expect(s.cmp.mgrhHomologado()).toBe(false);
+    expect(s.cmp.mgrhPuedeAplicar()).toBe(true);
+    // Paso 2: aplicar homologa.
+    s.cmp.aplicarHomologacion();
+    expect(s.cmp.mgrhHomologado()).toBe(true);
+    expect(s.cmp.mgrhSeleccionado()?.id).toBe(11);
+
+    s.cmp.basicosForm.patchValue({
+      nombre: 'rem',
+      naturaleza: 'rem',
+      tipoConceptoInterno: 'REM_FIJA',
+    });
+    s.cmp.aplicabilidadForm.patchValue({
+      regimenAplicable: ['TODOS'],
+      fechaVigIni: '2026-01-01',
+      planillaTipos: ['CAS'],
+    });
+    s.cmp.clasificacionForm.patchValue({ codigoMef: '00501' });
+    s.fixture.detectChanges();
+
+    const ref = TestBed.inject(MatDialogRef) as MatDialogRef<unknown, ConceptoPlanillaInput | undefined>;
+    const spy = vi.spyOn(ref, 'close');
+    s.cmp.onSubmit();
+    const payload = spy.mock.calls[0][0] as ConceptoPlanillaInput;
+    expect(payload.catalogoConceptoMgrhId).toBe(11);
+  });
+
+  it('MGRH: quitar homologación vuelve a Pendiente y envía FK null', () => {
+    const s = setup({ title: 'Nuevo', modo: 'crear', initial: null });
+    http = s.http;
+    s.cmp.elegirCandidatoMgrh(MGRH_INGRESO as never);
+    s.cmp.aplicarHomologacion();
+    expect(s.cmp.mgrhHomologado()).toBe(true);
+    s.cmp.quitarHomologacion();
+    expect(s.cmp.mgrhHomologado()).toBe(false);
+    expect(s.cmp.mgrhSeleccionado()).toBeNull();
+  });
+
+  it('MGRH: advertencia de compatibilidad cuando el TIPO no coincide con la clasificación', () => {
+    const s = setup({ title: 'Nuevo', modo: 'crear', initial: null });
+    http = s.http;
+    // Concepto remunerativo → esperado INGRESOS.
+    s.cmp.basicosForm.patchValue({ tipoConceptoInterno: 'REM_FIJA' });
+    s.fixture.detectChanges();
+
+    // Selecciona un APORTES → incompatible.
+    s.cmp.elegirCandidatoMgrh(MGRH_APORTE as never);
+    s.cmp.aplicarHomologacion();
+    expect(s.cmp.mgrhTipoIncompatible()).toBe('INGRESOS');
+
+    // Selecciona un INGRESOS → compatible (sin advertencia).
+    s.cmp.elegirCandidatoMgrh(MGRH_INGRESO as never);
+    s.cmp.aplicarHomologacion();
+    expect(s.cmp.mgrhTipoIncompatible()).toBeNull();
+  });
+
+  it('MGRH: precarga el detalle del homologado en edición vía búsqueda por código', () => {
+    const initial: ConceptoPlanillaInput = {
+      codigo: 'CONC-0042',
+      nombre: 'REMUNERACION',
+      tipo: 'INGRESO',
+      naturaleza: 'REM',
+      tipoConceptoInterno: 'REM_FIJA',
+      regimenAplicable: 'TODOS',
+      fechaVigIni: '2026-01-01',
+      planillaTipos: ['CAS'],
+      catalogoConceptoMgrhId: 11,
+    };
+    // Nota: precargarHomologacion dispara una búsqueda puntual ANTES de los
+    // catálogos del wizard, por lo que la consumimos primero.
+    TestBed.configureTestingModule({
+      imports: [ConceptoWizardDialogComponent, NoopAnimationsModule],
+      providers: [
+        {
+          provide: MAT_DIALOG_DATA,
+          useValue: {
+            title: 'Configurar',
+            modo: 'configurar',
+            estadoActual: 'ACTIVO',
+            initial,
+            mgrhResumen: {
+              id: 11,
+              tipo: 'INGRESOS',
+              codigoConceptoMgrh: '0101',
+              descripcionNorma: 'REMUNERACION PRINCIPAL',
+            },
+          } satisfies ConceptoWizardDialogData,
+        },
+        { provide: MatDialogRef, useValue: { close: () => undefined } },
+        provideHttpClient(),
+        provideHttpClientTesting(),
+      ],
+    });
+    http = TestBed.inject(HttpTestingController);
+    const fixture = TestBed.createComponent(ConceptoWizardDialogComponent);
+    fixture.detectChanges();
+
+    const mgrhReq = http.expectOne((r) => r.url === '/api/rrhh/catalogo-mgrh');
+    expect(mgrhReq.request.params.get('codigo')).toBe('0101');
+    mgrhReq.flush(mgrhPage([MGRH_INGRESO]));
+
+    http.expectOne('/api/rrhh/concepto-tipo-interno').flush(TIPO_INTERNO_FIXTURE);
+    http.expectOne('/api/rrhh/planilla-tipo').flush(PLANILLA_TIPO_FIXTURE);
+    http.expectOne('/api/rrhh/concepto-rtps').flush(RTPS_FIXTURE);
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.mgrhHomologado()).toBe(true);
+    expect(fixture.componentInstance.mgrhSeleccionado()?.codigoConceptoMgrh).toBe('0101');
+    expect(fixture.componentInstance.mgrhResumenLinea()).toContain('0101');
   });
 });

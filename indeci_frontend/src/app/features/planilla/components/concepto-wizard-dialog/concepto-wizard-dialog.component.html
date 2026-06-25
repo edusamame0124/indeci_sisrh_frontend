@@ -33,6 +33,7 @@
             <mat-label>Nombre</mat-label>
             <input
               matInput
+              appUppercase
               formControlName="nombre"
               autocomplete="off"
               maxlength="200"
@@ -50,6 +51,7 @@
             <mat-label>Abreviatura para boleta</mat-label>
             <input
               matInput
+              appUppercase
               formControlName="naturaleza"
               autocomplete="off"
               maxlength="120"
@@ -212,6 +214,18 @@
           A qué régimen aplica y desde cuándo está vigente.
         </p>
 
+        <fieldset class="wiz-fieldset wiz-incluye">
+          <legend>¿Este concepto se incluirá en una planilla de pago institucional? *</legend>
+          <mat-radio-group
+            formControlName="incluyeEnPlanilla"
+            class="wiz-incluye__group"
+            aria-label="¿Este concepto se incluirá en una planilla de pago institucional?"
+          >
+            <mat-radio-button value="SI">Sí</mat-radio-button>
+            <mat-radio-button value="NO">No, solo configuración / cálculo / control</mat-radio-button>
+          </mat-radio-group>
+        </fieldset>
+
         <div class="wiz-grid">
           <mat-form-field appearance="outline" class="wiz-col-2">
             <mat-label>Régimen aplicable</mat-label>
@@ -241,6 +255,7 @@
           </mat-form-field>
         </div>
 
+        @if (incluyeEnPlanilla() === 'SI') {
         <!-- Planillas asociadas (SPEC §15 — Fase A · M:N) -->
         <fieldset class="wiz-fieldset wiz-planillas">
           <legend>Planillas asociadas</legend>
@@ -298,6 +313,7 @@
             </mat-chip-set>
           }
         </fieldset>
+        }
 
         <div class="wiz-actions">
           <button mat-stroked-button type="button" matStepperPrevious>
@@ -371,21 +387,6 @@
             }
           </mat-form-field>
 
-          <mat-form-field appearance="outline">
-            <mat-label>Código SISPER</mat-label>
-            <input matInput formControlName="codigoSisper" autocomplete="off" maxlength="20" />
-          </mat-form-field>
-
-          <mat-form-field appearance="outline">
-            <mat-label>Código PLAME (SUNAT)</mat-label>
-            <input matInput formControlName="codigoPlameSunat" autocomplete="off" maxlength="20" />
-          </mat-form-field>
-
-          <mat-form-field appearance="outline">
-            <mat-label>Código MCPP</mat-label>
-            <input matInput formControlName="codigoMcpp" autocomplete="off" maxlength="20" />
-          </mat-form-field>
-
           @if (visibilidad().codigoTributoSunat) {
             <mat-form-field appearance="outline" class="wiz-col-2">
               <mat-label>Código de tributo SUNAT</mat-label>
@@ -409,7 +410,217 @@
       </form>
     </mat-step>
 
-    <!-- ───────────── ⑤ Revisión ───────────── -->
+    <!-- ───────────── ⑤ Homologación MGRH / MEF ───────────── -->
+    <mat-step label="Homologación MGRH / MEF">
+      <div class="wiz-form">
+        <div class="wiz-mgrh__intro">
+          <p class="wiz-step-hint">
+            Vincule este concepto local con su equivalente oficial del catálogo único MGRH / MEF.
+            La homologación es opcional y se realiza seleccionando una opción real del catálogo.
+          </p>
+          <span
+            class="wiz-mgrh__chip"
+            [class.wiz-mgrh__chip--ok]="mgrhHomologado() && !mgrhCatalogoInactivo()"
+            [class.wiz-mgrh__chip--inactive]="mgrhCatalogoInactivo()"
+            role="status"
+            aria-live="polite"
+          >
+            <mat-icon aria-hidden="true">{{ mgrhEstadoChipIcon() }}</mat-icon>
+            {{ mgrhEstadoChipLabel() }}
+          </span>
+        </div>
+
+        <section class="wiz-mgrh__context" aria-label="Clasificación local para homologación">
+          <div>
+            <span>Tipo local del concepto</span>
+            <strong>{{ tipoLocalLabel() }}</strong>
+          </div>
+          <div>
+            <span>Tipo MGRH permitido</span>
+            <strong>{{ tipoMgrhPermitidoLabel() }}</strong>
+          </div>
+        </section>
+
+        <mat-form-field appearance="outline" class="wiz-mgrh__autocomplete">
+          <mat-label>Buscar en el catálogo MGRH</mat-label>
+          <mat-icon matPrefix aria-hidden="true">search</mat-icon>
+          <input
+            matInput
+            type="text"
+            [formControl]="mgrhBusqueda"
+            [matAutocomplete]="mgrhAuto"
+            autocomplete="off"
+            aria-label="Buscar en el catálogo MGRH"
+            placeholder="Código, descripción o detalle oficial"
+          />
+          @if (mgrhBusqueda.value) {
+            <button
+              mat-icon-button
+              matSuffix
+              type="button"
+              aria-label="Limpiar búsqueda MGRH"
+              (click)="quitarHomologacion()"
+            >
+              <mat-icon aria-hidden="true">close</mat-icon>
+            </button>
+          }
+          @if (mgrhBuscando()) {
+            <mat-spinner matSuffix diameter="18" aria-hidden="true"></mat-spinner>
+          }
+          <mat-hint>
+            @if (tipoLocalMgrh()) {
+              Solo se muestran conceptos activos compatibles con {{ tipoLocalLabel() }}.
+            } @else {
+              Deshabilitado hasta definir el tipo local del concepto.
+            }
+          </mat-hint>
+          <mat-autocomplete
+            #mgrhAuto="matAutocomplete"
+            (optionSelected)="elegirCandidatoMgrh($event.option.value)"
+          >
+            @for (item of mgrhResultados(); track item.id) {
+              <mat-option [value]="item">
+                {{ mgrhOpcionLabel(item) }}
+              </mat-option>
+            }
+            @if (mgrhBuscando()) {
+              <mat-option disabled>Buscando en el catálogo...</mat-option>
+            } @else if (mgrhError()) {
+              <mat-option disabled>No se pudo consultar el catálogo. Intente nuevamente.</mat-option>
+            } @else if (mgrhBuscado() && mgrhResultados().length === 0) {
+              <mat-option disabled>No se encontraron coincidencias activas.</mat-option>
+            }
+          </mat-autocomplete>
+        </mat-form-field>
+
+        @if (!tipoLocalMgrh()) {
+          <p class="wiz-mgrh__blocked" role="status">
+            <mat-icon aria-hidden="true">warning</mat-icon>
+            Primero seleccione el tipo de concepto en la pestaña “Clasificación”.
+          </p>
+        }
+
+        @if (mgrhCandidato(); as cand) {
+          <section class="wiz-mgrh__candidato" aria-live="polite">
+            <div class="wiz-mgrh__candidato-info">
+              <mat-icon aria-hidden="true">touch_app</mat-icon>
+              <div>
+                <strong>{{ mgrhOpcionLabel(cand) }}</strong>
+                <span>Concepto elegido. Pulse <b>Aplicar</b> para homologar (aún no guardado).</span>
+              </div>
+            </div>
+            <button
+              mat-flat-button
+              color="primary"
+              type="button"
+              [disabled]="!mgrhPuedeAplicar()"
+              (click)="aplicarHomologacion()"
+            >
+              <mat-icon aria-hidden="true">check</mat-icon>
+              Aplicar homologación
+            </button>
+          </section>
+        }
+
+        @if (mgrhSeleccionado(); as sel) {
+          <section
+            class="wiz-mgrh__detalle-panel"
+            [class.wiz-mgrh__detalle-panel--inactive]="mgrhCatalogoInactivo()"
+            aria-labelledby="wiz-mgrh-detalle-title"
+          >
+            <header class="wiz-mgrh__detalle-head">
+              <div>
+                <mat-icon aria-hidden="true">fact_check</mat-icon>
+                <h3 id="wiz-mgrh-detalle-title">Detalle del concepto MGRH seleccionado</h3>
+              </div>
+              <div class="wiz-mgrh__detalle-acciones">
+                <button mat-stroked-button type="button" (click)="cambiarHomologacion()">
+                  <mat-icon aria-hidden="true">search</mat-icon>
+                  Cambiar
+                </button>
+                <button mat-stroked-button type="button" color="warn" (click)="quitarHomologacion()">
+                  <mat-icon aria-hidden="true">link_off</mat-icon>
+                  Quitar homologación
+                </button>
+              </div>
+            </header>
+
+            @if (mgrhCatalogoInactivo()) {
+              <p class="wiz-mgrh__inactive-alert" role="alert">
+                <mat-icon aria-hidden="true">warning</mat-icon>
+                Esta homologación se conserva por trazabilidad. Para cambiarla, seleccione un concepto activo compatible.
+              </p>
+            }
+
+            @if (mgrhTipoIncompatible(); as esperado) {
+              <p class="wiz-modo-aviso" role="alert">
+                <mat-icon aria-hidden="true">warning</mat-icon>
+                <span>
+                  El tipo MGRH (<strong>{{ labelTipoMgrh(sel.tipo) }}</strong>) no coincide con la
+                  clasificación del concepto (esperado <strong>{{ labelTipoMgrh(esperado) }}</strong>).
+                  Verifique la homologación.
+                </span>
+              </p>
+            }
+
+            <dl class="wiz-resumen wiz-mgrh__detalle-grid">
+              <div><dt>Código MGRH</dt><dd class="wiz-mgrh__codigo">{{ sel.codigoConceptoMgrh }}</dd></div>
+              <div><dt>Tipo</dt><dd>{{ sel.tipo }}</dd></div>
+              <div><dt>Estado catálogo</dt><dd>{{ sel.estado || '—' }}</dd></div>
+              <div><dt>Imponible</dt><dd>{{ sel.imponible || '—' }}</dd></div>
+              <div class="wiz-col-2"><dt>Descripción de norma</dt><dd>{{ sel.descripcionNorma || '—' }}</dd></div>
+              <div class="wiz-col-2"><dt>Detalle de norma</dt><dd>{{ sel.detalleNorma || '—' }}</dd></div>
+              <div><dt>Fecha de vigencia</dt><dd>{{ sel.fechaVigenciaTexto || '—' }}</dd></div>
+              <div><dt>Tipo de norma</dt><dd>{{ sel.tipoNorma || '—' }}</dd></div>
+              <div><dt>Descripción tipo concepto</dt><dd>{{ sel.descripcionTipoConcepto || '—' }}</dd></div>
+              <div><dt>Año / Fuente</dt><dd>{{ sel.anioCatalogo }} · {{ sel.fuenteCatalogo || '—' }}</dd></div>
+            </dl>
+          </section>
+        } @else if (mgrhHomologado()) {
+          <section class="wiz-mgrh__detalle-panel" aria-live="polite">
+            <header class="wiz-mgrh__detalle-head">
+              <div>
+                <mat-icon aria-hidden="true">fact_check</mat-icon>
+                <h3>Concepto homologado</h3>
+              </div>
+              <button mat-stroked-button type="button" color="warn" (click)="quitarHomologacion()">
+                <mat-icon aria-hidden="true">link_off</mat-icon>
+                Quitar homologación
+              </button>
+            </header>
+            <p class="wiz-empty-note">
+              <mat-icon aria-hidden="true">info</mat-icon>
+              Este concepto ya está homologado. Busque para ver o cambiar el detalle oficial.
+            </p>
+          </section>
+        }
+
+        <mat-form-field appearance="outline" class="wiz-col-2 wiz-mgrh__obs">
+          <mat-label>Observación interna de homologación (opcional)</mat-label>
+          <textarea
+            matInput
+            [formControl]="mgrhObservacion"
+            rows="2"
+            maxlength="300"
+            placeholder="Ej.: Homologación validada con especialista de planillas."
+          ></textarea>
+          <mat-hint align="end">{{ mgrhObservacion.value.length }}/300</mat-hint>
+        </mat-form-field>
+
+        <div class="wiz-actions">
+          <button mat-stroked-button type="button" matStepperPrevious>
+            <mat-icon>arrow_back</mat-icon>
+            Atrás
+          </button>
+          <span class="wiz-spacer"></span>
+          <button mat-flat-button color="primary" type="button" matStepperNext>
+            Revisar
+            <mat-icon iconPositionEnd>arrow_forward</mat-icon>
+          </button>
+        </div>
+      </div>
+    </mat-step>
+    <!-- ───────────── ⑥ Revisión ───────────── -->
     <mat-step label="Revisión">
       <div class="wiz-form">
         <p class="wiz-step-hint">
@@ -463,6 +674,16 @@
           @if (visibilidad().codigoTributoSunat && clasificacionForm.controls.codigoTributoSunat.value) {
             <div><dt>Tributo SUNAT</dt><dd>{{ clasificacionForm.controls.codigoTributoSunat.value }}</dd></div>
           }
+          <div class="wiz-col-2">
+            <dt>Homologación MGRH</dt>
+            <dd>
+              @if (mgrhResumenLinea(); as linea) {
+                {{ linea }}
+              } @else {
+                <span class="wiz-resumen__legacy">Pendiente de homologación</span>
+              }
+            </dd>
+          </div>
         </dl>
 
         @if (advertencias().length > 0) {

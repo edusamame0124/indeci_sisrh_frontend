@@ -263,6 +263,15 @@ export class ConceptoPlanillaPageComponent {
     return (v ?? 'N').toUpperCase() === 'S';
   }
 
+  /**
+   * `true` si el concepto está homologado con el catálogo MGRH / MEF
+   * (SPEC_HOMOLOGACION_MGRH §D5). Usa el estado derivado por backend; cae a la FK.
+   */
+  esHomologado(row: ConceptoPlanillaRow): boolean {
+    if (row.estadoHomologacionMgrh) return row.estadoHomologacionMgrh === 'HOMOLOGADO';
+    return row.catalogoConceptoMgrhId != null;
+  }
+
   /** Estado efectivo: usa `estado`; cae a derivar de `activo` (legacy P1). */
   estadoDe(row: ConceptoPlanillaRow): ConceptoPlanillaEstado {
     if (row.estado) return row.estado;
@@ -415,6 +424,10 @@ export class ConceptoPlanillaPageComponent {
       modoCalculo: row.modoCalculo ?? null,
       // SPEC §15 (Fase A): precarga las planillas asociadas para el multiselect.
       planillaTipos: [...(row.planillaTipos ?? [])],
+      // SPEC_HOMOLOGACION_MGRH §C.2: precarga la FK del concepto MGRH homologado.
+      catalogoConceptoMgrhId: row.catalogoConceptoMgrhId ?? null,
+      observacionHomologacionMgrh: row.observacionHomologacionMgrh ?? null,
+      incluyeEnPlanilla: row.incluyeEnPlanilla ?? null,
     };
     const data: ConceptoWizardDialogData = {
       title: `Configurar concepto ${row.codigo}`,
@@ -422,6 +435,8 @@ export class ConceptoPlanillaPageComponent {
       estadoActual: this.estadoDe(row),
       version: row.version ?? null,
       initial,
+      // §F: resumen read-only para precargar el detalle de la pestaña sin re-buscar.
+      mgrhResumen: row.mgrhResumen ?? null,
     };
     const ref = this.dialog.open(
       ConceptoWizardDialogComponent,

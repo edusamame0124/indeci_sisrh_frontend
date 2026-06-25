@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   computed,
   inject,
   signal,
@@ -14,7 +15,7 @@ import {
   type ValidatorFn,
   Validators,
 } from '@angular/forms';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import {
   MAT_DIALOG_DATA,
   MatDialogModule,
@@ -25,18 +26,25 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatRadioModule } from '@angular/material/radio';
 import { MatSelectModule } from '@angular/material/select';
 import { MatStepperModule } from '@angular/material/stepper';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatChipsModule } from '@angular/material/chips';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { catchError, debounceTime, distinctUntilChanged, filter, finalize, map, of, switchMap, tap } from 'rxjs';
 import { ConceptoRtpsApiService } from '../../services/concepto-rtps-api.service';
 import { ConceptoTipoInternoApiService } from '../../services/concepto-tipo-interno-api.service';
 import { PlanillaTipoApiService } from '../../services/planilla-tipo-api.service';
+import { CatalogoMgrhApiService } from '../../services/catalogo-mgrh-api.service';
+import { UppercaseDirective } from '../../../../shared/directives/uppercase.directive';
 import type { ConceptoRtps } from '../../models/concepto-rtps.model';
 import type { ConceptoTipoInterno } from '../../models/concepto-tipo-interno.model';
 import type { PlanillaTipo } from '../../models/planilla-tipo.model';
+import type { CatalogoConceptoMgrh } from '../../models/catalogo-mgrh.model';
 import type {
+  ConceptoMgrhResumen,
   ConceptoPlanillaInput,
   ConceptoPlanillaTipoConcepto,
 } from '../../models/concepto-planilla.model';
@@ -50,29 +58,41 @@ import {
 
 /** Datos de apertura del wizard (modo crear vs configurar). */
 export interface ConceptoWizardDialogData {
-  /** Título del encabezado. */
+  /** TÃ­tulo del encabezado. */
   readonly title: string;
-  /** `'crear'` = blank → BORRADOR; `'configurar'` = prefilled por fila. */
+  /** `'crear'` = blank â†’ BORRADOR; `'configurar'` = prefilled por fila. */
   readonly modo: 'crear' | 'configurar';
   /** Estado actual del concepto (solo display en TAB 1). */
   readonly estadoActual?: string | null;
-  /** N.º de versión de la configuración (solo display en TAB 1 — P3 §12). */
+  /** N.Âº de versiÃ³n de la configuraciÃ³n (solo display en TAB 1 â€” P3 Â§12). */
   readonly version?: number | null;
   /** Valores iniciales (configurar). `null` = alta en blanco. */
   readonly initial: ConceptoPlanillaInput | null;
+  /**
+   * Resumen MGRH homologado del concepto en ediciÃ³n (SPEC_HOMOLOGACION_MGRH Â§F).
+   * Permite precargar el detalle de la pestaÃ±a de homologaciÃ³n sin re-buscar.
+   */
+  readonly mgrhResumen?: ConceptoMgrhResumen | null;
 }
 
-/** Agrupa los ítems RTPS bajo su cabecera de grupo (mat-optgroup). */
+/** Agrupa los Ã­tems RTPS bajo su cabecera de grupo (mat-optgroup). */
 interface RtpsGrupo {
   readonly codigo: string;
   readonly descripcion: string;
   readonly items: readonly ConceptoRtps[];
 }
+type TipoLocalMgrh = 'INGRESO' | 'DESCUENTO' | 'APORTE';
+
+interface TipoLocalMgrhView {
+  readonly local: TipoLocalMgrh;
+  readonly localLabel: string;
+  readonly mgrh: 'INGRESOS' | 'EGRESOS' | 'APORTES';
+}
 
 const SI = 'S';
 const NO = 'N';
 
-/** Validador: el array de control debe tener al menos `min` elementos (§15). */
+/** Validador: el array de control debe tener al menos `min` elementos (Â§15). */
 function minSeleccion(min: number): ValidatorFn {
   return (control: AbstractControl): ValidationErrors | null => {
     const value = control.value as readonly unknown[] | null;
@@ -81,20 +101,20 @@ function minSeleccion(min: number): ValidatorFn {
 }
 
 /**
- * Wizard de Creación / Configuración de Conceptos de Planilla
- * (SPEC_CONCEPTOS_PLANILLA §3.A · §6 · P2).
+ * Wizard de CreaciÃ³n / ConfiguraciÃ³n de Conceptos de Planilla
+ * (SPEC_CONCEPTOS_PLANILLA Â§3.A Â· Â§6 Â· P2).
  *
  * <p>5 pasos con visibilidad condicional por `tipoConcepto`:</p>
  * <ol>
- *   <li>Datos básicos</li>
- *   <li>Regla de cálculo (afectaciones condicionales)</li>
- *   <li>Aplicabilidad (régimen + vigencia)</li>
- *   <li>Clasificación externa (RTPS + MEF/PLAME/MCPP/SUNAT)</li>
- *   <li>Revisión (resumen + advertencias)</li>
+ *   <li>Datos bÃ¡sicos</li>
+ *   <li>Regla de cÃ¡lculo (afectaciones condicionales)</li>
+ *   <li>Aplicabilidad (rÃ©gimen + vigencia)</li>
+ *   <li>ClasificaciÃ³n externa (RTPS + MEF/PLAME/MCPP/SUNAT)</li>
+ *   <li>RevisiÃ³n (resumen + advertencias)</li>
  * </ol>
  *
  * <p>Devuelve un {@link ConceptoPlanillaInput}; el backend fuerza
- * `estado = BORRADOR` al crear (no se envía estado).</p>
+ * `estado = BORRADOR` al crear (no se envÃ­a estado).</p>
  */
 @Component({
   selector: 'app-concepto-wizard-dialog',
@@ -109,10 +129,13 @@ function minSeleccion(min: number): ValidatorFn {
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
+    MatAutocompleteModule,
     MatRadioModule,
     MatSelectModule,
     MatTooltipModule,
     MatChipsModule,
+    MatProgressSpinnerModule,
+    UppercaseDirective,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './concepto-wizard-dialog.component.html',
@@ -127,10 +150,12 @@ export class ConceptoWizardDialogComponent {
   private readonly rtpsApi = inject(ConceptoRtpsApiService);
   private readonly tipoInternoApi = inject(ConceptoTipoInternoApiService);
   private readonly planillaTipoApi = inject(PlanillaTipoApiService);
+  private readonly catalogoMgrhApi = inject(CatalogoMgrhApiService);
+  private readonly destroyRef = inject(DestroyRef);
 
   /**
-   * Etiquetas legibles de la clasificación del motor (§13) y microcopy de su
-   * efecto en el cálculo, para que RR.HH. entienda qué deriva el Tipo elegido.
+   * Etiquetas legibles de la clasificaciÃ³n del motor (Â§13) y microcopy de su
+   * efecto en el cÃ¡lculo, para que RR.HH. entienda quÃ© deriva el Tipo elegido.
    */
   private readonly clasificacionMotorInfo: Readonly<
     Record<ConceptoPlanillaTipoConcepto, { label: string; efecto: string }>
@@ -192,7 +217,7 @@ export class ConceptoWizardDialogComponent {
     },
   ];
 
-  /** Modos en los que el monto NO es autocalculado por el motor (§14). */
+  /** Modos en los que el monto NO es autocalculado por el motor (Â§14). */
   private readonly MODOS_MANUALES: ReadonlySet<ConceptoModoCalculo> = new Set<ConceptoModoCalculo>(
     ['MONTO_FIJO', 'PORCENTAJE'],
   );
@@ -200,22 +225,21 @@ export class ConceptoWizardDialogComponent {
   readonly regimenes: readonly { value: string; label: string }[] = [
     { value: 'TODOS', label: 'Todos los regímenes' },
     { value: '276', label: '276 — Carrera Administrativa' },
-    { value: '728', label: '728 — Actividad Privada' },
     { value: '1057', label: '1057 — CAS' },
     { value: 'SERVIR', label: 'SERVIR' },
   ];
 
-  // ─────────────── Estado del catálogo "Tipo de Concepto" (§13) ───────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ Estado del catÃ¡logo "Tipo de Concepto" (Â§13) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   readonly tipoInternoLoading = signal(true);
   readonly tipoInternoError = signal(false);
   readonly tiposConcepto = signal<readonly ConceptoTipoInterno[]>([]);
 
-  // ─────────────── Estado del catálogo "Tipo de planilla" (§15) ───────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ Estado del catÃ¡logo "Tipo de planilla" (Â§15) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   readonly planillaTiposLoading = signal(true);
   readonly planillaTiposError = signal(false);
   readonly planillaTiposCatalogo = signal<readonly PlanillaTipo[]>([]);
 
-  // ─────────────── Estado del catálogo RTPS ───────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ Estado del catÃ¡logo RTPS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   readonly rtpsLoading = signal(true);
   readonly rtpsError = signal(false);
   private readonly rtpsList = signal<readonly ConceptoRtps[]>([]);
@@ -252,13 +276,100 @@ export class ConceptoWizardDialogComponent {
       .filter((g) => g.items.length > 0);
   });
 
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ HomologaciÃ³n MGRH / MEF (SPEC_HOMOLOGACION_MGRH Â§G) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  /** Tipos oficiales MGRH para el filtro del buscador (Â§B/D1 â€” sin GASTOS POR ENCARGO). */
+  readonly tiposMgrh: readonly { value: string; label: string }[] = [
+    { value: 'INGRESOS', label: 'Ingresos' },
+    { value: 'EGRESOS', label: 'Egresos' },
+    { value: 'APORTES', label: 'Aportes' },
+  ];
+
+  /** Campo unico type-ahead para homologar contra el catalogo MGRH / MEF. */
+  readonly mgrhBusqueda = this.fb.nonNullable.control({ value: '', disabled: true });
+
+  /** Observación interna de la homologación MGRH (opcional, libre). */
+  readonly mgrhObservacion = this.fb.nonNullable.control(
+    this.data.initial?.observacionHomologacionMgrh ?? '',
+  );
+
+  readonly MGRH_AUTOCOMPLETE_LIMIT = 15;
+  readonly mgrhBuscando = signal(false);
+  readonly mgrhError = signal(false);
+  readonly mgrhBuscado = signal(false);
+  readonly mgrhResultados = signal<readonly CatalogoConceptoMgrh[]>([]);  /** Detalle solo-lectura del concepto MGRH seleccionado (homologaciÃ³n vigente). */
+  readonly mgrhSeleccionado = signal<CatalogoConceptoMgrh | null>(null);
+  /** FK al catÃ¡logo homologado (`null` = pendiente). Espejo del seleccionado/precarga. */
+  private readonly mgrhId = signal<number | null>(
+    this.data.initial?.catalogoConceptoMgrhId ?? null,
+  );
+
+  /** Candidato elegido del autocomplete, aún NO aplicado (requiere botón "Aplicar"). */
+  readonly mgrhCandidato = signal<CatalogoConceptoMgrh | null>(null);
+
+  /** Chip de estado de homologacion: pendiente, activo o historico inactivo. */
+  readonly mgrhHomologado = computed(() => this.mgrhId() !== null);
+
+  /** Hay un candidato elegido distinto del ya homologado → habilita "Aplicar". */
+  readonly mgrhPuedeAplicar = computed(() => {
+    const c = this.mgrhCandidato();
+    return c !== null && c.id !== this.mgrhId();
+  });
+  readonly mgrhCatalogoInactivo = computed(() => {
+    const sel = this.mgrhSeleccionado();
+    if (!sel) return false;
+    return !sel.seleccionable || !sel.vigente || this.normalizarEstadoMgrh(sel.estado) === 'INACTIVO';
+  });
+  readonly mgrhEstadoChipLabel = computed(() => {
+    if (!this.mgrhHomologado()) return 'Pendiente de homologacion';
+    return this.mgrhCatalogoInactivo()
+      ? 'Homologacion con catalogo inactivo'
+      : 'Homologado';
+  });
+  readonly mgrhEstadoChipIcon = computed(() => {
+    if (!this.mgrhHomologado()) return 'pending';
+    return this.mgrhCatalogoInactivo() ? 'warning' : 'verified';
+  });
+
   /**
-   * Código existente (solo edición). El input se oculta del wizard (§13): en
-   * alta lo genera el backend; en edición se conserva sin mostrarlo.
+   * Advertencia de compatibilidad NO bloqueante (Â§G â€” mapeo clasificaciÃ³nâ†’TIPO MGRH).
+   * `null` si no hay selecciÃ³n, falta clasificaciÃ³n, o el tipo coincide.
+   */
+  readonly mgrhTipoIncompatible = computed<string | null>(() => {
+    const sel = this.mgrhSeleccionado();
+    const esperado = this.tipoMgrhEsperado();
+    if (!sel || !esperado) return null;
+    return sel.tipo === esperado ? null : esperado;
+  });
+
+  /** Tipo local y tipo MGRH permitido derivados del Tipo de Concepto local. */
+  readonly tipoLocalMgrh = computed<TipoLocalMgrhView | null>(() => {
+    switch (this.tipoConcepto()) {
+      case 'REMUNERATIVO':
+      case 'NO_REMUNERATIVO':
+        return { local: 'INGRESO', localLabel: 'Ingreso', mgrh: 'INGRESOS' };
+      case 'DESCUENTO':
+        return { local: 'DESCUENTO', localLabel: 'Descuento', mgrh: 'EGRESOS' };
+      case 'APORTE_TRABAJADOR':
+      case 'APORTE_EMPLEADOR':
+        return { local: 'APORTE', localLabel: 'Aporte', mgrh: 'APORTES' };
+      default:
+        return null;
+    }
+  });
+
+  readonly tipoLocalLabel = computed(() => this.tipoLocalMgrh()?.localLabel ?? 'No definido');
+  readonly tipoMgrhPermitidoLabel = computed(() => this.tipoLocalMgrh()?.mgrh ?? 'No definido');
+
+  /** TIPO MGRH esperado segun la clasificacion del motor del concepto. */
+  private readonly tipoMgrhEsperado = computed<string | null>(() => this.tipoLocalMgrh()?.mgrh ?? null);
+
+  /**
+   * CÃ³digo existente (solo ediciÃ³n). El input se oculta del wizard (Â§13): en
+   * alta lo genera el backend; en ediciÃ³n se conserva sin mostrarlo.
    */
   private readonly codigoExistente: string | null = this.data.initial?.codigo ?? null;
 
-  // ─────────────── Formularios por paso ───────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ Formularios por paso â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   readonly basicosForm = this.fb.group({
     nombre: this.fb.nonNullable.control(this.data.initial?.nombre ?? '', {
       validators: [Validators.required, Validators.maxLength(200)],
@@ -285,6 +396,20 @@ export class ConceptoWizardDialogComponent {
   });
 
   readonly aplicabilidadForm = this.fb.group({
+    // ¿El concepto se incluirá en una planilla de pago institucional? Gobierna las
+    // planillas asociadas. Se deriva en edición: "SI" si ya tiene planillas, "NO" si 0.
+    incluyeEnPlanilla: this.fb.nonNullable.control<'SI' | 'NO'>(
+      this.data.initial?.incluyeEnPlanilla === 'N'
+        ? 'NO'
+        : this.data.initial?.incluyeEnPlanilla === 'S'
+          ? 'SI'
+          : this.data.initial == null
+            ? 'SI'
+            : (this.data.initial.planillaTipos?.length ?? 0) > 0
+              ? 'SI'
+              : 'NO',
+      { validators: [Validators.required] },
+    ),
     regimenAplicable: this.fb.nonNullable.control<string[]>(
       this.parseRegimen(this.data.initial?.regimenAplicable),
       { validators: [Validators.required] },
@@ -293,7 +418,7 @@ export class ConceptoWizardDialogComponent {
       validators: [Validators.required],
     }),
     fechaVigFin: this.fb.control<string | null>(this.data.initial?.fechaVigFin ?? null),
-    // SPEC §15 (Fase A): el concepto se asocia a ≥1 tipo de planilla (M:N).
+    // SPEC Â§15 (Fase A): el concepto se asocia a â‰¥1 tipo de planilla (M:N).
     planillaTipos: this.fb.nonNullable.control<string[]>(
       [...(this.data.initial?.planillaTipos ?? [])],
       { validators: [Validators.required, minSeleccion(1)] },
@@ -311,26 +436,26 @@ export class ConceptoWizardDialogComponent {
     ),
   });
 
-  // ─────────────── Señales reactivas ───────────────
-  /** Código del Tipo de Concepto (catálogo SISPER) elegido por RR.HH. */
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ SeÃ±ales reactivas â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  /** CÃ³digo del Tipo de Concepto (catÃ¡logo SISPER) elegido por RR.HH. */
   private readonly tipoConceptoInterno = toSignal(
     this.basicosForm.controls.tipoConceptoInterno.valueChanges,
     { initialValue: this.basicosForm.controls.tipoConceptoInterno.value },
   );
 
-  /** Ítem del catálogo seleccionado (o null si aún no se elige / no carga). */
+  /** Ãtem del catÃ¡logo seleccionado (o null si aÃºn no se elige / no carga). */
   readonly itemTipoInterno = computed<ConceptoTipoInterno | null>(() => {
     const codigo = this.tipoConceptoInterno();
     if (!codigo) return null;
     return this.tiposConcepto().find((t) => t.codigo === codigo) ?? null;
   });
 
-  /** Clasificación del motor derivada del Tipo de Concepto elegido (§13). */
+  /** ClasificaciÃ³n del motor derivada del Tipo de Concepto elegido (Â§13). */
   private readonly tipoConcepto = computed<ConceptoPlanillaTipoConcepto | null>(
     () => this.itemTipoInterno()?.clasificacionMotor ?? null,
   );
 
-  /** Etiqueta + efecto de la clasificación del motor para mostrar a RR.HH. */
+  /** Etiqueta + efecto de la clasificaciÃ³n del motor para mostrar a RR.HH. */
   readonly clasificacionMotor = computed(() => {
     const clasif = this.tipoConcepto();
     return clasif ? this.clasificacionMotorInfo[clasif] : null;
@@ -348,16 +473,16 @@ export class ConceptoWizardDialogComponent {
   });
 
   /**
-   * Visibilidad condicional de campos (función pura, testeable). Deriva de la
-   * `clasificacionMotor` del Tipo de Concepto elegido (§13).
+   * Visibilidad condicional de campos (funciÃ³n pura, testeable). Deriva de la
+   * `clasificacionMotor` del Tipo de Concepto elegido (Â§13).
    */
   readonly visibilidad = computed(() => derivarVisibilidad(this.tipoConcepto()));
 
   /** Tipo legacy auto-derivado (INGRESO/DESCUENTO) para el payload. */
   readonly tipoLegacy = computed(() => derivarTipoLegacy(this.tipoConcepto()));
 
-  // ─────────────── Vista previa del efecto (P4 — §14) ───────────────
-  /** Modo de cálculo elegido (reactivo, para la vista previa). */
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ Vista previa del efecto (P4 â€” Â§14) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  /** Modo de cÃ¡lculo elegido (reactivo, para la vista previa). */
   private readonly modoCalculo = toSignal(
     this.calculoForm.controls.modoCalculo.valueChanges,
     { initialValue: this.calculoForm.controls.modoCalculo.value },
@@ -368,13 +493,19 @@ export class ConceptoWizardDialogComponent {
     initialValue: this.calculoForm.getRawValue(),
   });
 
-  /** Códigos de planilla seleccionados (reactivos, para chips y vista previa). */
+  /** CÃ³digos de planilla seleccionados (reactivos, para chips y vista previa). */
   private readonly planillaTiposValue = toSignal(
     this.aplicabilidadForm.controls.planillaTipos.valueChanges,
     { initialValue: this.aplicabilidadForm.controls.planillaTipos.value },
   );
 
-  /** Nombres de las planillas asociadas (código → nombre del catálogo, §15). */
+  /** "SI" = el concepto va a planilla de pago → muestra/exige las planillas asociadas. */
+  readonly incluyeEnPlanilla = toSignal(
+    this.aplicabilidadForm.controls.incluyeEnPlanilla.valueChanges,
+    { initialValue: this.aplicabilidadForm.controls.incluyeEnPlanilla.value },
+  );
+
+  /** Nombres de las planillas asociadas (cÃ³digo â†’ nombre del catÃ¡logo, Â§15). */
   readonly planillasSeleccionadas = computed<readonly string[]>(() => {
     const cat = this.planillaTiposCatalogo();
     return this.planillaTiposValue().map(
@@ -383,8 +514,8 @@ export class ConceptoWizardDialogComponent {
   });
 
   /**
-   * Vista previa cualitativa del efecto en planilla (función PURA, testeable).
-   * Solo refleja afectaciones visibles para el tipo (las ocultas no se envían).
+   * Vista previa cualitativa del efecto en planilla (funciÃ³n PURA, testeable).
+   * Solo refleja afectaciones visibles para el tipo (las ocultas no se envÃ­an).
    */
   readonly vistaPrevia = computed<VistaPreviaEfecto>(() => {
     const cal = this.afectacionesValue();
@@ -403,9 +534,9 @@ export class ConceptoWizardDialogComponent {
   });
 
   /**
-   * Advertencia NO bloqueante (§14): el modo elegido es incoherente con la
-   * clasificación del motor. Ej.: un aporte o un concepto que el motor calcula
-   * marcado como "Monto fijo"/"Porcentaje" — sugerir "Resultado del motor".
+   * Advertencia NO bloqueante (Â§14): el modo elegido es incoherente con la
+   * clasificaciÃ³n del motor. Ej.: un aporte o un concepto que el motor calcula
+   * marcado como "Monto fijo"/"Porcentaje" â€” sugerir "Resultado del motor".
    */
   readonly modoIncoherente = computed<string | null>(() => {
     const clasif = this.tipoConcepto();
@@ -422,7 +553,7 @@ export class ConceptoWizardDialogComponent {
     return this.data.estadoActual ?? 'BORRADOR';
   });
 
-  /** Etiqueta de versión (solo display, modo configurar — P3 §12). */
+  /** Etiqueta de versiÃ³n (solo display, modo configurar â€” P3 Â§12). */
   readonly versionLabel = computed(() => {
     if (this.data.modo === 'crear' || this.data.version == null) return null;
     return `v${this.data.version}`;
@@ -432,11 +563,38 @@ export class ConceptoWizardDialogComponent {
     this.cargarTiposInterno();
     this.cargarPlanillaTipos();
     this.cargarRtps();
-    // Si MEF pasa a obligatorio según el tipo, reflejarlo en validadores.
-    this.basicosForm.controls.tipoConceptoInterno.valueChanges.subscribe(() => {
-      this.syncMefValidators();
-    });
+    this.precargarHomologacion();
+    this.inicializarBusquedaMgrh();
+    this.basicosForm.controls.tipoConceptoInterno.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        this.syncMefValidators();
+        this.sincronizarEstadoBusquedaMgrh();
+      });
     this.syncMefValidators();
+    this.sincronizarEstadoBusquedaMgrh();
+
+    // Gating planillas: "NO" oculta/vacía y quita el validador ≥1; "SI" lo exige.
+    this.aplicabilidadForm.controls.incluyeEnPlanilla.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((v) => this.sincronizarPlanillaTipos(v));
+    this.sincronizarPlanillaTipos(this.aplicabilidadForm.controls.incluyeEnPlanilla.value);
+  }
+
+  /**
+   * Sincroniza las planillas asociadas con la respuesta "¿se incluirá en planilla?":
+   * "SI" exige ≥1; "NO" limpia la selección y quita la obligatoriedad (solo
+   * configuración / cálculo / control, sin planilla de pago).
+   */
+  private sincronizarPlanillaTipos(incluye: 'SI' | 'NO'): void {
+    const ctrl = this.aplicabilidadForm.controls.planillaTipos;
+    if (incluye === 'SI') {
+      ctrl.setValidators([Validators.required, minSeleccion(1)]);
+    } else {
+      ctrl.clearValidators();
+      ctrl.setValue([], { emitEvent: false });
+    }
+    ctrl.updateValueAndValidity({ emitEvent: false });
   }
 
   private cargarTiposInterno(): void {
@@ -446,8 +604,8 @@ export class ConceptoWizardDialogComponent {
       next: (list) => {
         this.tiposConcepto.set(list);
         this.tipoInternoLoading.set(false);
-        // En edición el valor inicial ya está; ahora que conocemos su
-        // clasificación del motor, re-sincronizamos los validadores MEF.
+        // En ediciÃ³n el valor inicial ya estÃ¡; ahora que conocemos su
+        // clasificaciÃ³n del motor, re-sincronizamos los validadores MEF.
         this.syncMefValidators();
       },
       error: () => {
@@ -472,7 +630,7 @@ export class ConceptoWizardDialogComponent {
     });
   }
 
-  /** "Seleccionar todas" — marca todos los tipos del catálogo activo (§15). */
+  /** "Seleccionar todas" â€” marca todos los tipos del catÃ¡logo activo (Â§15). */
   seleccionarTodasPlanillas(): void {
     const codigos = this.planillaTiposCatalogo().map((t) => t.codigo);
     this.aplicabilidadForm.controls.planillaTipos.setValue(codigos);
@@ -494,6 +652,196 @@ export class ConceptoWizardDialogComponent {
     });
   }
 
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ HomologaciÃ³n MGRH / MEF â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+  /**
+   * Precarga el detalle del concepto MGRH homologado en ediciÃ³n (Â§F). Usa el
+   * resumen del row si llegÃ³; si solo hay FK, lo resuelve con una bÃºsqueda
+   * puntual por cÃ³digo (soloSeleccionables=false para no excluir homologaciones
+   * a registros no ordinarios ya existentes).
+   */
+  private precargarHomologacion(): void {
+    const resumen = this.data.mgrhResumen ?? null;
+    const fkId = this.data.initial?.catalogoConceptoMgrhId ?? null;
+    if (resumen) {
+      // El resumen no trae todos los campos oficiales; mostramos lo disponible y
+      // refrescamos con la bÃºsqueda puntual para completar el panel de detalle.
+      this.buscarPorCodigoParaPrecarga(resumen.codigoConceptoMgrh, resumen.tipo, fkId);
+    } else if (fkId !== null) {
+      this.mgrhId.set(fkId);
+    }
+  }
+
+  /** Resuelve el detalle completo del homologado por cÃ³digo + tipo (precarga). */
+  private buscarPorCodigoParaPrecarga(
+    codigo: string,
+    tipo: string,
+    fkId: number | null,
+  ): void {
+    this.catalogoMgrhApi
+      .buscar({ codigo, tipo, soloSeleccionables: false, soloVigentes: false }, 0, 20)
+      .subscribe({
+        next: (page) => {
+          const match =
+            page.content.find((c) => c.id === fkId) ??
+            page.content.find((c) => c.codigoConceptoMgrh === codigo && c.tipo === tipo) ??
+            null;
+          if (match) {
+            this.mgrhSeleccionado.set(match);
+            this.mgrhId.set(match.id);
+            this.mgrhBusqueda.setValue(this.mgrhOpcionLabel(match), { emitEvent: false });
+          } else if (fkId !== null) {
+            this.mgrhId.set(fkId);
+          }
+        },
+        error: () => {
+          if (fkId !== null) this.mgrhId.set(fkId);
+        },
+      });
+  }
+
+  private inicializarBusquedaMgrh(): void {
+    this.mgrhBusqueda.valueChanges
+      .pipe(
+        // Al seleccionar una opción, Material emite el OBJETO en valueChanges.
+        // Solo procesamos texto tecleado (string); así la selección no borra el
+        // candidato ni rompe puedeBuscarMgrh() con un .trim() sobre un objeto.
+        filter((texto): texto is string => typeof texto === 'string'),
+        debounceTime(300),
+        distinctUntilChanged(),
+        tap((texto) => this.prepararBusquedaMgrh(texto)),
+        filter((texto) => this.puedeBuscarMgrh(texto)),
+        switchMap((texto) => this.buscarOpcionesMgrh(texto)),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((items) => {
+        this.mgrhResultados.set(items);
+      });
+  }
+
+  private prepararBusquedaMgrh(texto: string): void {
+    const seleccionado = this.mgrhSeleccionado();
+    if (seleccionado && texto !== this.mgrhOpcionLabel(seleccionado)) {
+      this.mgrhSeleccionado.set(null);
+      this.mgrhId.set(null);
+    }
+    const candidato = this.mgrhCandidato();
+    if (candidato && texto !== this.mgrhOpcionLabel(candidato)) {
+      this.mgrhCandidato.set(null);
+    }
+    this.mgrhError.set(false);
+    this.mgrhBuscado.set(false);
+    this.mgrhResultados.set([]);
+    if (!this.puedeBuscarMgrh(texto)) {
+      this.mgrhBuscando.set(false);
+    }
+  }
+
+  private puedeBuscarMgrh(texto: string): boolean {
+    return !!this.tipoLocalMgrh() && texto.trim().length >= 2;
+  }
+
+  private buscarOpcionesMgrh(texto: string) {
+    const tipoLocal = this.tipoLocalMgrh();
+    if (!tipoLocal) return of([] as CatalogoConceptoMgrh[]);
+
+    this.mgrhBuscando.set(true);
+    return this.catalogoMgrhApi
+      .buscar(
+        {
+          texto,
+          tipoLocal: tipoLocal.local,
+          soloActivos: true,
+          limit: this.MGRH_AUTOCOMPLETE_LIMIT,
+          soloSeleccionables: true,
+          soloVigentes: true,
+        },
+        0,
+        this.MGRH_AUTOCOMPLETE_LIMIT,
+      )
+      .pipe(
+        tap(() => this.mgrhBuscado.set(true)),
+        map((page) => page.content),
+        catchError(() => {
+          this.mgrhError.set(true);
+          this.mgrhBuscado.set(true);
+          return of([] as CatalogoConceptoMgrh[]);
+        }),
+        finalize(() => this.mgrhBuscando.set(false)),
+      );
+  }
+
+  private sincronizarEstadoBusquedaMgrh(): void {
+    if (this.tipoLocalMgrh()) {
+      this.mgrhBusqueda.enable({ emitEvent: false });
+      return;
+    }
+    this.mgrhBusqueda.disable({ emitEvent: false });
+    this.mgrhBusqueda.setValue('', { emitEvent: false });
+    this.mgrhResultados.set([]);
+    this.mgrhBuscando.set(false);
+    this.mgrhBuscado.set(false);
+    this.mgrhError.set(false);
+  }
+
+  limpiarBusquedaMgrh(): void {
+    this.mgrhBusqueda.setValue('');
+    this.mgrhResultados.set([]);
+    this.mgrhBuscado.set(false);
+    this.mgrhError.set(false);
+    this.mgrhCandidato.set(null);
+  }
+
+  /** Paso 1 — elige un candidato del autocomplete (NO homologa todavía). */
+  elegirCandidatoMgrh(item: CatalogoConceptoMgrh): void {
+    this.mgrhCandidato.set(item);
+    this.mgrhBusqueda.setValue(this.mgrhOpcionLabel(item), { emitEvent: false });
+    this.mgrhResultados.set([]);
+  }
+
+  /** Paso 2 — aplica el candidato: el concepto pasa a "Homologado" (antes de guardar). */
+  aplicarHomologacion(): void {
+    const c = this.mgrhCandidato();
+    if (!c) return;
+    this.mgrhSeleccionado.set(c);
+    this.mgrhId.set(c.id);
+    this.mgrhCandidato.set(null);
+  }
+
+  /** Cambiar: limpia la selección para buscar otra opción (conserva la observación). */
+  cambiarHomologacion(): void {
+    this.mgrhSeleccionado.set(null);
+    this.mgrhId.set(null);
+    this.limpiarBusquedaMgrh();
+  }
+
+  /** Quita la homologacion: vuelve a Pendiente y permite guardar sin FK. */
+  quitarHomologacion(): void {
+    this.mgrhSeleccionado.set(null);
+    this.mgrhId.set(null);
+    this.limpiarBusquedaMgrh();
+  }
+
+  /** Texto visible de cada opcion del autocomplete. */
+  mgrhOpcionLabel(item: CatalogoConceptoMgrh | null): string {
+    if (!item) return '';
+    const textoOficial = item.detalleNorma?.trim() || item.descripcionNorma?.trim() || 'Sin descripcion oficial';
+    return `[${item.codigoConceptoMgrh}] ${textoOficial} | ${item.tipo} | ${item.estado || 'Sin estado'}`;
+  }
+
+  private normalizarEstadoMgrh(estado: string | null): string {
+    return (estado ?? '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .trim()
+      .toUpperCase();
+  }
+
+  /** Etiqueta legible del TIPO MGRH (para la advertencia de compatibilidad). */
+  labelTipoMgrh(tipo: string | null): string {
+    return this.tiposMgrh.find((t) => t.value === tipo)?.label ?? (tipo ?? '—');
+  }
+
   private syncMefValidators(): void {
     const ctrl = this.clasificacionForm.controls.codigoMef;
     if (this.visibilidad().codigoMefObligatorio) {
@@ -502,7 +850,7 @@ export class ConceptoWizardDialogComponent {
       ctrl.removeValidators(Validators.required);
     }
     // Revalida y propaga el estado del grupo para que `puedeGuardar` reaccione
-    // al cambio de obligatoriedad del código MEF según el tipo de concepto.
+    // al cambio de obligatoriedad del cÃ³digo MEF segÃºn el tipo de concepto.
     ctrl.updateValueAndValidity();
     this.clasificacionForm.updateValueAndValidity();
   }
@@ -511,7 +859,7 @@ export class ConceptoWizardDialogComponent {
     this.rtpsFilter.set((ev.target as HTMLInputElement).value);
   }
 
-  /** Descripción legible de la opción RTPS seleccionada (para la revisión). */
+  /** DescripciÃ³n legible de la opciÃ³n RTPS seleccionada (para la revisiÃ³n). */
   rtpsDescripcion(codigo: string | null): string | null {
     if (!codigo) return null;
     const found = this.rtpsList().find((r) => r.codigo === codigo);
@@ -528,7 +876,7 @@ export class ConceptoWizardDialogComponent {
     return values.join(', ');
   }
 
-  // ─────────────── Validación / advertencias TAB 5 ───────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ ValidaciÃ³n / advertencias TAB 5 â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   /** Validez global: todos los pasos con campos obligatorios completos. */
   readonly puedeGuardar = computed(() => {
@@ -540,7 +888,7 @@ export class ConceptoWizardDialogComponent {
     );
   });
 
-  /** Advertencias normativas no bloqueantes para el TAB Revisión. */
+  /** Advertencias normativas no bloqueantes para el TAB RevisiÃ³n. */
   advertencias(): readonly string[] {
     const out: string[] = [];
     const v = this.visibilidad();
@@ -559,7 +907,7 @@ export class ConceptoWizardDialogComponent {
     return out;
   }
 
-  // ─────────────── Submit ───────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ Submit â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   onSubmit(): void {
     this.basicosForm.markAllAsTouched();
@@ -579,17 +927,17 @@ export class ConceptoWizardDialogComponent {
     const v = this.visibilidad();
 
     return {
-      // Alta: sin código (lo genera el backend, §13). Edición: se conserva.
+      // Alta: sin cÃ³digo (lo genera el backend, Â§13). EdiciÃ³n: se conserva.
       codigo: this.codigoExistente,
       nombre: b.nombre.trim().toUpperCase(),
       naturaleza: b.naturaleza.trim().toUpperCase(),
-      // El server deriva `tipoConcepto` desde `tipoConceptoInterno`; aquí solo
-      // enviamos el tipo legacy (INGRESO/DESCUENTO) y el código del catálogo.
+      // El server deriva `tipoConcepto` desde `tipoConceptoInterno`; aquÃ­ solo
+      // enviamos el tipo legacy (INGRESO/DESCUENTO) y el cÃ³digo del catÃ¡logo.
       tipo: this.tipoLegacy(),
       tipoConceptoInterno: b.tipoConceptoInterno,
 
-      // P4 — §14: el modo de cálculo se persiste (metadata/intención). El motor
-      // NO se ramifica por este valor; solo documenta cómo se origina el monto.
+      // P4 â€” Â§14: el modo de cÃ¡lculo se persiste (metadata/intenciÃ³n). El motor
+      // NO se ramifica por este valor; solo documenta cÃ³mo se origina el monto.
       modoCalculo: cal.modoCalculo,
 
       esProrrateable: v.prorrateable ? this.sn(cal.esProrrateable) : NO,
@@ -603,8 +951,9 @@ export class ConceptoWizardDialogComponent {
       fechaVigIni: apl.fechaVigIni || null,
       fechaVigFin: apl.fechaVigFin || null,
 
-      // SPEC §15 (Fase A): ≥1 código de tipo de planilla (el backend lo exige).
+      // SPEC Â§15 (Fase A): â‰¥1 cÃ³digo de tipo de planilla (el backend lo exige).
       planillaTipos: [...apl.planillaTipos],
+      incluyeEnPlanilla: apl.incluyeEnPlanilla === 'NO' ? 'N' : 'S',
 
       rtpsCodigo: this.nullable(cla.rtpsCodigo),
       codigoMef: this.nullable(cla.codigoMef),
@@ -612,10 +961,27 @@ export class ConceptoWizardDialogComponent {
       codigoPlameSunat: this.nullable(cla.codigoPlameSunat),
       codigoMcpp: this.nullable(cla.codigoMcpp),
       codigoTributoSunat: v.codigoTributoSunat ? this.nullable(cla.codigoTributoSunat) : null,
+
+      // SPEC_HOMOLOGACION_MGRH Â§C.2/Â§D5: FK Ãºnica nullable al catÃ¡logo MGRH.
+      catalogoConceptoMgrhId: this.mgrhId(),
+      observacionHomologacionMgrh: this.mgrhObservacion.value.trim() || null,
     };
   }
 
-  // ─────────────── Helpers ───────────────
+  /** LÃ­nea de homologaciÃ³n para el resumen del TAB RevisiÃ³n (Â§G). */
+  readonly mgrhResumenLinea = computed<string | null>(() => {
+    const sel = this.mgrhSeleccionado();
+    if (sel) {
+      const desc = sel.descripcionNorma ?? '';
+      return desc
+        ? `${sel.codigoConceptoMgrh} — ${desc}`
+        : sel.codigoConceptoMgrh;
+    }
+    // Homologado por FK pero sin detalle cargado aÃºn (precarga sin resumen).
+    return this.mgrhId() !== null ? 'Homologado' : null;
+  });
+
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   private sn(value: boolean): string {
     return value ? SI : NO;

@@ -187,12 +187,19 @@ describe('filterVisibleNavItems (Spec 009 — 5 módulos + Inicio)', () => {
     expect(conceptos?.comingSoon).toBeFalsy();
   });
 
-  it('Planilla expone sus sub-items navegables (incluye Configuración Anual, Carga de asistencia + subrama Subsidios, Suspensiones/Licencias y MCPP)', () => {
+  it('Planilla agrupa Generación masiva/individual + Asistente de Recálculo bajo "Procesar planilla" y expone sus rutas navegables', () => {
     const r = filterVisibleNavItems(MAIN_NAV_ITEMS, [], ['ADMIN']);
     const pla = r.find((i) => i.label === 'Planilla');
-    expect(pla?.children?.length).toBe(13);
-    expect(pla?.children?.every((c) => !c.comingSoon)).toBe(true);
-    expect(pla?.children?.map((c) => c.route).sort()).toEqual(
+    // 9 ítems de primer nivel: 7 directos + subgrupo "Procesar planilla" + Movimientos.
+    expect(pla?.children?.length).toBe(9);
+    const procesar = pla?.children?.find((c) => c.label === 'Procesar planilla');
+    expect(procesar?.children?.map((c) => c.route)).toEqual([
+      '/planilla/generacion-masiva',
+      '/planilla/generacion-individual',
+      '/planilla/recalculo',
+    ]);
+    // Todas las rutas navegables (hojas), incluyendo las anidadas en "Procesar planilla".
+    expect(flattenNavLeaves(pla?.children).map((c) => c.route).sort()).toEqual(
       [
         '/planilla/configuracion-cas',
         '/planilla/conceptos',
@@ -205,8 +212,6 @@ describe('filterVisibleNavItems (Spec 009 — 5 módulos + Inicio)', () => {
         '/planilla/generacion-masiva',
         '/planilla/generacion-individual',
         '/planilla/movimientos',
-        '/planilla/suspensiones',
-        '/planilla/mcpp',
       ].sort(),
     );
   });

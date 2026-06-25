@@ -147,6 +147,12 @@
   font-weight: 500;
 }
 
+/* Homologación MGRH / MEF: chip secundario bajo el estado de ciclo de vida. */
+.concepto-chip--mgrh {
+  display: inline-block;
+  margin-top: 4px;
+}
+
 .concepto-chip[data-severity='success'] {
   background: var(--sisrh-success-100);
   color: var(--sisrh-success);

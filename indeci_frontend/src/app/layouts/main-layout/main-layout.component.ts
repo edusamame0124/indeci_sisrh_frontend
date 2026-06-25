@@ -107,6 +107,9 @@ import { flattenNavLeaves } from '../../core/models/main-nav-item.model';
                     </div>
                   }
                   @for (c of item.children; track trackChildKey(c)) {
+                    @if (c.sectionHeader) {
+                      <p class="shell__nav-section" role="presentation">{{ c.sectionHeader }}</p>
+                    }
                     @if (c.children?.length) {
                       <mat-expansion-panel
                         class="shell__nav-subpanel"
@@ -491,6 +494,23 @@ import { flattenNavLeaves } from '../../core/models/main-nav-item.model';
         width: 1rem !important;
         height: 1rem !important;
         opacity: 0.85;
+      }
+      /* Cabecera de sección dentro de un grupo (divisor no clickeable). */
+      .shell__nav-section {
+        margin: 0.5rem 0.75rem 0.125rem;
+        padding-top: 0.25rem;
+        border-top: 1px solid var(--sisrh-border-soft, #e7ecf2);
+        font-size: 0.625rem;
+        font-weight: 700;
+        letter-spacing: 0.07em;
+        text-transform: uppercase;
+        color: var(--sisrh-color-muted, #64748b);
+      }
+      /* La primera sección del grupo no necesita borde superior. */
+      .shell__nav-panel .mat-expansion-panel-body > .shell__nav-section:first-child {
+        margin-top: 0;
+        padding-top: 0;
+        border-top: none;
       }
       :host ::ng-deep .shell__nav-subpanel .mat-expansion-panel-body {
         padding: 0 2px 4px;

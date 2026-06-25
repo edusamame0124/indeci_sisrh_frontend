@@ -73,6 +73,14 @@
   grid-column: 1 / -1;
 }
 
+/* Pregunta "¿se incluirá en planilla de pago?" — radios en columna. */
+.wiz-incluye__group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
 .wiz-rtps {
   width: 100%;
 }
@@ -439,6 +447,237 @@
   text-align: center;
 }
 
+/* ============================ HOMOLOGACIÓN MGRH / MEF ============================ */
+
+.wiz-mgrh__intro {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.wiz-mgrh__intro .wiz-step-hint {
+  flex: 1 1 320px;
+}
+
+.wiz-mgrh__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--sisrh-warning);
+  background: var(--sisrh-warning-100);
+  border: 1px solid #f0d8a0;
+}
+
+.wiz-mgrh__chip--ok {
+  color: var(--sisrh-success);
+  background: var(--sisrh-success-100, #e7f5ee);
+  border-color: #b7e0c7;
+}
+
+.wiz-mgrh__chip mat-icon {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+}
+
+.wiz-mgrh__buscador-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+/* ---- Resultados ---- */
+
+.wiz-mgrh__estado {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 16px 12px;
+  font-size: 13px;
+  color: var(--sisrh-text-muted);
+  background: var(--sisrh-surface-muted);
+  border: 1px dashed var(--sisrh-border);
+  border-radius: 8px;
+}
+
+.wiz-mgrh__estado mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+}
+
+.wiz-mgrh__estado--error {
+  color: #8a5a12;
+  background: var(--sisrh-warning-100);
+  border-color: #f0d8a0;
+  border-style: solid;
+}
+
+.wiz-mgrh__estado--idle {
+  border-style: solid;
+}
+
+.wiz-mgrh__table-wrap {
+  border: 1px solid var(--sisrh-border);
+  border-radius: 8px;
+  overflow: auto;
+}
+
+.wiz-mgrh__table {
+  width: 100%;
+  background: var(--sisrh-surface);
+}
+
+.wiz-mgrh__table th.mat-mdc-header-cell {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--sisrh-text-muted);
+  font-weight: 600;
+}
+
+.wiz-mgrh__table td.mat-mdc-cell {
+  font-size: 13px;
+  color: var(--sisrh-text);
+}
+
+.wiz-mgrh__codigo {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.wiz-mgrh__detalle {
+  max-width: 320px;
+}
+
+.wiz-mgrh__detalle span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wiz-mgrh__row {
+  cursor: pointer;
+}
+
+.wiz-mgrh__row:hover {
+  background: var(--sisrh-primary-100);
+}
+
+.wiz-mgrh__row:focus-visible {
+  outline: 2px solid var(--sisrh-focus, #2563eb);
+  outline-offset: -2px;
+}
+
+.wiz-mgrh__row--sel,
+.wiz-mgrh__row--sel:hover {
+  background: var(--sisrh-info-100);
+  box-shadow: inset 3px 0 0 var(--sisrh-info);
+}
+
+/* ---- Panel detalle ---- */
+
+.wiz-mgrh__detalle-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.wiz-mgrh__detalle-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.wiz-mgrh__detalle-head > div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.wiz-mgrh__detalle-head mat-icon {
+  color: var(--sisrh-success);
+}
+
+.wiz-mgrh__detalle-head h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--sisrh-primary);
+}
+
+/* Acciones del detalle: "Cambiar" + "Quitar" en una sola fila. */
+.wiz-mgrh__detalle-acciones {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Observación interna de homologación: ancho completo del grid. */
+.wiz-mgrh__obs {
+  width: 100%;
+}
+
+/* Candidato elegido (paso 1) — banda con CTA "Aplicar" antes de homologar. */
+.wiz-mgrh__candidato {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 12px 16px;
+  border: 1px solid var(--sisrh-primary, #1565c0);
+  border-radius: 8px;
+  background: var(--sisrh-primary-50, #e8f0fe);
+}
+
+.wiz-mgrh__candidato-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.wiz-mgrh__candidato-info > div {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.wiz-mgrh__candidato-info strong {
+  font-size: 14px;
+  color: var(--sisrh-primary, #1565c0);
+  word-break: break-word;
+}
+
+.wiz-mgrh__candidato-info span {
+  font-size: 12px;
+  color: var(--sisrh-text-muted, #5f6368);
+}
+
+/* El detalle reusa .wiz-resumen; restablece el borde inferior que el resumen
+   del TAB Revisión retira en sus últimas 2 filas. */
+.wiz-mgrh__detalle-grid > div:nth-last-child(-n + 2) {
+  border-bottom: 1px solid var(--sisrh-border-soft);
+}
+
+.wiz-mgrh__detalle-grid > div:last-child {
+  border-bottom: none;
+}
+
 /* ============================ RESPONSIVE ============================ */
 
 @media (max-width: 600px) {
@@ -462,5 +701,81 @@
 
   .wiz-resumen > div:last-child {
     border-bottom: none;
+  }
+}
+
+.wiz-mgrh__chip--inactive {
+  color: #8a5a12;
+  background: var(--sisrh-warning-100);
+  border-color: #f0d8a0;
+}
+
+.wiz-mgrh__context {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--sisrh-surface-muted);
+  border: 1px solid var(--sisrh-border);
+  border-radius: 8px;
+}
+
+.wiz-mgrh__context div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.wiz-mgrh__context span {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--sisrh-text-muted);
+}
+
+.wiz-mgrh__context strong {
+  font-size: 14px;
+  color: var(--sisrh-text);
+}
+
+.wiz-mgrh__autocomplete {
+  width: 100%;
+}
+
+.wiz-mgrh__blocked,
+.wiz-mgrh__inactive-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0;
+  padding: 12px 14px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #8a5a12;
+  background: var(--sisrh-warning-100);
+  border: 1px solid #f0d8a0;
+  border-radius: 8px;
+}
+
+.wiz-mgrh__blocked mat-icon,
+.wiz-mgrh__inactive-alert mat-icon {
+  color: var(--sisrh-warning);
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.wiz-mgrh__detalle-panel--inactive {
+  border: 1px solid #f0d8a0;
+  border-radius: 8px;
+  padding: 12px;
+  background: #fffaf0;
+}
+
+@media (max-width: 600px) {
+  .wiz-mgrh__context {
+    grid-template-columns: 1fr;
   }
 }

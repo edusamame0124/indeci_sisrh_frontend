@@ -316,6 +316,16 @@
                 >
                   {{ labelEstado(estadoDe(row)) }}
                 </span>
+                <!-- Homologación MGRH / MEF (SPEC_HOMOLOGACION_MGRH §G — chip opcional) -->
+                <span
+                  class="concepto-chip concepto-chip--mini concepto-chip--mgrh"
+                  [attr.data-severity]="esHomologado(row) ? 'success' : 'warning'"
+                  [matTooltip]="esHomologado(row)
+                    ? 'Homologado con MGRH ' + (row.mgrhResumen?.codigoConceptoMgrh ?? '')
+                    : 'Pendiente de homologación MGRH / MEF'"
+                >
+                  MGRH: {{ esHomologado(row) ? 'Homologado' : 'Pendiente' }}
+                </span>
               </td>
             </ng-container>
 

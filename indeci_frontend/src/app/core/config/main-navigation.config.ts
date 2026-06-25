@@ -153,16 +153,17 @@ export const MAIN_NAV_ITEMS: readonly MainNavItem[] = [
     icon: 'calculate',
     requiredAnyRole: [...PLANILLA_OPERATIVA_ROLES],
     children: [
-      { label: 'Configuración Anual', route: '/planilla/configuracion-cas', icon: 'settings' },
+      { label: 'Configuración Anual', route: '/planilla/configuracion-cas', icon: 'settings', sectionHeader: 'Configuración' },
       { label: 'Conceptos de Planilla', route: '/planilla/conceptos', icon: 'receipt_long' },
       { label: 'Tipos de planilla', route: '/planilla/tipos-planilla', icon: 'splitscreen' },
-      { label: 'Periodos', route: '/planilla/periodos', icon: 'event' },
+      { label: 'Periodos', route: '/planilla/periodos', icon: 'event', sectionHeader: 'Operación mensual' },
       { label: 'Carga de asistencia', route: '/asistencia/carga', icon: 'event_available' },
       {
         label: 'Subsidios por Enfermedad e Incapacidad Temporal y Subsidios por Maternidad',
         route: '/asistencia/subsidios',
         icon: 'medical_services',
       },
+
       { label: 'Centro de Validaciones', route: '/planilla/validaciones', icon: 'rule' },
       { label: 'Asistente de Recálculo', route: '/planilla/recalculo', icon: 'tune' },
       { label: 'Generación masiva', route: '/planilla/generacion-masiva', icon: 'group_work' },
@@ -174,6 +175,20 @@ export const MAIN_NAV_ITEMS: readonly MainNavItem[] = [
       { label: 'Movimientos', route: '/planilla/movimientos', icon: 'list' },
       { label: 'Suspensiones / Licencias', route: '/planilla/suspensiones', icon: 'event_busy' },
       { label: 'MCPP', route: '/planilla/mcpp', icon: 'receipt' },
+
+      { label: 'Centro de Validaciones', route: '/planilla/validaciones', icon: 'rule', sectionHeader: 'Control y procesamiento' },
+      {
+        label: 'Procesar planilla',
+        icon: 'autorenew',
+        children: [
+          { label: 'Generación masiva', route: '/planilla/generacion-masiva', icon: 'group_work' },
+          { label: 'Generación individual', route: '/planilla/generacion-individual', icon: 'person_add' },
+          { label: 'Asistente de Recálculo', route: '/planilla/recalculo', icon: 'tune' },
+        ],
+      },
+      { label: 'Movimientos', route: '/planilla/movimientos', icon: 'list', sectionHeader: 'Resultados' },
+      // { label: 'Suspensiones / Licencias', route: '/planilla/suspensiones', icon: 'event_busy' },
+      // { label: 'MCPP', route: '/planilla/mcpp', icon: 'receipt' },
     ],
   },
 

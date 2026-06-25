@@ -8,6 +8,12 @@ export interface MainNavChildItem {
   /** Ruta del enlace. Omitir o vacío cuando el ítem solo agrupa `children`. */
   readonly route?: string;
   /**
+   * Cabecera de sección (label en mayúsculas, no clickeable) que se renderiza
+   * ANTES de este ítem para agrupar visualmente los siguientes. Solo presentación;
+   * no afecta rutas ni navegación.
+   */
+  readonly sectionHeader?: string;
+  /**
    * Si true: ruta aún no implementada. Se renderiza en gris con tooltip
    * "Próximamente" y sin link activo.
    */
