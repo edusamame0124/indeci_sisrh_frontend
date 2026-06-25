@@ -70,7 +70,7 @@ export class MisAsistenciasPage implements OnInit {
     const cacheKey = `${rango.fechaInicio}_${rango.fechaFin}`;
 
     const dataCache = this.cachePorMes.get(cacheKey);
-
+    console.log('RANGO ANGULAR:', rango);
     if (dataCache) {
       this.asistencias.set(dataCache);
       return;
@@ -79,17 +79,24 @@ export class MisAsistenciasPage implements OnInit {
     this.cargando.set(true);
 
     this.asistenciaApi.listarMisAsistencias(rango.fechaInicio, rango.fechaFin).subscribe({
-      next: (data) => {
-        const lista = Array.isArray(data) ? data : [];
+      next: (resp: any) => {
+        console.log('RESPUESTA COMPLETA:', resp);
+        console.log('DATA:', resp?.data);
+        console.log('CONTENT:', resp?.data?.content);
+        const lista: MiAsistenciaEmpleado[] = Array.isArray(resp)
+          ? resp
+          : Array.isArray(resp?.data)
+            ? resp.data
+            : [];
 
         this.cachePorMes.set(cacheKey, lista);
         this.asistencias.set(lista);
-
         this.cargando.set(false);
       },
       error: (err) => {
         console.error('Error cargando mis asistencias:', err);
         this.error.set('No se pudieron cargar sus asistencias.');
+        this.asistencias.set([]);
         this.cargando.set(false);
       },
     });
@@ -165,7 +172,12 @@ export class MisAsistenciasPage implements OnInit {
     asistencia?: MiAsistenciaEmpleado | null,
   ): EstadoDiaAsistenciaEmpleado {
     if (asistencia) {
-      const estadoRaw = asistencia.estadoAsistencia ?? asistencia.estado ?? asistencia.tipo ?? '';
+      const estadoRaw =
+        asistencia.tipoDia ??
+        asistencia.estadoAsistencia ??
+        asistencia.estado ??
+        asistencia.tipo ??
+        '';
 
       const estado = estadoRaw.toString().trim().toUpperCase().replaceAll(' ', '_');
 

@@ -12,7 +12,7 @@ export interface MiAsistenciaEmpleado {
   estado?: string | null;
   estadoAsistencia?: string | null;
   tipo?: string | null;
-
+tipoDia?: string;
   horaIngreso?: string | null;
   horaSalida?: string | null;
 
