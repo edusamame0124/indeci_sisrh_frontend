@@ -232,12 +232,15 @@ export class SolicitudesRrhhService {
 
   aprobarRrhh(
     idPapeleta: number,
-    file: File,
+    file: File | null,
     observacion: string,
   ): Observable<ApiResponse<unknown>> {
     const formData = new FormData();
 
-    formData.append('file', file);
+    if (file) {
+      formData.append('file', file);
+    }
+
     formData.append('observacion', observacion);
 
     return this.http.put<ApiResponse<unknown>>(

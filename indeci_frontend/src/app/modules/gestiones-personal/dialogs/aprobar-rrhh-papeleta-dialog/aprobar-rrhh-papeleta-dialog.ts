@@ -64,10 +64,7 @@ export class AprobarRrhhPapeletaDialogComponent {
   }
 
   aprobar(): void {
-    if (!this.archivo) {
-      this.error.set('Debe adjuntar la papeleta firmada por RRHH.');
-      return;
-    }
+    
 
     this.procesando.set(true);
     this.error.set(null);
