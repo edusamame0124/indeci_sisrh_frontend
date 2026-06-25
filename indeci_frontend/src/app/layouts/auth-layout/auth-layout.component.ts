@@ -68,7 +68,7 @@ import { RouterOutlet } from '@angular/router';
         font-weight: 400;
       }
 .auth-layout__content {
-  transform: translate(600px, 220px);
+  transform: translate(100px, 220px);
 }
       .auth-layout__footer {
         margin-top: 2rem;
