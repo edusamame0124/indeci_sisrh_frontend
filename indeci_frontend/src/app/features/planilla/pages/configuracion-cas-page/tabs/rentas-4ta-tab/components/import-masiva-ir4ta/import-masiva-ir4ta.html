@@ -1,0 +1,129 @@
+<section class="sisrh-page import-masiva">
+  <header class="sisrh-page-header">
+    <div>
+      <h1 class="import-masiva__title">Carga Masiva de Constancias de Suspensión (IR4TA)</h1>
+      <p class="import-masiva__desc">
+        Sube un archivo CSV con las constancias de suspensión. El archivo debe contener: <br />
+        <strong>TIPO_DOC; NRO_DOC; NRO_CONSTANCIA; FECHA_EMISION; FECHA_VIG_INI; FECHA_VIG_FIN; OBSERVACION</strong>
+      </p>
+    </div>
+  </header>
+
+  <mat-card class="sisrh-card import-masiva__card">
+    <mat-card-title class="import-masiva__card-title">Selección de archivo</mat-card-title>
+    <mat-card-content>
+      <div class="upload-zone" [ngClass]="{ 'upload-zone--has-file': fileToUpload() }">
+        @if (!fileToUpload()) {
+          <mat-icon class="upload-zone__icon">cloud_upload</mat-icon>
+          <p class="upload-zone__text">Arrastra el archivo CSV aquí o haz clic para seleccionar</p>
+          <input 
+            type="file" 
+            accept=".csv" 
+            class="upload-zone__input" 
+            (change)="onFileSelected($event)" 
+            [disabled]="isUploading()"
+            aria-label="Seleccionar archivo CSV"
+          />
+        } @else {
+          <mat-icon class="upload-zone__file-icon">description</mat-icon>
+          <div class="upload-zone__file-info">
+            <span class="upload-zone__filename">{{ fileToUpload()?.name }}</span>
+            <span class="upload-zone__filesize">{{ (fileToUpload()?.size! / 1024).toFixed(1) }} KB</span>
+          </div>
+          <button 
+            mat-icon-button 
+            color="warn" 
+            (click)="removeFile()" 
+            [disabled]="isUploading()"
+            matTooltip="Quitar archivo"
+            aria-label="Quitar archivo"
+          >
+            <mat-icon>delete</mat-icon>
+          </button>
+        }
+      </div>
+
+      @if (isUploading()) {
+        <div class="import-masiva__progress">
+          <p>Procesando y validando registros...</p>
+          <mat-progress-bar mode="indeterminate" color="primary"></mat-progress-bar>
+        </div>
+      }
+    </mat-card-content>
+    
+    <mat-card-actions class="import-masiva__actions" align="end">
+      <button 
+        mat-flat-button 
+        color="primary" 
+        class="import-masiva__submit-btn"
+        [disabled]="!fileToUpload() || isUploading()" 
+        (click)="upload()"
+      >
+        <mat-icon>upload_file</mat-icon>
+        Procesar Constancias
+      </button>
+    </mat-card-actions>
+  </mat-card>
+
+  @if (report()) {
+    <mat-card class="sisrh-card report-card">
+      <mat-card-title class="report__title">Resultado de la Importación</mat-card-title>
+      <mat-card-content>
+        <div class="report__stats">
+          <div class="stat-card stat-card--neutral">
+            <mat-icon class="stat-card__icon">receipt_long</mat-icon>
+            <div class="stat-card__content">
+              <span class="stat-card__label">Total Filas</span>
+              <span class="stat-card__value">{{ report().totalFilas }}</span>
+            </div>
+          </div>
+          <div class="stat-card stat-card--success">
+            <mat-icon class="stat-card__icon">check_circle</mat-icon>
+            <div class="stat-card__content">
+              <span class="stat-card__label">Procesados</span>
+              <span class="stat-card__value">{{ report().totalProcesados }}</span>
+            </div>
+          </div>
+          @if (report().totalErrores > 0) {
+            <div class="stat-card stat-card--error">
+              <mat-icon class="stat-card__icon">error</mat-icon>
+              <div class="stat-card__content">
+                <span class="stat-card__label">Errores</span>
+                <span class="stat-card__value">{{ report().totalErrores }}</span>
+              </div>
+            </div>
+          }
+        </div>
+
+        @if (report().filasError && report().filasError.length > 0) {
+          <div class="report__errors">
+            <h5 class="report__errors-title">
+              <mat-icon>warning</mat-icon>
+              Detalle de Errores Encontrados
+            </h5>
+            <div class="report__errors-container">
+              <table class="report__error-table">
+                <thead>
+                  <tr>
+                    <th>Fila</th>
+                    <th>Documento</th>
+                    <th>Motivo del Error</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (err of report().filasError; track err.numeroFila) {
+                    <tr>
+                      <td class="col-line">Fila {{ err.numeroFila }}</td>
+                      <td class="col-doc">{{ err.nroDoc }}</td>
+                      <td class="col-msg">{{ err.mensajeError }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        }
+      </mat-card-content>
+    </mat-card>
+  }
+</section>

@@ -14,38 +14,42 @@ describe('filterVisibleNavItems (Spec 009 — 5 módulos + Inicio)', () => {
     expect(r.map((i) => i.route)).toEqual(['/']);
   });
 
-  it('ADMIN ve todos los módulos (Inicio + Catálogos + Empleados + Gestiones del personal + Legajo Personal + Planilla + Portal + Reportes + Administración)', () => {
+  it('ADMIN ve todos los módulos (Inicio + Catálogos + Módulo Vinculación + Gestiones del personal + Legajo Personal + Teletrabajo + Mis asistencias + Planilla + Reportes + Administración)', () => {
     const r = filterVisibleNavItems(MAIN_NAV_ITEMS, [], ['ADMIN']);
     expect(r.map((i) => i.label)).toEqual([
       'Inicio',
       'Catálogos',
-      'Empleados',
+      'Módulo Vinculación',
       'Gestiones del personal',
       'Legajo Personal',
+      'Teletrabajo',
+      'Mis asistencias',
       'Planilla',
-      'Portal del empleado',
       'Reportes',
       'Administración',
+      'Portal del empleado',
     ]);
   });
 
   it('SUPER_ADMIN ve los 5 módulos completos', () => {
     const r = filterVisibleNavItems(MAIN_NAV_ITEMS, [], ['SUPER_ADMIN']);
     expect(r.find((i) => i.label === 'Catálogos')).toBeTruthy();
-    expect(r.find((i) => i.label === 'Empleados')).toBeTruthy();
+    expect(r.find((i) => i.label === 'Módulo Vinculación')).toBeTruthy();
     expect(r.find((i) => i.label === 'Planilla')).toBeTruthy();
     expect(r.find((i) => i.label === 'Reportes')).toBeTruthy();
     expect(r.find((i) => i.label === 'Administración')).toBeTruthy();
   });
 
-  it('RRHH_ADMIN (legacy) ve Inicio + Catálogos + Empleados + Legajo Personal + Planilla + Portal, NO Reportes ni Administración', () => {
+  it('RRHH_ADMIN (legacy) ve Inicio + Catálogos + Módulo Vinculación + Legajo Personal + Planilla + Portal, NO Reportes ni Administración', () => {
     const r = filterVisibleNavItems(MAIN_NAV_ITEMS, [], ['RRHH_ADMIN']);
     expect(r.map((i) => i.label)).toEqual([
       'Inicio',
       'Catálogos',
-      'Empleados',
+      'Módulo Vinculación',
       'Gestiones del personal',
       'Legajo Personal',
+      'Teletrabajo',
+      'Mis asistencias',
       'Planilla',
       'Portal del empleado',
     ]);
@@ -56,13 +60,15 @@ describe('filterVisibleNavItems (Spec 009 — 5 módulos + Inicio)', () => {
     expect(r.map((i) => i.label)).toEqual([
       'Inicio',
       'Catálogos',
-      'Empleados',
+      'Módulo Vinculación',
       'Gestiones del personal',
       'Legajo Personal',
+      'Teletrabajo',
+      'Mis asistencias',
       'Planilla',
-      'Portal del empleado',
       'Reportes',
       'Administración',
+      'Portal del empleado',
     ]);
   });
 
@@ -73,17 +79,19 @@ describe('filterVisibleNavItems (Spec 009 — 5 módulos + Inicio)', () => {
     expect(r.find((i) => i.label === 'Administración')).toBeUndefined();
   });
 
-  it('RRHH_CONSULTA ve Empleados + Legajo Personal + Planilla + Reportes (lectura), NO Administración', () => {
+  it('RRHH_CONSULTA ve Módulo Vinculación + Legajo Personal + Planilla + Reportes (lectura), NO Administración', () => {
     const r = filterVisibleNavItems(MAIN_NAV_ITEMS, [], ['RRHH_CONSULTA']);
     expect(r.map((i) => i.label)).toEqual([
       'Inicio',
       'Catálogos',
-      'Empleados',
+      'Módulo Vinculación',
       'Gestiones del personal',
       'Legajo Personal',
+      'Teletrabajo',
+      'Mis asistencias',
       'Planilla',
-      'Portal del empleado',
       'Reportes',
+      'Portal del empleado',
     ]);
   });
 
@@ -112,21 +120,14 @@ describe('filterVisibleNavItems (Spec 009 — 5 módulos + Inicio)', () => {
     expect(leaves.map((l) => l.label)).toEqual(['Bancos']);
   });
 
-  it('Empleados expone 10 sub-items con etiquetas del flujo (Spec 009 + B5 + F5.1 Cargo histórico + F5.2 Encargaturas)', () => {
+  it('Módulo Vinculación expone 3 sub-items con etiquetas del flujo', () => {
     const r = filterVisibleNavItems(MAIN_NAV_ITEMS, [], ['RRHH_ADMIN']);
-    const emp = r.find((i) => i.label === 'Empleados');
-    expect(emp?.children?.length).toBe(10);
+    const emp = r.find((i) => i.label === 'Módulo Vinculación');
+    expect(emp?.children?.length).toBe(3);
     expect(emp?.children?.map((c) => c.label)).toEqual([
       'Datos personales',
-      'Puesto laboral',
-      'Cargo histórico',
-      'Encargaturas',
-      'Cuenta bancaria',
-      'Configuración pensión',
-      'Configuración planilla',
-      'Conceptos asignados',
-      'Préstamos',
-      'Vacaciones',
+      'Eventos del período',
+      'Ficha 360',
     ]);
   });
 
@@ -148,20 +149,19 @@ describe('filterVisibleNavItems (Spec 009 — 5 módulos + Inicio)', () => {
     ]);
   });
 
-  it('Legajo Personal expone 11 sub-items navegables bajo /legajo/', () => {
+  it('Legajo Personal expone 1 sub-item navegable bajo /legajo/', () => {
     const r = filterVisibleNavItems(MAIN_NAV_ITEMS, [], ['ADMIN']);
     const legajo = r.find((i) => i.label === 'Legajo Personal');
-    expect(legajo?.children?.length).toBe(11);
+    expect(legajo?.children?.length).toBe(1);
     expect(legajo?.children?.every((c) => !c.comingSoon)).toBe(true);
     const routes = legajo?.children?.map((c) => c.route).filter((p): p is string => Boolean(p)) ?? [];
-    expect(routes.every((p) => p.startsWith('/legajo/'))).toBe(true);
-    expect(routes).toContain('/legajo/datos-generales');
-    expect(routes).toContain('/legajo/documentos-complementarios');
+    expect(routes.every((p) => p.startsWith('/legajo'))).toBe(true);
+    expect(routes).toContain('/legajo');
   });
 
-  it('Empleados usa rutas bajo /empleados/ (T131)', () => {
+  it('Módulo Vinculación usa rutas bajo /empleados/', () => {
     const r = filterVisibleNavItems(MAIN_NAV_ITEMS, [], ['ADMIN']);
-    const emp = r.find((i) => i.label === 'Empleados');
+    const emp = r.find((i) => i.label === 'Módulo Vinculación');
     const routes = emp?.children?.map((c) => c.route).filter((r): r is string => Boolean(r)) ?? [];
     expect(routes.every((p) => p.startsWith('/empleados/'))).toBe(true);
   });
@@ -180,38 +180,29 @@ describe('filterVisibleNavItems (Spec 009 — 5 módulos + Inicio)', () => {
     expect(spec009.every((c) => !c.comingSoon)).toBe(true);
   });
 
-  it('Conceptos asignados (Empleados) no está comingSoon tras T143', () => {
-    const r = filterVisibleNavItems(MAIN_NAV_ITEMS, [], ['ADMIN']);
-    const emp = r.find((i) => i.label === 'Empleados');
-    const conceptos = emp?.children?.find((c) => c.route === '/empleados/conceptos');
-    expect(conceptos?.comingSoon).toBeFalsy();
-  });
-
-  it('Planilla agrupa Generación masiva/individual + Asistente de Recálculo bajo "Procesar planilla" y expone sus rutas navegables', () => {
+  it('Planilla expone Centro de Validaciones, Generación masiva/individual y Asistente de Recálculo como menú directamente', () => {
     const r = filterVisibleNavItems(MAIN_NAV_ITEMS, [], ['ADMIN']);
     const pla = r.find((i) => i.label === 'Planilla');
-    // 9 ítems de primer nivel: 7 directos + subgrupo "Procesar planilla" + Movimientos.
-    expect(pla?.children?.length).toBe(9);
-    const procesar = pla?.children?.find((c) => c.label === 'Procesar planilla');
-    expect(procesar?.children?.map((c) => c.route)).toEqual([
-      '/planilla/generacion-masiva',
-      '/planilla/generacion-individual',
-      '/planilla/recalculo',
-    ]);
-    // Todas las rutas navegables (hojas), incluyendo las anidadas en "Procesar planilla".
+    // 12 ítems de primer nivel: todos directos en planilla.
+    expect(pla?.children?.length).toBe(12);
+    expect(pla?.children?.map((c) => c.route)).toContain('/planilla/generacion-masiva');
+    expect(pla?.children?.map((c) => c.route)).toContain('/planilla/generacion-individual');
+    expect(pla?.children?.map((c) => c.route)).toContain('/planilla/recalculo');
+    // Todas las rutas navegables (hojas).
     expect(flattenNavLeaves(pla?.children).map((c) => c.route).sort()).toEqual(
       [
         '/planilla/configuracion-cas',
         '/planilla/conceptos',
-        '/planilla/tipos-planilla',
         '/planilla/periodos',
         '/asistencia/carga',
         '/asistencia/subsidios',
+        '/planilla/suspensiones',
         '/planilla/validaciones',
         '/planilla/recalculo',
         '/planilla/generacion-masiva',
         '/planilla/generacion-individual',
         '/planilla/movimientos',
+        '/planilla/mcpp',
       ].sort(),
     );
   });

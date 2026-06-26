@@ -1,13 +1,13 @@
 import { TestBed } from '@angular/core/testing';
 
-import { LegajoState } from './legajo-state';
+import { LegajoStateService } from './legajo-state';
 
-describe('LegajoState', () => {
-  let service: LegajoState;
+describe('LegajoStateService', () => {
+  let service: LegajoStateService;
 
   beforeEach(() => {
     TestBed.configureTestingModule({});
-    service = TestBed.inject(LegajoState);
+    service = TestBed.inject(LegajoStateService);
   });
 
   it('should be created', () => {

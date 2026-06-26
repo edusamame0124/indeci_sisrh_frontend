@@ -17,7 +17,9 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { Suspension4taApiService } from '../../../../services/suspension4ta-api.service';
+import { AcumuladoDetalleModalComponent } from '../acumulado-detalle-modal/acumulado-detalle-modal.component';
 import { NotificacionService } from '../../../../../../core/services/notificacion.service';
 import { ErrorMessageService } from '../../../../../../core/services/error-message.service';
 import { isErrorResponse } from '../../../../../../core/models/error-response.model';
@@ -47,6 +49,7 @@ import type {
     MatInputModule,
     MatSelectModule,
     MatProgressSpinnerModule,
+    MatDialogModule,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './control-anual-tab.component.html',
@@ -58,6 +61,7 @@ export class ControlAnualTabComponent {
   private readonly notif = inject(NotificacionService);
   private readonly errors = inject(ErrorMessageService);
   private readonly snack = inject(MatSnackBar);
+  private readonly dialog = inject(MatDialog);
 
   /** Empleado cuyo control se muestra. Dispara la carga al cambiar. */
   readonly empleadoId = input.required<number>();
@@ -171,6 +175,26 @@ export class ControlAnualTabComponent {
           this.snack.open(this.traducir(err), 'Cerrar', { duration: 7000 });
         },
       });
+  }
+
+  verDetalleAcumulado(): void {
+    const eid = this.empleadoId();
+    if (!eid || this.saving()) return;
+    this.saving.set(true);
+    
+    this.api.obtenerDetalleAcumulado(eid, this.anio()).subscribe({
+      next: (data) => {
+        this.saving.set(false);
+        this.dialog.open(AcumuladoDetalleModalComponent, {
+          width: '700px',
+          data: data,
+        });
+      },
+      error: (err: HttpErrorResponse) => {
+        this.saving.set(false);
+        this.snack.open(this.traducir(err), 'Cerrar', { duration: 7000 });
+      },
+    });
   }
 
   // ── Helpers de presentación ────────────────────────────────────────────

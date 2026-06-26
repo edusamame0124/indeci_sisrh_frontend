@@ -38,6 +38,13 @@
 
       <p class="ctrl-hero-label">Acumulado conocido por INDECI</p>
       <p class="ctrl-hero-monto sisrh-tabular">S/ {{ fmtMoneda(c.acumuladoIndeci) }}</p>
+      
+      <div style="margin-top: 8px; margin-bottom: 24px;">
+        <button mat-stroked-button (click)="verDetalleAcumulado()">
+          <mat-icon>visibility</mat-icon>
+          Ver detalle del Acumulado
+        </button>
+      </div>
 
       <dl class="ctrl-kv">
         <div>

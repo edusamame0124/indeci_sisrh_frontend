@@ -36,6 +36,7 @@ export interface AsistenciaDiariaRow {
   readonly papeletaMotivoRechazo: string | null;
   readonly papeletaDecisionUsuario: string | null;
   readonly papeletaDecisionFecha: string | null;
+  readonly tieneTeletrabajo?: boolean;
 }
 
 export interface AsistenciaDiariaFiltro {

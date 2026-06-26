@@ -29,9 +29,9 @@ export class PlanillaTipoApiService {
   }
 
   /** Alta de un tipo de planilla (PLA_WRITE). Rechaza código duplicado/blank (400). */
-  crear(body: PlanillaTipoInput): Observable<null> {
+  crear(body: PlanillaTipoInput): Observable<PlanillaTipo> {
     return this.http
-      .post<ApiResponse<null>>(PlanillaTipoApiService.BASE, body)
+      .post<ApiResponse<PlanillaTipo>>(PlanillaTipoApiService.BASE, body)
       .pipe(map(extractApiData));
   }
 

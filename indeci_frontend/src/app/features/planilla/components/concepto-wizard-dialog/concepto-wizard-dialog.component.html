@@ -221,7 +221,7 @@
             class="wiz-incluye__group"
             aria-label="¿Este concepto se incluirá en una planilla de pago institucional?"
           >
-            <mat-radio-button value="SI">Sí</mat-radio-button>
+            <mat-radio-button value="SI">Sí, participa en el cálculo o resultado de una planilla </mat-radio-button>
             <mat-radio-button value="NO">No, solo configuración / cálculo / control</mat-radio-button>
           </mat-radio-group>
         </fieldset>
@@ -264,26 +264,41 @@
             <p class="wiz-planillas__hint" id="wiz-planillas-hint">
               El concepto aparecerá en las planillas seleccionadas.
             </p>
-            <button
-              type="button"
-              mat-stroked-button
-              class="wiz-planillas__all"
-              (click)="seleccionarTodasPlanillas()"
-              [disabled]="planillaTiposLoading() || planillaTiposError() || planillaTiposCatalogo().length === 0"
-            >
-              <mat-icon aria-hidden="true">done_all</mat-icon>
-              Seleccionar todas
-            </button>
+            <div class="wiz-planillas__actions">
+              <button
+                type="button"
+                mat-stroked-button
+                class="wiz-planillas__add"
+                (click)="abrirNuevoTipoPlanilla()"
+              >
+                <mat-icon aria-hidden="true">add</mat-icon>
+                Nuevo tipo de planilla
+              </button>
+              <button
+                type="button"
+                mat-stroked-button
+                class="wiz-planillas__all"
+                (click)="seleccionarTodasPlanillas()"
+                [disabled]="planillaTiposLoading() || planillaTiposError() || planillaTiposCatalogo().length === 0"
+              >
+                <mat-icon aria-hidden="true">done_all</mat-icon>
+                Seleccionar todas
+              </button>
+            </div>
           </div>
 
           <mat-form-field appearance="outline" class="wiz-col-2">
-            <mat-label>Tipos de planilla</mat-label>
+            <mat-label>Planillas operativas asociadas</mat-label>
             <mat-select
               formControlName="planillaTipos"
               multiple
               aria-label="Tipos de planilla asociados"
               aria-describedby="wiz-planillas-hint"
+              class="wiz-planillas-select"
             >
+              <mat-select-trigger>
+                {{ planillasSeleccionadas().join(', ') }}
+              </mat-select-trigger>
               @if (planillaTiposLoading()) {
                 <mat-option disabled>Cargando catálogo de planillas…</mat-option>
               } @else if (planillaTiposError()) {
@@ -292,7 +307,21 @@
                 <mat-option disabled>No hay tipos de planilla registrados.</mat-option>
               } @else {
                 @for (p of planillaTiposCatalogo(); track p.codigo) {
-                  <mat-option [value]="p.codigo">{{ p.nombre }}</mat-option>
+                  <mat-option [value]="p.codigo" class="wiz-planilla-option">
+                    <div class="wiz-planilla-option-wrapper">
+                      <span class="wiz-planilla-text">{{ p.nombre }}</span>
+                      <button 
+                        mat-icon-button 
+                        type="button" 
+                        color="warn" 
+                        (click)="eliminarTipoPlanilla($event, p)" 
+                        aria-label="Eliminar tipo de planilla"
+                        class="wiz-planilla-delete"
+                      >
+                        <mat-icon>delete</mat-icon>
+                      </button>
+                    </div>
+                  </mat-option>
                 }
               }
             </mat-select>

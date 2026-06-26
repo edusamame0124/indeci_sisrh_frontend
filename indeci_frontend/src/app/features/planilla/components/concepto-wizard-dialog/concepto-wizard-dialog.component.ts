@@ -18,6 +18,7 @@ import {
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import {
   MAT_DIALOG_DATA,
+  MatDialog,
   MatDialogModule,
   MatDialogRef,
 } from '@angular/material/dialog';
@@ -42,6 +43,7 @@ import { UppercaseDirective } from '../../../../shared/directives/uppercase.dire
 import type { ConceptoRtps } from '../../models/concepto-rtps.model';
 import type { ConceptoTipoInterno } from '../../models/concepto-tipo-interno.model';
 import type { PlanillaTipo } from '../../models/planilla-tipo.model';
+import { PlanillaTipoFormDialogComponent } from '../planilla-tipo-form-dialog/planilla-tipo-form-dialog.component';
 import type { CatalogoConceptoMgrh } from '../../models/catalogo-mgrh.model';
 import type {
   ConceptoMgrhResumen,
@@ -147,6 +149,7 @@ export class ConceptoWizardDialogComponent {
     MatDialogRef<ConceptoWizardDialogComponent, ConceptoPlanillaInput | undefined>,
   );
   private readonly fb = inject(FormBuilder);
+  private readonly dialog = inject(MatDialog);
   private readonly rtpsApi = inject(ConceptoRtpsApiService);
   private readonly tipoInternoApi = inject(ConceptoTipoInternoApiService);
   private readonly planillaTipoApi = inject(PlanillaTipoApiService);
@@ -630,11 +633,58 @@ export class ConceptoWizardDialogComponent {
     });
   }
 
-  /** "Seleccionar todas" â€” marca todos los tipos del catÃ¡logo activo (Â§15). */
+  /** "Seleccionar todas" — marca todos los tipos del catálogo activo (§15). */
   seleccionarTodasPlanillas(): void {
     const codigos = this.planillaTiposCatalogo().map((t) => t.codigo);
     this.aplicabilidadForm.controls.planillaTipos.setValue(codigos);
     this.aplicabilidadForm.controls.planillaTipos.markAsDirty();
+  }
+
+  abrirNuevoTipoPlanilla(): void {
+    const dialogRef = this.dialog.open(PlanillaTipoFormDialogComponent, {
+      width: '450px',
+      data: {
+        title: 'Nuevo tipo de planilla',
+        modo: 'crear',
+        submitLabel: 'Guardar',
+        initial: null,
+      },
+    });
+
+    dialogRef.afterClosed().pipe(
+      filter(Boolean),
+      switchMap((payload) => this.planillaTipoApi.crear(payload as any))
+    ).subscribe({
+      next: (nuevo) => {
+        if (!nuevo) return;
+        // Recargar el catalogo y autoseleccionar
+        this.planillaTipoApi.listar().subscribe((list) => {
+          this.planillaTiposCatalogo.set(list);
+          const actuales = this.aplicabilidadForm.controls.planillaTipos.value;
+          this.aplicabilidadForm.controls.planillaTipos.setValue([...actuales, nuevo.codigo]);
+          this.aplicabilidadForm.controls.planillaTipos.markAsDirty();
+        });
+      },
+      error: () => {
+        // En un caso real mostraríamos un snackbar, por ahora solo ignoramos
+      }
+    });
+  }
+
+  eliminarTipoPlanilla(event: Event, p: PlanillaTipo): void {
+    event.stopPropagation();
+    if (!confirm(`¿Seguro de eliminar el tipo de planilla: ${p.nombre}?`)) {
+      return;
+    }
+    this.planillaTipoApi.eliminar(p.codigo).subscribe({
+      next: () => {
+        this.planillaTipoApi.listar().subscribe((list) => {
+          this.planillaTiposCatalogo.set(list);
+          const actuales = this.aplicabilidadForm.controls.planillaTipos.value;
+          this.aplicabilidadForm.controls.planillaTipos.setValue(actuales.filter(c => c !== p.codigo));
+        });
+      }
+    });
   }
 
   private cargarRtps(): void {

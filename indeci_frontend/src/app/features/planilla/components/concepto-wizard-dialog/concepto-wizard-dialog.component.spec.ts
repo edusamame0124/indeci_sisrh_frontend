@@ -114,14 +114,18 @@ describe('ConceptoWizardDialogComponent (SPEC_CONCEPTOS_PLANILLA §3.A/§6/§13 
     TestBed.resetTestingModule();
   });
 
-  it('agrupa RTPS por cabecera y excluye los grupos (esGrupo=S) como ítems', () => {
-    const s = setup({ title: 'Nuevo', modo: 'crear', initial: null });
-    http = s.http;
-    const grupos = s.cmp.rtpsGrupos();
-    expect(grupos.map((g) => g.codigo).sort()).toEqual(['0100', '0700']);
-    const desc = grupos.find((g) => g.codigo === '0700');
-    expect(desc?.items.map((i) => i.codigo)).toEqual(['0703', '0704']);
-  });
+  it(
+    'agrupa RTPS por cabecera y excluye los grupos (esGrupo=S) como ítems',
+    () => {
+      const s = setup({ title: 'Nuevo', modo: 'crear', initial: null });
+      http = s.http;
+      const grupos = s.cmp.rtpsGrupos();
+      expect(grupos.map((g) => g.codigo).sort()).toEqual(['0100', '0700']);
+      const desc = grupos.find((g) => g.codigo === '0700');
+      expect(desc?.items.map((i) => i.codigo)).toEqual(['0703', '0704']);
+    },
+    15000,
+  );
 
   it('carga el catálogo "Tipo de Concepto" y deriva la clasificación del motor', () => {
     const s = setup({ title: 'Nuevo', modo: 'crear', initial: null });

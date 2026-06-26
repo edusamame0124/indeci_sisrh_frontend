@@ -53,10 +53,10 @@ export interface ConceptoOptGroup {
 /** SISPER del Aporte Facultativo 0.5% — único concepto que se ingresa por %. */
 const SISPER_APORTE_FACULTATIVO = '613';
 
-/** 12 descuentos voluntarios SISPER (SPEC §4 M07). */
+/** 14 descuentos voluntarios SISPER (SPEC §4 M07). */
 const SISPER_VOLUNTARIOS: ReadonlySet<string> = new Set([
   '735', '722', '734', '703', '715', '727',
-  '726', '704', '725', '717', '613', '731',
+  '726', '704', '725', '717', '613', '731', '736', '737',
 ]);
 
 /** Ajustes especiales: judicial (716), diferencial (059/060), reintegro (041). */

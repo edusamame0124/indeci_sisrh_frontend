@@ -332,7 +332,7 @@ export class EmpleadoSuspension4taPageComponent implements OnInit {
 
   private esRegimenCas(regimen: string | null): boolean {
     if (!regimen) return false;
-    const codigo = regimen.trim().toUpperCase();
-    return codigo === 'CAS' || codigo === '1057';
+    const r = regimen.trim().toUpperCase();
+    return r.includes('CAS') || r.includes('1057') || r.includes('CONTRATO ADMINISTRATIVO DE SERVICIOS');
   }
 }

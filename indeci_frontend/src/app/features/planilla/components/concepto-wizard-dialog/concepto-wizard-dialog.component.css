@@ -185,7 +185,9 @@
   color: var(--sisrh-text-muted);
 }
 
-.wiz-planillas__all {
+.wiz-planillas__actions {
+  display: flex;
+  gap: 8px;
   flex: 0 0 auto;
 }
 
@@ -195,6 +197,29 @@
 
 .wiz-planillas__chips {
   margin-top: -4px;
+}
+
+.wiz-planilla-option-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.wiz-planilla-text {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wiz-planilla-delete {
+  transform: scale(0.85);
+  margin-right: -8px;
+  flex-shrink: 0;
+}
+
+::ng-deep .wiz-planilla-option .mdc-list-item__primary-text {
+  width: 100%;
 }
 
 /* ============================ RTPS SEARCH ============================ */

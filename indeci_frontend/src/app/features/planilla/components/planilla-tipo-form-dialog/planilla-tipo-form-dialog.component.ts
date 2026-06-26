@@ -9,6 +9,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { MatIconModule } from '@angular/material/icon';
 import type { PlanillaTipoInput } from '../../models/planilla-tipo.model';
 
 /** Datos de apertura del form-dialog (alta vs edición). */
@@ -23,8 +24,8 @@ export interface PlanillaTipoFormDialogData {
 
 /**
  * Form-dialog del catálogo "Tipo de planilla" (SPEC_CONCEPTOS_PLANILLA §15).
- * Alta/edición: código (PK, solo alta), nombre, orden y activo.
- * El código se normaliza a MAYÚSCULAS; el nombre se recorta y normaliza.
+ * Alta: nombre (3-120 chars), descripcion (max 300) y activo.
+ * El código y orden son generados por el backend.
  */
 @Component({
   selector: 'app-planilla-tipo-form-dialog',
@@ -36,6 +37,7 @@ export interface PlanillaTipoFormDialogData {
     MatCheckboxModule,
     MatFormFieldModule,
     MatInputModule,
+    MatIconModule,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './planilla-tipo-form-dialog.component.html',
@@ -49,22 +51,17 @@ export class PlanillaTipoFormDialogComponent {
   private readonly fb = inject(FormBuilder);
 
   readonly form = this.fb.group({
-    codigo: this.fb.nonNullable.control(this.data.initial?.codigo ?? '', {
-      validators: [Validators.required, Validators.maxLength(20)],
-    }),
     nombre: this.fb.nonNullable.control(this.data.initial?.nombre ?? '', {
-      validators: [Validators.required, Validators.maxLength(60)],
+      validators: [Validators.required, Validators.minLength(3), Validators.maxLength(120)],
     }),
-    orden: this.fb.nonNullable.control(this.data.initial?.orden ?? 1, {
-      validators: [Validators.required, Validators.min(0), Validators.max(999)],
+    descripcion: this.fb.control(this.data.initial?.descripcion ?? '', {
+      validators: [Validators.maxLength(300)],
     }),
     activo: this.fb.nonNullable.control((this.data.initial?.activo ?? 1) === 1),
   });
 
   constructor() {
-    if (this.data.modo === 'editar') {
-      this.form.controls.codigo.disable();
-    }
+    // Si estuviéramos editando un elemento existente, acá podríamos deshabilitar algo
   }
 
   onSubmit(): void {
@@ -74,10 +71,9 @@ export class PlanillaTipoFormDialogComponent {
     }
     const v = this.form.getRawValue();
     this.dialogRef.close({
-      codigo: v.codigo.trim().toUpperCase(),
-      nombre: v.nombre.trim().toUpperCase(),
-      orden: v.orden,
+      nombre: v.nombre.trim(),
+      descripcion: (v.descripcion && v.descripcion.trim().length > 0) ? v.descripcion.trim() : undefined,
       activo: v.activo ? 1 : 0,
-    });
+    } as PlanillaTipoInput);
   }
 }

@@ -32,11 +32,12 @@ import { isErrorResponse } from '../../../../core/models/error-response.model';
 import { EmpleadoFlowWarningBannerComponent } from '../../components/empleado-flow-warning-banner/empleado-flow-warning-banner.component';
 import { EmpleadoFlowService } from '../../services/empleado-flow.service';
 import { EmpleadoFlowBackendSyncService } from '../../services/empleado-flow-backend-sync.service';
-import { NumericOnlyDirective } from '../../../../shared/directives/numeric-only.directive';
 import { padAirhspCode } from '../../utils/pad-airhsp-code';
 import type { IncrementosDsResponse } from '../../models/incrementos-ds.model';
 import { IncrementosDsPanelComponent } from './components/incrementos-ds-panel/incrementos-ds-panel.component';
 import { ResumenRemuneracionCardComponent } from './components/resumen-remuneracion-card/resumen-remuneracion-card.component';
+import { TipoPersonaMefApiService } from '../../../planilla/services/tipo-persona-mef-api.service';
+import type { TipoPersonaMef } from '../../../planilla/models/tipo-persona-mef.model';
 
 const MONTO_INT_DIGITS = 5;
 const MONTO_MAX = 99999.99;
@@ -55,7 +56,6 @@ const AIRHSP_PATTERN = /^[0-9]{6}$/;
     MatSelectModule,
     MatButtonModule,
     MatProgressSpinnerModule,
-    NumericOnlyDirective,
     EmpleadoFlowWarningBannerComponent,
     IncrementosDsPanelComponent,
     ResumenRemuneracionCardComponent,
@@ -71,6 +71,7 @@ export class EmpleadoPlanillaFormPageComponent implements OnInit {
   private readonly personaApi = inject(PersonaApiService);
   private readonly planillaApi = inject(EmpleadoPlanillaApiService);
   private readonly catalogoApi = inject(CatalogoApiService);
+  private readonly tipoPersonaMefApi = inject(TipoPersonaMefApiService);
   private readonly snack = inject(MatSnackBar);
   private readonly notif = inject(NotificacionService);
   private readonly errors = inject(ErrorMessageService);
@@ -90,15 +91,12 @@ export class EmpleadoPlanillaFormPageComponent implements OnInit {
   readonly regimenes = signal<readonly RegimenLaboral[]>([]);
   readonly tiposContrato = signal<readonly TipoContrato[]>([]);
   readonly condiciones = signal<readonly CondicionLaboral[]>([]);
+  readonly tiposPersonaMef = signal<readonly TipoPersonaMef[]>([]);
 
   readonly form = this.fb.group({
     regimenLaboralId: this.fb.control<number | null>(null, [Validators.required]),
     tipoContratoId: this.fb.control<number | null>(null),
     condicionLaboralId: this.fb.control<number | null>(null),
-    codigoAirhsp: this.fb.control<string>('', [
-      Validators.required,
-      Validators.pattern(AIRHSP_PATTERN),
-    ]),
     montoContratado: this.fb.control<number | null>(null, [
       Validators.required,
       Validators.min(0.01),
@@ -110,6 +108,8 @@ export class EmpleadoPlanillaFormPageComponent implements OnInit {
       Validators.max(MONTO_MAX),
     ]),
     numHijos: this.fb.control<number | null>(null, [Validators.min(0)]),
+    tipoPersonaMefId: this.fb.control<number | null>(null),
+    registroPlazaAirhsp: this.fb.control<string>(''),
   });
 
   readonly tieneHijos = computed(() => {
@@ -227,6 +227,10 @@ export class EmpleadoPlanillaFormPageComponent implements OnInit {
       next: (list) => this.condiciones.set(list),
       error: () => this.condiciones.set([]),
     });
+    this.tipoPersonaMefApi.listarActivos().subscribe({
+      next: (list) => this.tiposPersonaMef.set(list),
+      error: () => this.tiposPersonaMef.set([]),
+    });
   }
 
   private patchFromList(empleadoId: number, targetId: number): void {
@@ -243,10 +247,11 @@ export class EmpleadoPlanillaFormPageComponent implements OnInit {
           regimenLaboralId: row.regimenLaboralId,
           tipoContratoId: row.tipoContratoId,
           condicionLaboralId: row.condicionLaboralId,
-          codigoAirhsp: row.codigoAirhsp ?? '',
           montoContratado,
           sueldoBasico: row.sueldoBasico,
           numHijos: row.numHijos,
+          tipoPersonaMefId: (row as any).tipoPersonaMefId ?? null,
+          registroPlazaAirhsp: (row as any).registroPlazaAirhsp ?? '',
         });
         this.regimenLaboralIdSignal.set(row.regimenLaboralId);
         this.condicionLaboralIdSignal.set(row.condicionLaboralId);
@@ -260,12 +265,7 @@ export class EmpleadoPlanillaFormPageComponent implements OnInit {
   }
 
   onCodigoAirhspBlur(): void {
-    const raw = this.form.controls.codigoAirhsp.value ?? '';
-    const padded = padAirhspCode(raw);
-    if (padded !== raw) {
-      this.form.controls.codigoAirhsp.setValue(padded);
-    }
-    this.form.controls.codigoAirhsp.updateValueAndValidity();
+    // Deprecated
   }
 
   onMontoContratadoInput(event: Event): void {
@@ -315,13 +315,13 @@ export class EmpleadoPlanillaFormPageComponent implements OnInit {
     }
 
     const numHijos = v.numHijos ?? 0;
-    if (v.regimenLaboralId == null || !v.codigoAirhsp) {
+    if (v.regimenLaboralId == null) {
       return;
     }
 
     const body = {
       empleadoId: empId,
-      codigoAirhsp: padAirhspCode(v.codigoAirhsp),
+      codigoAirhsp: '000000',
       montoContrato: v.montoContratado,
       sueldoBasico: v.sueldoBasico,
       tieneAsignacionFamiliar: numHijos > 0 ? 1 : 0,
@@ -329,6 +329,8 @@ export class EmpleadoPlanillaFormPageComponent implements OnInit {
       regimenLaboralId: v.regimenLaboralId,
       tipoContratoId: v.tipoContratoId ?? null,
       condicionLaboralId: v.condicionLaboralId ?? null,
+      tipoPersonaMefId: v.tipoPersonaMefId ?? null,
+      registroPlazaAirhsp: v.registroPlazaAirhsp ?? '',
     };
 
     this.saving.set(true);

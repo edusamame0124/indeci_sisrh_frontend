@@ -1,4 +1,4 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { map, type Observable } from 'rxjs';
 import type { ApiResponse } from '../../../core/models/api-response.model';
@@ -11,6 +11,7 @@ import type {
   Ir4taControlAnual,
   Ir4taReinicioInput,
   TipoTopeIr4ta,
+  Ir4taAcumuladoDetalle,
 } from '../models/ir4ta-control-anual.model';
 
 /**
@@ -45,6 +46,14 @@ export class Suspension4taApiService {
       .pipe(map(extractApiData));
   }
 
+  importarMasivo(file: File): Observable<any> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http
+      .post<ApiResponse<any>>('/api/rrhh/suspension-4ta/importar', formData)
+      .pipe(map(extractApiData));
+  }
+
   // ── Control anual del tope de suspensión (pendiente B2) ───────────────────
 
   /** Vista de solo lectura del control anual (acumulado, tope, alertas). */
@@ -73,15 +82,22 @@ export class Suspension4taApiService {
   }
 
   /** Confirma el reinicio de retención tras superar el tope (RR.HH.). */
-  confirmarReinicio(
-    empleadoId: number,
-    body: Ir4taReinicioInput,
-  ): Observable<Ir4taControlAnual> {
+  confirmarReinicio(empleadoId: number, input: Ir4taReinicioInput) {
     return this.http
       .post<ApiResponse<Ir4taControlAnual>>(
         `/api/rrhh/suspension-4ta/${empleadoId}/control-anual/confirmar-reinicio`,
-        body,
+        input,
       )
-      .pipe(map(extractApiData));
+      .pipe(map((res) => res.data));
+  }
+
+  obtenerDetalleAcumulado(empleadoId: number, anio: number) {
+    let params = new HttpParams().set('anio', anio.toString());
+    return this.http
+      .get<ApiResponse<Ir4taAcumuladoDetalle[]>>(
+        `/api/rrhh/suspension-4ta/${empleadoId}/control-anual/detalle-acumulado`,
+        { params },
+      )
+      .pipe(map((res) => res.data));
   }
 }

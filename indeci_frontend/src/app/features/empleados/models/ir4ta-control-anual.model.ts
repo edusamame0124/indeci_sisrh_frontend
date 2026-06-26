@@ -50,3 +50,10 @@ export interface Ir4taReinicioInput {
   sustento: string;
   observacion?: string | null;
 }
+
+export interface Ir4taAcumuladoDetalle {
+  periodo: string;
+  ingresosBrutos: number;
+  deducciones: number;
+  baseAfecta: number;
+}

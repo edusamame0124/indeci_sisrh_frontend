@@ -114,7 +114,7 @@
         </ng-container>
 
         <ng-container matColumnDef="papeleta">
-          <th mat-header-cell *matHeaderCellDef scope="col">Permiso/Papeleta</th>
+          <th mat-header-cell *matHeaderCellDef scope="col">Permiso / Papeleta / Teletrabajo</th>
           <td mat-cell *matCellDef="let row">
             @if (row.tienePapeletaAprobada) {
               <span
@@ -123,6 +123,11 @@
                 matTooltipPosition="above"
               >
                 Tiene Papeleta Aprobada
+              </span>
+            }
+            @if (row.tieneTeletrabajo) {
+              <span class="diaria__papeleta diaria__papeleta--teletrabajo">
+                Teletrabajo
               </span>
             }
           </td>

@@ -12,19 +12,17 @@ export interface PlanillaTipo {
   readonly codigo: string;
   /** Nombre legible mostrado en chips y selectores. Ej.: `CAS TEMPORAL`. */
   readonly nombre: string;
+  readonly descripcion?: string;
   /** Orden de presentación (ascendente). */
   readonly orden: number;
-  /** Baja lógica: 1 = activo, 0 = dado de baja. */
   readonly activo: number;
 }
 
-/**
- * Payload de alta/edición del catálogo (admin). Mirrors el body del backend
- * `POST/PUT /api/rrhh/planilla-tipo`.
- */
+/** Payload para crear/editar. */
 export interface PlanillaTipoInput {
-  readonly codigo: string;
+  readonly codigo?: string;
   readonly nombre: string;
-  readonly orden: number;
+  readonly descripcion?: string;
+  readonly orden?: number;
   readonly activo: number;
 }

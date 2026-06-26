@@ -1,13 +1,13 @@
 import { TestBed } from '@angular/core/testing';
 
-import { LegajoDocumento } from './legajo-documento';
+import { LegajoDocumentoService } from './legajo-documento';
 
-describe('LegajoDocumento', () => {
-  let service: LegajoDocumento;
+describe('LegajoDocumentoService', () => {
+  let service: LegajoDocumentoService;
 
   beforeEach(() => {
     TestBed.configureTestingModule({});
-    service = TestBed.inject(LegajoDocumento);
+    service = TestBed.inject(LegajoDocumentoService);
   });
 
   it('should be created', () => {

@@ -2,58 +2,55 @@
 
 <form [formGroup]="form" (ngSubmit)="onSubmit()">
   <mat-dialog-content tabindex="0" class="ptd-content">
+    
     <mat-form-field appearance="outline" class="ptd-field">
-      <mat-label>Código</mat-label>
-      <input
-        matInput
-        formControlName="codigo"
-        autocomplete="off"
-        maxlength="20"
-        placeholder="Ej.: CAS, CAS_TEMP"
-        [attr.aria-labelledby]="'planilla-tipo-dialog-title'"
-      />
-      @if (data.modo === 'editar') {
-        <mat-hint align="end">No editable: identifica la planilla</mat-hint>
-      } @else {
-        <mat-hint align="end">Único; se guarda en MAYÚSCULAS</mat-hint>
-      }
-      @if (form.controls.codigo.hasError('required') && form.controls.codigo.touched) {
-        <mat-error>El código es obligatorio.</mat-error>
-      }
-      @if (form.controls.codigo.hasError('maxlength')) {
-        <mat-error>Máximo 20 caracteres.</mat-error>
-      }
-    </mat-form-field>
-
-    <mat-form-field appearance="outline" class="ptd-field">
-      <mat-label>Nombre</mat-label>
+      <mat-label>Nombre del tipo de planilla</mat-label>
       <input
         matInput
         formControlName="nombre"
         autocomplete="off"
-        maxlength="60"
-        placeholder="Ej.: CAS TEMPORAL"
+        maxlength="120"
+        placeholder="Ej.: CAS adicional"
+        [attr.aria-labelledby]="'planilla-tipo-dialog-title'"
       />
       @if (form.controls.nombre.hasError('required') && form.controls.nombre.touched) {
         <mat-error>El nombre es obligatorio.</mat-error>
       }
+      @if (form.controls.nombre.hasError('minlength')) {
+        <mat-error>Mínimo 3 caracteres.</mat-error>
+      }
       @if (form.controls.nombre.hasError('maxlength')) {
-        <mat-error>Máximo 60 caracteres.</mat-error>
+        <mat-error>Máximo 120 caracteres.</mat-error>
       }
     </mat-form-field>
 
-    <mat-form-field appearance="outline" class="ptd-field ptd-field--orden">
-      <mat-label>Orden</mat-label>
-      <input matInput type="number" formControlName="orden" min="0" max="999" />
-      <mat-hint align="end">Posición en los selectores (ascendente)</mat-hint>
-      @if (form.controls.orden.invalid && form.controls.orden.touched) {
-        <mat-error>Ingrese un número entre 0 y 999.</mat-error>
+    <mat-form-field appearance="outline" class="ptd-field">
+      <mat-label>Descripción operativa</mat-label>
+      <textarea
+        matInput
+        formControlName="descripcion"
+        rows="3"
+        maxlength="300"
+        placeholder="Pago complementario aplicable al personal CAS..."
+      ></textarea>
+      <mat-hint align="end">{{ form.controls.descripcion.value?.length || 0 }} / 300</mat-hint>
+      @if (form.controls.descripcion.hasError('maxlength')) {
+        <mat-error>Máximo 300 caracteres.</mat-error>
       }
     </mat-form-field>
 
-    <mat-checkbox formControlName="activo" class="ptd-activo">
-      Activo (disponible para asociar a conceptos)
-    </mat-checkbox>
+    <div class="ptd-activo-container">
+      <mat-checkbox formControlName="activo" class="ptd-activo">
+        Activo
+      </mat-checkbox>
+      <p class="ptd-activo-hint">Disponible para asociar a conceptos de planilla.</p>
+    </div>
+
+    <div class="ptd-info">
+      <mat-icon inline>info</mat-icon>
+      <p>El código interno y el orden de visualización se asignan automáticamente al guardar.</p>
+    </div>
+
   </mat-dialog-content>
 
   <mat-dialog-actions align="end">
