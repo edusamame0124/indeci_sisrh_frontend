@@ -90,13 +90,12 @@ import { LoginRequest } from '../../models/login.model';
   styles: [
     `
 :host {
-  display: block;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
   width: 100%;
-  min-height: 100vh;
-
-  background-size: contain;
-  background-position: center;
-  background-repeat: no-repeat;
+  min-height: 85vh;
+  padding-bottom: 3rem;
 }
       
       .login-card {

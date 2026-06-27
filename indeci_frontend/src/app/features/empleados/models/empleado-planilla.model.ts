@@ -16,6 +16,8 @@ export interface EmpleadoPlanillaInput {
   readonly regimenLaboralId: number;
   readonly tipoContratoId?: number | null;
   readonly condicionLaboralId?: number | null;
+  readonly tipoPersonaMefId?: number | null;
+  readonly registroPlazaAirhsp?: string | null;
 }
 
 /** Fila de la tabla consolidada (todos los empleados) — espejo de `PlanillaConsolidadaRowDto`. */
@@ -61,8 +63,9 @@ export interface EmpleadoPlanillaRow {
   readonly regimenLaboralId: number | null;
   readonly tipoContratoId: number | null;
   readonly condicionLaboralId: number | null;
-  // Etiquetas resueltas por el backend para el listado.
   readonly regimenLaboral: string | null;
   readonly tipoContrato: string | null;
   readonly condicionLaboral: string | null;
+  readonly tipoPersonaMefId: number | null;
+  readonly registroPlazaAirhsp: string | null;
 }

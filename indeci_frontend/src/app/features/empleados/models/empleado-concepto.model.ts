@@ -8,6 +8,18 @@ export interface EmpleadoConceptoInput {
   /** Vigencia (Spec 013 / C1) — fechas ISO `YYYY-MM-DD`. */
   fechaInicio?: string | null;
   fechaFin?: string | null;
+
+  // --- Campos de Descuento Judicial ---
+  tipoCalculoJudicial?: string | null;
+  baseCalculoJudicial?: string | null;
+  nroExpediente?: string | null;
+  nroOficio?: string | null;
+  juzgadoEmisor?: string | null;
+  tipoDocBeneficiario?: string | null;
+  nroDocBeneficiario?: string | null;
+  nombreBeneficiario?: string | null;
+  entidadBancaria?: string | null;
+  cuentaBancaria?: string | null;
 }
 
 /**
@@ -31,4 +43,16 @@ export interface EmpleadoConceptoRow {
   /** Vigencia (Spec 013 / C1) — fechas ISO `YYYY-MM-DD`. */
   readonly fechaInicio?: string | null;
   readonly fechaFin?: string | null;
+
+  // --- Campos de Descuento Judicial ---
+  readonly tipoCalculoJudicial?: string | null;
+  readonly baseCalculoJudicial?: string | null;
+  readonly nroExpediente?: string | null;
+  readonly nroOficio?: string | null;
+  readonly juzgadoEmisor?: string | null;
+  readonly tipoDocBeneficiario?: string | null;
+  readonly nroDocBeneficiario?: string | null;
+  readonly nombreBeneficiario?: string | null;
+  readonly entidadBancaria?: string | null;
+  readonly cuentaBancaria?: string | null;
 }

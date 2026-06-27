@@ -102,6 +102,12 @@
         }
 
         <div class="wiz-actions">
+          @if (data.modo === 'configurar') {
+            <button mat-flat-button color="primary" type="button" (click)="onSubmit()">
+              <mat-icon>save</mat-icon>
+              Actualizar
+            </button>
+          }
           <span class="wiz-spacer"></span>
           <button mat-flat-button color="primary" type="button" matStepperNext>
             Siguiente
@@ -199,6 +205,12 @@
             Atrás
           </button>
           <span class="wiz-spacer"></span>
+          @if (data.modo === 'configurar') {
+            <button mat-flat-button color="primary" type="button" (click)="onSubmit()">
+              <mat-icon>save</mat-icon>
+              Actualizar
+            </button>
+          }
           <button mat-flat-button color="primary" type="button" matStepperNext>
             Siguiente
             <mat-icon iconPositionEnd>arrow_forward</mat-icon>
@@ -350,6 +362,12 @@
             Atrás
           </button>
           <span class="wiz-spacer"></span>
+          @if (data.modo === 'configurar') {
+            <button mat-flat-button color="primary" type="button" (click)="onSubmit()">
+              <mat-icon>save</mat-icon>
+              Actualizar
+            </button>
+          }
           <button mat-flat-button color="primary" type="button" matStepperNext>
             Siguiente
             <mat-icon iconPositionEnd>arrow_forward</mat-icon>
@@ -431,6 +449,12 @@
             Atrás
           </button>
           <span class="wiz-spacer"></span>
+          @if (data.modo === 'configurar') {
+            <button mat-flat-button color="primary" type="button" (click)="onSubmit()">
+              <mat-icon>save</mat-icon>
+              Actualizar
+            </button>
+          }
           <button mat-flat-button color="primary" type="button" matStepperNext>
             Revisar
             <mat-icon iconPositionEnd>arrow_forward</mat-icon>
@@ -642,6 +666,12 @@
             Atrás
           </button>
           <span class="wiz-spacer"></span>
+          @if (data.modo === 'configurar') {
+            <button mat-flat-button color="primary" type="button" (click)="onSubmit()">
+              <mat-icon>save</mat-icon>
+              Actualizar
+            </button>
+          }
           <button mat-flat-button color="primary" type="button" matStepperNext>
             Revisar
             <mat-icon iconPositionEnd>arrow_forward</mat-icon>
@@ -778,7 +808,6 @@
             color="primary"
             type="button"
             (click)="onSubmit()"
-            [disabled]="!puedeGuardar()"
           >
             <mat-icon>save</mat-icon>
             {{ data.modo === 'crear' ? 'Registrar borrador' : 'Guardar cambios' }}

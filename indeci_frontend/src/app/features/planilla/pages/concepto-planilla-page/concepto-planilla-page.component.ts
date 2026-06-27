@@ -430,7 +430,7 @@ export class ConceptoPlanillaPageComponent {
       incluyeEnPlanilla: row.incluyeEnPlanilla ?? null,
     };
     const data: ConceptoWizardDialogData = {
-      title: `Configurar concepto ${row.codigo}`,
+      title: `Configurar concepto ${row.codigo} - ${row.nombre}`,
       modo: 'configurar',
       estadoActual: this.estadoDe(row),
       version: row.version ?? null,

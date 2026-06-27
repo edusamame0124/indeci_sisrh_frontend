@@ -38,10 +38,11 @@ import { IncrementosDsPanelComponent } from './components/incrementos-ds-panel/i
 import { ResumenRemuneracionCardComponent } from './components/resumen-remuneracion-card/resumen-remuneracion-card.component';
 import { TipoPersonaMefApiService } from '../../../planilla/services/tipo-persona-mef-api.service';
 import type { TipoPersonaMef } from '../../../planilla/models/tipo-persona-mef.model';
+import { UppercaseDirective } from '../../../../shared/directives/uppercase.directive';
 
 const MONTO_INT_DIGITS = 5;
 const MONTO_MAX = 99999.99;
-const AIRHSP_PATTERN = /^[0-9]{6}$/;
+const AIRHSP_PATTERN = /^[A-Z0-9]{6}$/;
 
 @Component({
   selector: 'app-empleado-planilla-form-page',
@@ -59,6 +60,7 @@ const AIRHSP_PATTERN = /^[0-9]{6}$/;
     EmpleadoFlowWarningBannerComponent,
     IncrementosDsPanelComponent,
     ResumenRemuneracionCardComponent,
+    UppercaseDirective,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './empleado-planilla-form-page.component.html',
@@ -109,7 +111,10 @@ export class EmpleadoPlanillaFormPageComponent implements OnInit {
     ]),
     numHijos: this.fb.control<number | null>(null, [Validators.min(0)]),
     tipoPersonaMefId: this.fb.control<number | null>(null),
-    registroPlazaAirhsp: this.fb.control<string>(''),
+    registroPlazaAirhsp: this.fb.control<string>('', [
+      Validators.pattern(AIRHSP_PATTERN),
+      Validators.maxLength(6),
+    ]),
   });
 
   readonly tieneHijos = computed(() => {
@@ -132,7 +137,7 @@ export class EmpleadoPlanillaFormPageComponent implements OnInit {
     if (regCod === '276' || regCod === '30057') {
       return false;
     }
-    return regCod === '728' || regCod === '1057' || condCod === 'CAS';
+    return regCod === '1057' || condCod === 'CAS';
   });
 
   private readonly numHijosSignal = signal<number | null>(null);
@@ -216,7 +221,10 @@ export class EmpleadoPlanillaFormPageComponent implements OnInit {
 
   private cargarCatalogos(): void {
     this.catalogoApi.listarRegimenesLaborales().subscribe({
-      next: (list) => this.regimenes.set(list),
+      next: (list) => {
+        const filtrados = list.filter((r) => r.codigo !== '728' && r.codigo !== '9999');
+        this.regimenes.set(filtrados);
+      },
       error: () => this.regimenes.set([]),
     });
     this.catalogoApi.listarTiposContrato().subscribe({

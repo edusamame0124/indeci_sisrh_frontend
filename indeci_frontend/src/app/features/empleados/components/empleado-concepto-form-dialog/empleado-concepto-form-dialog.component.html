@@ -62,17 +62,155 @@
         }
       </mat-form-field>
 
-      <mat-form-field appearance="outline" class="full">
-        <mat-label>Monto mensual (S/)</mat-label>
-        <input matInput type="number" formControlName="monto" inputmode="decimal" autocomplete="off" />
-      </mat-form-field>
-
-      @if (mostrarPorcentaje()) {
+      @if (!isDescuentoJudicial()) {
         <mat-form-field appearance="outline" class="full">
-          <mat-label>Porcentaje (%)</mat-label>
-          <input matInput type="number" formControlName="porcentaje" inputmode="decimal" autocomplete="off" />
-          <mat-hint>Aporte Facultativo 0.5% — SISPER-613</mat-hint>
+          <mat-label>Monto mensual (S/)</mat-label>
+          <input matInput type="number" formControlName="monto" inputmode="decimal" autocomplete="off" min="0" (keydown)="$event.key === '-' ? $event.preventDefault() : null" />
+          @if (form.controls.monto.hasError('min') && form.controls.monto.touched) {
+            <mat-error>No negativos</mat-error>
+          }
         </mat-form-field>
+
+        @if (mostrarPorcentaje()) {
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>Porcentaje (%)</mat-label>
+            <input matInput type="number" formControlName="porcentaje" inputmode="decimal" autocomplete="off" min="0" (keydown)="$event.key === '-' ? $event.preventDefault() : null" />
+            <mat-hint>Aporte Facultativo 0.5% — SISPER-613</mat-hint>
+            @if (form.controls.porcentaje.hasError('min') && form.controls.porcentaje.touched) {
+              <mat-error>No negativos</mat-error>
+            }
+          </mat-form-field>
+        }
+      } @else {
+        <!-- JUDICIAL FORM -->
+        <mat-card class="sisrh-card" style="margin-bottom: 24px; margin-top: 16px;">
+          <mat-card-title style="font-size: 16px; margin-bottom: 16px;">Configuración del Cálculo</mat-card-title>
+          <mat-card-content>
+            <mat-radio-group formControlName="tipoCalculoJudicial" style="display: flex; gap: 16px; margin-bottom: 16px;">
+              <mat-radio-button value="MONTO_FIJO">Monto Fijo (S/)</mat-radio-button>
+              <mat-radio-button value="PORCENTAJE">Porcentaje (%)</mat-radio-button>
+            </mat-radio-group>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+              @if (form.controls.tipoCalculoJudicial.value === 'MONTO_FIJO') {
+                <mat-form-field appearance="outline" class="full">
+                  <mat-label>Monto (S/)</mat-label>
+                  <input matInput type="number" formControlName="monto" inputmode="decimal" autocomplete="off" min="0" (keydown)="$event.key === '-' ? $event.preventDefault() : null" />
+                  @if (form.controls.monto.hasError('required') && form.controls.monto.touched) {
+                    <mat-error>Requerido</mat-error>
+                  }
+                  @if (form.controls.monto.hasError('min') && form.controls.monto.touched) {
+                    <mat-error>No negativos</mat-error>
+                  }
+                </mat-form-field>
+              } @else {
+                <mat-form-field appearance="outline" class="full">
+                  <mat-label>Porcentaje (%)</mat-label>
+                  <input matInput type="number" formControlName="porcentaje" inputmode="decimal" autocomplete="off" min="0" (keydown)="$event.key === '-' ? $event.preventDefault() : null" />
+                  @if (form.controls.porcentaje.hasError('required') && form.controls.porcentaje.touched) {
+                    <mat-error>Requerido</mat-error>
+                  }
+                  @if (form.controls.porcentaje.hasError('min') && form.controls.porcentaje.touched) {
+                    <mat-error>No negativos</mat-error>
+                  }
+                  @if (form.controls.porcentaje.hasError('max')) {
+                    <mat-error>No debe exceder el 60%</mat-error>
+                  }
+                </mat-form-field>
+                
+                <mat-form-field appearance="outline" class="full">
+                  <mat-label>Base de Cálculo</mat-label>
+                  <mat-select formControlName="baseCalculoJudicial">
+                    <mat-option value="BRUTA_MENOS_LEY">Bruta menos Ley (AFP/ONP, 5ta)</mat-option>
+                    <mat-option value="TOTAL_BRUTA">Remuneración Total Bruta</mat-option>
+                  </mat-select>
+                </mat-form-field>
+              }
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card class="sisrh-card" style="margin-bottom: 24px;">
+          <mat-card-title style="font-size: 16px; margin-bottom: 16px;">Sustento Legal del Mandato</mat-card-title>
+          <mat-card-content style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+            <mat-form-field appearance="outline" class="full">
+              <mat-label>Nro. de Expediente</mat-label>
+              <input matInput formControlName="nroExpediente" placeholder="Ej: 00123-2026-0-JR-FC" autocomplete="off" />
+              @if (form.controls.nroExpediente.hasError('required') && form.controls.nroExpediente.touched) {
+                <mat-error>Requerido</mat-error>
+              }
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="full">
+              <mat-label>Nro. de Oficio</mat-label>
+              <input matInput formControlName="nroOficio" placeholder="Ej: OFICIO-1045-2026-JFP" autocomplete="off" />
+              @if (form.controls.nroOficio.hasError('required') && form.controls.nroOficio.touched) {
+                <mat-error>Requerido</mat-error>
+              }
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="full" style="grid-column: span 2;">
+              <mat-label>Juzgado Emisor</mat-label>
+              <mat-select formControlName="juzgadoEmisor">
+                @for (juzgado of juzgados; track juzgado) {
+                  <mat-option [value]="juzgado">{{ juzgado }}</mat-option>
+                }
+              </mat-select>
+              @if (form.controls.juzgadoEmisor.hasError('required') && form.controls.juzgadoEmisor.touched) {
+                <mat-error>Requerido</mat-error>
+              }
+            </mat-form-field>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card class="sisrh-card" style="margin-bottom: 24px;">
+          <mat-card-title style="font-size: 16px; margin-bottom: 16px;">Datos del Beneficiario</mat-card-title>
+          <mat-card-content style="display: grid; grid-template-columns: 1fr 2fr; gap: 16px;">
+            <mat-form-field appearance="outline" class="full">
+              <mat-label>Tipo Doc.</mat-label>
+              <mat-select formControlName="tipoDocBeneficiario">
+                <mat-option value="DNI">DNI</mat-option>
+                <mat-option value="CE">CE</mat-option>
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="full">
+              <mat-label>Nro. de Documento</mat-label>
+              <input matInput formControlName="nroDocBeneficiario" autocomplete="off" appNumericOnly />
+              @if (form.controls.nroDocBeneficiario.hasError('required') && form.controls.nroDocBeneficiario.touched) {
+                <mat-error>Requerido</mat-error>
+              }
+              @if (form.controls.nroDocBeneficiario.hasError('pattern') && form.controls.nroDocBeneficiario.touched) {
+                <mat-error>Solo números</mat-error>
+              }
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="full" style="grid-column: span 2;">
+              <mat-label>Nombre Completo</mat-label>
+              <input matInput formControlName="nombreBeneficiario" autocomplete="off" />
+              @if (form.controls.nombreBeneficiario.hasError('required') && form.controls.nombreBeneficiario.touched) {
+                <mat-error>Requerido</mat-error>
+              }
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="full">
+              <mat-label>Entidad Bancaria destino</mat-label>
+              <mat-select formControlName="entidadBancaria">
+                @for (banco of bancos; track banco) {
+                  <mat-option [value]="banco">{{ banco }}</mat-option>
+                }
+              </mat-select>
+              @if (form.controls.entidadBancaria.hasError('required') && form.controls.entidadBancaria.touched) {
+                <mat-error>Requerido</mat-error>
+              }
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="full">
+              <mat-label>Número de Cuenta / CCI</mat-label>
+              <input matInput formControlName="cuentaBancaria" autocomplete="off" appNumericOnly />
+              @if (form.controls.cuentaBancaria.hasError('required') && form.controls.cuentaBancaria.touched) {
+                <mat-error>Requerido</mat-error>
+              }
+              @if (form.controls.cuentaBancaria.hasError('pattern') && form.controls.cuentaBancaria.touched) {
+                <mat-error>Solo números</mat-error>
+              }
+            </mat-form-field>
+          </mat-card-content>
+        </mat-card>
       }
 
       <!-- Vigencia desde (requerida) -->
@@ -135,7 +273,11 @@
 
       @if (form.hasError('valorRequerido') && form.touched) {
         <p class="cross-field-error" role="alert">
-          Indica un monto mensual (o un porcentaje, para el Aporte Facultativo).
+          @if (isDescuentoJudicial()) {
+            El descuento por pensión alimentaria no puede exceder el 60% de los ingresos percibidos por el trabajador y es requerido indicar un valor.
+          } @else {
+            Indica un monto mensual (o un porcentaje, para el Aporte Facultativo).
+          }
         </p>
       }
 

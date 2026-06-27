@@ -28,11 +28,14 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
+import { MatCardModule } from '@angular/material/card';
+import { MatRadioModule } from '@angular/material/radio';
 import type { ConceptoPlanillaRow } from '../../../planilla/models/concepto-planilla.model';
 import { EmpleadoConceptoApiService } from '../../services/empleado-concepto-api.service';
 import type { EmpleadoConceptoInput, EmpleadoConceptoRow } from '../../models/empleado-concepto.model';
 import { EstimacionNetoApiService } from '../../services/estimacion-neto-api.service';
 import type { EstimacionNetoResult } from '../../models/estimacion-neto.model';
+import { NumericOnlyDirective } from '../../../../shared/directives/numeric-only.directive';
 
 export interface EmpleadoConceptoFormDialogData {
   readonly empleadoId: number;
@@ -150,6 +153,24 @@ export const MESES_NOMBRES: readonly string[] = [
   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
 ];
 
+export const JUZGADOS_EMISORES: readonly string[] = [
+  'Juzgado de Paz Letrado',
+  'Juzgado Especializado de Familia',
+  'Juzgado Especializado Civil',
+  'Juzgado Mixto'
+];
+
+export const ENTIDADES_BANCARIAS: readonly string[] = [
+  'Banco de la Nación',
+  'BCP',
+  'BBVA',
+  'Interbank',
+  'Scotiabank',
+  'BanBif',
+  'Caja Piura',
+  'Caja Arequipa'
+];
+
 /** Genera rango de años: 5 años atrás hasta 5 años adelante desde el actual. */
 function generarAnios(): readonly number[] {
   const actual = new Date().getFullYear();
@@ -169,6 +190,9 @@ function generarAnios(): readonly number[] {
     MatInputModule,
     MatSelectModule,
     MatProgressSpinnerModule,
+    MatCardModule,
+    MatRadioModule,
+    NumericOnlyDirective,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './empleado-concepto-form-dialog.component.html',
@@ -208,6 +232,10 @@ export class EmpleadoConceptoFormDialogComponent implements OnInit {
     if (id == null) return null;
     return this.opcionesConcepto().find((c) => c.id === id) ?? null;
   });
+  
+  readonly isDescuentoJudicial = computed(
+    () => this.conceptoSeleccionado()?.codigoMef === '05201',
+  );
 
   /** El campo Porcentaje solo aplica al Aporte Facultativo 0.5% (SISPER-613). */
   readonly mostrarPorcentaje = computed(
@@ -245,20 +273,33 @@ export class EmpleadoConceptoFormDialogComponent implements OnInit {
 
   readonly meses = MESES_NOMBRES;
   readonly anios = generarAnios();
+  readonly juzgados = JUZGADOS_EMISORES;
+  readonly bancos = ENTIDADES_BANCARIAS;
 
   readonly form = this.fb.group(
     {
       conceptoPlanillaId: this.fb.control<number | null>(null, {
         validators: [Validators.required],
       }),
-      monto: this.fb.control<number | null>(null),
-      porcentaje: this.fb.control<number | null>(null),
+      monto: this.fb.control<number | null>(null, { validators: [Validators.min(0)] }),
+      porcentaje: this.fb.control<number | null>(null, { validators: [Validators.min(0)] }),
       // Vigencia desde (requerida)
       fechaInicioMes:  this.fb.control<number | null>(null, { validators: [Validators.required] }),
       fechaInicioAnio: this.fb.control<number | null>(null, { validators: [Validators.required] }),
       // Vigencia hasta (opcional)
       fechaFinMes:  this.fb.control<number | null>(null),
       fechaFinAnio: this.fb.control<number | null>(null),
+      // Judicial
+      tipoCalculoJudicial: this.fb.control<string>('MONTO_FIJO'),
+      baseCalculoJudicial: this.fb.control<string>('BRUTA_MENOS_LEY'),
+      nroExpediente: this.fb.control<string | null>(null),
+      nroOficio: this.fb.control<string | null>(null),
+      juzgadoEmisor: this.fb.control<string | null>(null),
+      tipoDocBeneficiario: this.fb.control<string>('DNI'),
+      nroDocBeneficiario: this.fb.control<string | null>(null),
+      nombreBeneficiario: this.fb.control<string | null>(null),
+      entidadBancaria: this.fb.control<string>('Banco de la Nación'),
+      cuentaBancaria: this.fb.control<string | null>(null),
     },
     { validators: [atLeastOneConceptoValor(), vigenciaRangoValido()] },
   );
@@ -271,10 +312,67 @@ export class EmpleadoConceptoFormDialogComponent implements OnInit {
       .pipe(takeUntilDestroyed())
       .subscribe((id) => {
         this.conceptoSeleccionadoId.set(id);
-        if (this.mostrarPorcentaje()) {
+        const isJudicial = this.isDescuentoJudicial();
+        
+        if (isJudicial) {
+          this.form.controls.nroExpediente.setValidators([Validators.required]);
+          this.form.controls.nroOficio.setValidators([Validators.required]);
+          this.form.controls.juzgadoEmisor.setValidators([Validators.required]);
+          this.form.controls.nroDocBeneficiario.setValidators([Validators.required, Validators.pattern('^[0-9]+$')]);
+          this.form.controls.nombreBeneficiario.setValidators([Validators.required]);
+          this.form.controls.cuentaBancaria.setValidators([Validators.required, Validators.pattern('^[0-9]+$')]);
+          
+          const tipoCalc = this.form.controls.tipoCalculoJudicial.value;
+          if (tipoCalc === 'PORCENTAJE') {
+            this.form.controls.porcentaje.setValidators([Validators.required, Validators.min(0), Validators.max(60)]);
+            this.form.controls.monto.setValidators([Validators.min(0)]);
+          } else {
+            this.form.controls.monto.setValidators([Validators.required, Validators.min(0)]);
+            this.form.controls.porcentaje.setValidators([Validators.min(0)]);
+          }
+        } else {
+          this.form.controls.nroExpediente.clearValidators();
+          this.form.controls.nroOficio.clearValidators();
+          this.form.controls.juzgadoEmisor.clearValidators();
+          this.form.controls.nroDocBeneficiario.clearValidators();
+          this.form.controls.nombreBeneficiario.clearValidators();
+          this.form.controls.cuentaBancaria.clearValidators();
+          
+          this.form.controls.monto.setValidators([Validators.min(0)]);
+          this.form.controls.porcentaje.setValidators([Validators.min(0)]);
+        }
+        
+        this.form.controls.nroExpediente.updateValueAndValidity();
+        this.form.controls.nroOficio.updateValueAndValidity();
+        this.form.controls.juzgadoEmisor.updateValueAndValidity();
+        this.form.controls.nroDocBeneficiario.updateValueAndValidity();
+        this.form.controls.nombreBeneficiario.updateValueAndValidity();
+        this.form.controls.cuentaBancaria.updateValueAndValidity();
+        this.form.controls.monto.updateValueAndValidity();
+        this.form.controls.porcentaje.updateValueAndValidity();
+
+        if (this.mostrarPorcentaje() || (isJudicial && this.form.controls.tipoCalculoJudicial.value === 'PORCENTAJE')) {
           this.form.controls.monto.setValue(null);
         } else {
           this.form.controls.porcentaje.setValue(null);
+        }
+      });
+
+    this.form.controls.tipoCalculoJudicial.valueChanges
+      .pipe(takeUntilDestroyed())
+      .subscribe((tipo) => {
+        if (this.isDescuentoJudicial()) {
+           if (tipo === 'PORCENTAJE') {
+             this.form.controls.monto.setValue(null);
+             this.form.controls.monto.setValidators([Validators.min(0)]);
+             this.form.controls.porcentaje.setValidators([Validators.required, Validators.min(0), Validators.max(60)]);
+           } else {
+             this.form.controls.porcentaje.setValue(null);
+             this.form.controls.porcentaje.setValidators([Validators.min(0)]);
+             this.form.controls.monto.setValidators([Validators.required, Validators.min(0)]);
+           }
+           this.form.controls.monto.updateValueAndValidity();
+           this.form.controls.porcentaje.updateValueAndValidity();
         }
       });
 
@@ -346,6 +444,16 @@ export class EmpleadoConceptoFormDialogComponent implements OnInit {
             fechaInicioAnio: ini?.anio ?? null,
             fechaFinMes:  fin?.mes  ?? null,
             fechaFinAnio: fin?.anio ?? null,
+            tipoCalculoJudicial: registro.tipoCalculoJudicial ?? 'MONTO_FIJO',
+            baseCalculoJudicial: registro.baseCalculoJudicial ?? 'BRUTA_MENOS_LEY',
+            nroExpediente: registro.nroExpediente,
+            nroOficio: registro.nroOficio,
+            juzgadoEmisor: registro.juzgadoEmisor,
+            tipoDocBeneficiario: registro.tipoDocBeneficiario ?? 'DNI',
+            nroDocBeneficiario: registro.nroDocBeneficiario,
+            nombreBeneficiario: registro.nombreBeneficiario,
+            entidadBancaria: registro.entidadBancaria ?? 'Banco de la Nación',
+            cuentaBancaria: registro.cuentaBancaria,
           });
           this.form.controls.conceptoPlanillaId.disable({ emitEvent: false });
         }
@@ -385,6 +493,18 @@ export class EmpleadoConceptoFormDialogComponent implements OnInit {
       formula: null,
       fechaInicio: mesAnioAIsoDate(v.fechaInicioMes, v.fechaInicioAnio),
       fechaFin:    mesAnioAIsoDate(v.fechaFinMes,    v.fechaFinAnio),
+      ...(this.isDescuentoJudicial() && {
+        tipoCalculoJudicial: v.tipoCalculoJudicial,
+        baseCalculoJudicial: v.baseCalculoJudicial,
+        nroExpediente: v.nroExpediente,
+        nroOficio: v.nroOficio,
+        juzgadoEmisor: v.juzgadoEmisor,
+        tipoDocBeneficiario: v.tipoDocBeneficiario,
+        nroDocBeneficiario: v.nroDocBeneficiario,
+        nombreBeneficiario: v.nombreBeneficiario,
+        entidadBancaria: v.entidadBancaria,
+        cuentaBancaria: v.cuentaBancaria,
+      })
     };
     this.dialogRef.close(body);
   }

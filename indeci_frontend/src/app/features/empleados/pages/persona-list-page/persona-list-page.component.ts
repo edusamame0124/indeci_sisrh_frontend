@@ -59,43 +59,7 @@ interface PersonaQuickAccess {
   readonly overrideRoute?: readonly string[];
 }
 
-export const PERSONA_QUICK_ACCESS: readonly PersonaQuickAccess[] = [
-  {
-    key: 'puesto',
-    segment: 'puesto',
-    icon: 'badge',
-    label: 'puesto laboral',
-    header: 'Puesto',
-  },
-  {
-    key: 'cuentaBancaria',
-    segment: 'cuentas-bancarias',
-    icon: 'account_balance',
-    label: 'cuenta bancaria',
-    header: 'Cuenta',
-  },
-  {
-    key: 'pension',
-    segment: 'pension',
-    icon: 'savings',
-    label: 'pensión',
-    header: 'Pensión',
-  },
-  {
-    key: 'planilla',
-    segment: 'planilla',
-    icon: 'receipt_long',
-    label: 'configuración planilla',
-    header: 'Planilla',
-  },
-  {
-    key: 'conceptos',
-    segment: 'conceptos',
-    icon: 'list_alt',
-    label: 'conceptos asignados',
-    header: 'Conceptos',
-  },
-] as const;
+// quickAccess eliminado temporalmente. Se consolida en Datos del Empleado.
 
 @Component({
   selector: 'app-persona-list-page',
@@ -114,7 +78,6 @@ export const PERSONA_QUICK_ACCESS: readonly PersonaQuickAccess[] = [
     MatProgressBarModule,
     MatProgressSpinnerModule,
     MatMenuModule,
-    TitleCasePipe,
     EmptyStateComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -130,7 +93,7 @@ export const PERSONA_QUICK_ACCESS: readonly PersonaQuickAccess[] = [
 
       <mat-card class="page-card sisrh-elevated">
         <mat-card-header>
-          <mat-card-title>Personas y empleados</mat-card-title>
+          <mat-card-title>Registro Integrado de Personal</mat-card-title>
           <mat-card-subtitle>Consulta administrativa — RRHH INDECI</mat-card-subtitle>
         </mat-card-header>
         <mat-card-content>
@@ -247,115 +210,72 @@ export const PERSONA_QUICK_ACCESS: readonly PersonaQuickAccess[] = [
                       }
                     </td>
                   </ng-container>
-                  @for (qa of quickAccess; track qa.key) {
-                    <ng-container [matColumnDef]="qa.key">
-                      <th mat-header-cell *matHeaderCellDef scope="col" class="col-quick">
-                        {{ qa.header }}
-                      </th>
-                      <td
-                        mat-cell
-                        *matCellDef="let row"
-                        class="col-quick"
-                        [attr.data-inactive]="isInactive(row) ? 'true' : null"
-                      >
-                        <a
-                          mat-icon-button
-                          class="row-action row-action--quick"
-                          [routerLink]="['/empleados', qa.segment, 'personas', row.id]"
-                          [attr.aria-label]="'Ir a ' + qa.label + ' de ' + row.nombreCompleto"
-                          [matTooltip]="
-                            isInactive(row)
-                              ? 'Consulta de ' + qa.label + ' (inactivo)'
-                              : 'Ir a ' + qa.label
-                          "
-                        >
-                          <mat-icon [fontIcon]="qa.icon" aria-hidden="true" />
-                        </a>
-                      </td>
-                    </ng-container>
-                  }
-                  <!-- Columna Régimen (chip con código laboral) -->
-                  <ng-container matColumnDef="regimen">
-                    <th mat-header-cell *matHeaderCellDef scope="col" class="col-regimen">
-                      Régimen
-                    </th>
-                    <td mat-cell *matCellDef="let row" class="col-regimen">
-                      @if (row.regimenLaboral) {
-                        <span class="regimen-chip" [attr.aria-label]="'Régimen ' + row.regimenLaboral">
-                          {{ row.regimenLaboral }}
-                        </span>
-                      } @else {
-                        <span class="celda-vacia" aria-label="Sin régimen">—</span>
-                      }
-                    </td>
-                  </ng-container>
-
-                  <!-- Columna Suspensión de 4ta (acceso directo) -->
-                  <ng-container matColumnDef="suspension4ta">
-                    <th mat-header-cell *matHeaderCellDef scope="col" class="col-suspension4ta">
-                      Suspensión 4ta
-                    </th>
-                    <td mat-cell *matCellDef="let row" class="col-suspension4ta">
-                      <a
-                        mat-icon-button
-                        class="row-action"
-                        [routerLink]="['/empleados/suspension-4ta/personas', row.id]"
-                        [attr.aria-label]="'Suspensión de 4ta de ' + row.nombreCompleto"
-                        matTooltip="Suspensión de retención 4ta categoría"
-                      >
-                        <mat-icon fontIcon="gavel" aria-hidden="true" />
-                      </a>
-                    </td>
-                  </ng-container>
-
-                  <ng-container matColumnDef="accesos">
-                    <th mat-header-cell *matHeaderCellDef scope="col" class="col-accesos">
-                      Accesos
+                  <!-- Nueva Columna: Datos del Empleado -->
+                  <ng-container matColumnDef="datosEmpleado">
+                    <th mat-header-cell *matHeaderCellDef scope="col" class="col-datos-empleado">
+                      Datos del Empleado
                     </th>
                     <td
                       mat-cell
                       *matCellDef="let row"
-                      class="col-accesos"
+                      class="col-datos-empleado"
                       [attr.data-inactive]="isInactive(row) ? 'true' : null"
                     >
-                      <div class="accesos-cluster">
-                        @for (qa of quickAccess; track qa.key) {
-                          <a
-                            mat-icon-button
-                            class="row-action row-action--quick"
-                            [routerLink]="['/empleados', qa.segment, 'personas', row.id]"
-                            [attr.aria-label]="'Ir a ' + qa.label + ' de ' + row.nombreCompleto"
-                            [matTooltip]="
-                              isInactive(row)
-                                ? 'Consulta de ' + qa.label + ' (inactivo)'
-                                : 'Ir a ' + qa.label
-                            "
-                          >
-                            <mat-icon [fontIcon]="qa.icon" aria-hidden="true" />
-                          </a>
-                        }
-                      </div>
+                      <a
+                        mat-stroked-button
+                        color="primary"
+                        class="row-action row-action--quick btn-datos-empleado"
+                        [routerLink]="['/empleados', 'datos', row.id]"
+                        [attr.aria-label]="'Ver datos de ' + row.nombreCompleto"
+                        [matTooltip]="
+                          isInactive(row)
+                            ? 'Datos del empleado (inactivo)'
+                            : 'Ver datos del empleado'
+                        "
+                      >
+                        <mat-icon fontIcon="folder_shared" aria-hidden="true" />
+                        Ver Datos
+                      </a>
                     </td>
                   </ng-container>
-                  <!-- Columna Salud / EPS del empleado -->
-                  <ng-container matColumnDef="saludEps">
-                    <th mat-header-cell *matHeaderCellDef scope="col" class="col-salud-eps">
-                      Salud / EPS
-                    </th>
-                    <td mat-cell *matCellDef="let row" class="col-salud-eps">
-                      <button
+                  <!-- Columnas restauradas a solicitud del usuario -->
+                  <ng-container matColumnDef="conceptos">
+                    <th mat-header-cell *matHeaderCellDef scope="col">Conceptos</th>
+                    <td mat-cell *matCellDef="let row" [attr.data-inactive]="isInactive(row) ? 'true' : null">
+                      <a
                         mat-icon-button
-                        type="button"
-                        class="row-action row-action--salud"
-                        (click)="openSaludEps(row)"
-                        [attr.aria-label]="'Salud/EPS de ' + row.nombreCompleto"
-                        matTooltip="Salud / EPS del empleado"
+                        color="primary"
+                        class="row-action row-action--quick"
+                        [routerLink]="['/empleados', 'conceptos', 'personas', row.id]"
+                        [attr.aria-label]="'Ver conceptos de ' + row.nombreCompleto"
+                        [matTooltip]="
+                          isInactive(row) ? 'Conceptos (empleado inactivo)' : 'Gestionar conceptos'
+                        "
                       >
-                        <mat-icon fontIcon="health_and_safety" aria-hidden="true" />
-                      </button>
+                        <mat-icon fontIcon="receipt_long" aria-hidden="true" />
+                      </a>
                     </td>
                   </ng-container>
 
+                  <ng-container matColumnDef="suspension4ta">
+                    <th mat-header-cell *matHeaderCellDef scope="col" matTooltip="Suspensión de Cuarta Categoría">
+                      Susp. 4ta
+                    </th>
+                    <td mat-cell *matCellDef="let row" [attr.data-inactive]="isInactive(row) ? 'true' : null">
+                      <a
+                        mat-icon-button
+                        color="primary"
+                        class="row-action row-action--quick"
+                        [routerLink]="['/empleados', 'suspension-4ta', 'personas', row.id]"
+                        [attr.aria-label]="'Suspensión 4ta de ' + row.nombreCompleto"
+                        [matTooltip]="
+                          isInactive(row) ? 'Suspensión 4ta (inactivo)' : 'Gestionar Suspensión de 4ta'
+                        "
+                      >
+                        <mat-icon fontIcon="block" aria-hidden="true" />
+                      </a>
+                    </td>
+                  </ng-container>
                   <ng-container matColumnDef="acciones">
                     <th mat-header-cell *matHeaderCellDef scope="col" class="col-acciones">
                       Acciones
@@ -392,16 +312,7 @@ export const PERSONA_QUICK_ACCESS: readonly PersonaQuickAccess[] = [
                         <mat-icon fontIcon="more_vert" aria-hidden="true" />
                       </button>
                       <mat-menu #moreMenu="matMenu">
-                        @for (qa of quickAccess; track qa.key) {
-                          <a
-                            mat-menu-item
-                            [routerLink]="qa.overrideRoute ?? ['/empleados', qa.segment, 'personas', row.id]"
-                            [attr.aria-label]="'Configurar ' + qa.label + ' de ' + row.nombreCompleto"
-                          >
-                            <mat-icon [fontIcon]="qa.icon" aria-hidden="true" />
-                            <span>{{ qa.label | titlecase }}</span>
-                          </a>
-                        }
+                      <!-- El menú "Mas opciones" (quickAccess) se simplifica por ahora -->
                       </mat-menu>
                       @if (!isInactive(row)) {
                         <button
@@ -472,34 +383,14 @@ export const PERSONA_QUICK_ACCESS: readonly PersonaQuickAccess[] = [
         white-space: nowrap;
         text-align: right;
       }
-      :host ::ng-deep .persona-table .col-quick {
+      :host ::ng-deep .persona-table .col-datos-empleado {
         width: 1%;
         white-space: nowrap;
         text-align: center;
-        padding: 0 4px;
+        padding: 0 16px;
       }
-      :host ::ng-deep .persona-table .col-accesos {
-        width: 1%;
-        white-space: nowrap;
-        text-align: center;
-      }
-      :host ::ng-deep .persona-table .col-regimen {
-        width: 1%;
-        white-space: nowrap;
-        text-align: center;
-        padding: 0 8px;
-      }
-      :host ::ng-deep .persona-table .col-suspension4ta {
-        width: 1%;
-        white-space: nowrap;
-        text-align: center;
-        padding: 0 4px;
-      }
-      :host ::ng-deep .persona-table .col-salud-eps {
-        width: 1%;
-        white-space: nowrap;
-        text-align: center;
-        padding: 0 4px;
+      .btn-datos-empleado {
+        border-radius: 20px;
       }
       .row-action--salud {
         color: var(--sisrh-success, #157347);
@@ -565,7 +456,7 @@ export class PersonaListPageComponent {
   private readonly destroyRef = inject(DestroyRef);
   private readonly breakpoint = inject(BreakpointObserver);
 
-  readonly quickAccess = PERSONA_QUICK_ACCESS;
+
 
   readonly compactMode = toSignal(
     this.breakpoint.observe('(max-width: 1023.98px)').pipe(map((r) => r.matches)),
@@ -574,22 +465,17 @@ export class PersonaListPageComponent {
 
   readonly columns = computed<readonly string[]>(() =>
     this.compactMode()
-      ? ['nombreCompleto', 'dni', 'estado', 'accesos', 'acciones']
+      ? ['nombreCompleto', 'dni', 'estado', 'datosEmpleado', 'acciones']
       : [
-          'nombreCompleto',
-          'dni',
-          'codigoInterno',
-          'estado',
-          'puesto',
-          'cuentaBancaria',
-          'pension',
-          'planilla',
-          'regimen',
-          'conceptos',
-          'suspension4ta',
-          'saludEps',
-          'acciones',
-        ],
+        'nombreCompleto',
+        'dni',
+        'codigoInterno',
+        'estado',
+        'conceptos',
+        'suspension4ta',
+        'datosEmpleado',
+        'acciones',
+      ],
   );
 
   readonly pageSizeOptions = [10, 20, 50] as const;

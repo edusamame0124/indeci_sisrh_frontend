@@ -102,8 +102,12 @@ import { isErrorResponse } from '../../../../core/models/error-response.model';
   styles: [
     `
       :host {
-        display: block;
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
         width: 100%;
+        min-height: 85vh;
+        padding-bottom: 3rem;
         font-family: var(--sisrh-font-sans, 'Source Sans 3', 'Segoe UI', system-ui, sans-serif);
       }
       .auth-card {

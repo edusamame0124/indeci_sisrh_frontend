@@ -43,6 +43,14 @@ export const EMPLEADOS_ROUTES: Routes = [
           ),
         title: 'Ficha persona — SISRH-INDECI',
       },
+      {
+        path: 'datos/:personaId',
+        loadComponent: () =>
+          import('./pages/empleado-datos-integrados-page/empleado-datos-integrados-page.component').then(
+            (m) => m.EmpleadoDatosIntegradosPageComponent,
+          ),
+        title: 'Datos del Empleado — SISRH-INDECI',
+      },
 
       /* ——— Cuentas bancarias (004) ——— */
       {

@@ -146,16 +146,18 @@ import { SistemaCard } from '../../models/sistema.model';
       }
       .selector-wrap {
         display: flex;
-        justify-content: center;
-        padding: 1.5rem 1rem;
+        justify-content: flex-end;
+        padding: 0 1.5rem 1rem 1rem;
       }
       .selector-card {
         width: 100%;
-        max-width: 980px;
-        background: #fff;
+        max-width: 480px;
+        background: rgba(255, 255, 255, 0.75);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
         border-radius: 12px;
-        border-color: var(--sisrh-color-border, #e2e8f0) !important;
-        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+        border-color: rgba(226, 232, 240, 0.5) !important;
+        box-shadow: 0 8px 32px rgba(15, 23, 42, 0.1);
         padding: 0;
         overflow: hidden;
       }
@@ -163,11 +165,11 @@ import { SistemaCard } from '../../models/sistema.model';
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 1rem;
-        padding: 1.125rem 1.5rem;
-        border-bottom: 1px solid var(--sisrh-color-border, #e2e8f0);
+        gap: 0.75rem;
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid rgba(226, 232, 240, 0.5);
         border-top: 3px solid var(--mat-sys-primary, #0d47a1);
-        background: #fafbfc;
+        background: rgba(250, 251, 252, 0.4);
       }
       .selector-head__brand {
         display: flex;
@@ -176,30 +178,30 @@ import { SistemaCard } from '../../models/sistema.model';
       }
       .selector-head__icon {
         color: var(--mat-sys-primary, #0d47a1);
-        font-size: 1.5rem;
-        width: 1.5rem;
-        height: 1.5rem;
+        font-size: 1.25rem;
+        width: 1.25rem;
+        height: 1.25rem;
       }
       .selector-head__title {
         margin: 0;
-        font-size: 1.125rem;
+        font-size: 0.9375rem;
         font-weight: 600;
         color: var(--sisrh-color-primary, #0f172a);
         letter-spacing: -0.01em;
       }
       .selector-greeting {
-        padding: 1.5rem 1.5rem 1rem;
+        padding: 1rem 1rem 0.5rem;
       }
       .selector-greeting__title {
-        margin: 0 0 0.25rem;
-        font-size: 1.375rem;
+        margin: 0 0 0.125rem;
+        font-size: 1rem;
         font-weight: 600;
         color: var(--sisrh-color-primary, #0f172a);
         letter-spacing: -0.015em;
       }
       .selector-greeting__sub {
         margin: 0;
-        font-size: 0.9375rem;
+        font-size: 0.75rem;
         color: var(--sisrh-color-muted, #64748b);
         line-height: 1.45;
       }
@@ -230,24 +232,31 @@ import { SistemaCard } from '../../models/sistema.model';
       }
       .selector-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-        gap: 1rem;
-        padding: 0.5rem 1.5rem 1.5rem;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.625rem;
+        padding: 0.5rem 1rem 1rem;
+      }
+      @media (max-width: 680px) {
+        .selector-grid {
+          grid-template-columns: 1fr;
+        }
       }
       .sys-card {
         all: unset;
         cursor: pointer;
         display: flex;
         flex-direction: column;
-        gap: 0.875rem;
-        padding: 1.125rem;
-        border: 1px solid var(--sisrh-color-border, #e2e8f0);
-        border-radius: 10px;
-        background: #fff;
+        align-items: flex-start;
+        gap: 0.5rem;
+        padding: 0.75rem;
+        border: 1px solid rgba(226, 232, 240, 0.8);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.95);
         transition: border-color 120ms ease, box-shadow 120ms ease,
           transform 120ms ease;
         text-align: left;
-        min-height: 170px;
+        min-height: auto;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
       }
       .sys-card:hover:not(.sys-card--locked) {
         border-color: var(--mat-sys-primary, #0d47a1);
@@ -271,18 +280,19 @@ import { SistemaCard } from '../../models/sistema.model';
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        gap: 0.375rem;
-        width: 2.5rem;
-        height: 2.5rem;
+        gap: 0.25rem;
+        width: 2.25rem;
+        height: 2.25rem;
         border-radius: 8px;
         background: rgba(13, 71, 161, 0.08);
         position: relative;
+        flex-shrink: 0;
       }
       .sys-card__icon {
         color: var(--mat-sys-primary, #0d47a1);
-        font-size: 1.5rem;
-        width: 1.5rem;
-        height: 1.5rem;
+        font-size: 1.125rem;
+        width: 1.125rem;
+        height: 1.125rem;
       }
       .sys-card__lock {
         position: absolute;
@@ -301,34 +311,37 @@ import { SistemaCard } from '../../models/sistema.model';
         display: flex;
         flex-direction: column;
         gap: 0.5rem;
+        flex: 1;
       }
       .sys-card__name {
-        margin: 0;
-        font-size: 1rem;
+        margin: 0 0 0.125rem 0;
+        font-size: 0.9375rem;
         font-weight: 600;
         color: var(--sisrh-color-primary, #0f172a);
         letter-spacing: -0.01em;
       }
       .sys-card__desc {
         margin: 0;
-        font-size: 0.8125rem;
+        font-size: 0.6875rem;
         color: var(--sisrh-color-muted, #64748b);
         line-height: 1.45;
       }
       .sys-card__roles {
-        margin-top: 0.25rem;
+        margin-top: auto;
+        padding-top: 0.25rem;
       }
       .sys-card__chip {
         background: rgba(13, 71, 161, 0.08) !important;
         color: var(--mat-sys-primary, #0d47a1) !important;
-        font-size: 0.6875rem !important;
+        font-size: 0.6rem !important;
         font-weight: 600 !important;
         letter-spacing: 0.02em;
-        min-height: 1.5rem !important;
-        height: 1.5rem !important;
+        min-height: 1.125rem !important;
+        height: 1.125rem !important;
       }
       .sys-card__nochip {
         margin: 0;
+        margin-top: auto;
         font-size: 0.75rem;
         color: var(--sisrh-color-muted, #64748b);
         font-style: italic;
@@ -337,12 +350,12 @@ import { SistemaCard } from '../../models/sistema.model';
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 1rem;
+        gap: 0.75rem;
         flex-wrap: wrap;
-        padding: 0.875rem 1.5rem;
-        border-top: 1px solid var(--sisrh-color-border, #e2e8f0);
-        background: #fafbfc;
-        font-size: 0.8125rem;
+        padding: 0.625rem 1rem;
+        border-top: 1px solid rgba(226, 232, 240, 0.5);
+        background: rgba(250, 251, 252, 0.4);
+        font-size: 0.6875rem;
         color: var(--sisrh-color-muted, #64748b);
       }
       .selector-foot__session {
@@ -352,9 +365,9 @@ import { SistemaCard } from '../../models/sistema.model';
       }
       .selector-foot__session mat-icon {
         color: #16a34a;
-        font-size: 1rem;
-        width: 1rem;
-        height: 1rem;
+        font-size: 0.875rem;
+        width: 0.875rem;
+        height: 0.875rem;
       }
       .selector-foot__ref {
         font-size: 0.6875rem;

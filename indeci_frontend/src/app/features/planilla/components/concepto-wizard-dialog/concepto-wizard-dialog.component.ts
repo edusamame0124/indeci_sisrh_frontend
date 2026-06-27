@@ -40,6 +40,7 @@ import { ConceptoTipoInternoApiService } from '../../services/concepto-tipo-inte
 import { PlanillaTipoApiService } from '../../services/planilla-tipo-api.service';
 import { CatalogoMgrhApiService } from '../../services/catalogo-mgrh-api.service';
 import { UppercaseDirective } from '../../../../shared/directives/uppercase.directive';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import type { ConceptoRtps } from '../../models/concepto-rtps.model';
 import type { ConceptoTipoInterno } from '../../models/concepto-tipo-interno.model';
 import type { PlanillaTipo } from '../../models/planilla-tipo.model';
@@ -155,6 +156,7 @@ export class ConceptoWizardDialogComponent {
   private readonly planillaTipoApi = inject(PlanillaTipoApiService);
   private readonly catalogoMgrhApi = inject(CatalogoMgrhApiService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly snack = inject(MatSnackBar);
 
   /**
    * Etiquetas legibles de la clasificaciÃ³n del motor (Â§13) y microcopy de su
@@ -959,11 +961,60 @@ export class ConceptoWizardDialogComponent {
 
   // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ Submit â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
+  obtenerErroresFormulario(): string[] {
+    const errores: string[] = [];
+
+    if (this.basicosForm.controls.nombre.invalid) {
+      errores.push('Datos básicos: Nombre (obligatorio, máx 200 caracteres)');
+    }
+    if (this.basicosForm.controls.naturaleza.invalid) {
+      errores.push('Datos básicos: Abreviatura para boleta (obligatoria, máx 120 caracteres)');
+    }
+    if (this.basicosForm.controls.tipoConceptoInterno.invalid) {
+      errores.push('Datos básicos: Tipo de Concepto');
+    }
+
+    if (this.aplicabilidadForm.controls.regimenAplicable.invalid) {
+      errores.push('Aplicabilidad: Régimen aplicable');
+    }
+    if (this.aplicabilidadForm.controls.fechaVigIni.invalid) {
+      errores.push('Aplicabilidad: Vigente desde (obligatorio)');
+    }
+    if (this.aplicabilidadForm.controls.planillaTipos.invalid && this.incluyeEnPlanilla() === 'SI') {
+      errores.push('Aplicabilidad: Debe asociar al menos una planilla operativa');
+    }
+
+    if (this.clasificacionForm.controls.codigoMef.invalid && this.visibilidad().codigoMefObligatorio) {
+      errores.push('Clasificación: Código MEF / AIRHSP (obligatorio para conceptos remunerativos)');
+    }
+
+    return errores;
+  }
+
   onSubmit(): void {
     this.basicosForm.markAllAsTouched();
     this.aplicabilidadForm.markAllAsTouched();
     this.clasificacionForm.markAllAsTouched();
-    if (!this.puedeGuardar()) return;
+
+    if (this.data.modo === 'crear') {
+      if (!this.puedeGuardar()) {
+        const errores = this.obtenerErroresFormulario();
+        const msg = errores.length > 0 
+          ? 'Faltan completar campos obligatorios:\n' + errores.map(e => `• ${e}`).join('\n')
+          : 'Faltan completar campos obligatorios en el formulario.';
+        this.snack.open(msg, 'Cerrar', { duration: 6000 });
+        return;
+      }
+    } else {
+      // En edición (modo configurar), permitimos actualizar con cambios mínimos.
+      // Solo validamos nombre y naturaleza obligatorios para evitar caídas en BD.
+      const nombreVal = this.basicosForm.controls.nombre.value?.trim();
+      const natVal = this.basicosForm.controls.naturaleza.value?.trim();
+      if (!nombreVal || !natVal) {
+        this.snack.open('El nombre y la abreviatura son campos obligatorios para guardar.', 'Cerrar', { duration: 5000 });
+        return;
+      }
+    }
 
     const body = this.buildPayload();
     this.dialogRef.close(body);

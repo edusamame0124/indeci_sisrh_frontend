@@ -1,0 +1,39 @@
+@if (loading()) {
+  <div class="loading" aria-busy="true">
+    <mat-progress-spinner mode="indeterminate" diameter="48" aria-label="Cargando" />
+  </div>
+} @else if (!empleadoId()) {
+  <div class="hint">No hay registro de empleado vinculado a esta persona. No se puede gestionar configuración de salud.</div>
+} @else if (error()) {
+  <div class="error-msg" role="alert">
+    <mat-icon fontIcon="error_outline" aria-hidden="true" />
+    {{ error() }}
+  </div>
+} @else {
+  <mat-tab-group dynamicHeight animationDuration="150ms">
+    <mat-tab label="Información actual">
+      <app-salud-eps-actual-tab
+        [empleadoId]="empleadoId()"
+        [actual]="actual()"
+        [epsList]="epsList()"
+        (guardado)="onGuardado()"
+      />
+    </mat-tab>
+
+    <mat-tab label="Historial de vigencias">
+      <app-salud-eps-historial-tab
+        [empleadoId]="empleadoId()"
+        [rows]="historial()"
+        (refrescar)="cargar()"
+      />
+    </mat-tab>
+
+    <mat-tab label="Documentos">
+      <app-salud-eps-documentos-tab [rows]="historial()" />
+    </mat-tab>
+
+    <mat-tab label="Auditoría">
+      <app-salud-eps-auditoria-tab [rows]="historial()" />
+    </mat-tab>
+  </mat-tab-group>
+}
