@@ -6,13 +6,10 @@ import { provideHttpClientTesting, HttpTestingController } from '@angular/common
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { of } from 'rxjs';
-import {
-  PERSONA_QUICK_ACCESS,
-  PersonaListPageComponent,
-} from './persona-list-page.component';
-import type { PersonaEmpleado } from '../../models/persona-empleado.model';
+import { PersonaListPageComponent } from './persona-list-page.component';
+import type { PersonaResumen } from '../../models/persona-empleado.model';
 
-describe('PersonaListPageComponent — quick-access columns', () => {
+describe('PersonaListPageComponent — columnas de la tabla', () => {
   let httpMock: HttpTestingController;
 
   function provideBreakpointStub(matches: boolean) {
@@ -37,24 +34,32 @@ describe('PersonaListPageComponent — quick-access columns', () => {
     return TestBed.createComponent(PersonaListPageComponent);
   }
 
-  function flushList(rows: PersonaEmpleado[]): void {
-    httpMock.expectOne('/api/rrhh/persona').flush({ data: rows });
+  function flushList(rows: PersonaResumen[]): void {
+    httpMock.expectOne((req) => req.url === '/api/rrhh/persona/page').flush({
+      estado: 'OK',
+      mensaje: 'Éxito',
+      data: {
+        content: rows,
+        totalElements: rows.length,
+        totalPages: 1,
+        pageNumber: 0,
+        pageSize: 20
+      }
+    });
   }
 
-  const personaActiva: PersonaEmpleado = {
+  const personaActiva: PersonaResumen = {
     id: 41,
     nombreCompleto: 'Juan Pérez',
     dni: '12345678',
-    email: 'jp@example.com',
     codigoInterno: 'EMP00041',
     estado: 'ACTIVO',
   };
 
-  const personaInactiva: PersonaEmpleado = {
+  const personaInactiva: PersonaResumen = {
     id: 42,
     nombreCompleto: 'María López',
     dni: '87654321',
-    email: 'ml@example.com',
     codigoInterno: 'EMP00042',
     estado: 'INACTIVO',
   };
@@ -64,21 +69,7 @@ describe('PersonaListPageComponent — quick-access columns', () => {
     TestBed.resetTestingModule();
   });
 
-  it('declara la constante PERSONA_QUICK_ACCESS con los 5 módulos en el orden pedido', () => {
-    const keys = PERSONA_QUICK_ACCESS.map((qa) => qa.key);
-    expect(keys).toEqual(['puesto', 'cuentaBancaria', 'pension', 'planilla', 'conceptos']);
-
-    const segments = PERSONA_QUICK_ACCESS.map((qa) => qa.segment);
-    expect(segments).toEqual([
-      'puesto',
-      'cuentas-bancarias',
-      'pension',
-      'planilla',
-      'conceptos',
-    ]);
-  });
-
-  it('renderiza las 10 columnas en orden (desktop ≥1024px)', () => {
+  it('renderiza las 8 columnas en orden (desktop ≥1024px)', () => {
     const fixture = buildFixture(false);
     fixture.detectChanges();
     flushList([personaActiva]);
@@ -89,16 +80,14 @@ describe('PersonaListPageComponent — quick-access columns', () => {
       'dni',
       'codigoInterno',
       'estado',
-      'puesto',
-      'cuentaBancaria',
-      'pension',
-      'planilla',
+      'datosEmpleado',
       'conceptos',
+      'suspension4ta',
       'acciones',
     ]);
   });
 
-  it('colapsa a columna única "accesos" en modo compact (<1024px)', () => {
+  it('colapsa a columnas reducidas en modo compact (<1024px)', () => {
     const fixture = buildFixture(true);
     fixture.detectChanges();
     flushList([personaActiva]);
@@ -108,47 +97,45 @@ describe('PersonaListPageComponent — quick-access columns', () => {
       'nombreCompleto',
       'dni',
       'estado',
-      'accesos',
+      'datosEmpleado',
       'acciones',
     ]);
   });
 
-  it('genera hrefs RouterLink correctos para cada quick-access', () => {
+  it('genera hrefs RouterLink correctos para los accesos del empleado', () => {
     const fixture = buildFixture(false);
     fixture.detectChanges();
     flushList([personaActiva]);
     fixture.detectChanges();
 
     const host: HTMLElement = fixture.nativeElement;
-    const expected: Record<string, string> = {
-      'puesto laboral': '/empleados/puesto/personas/41',
-      'cuenta bancaria': '/empleados/cuentas-bancarias/personas/41',
-      pensión: '/empleados/pension/personas/41',
-      planilla: '/empleados/planilla/personas/41',
-      'conceptos asignados': '/empleados/conceptos/personas/41',
-    };
+    
+    // Ver Datos
+    const linkDatos = host.querySelector<HTMLAnchorElement>('a.btn-datos-empleado');
+    expect(linkDatos).toBeTruthy();
+    expect(linkDatos!.getAttribute('href')).toBe('/empleados/datos/41');
 
-    for (const [label, href] of Object.entries(expected)) {
-      const link = host.querySelector<HTMLAnchorElement>(
-        `a[aria-label="Ir a ${label} de Juan Pérez"]`,
-      );
-      expect(link, `enlace para ${label}`).toBeTruthy();
-      expect(link!.getAttribute('href')).toBe(href);
-    }
+    // Conceptos
+    const linkConceptos = host.querySelector<HTMLAnchorElement>('a[aria-label="Ver conceptos de Juan Pérez"]');
+    expect(linkConceptos).toBeTruthy();
+    expect(linkConceptos!.getAttribute('href')).toBe('/empleados/conceptos/personas/41');
+
+    // Suspensión 4ta
+    const linkSuspension = host.querySelector<HTMLAnchorElement>('a[aria-label="Suspensión 4ta de Juan Pérez"]');
+    expect(linkSuspension).toBeTruthy();
+    expect(linkSuspension!.getAttribute('href')).toBe('/empleados/suspension-4ta/personas/41');
   });
 
-  it('mantiene los 5 atajos visibles en personas INACTIVAS y marca la celda con data-inactive', () => {
+  it('marca las celdas como inactivas en personas INACTIVAS', () => {
     const fixture = buildFixture(false);
     fixture.detectChanges();
     flushList([personaInactiva]);
     fixture.detectChanges();
 
     const host: HTMLElement = fixture.nativeElement;
-    const inactiveLinks = host.querySelectorAll<HTMLAnchorElement>('a.row-action--quick');
-    expect(inactiveLinks.length).toBe(PERSONA_QUICK_ACCESS.length);
-
     const markedCells = host.querySelectorAll('td[data-inactive="true"]');
-    expect(markedCells.length).toBe(PERSONA_QUICK_ACCESS.length);
+    // Esperamos 3 celdas marcadas como inactivo (datosEmpleado, conceptos, suspension4ta)
+    expect(markedCells.length).toBe(3);
   });
 
   it('helper isInactive distingue ACTIVO/INACTIVO', () => {

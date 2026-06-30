@@ -1,0 +1,54 @@
+<h2 mat-dialog-title>Añadir empleado a Planilla Adicional</h2>
+
+<mat-dialog-content>
+  <div class="manual-dialog-container">
+    <p class="dialog-desc">Busque al empleado que desea incluir en la lista de candidatos para la generación adicional y justifique el motivo.</p>
+
+    <!-- Buscador de Persona -->
+    <div class="buscador-container">
+      <app-persona-picker
+        [soloEmpleados]="true"
+        [selected]="personaSeleccionada()"
+        (seleccionar)="onPersonaSeleccionada($event)"
+        (limpiar)="onLimpiarPersona()">
+      </app-persona-picker>
+    </div>
+
+    <!-- Formulario de Motivo -->
+    @if (personaSeleccionada()) {
+      <form [formGroup]="form" class="motivo-form">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Motivo de Inclusión</mat-label>
+          <mat-select formControlName="motivoBase">
+            <mat-option value="OMISION">Omisión Administrativa</mat-option>
+            <mat-option value="REINTEGRO">Reintegro / Bono Omitido</mat-option>
+            <mat-option value="MANDATO">Mandato Judicial / Cautelar</mat-option>
+            <mat-option value="OTRO">Otro Motivo</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width text-area-field">
+          <mat-label>Detalle / Justificación</mat-label>
+          <textarea matInput formControlName="justificacion" rows="3" placeholder="Especifique el documento o razón (ej. Resolución N° 123-2026)"></textarea>
+          @if (form.controls.justificacion.hasError('required')) {
+            <mat-error>El detalle es obligatorio.</mat-error>
+          }
+          @if (form.controls.justificacion.hasError('minlength')) {
+            <mat-error>Mínimo 5 caracteres.</mat-error>
+          }
+        </mat-form-field>
+      </form>
+    }
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button mat-dialog-close>Cancelar</button>
+  <button 
+    mat-flat-button 
+    color="primary" 
+    [disabled]="!personaSeleccionada() || form.invalid"
+    (click)="confirmar()">
+    Añadir a la lista
+  </button>
+</mat-dialog-actions>

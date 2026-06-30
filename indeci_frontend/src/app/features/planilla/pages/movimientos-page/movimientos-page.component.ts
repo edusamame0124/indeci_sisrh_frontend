@@ -8,6 +8,7 @@ import {
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
+import { NgClass } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
@@ -19,14 +20,17 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
+import { MatTabsModule } from '@angular/material/tabs';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { sisrhConfirmDialogConfig } from '../../../../core/config/sisrh-dialog.config';
 import { ConfirmDialogComponent } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { PeriodoPlanillaApiService } from '../../services/periodo-planilla-api.service';
 import { MovimientoPlanillaApiService } from '../../services/movimiento-planilla-api.service';
 import { ExportPlanillaApiService } from '../../services/export-planilla-api.service';
+import { PlanillaLoteApiService } from '../../services/planilla-lote-api.service';
 import { ErrorMessageService } from '../../../../core/services/error-message.service';
 import type { ExportHistorialRow } from '../../models/export-historial.model';
+import type { PlanillaLoteDashboardRow } from '../../models/planilla-lote.model';
 import { isErrorResponse } from '../../../../core/models/error-response.model';
 import { PeriodoEstadoBadgeComponent } from '../../components/periodo-estado-badge/periodo-estado-badge.component';
 import type { PeriodoPlanillaRow } from '../../models/periodo-planilla.model';
@@ -62,7 +66,10 @@ export type FiltroSemaforo = 'TODOS' | 'BIEN' | 'NETO_NO_VA' | 'SIN_VALIDAR';
     MatMenuModule,
     MatProgressSpinnerModule,
     MatPaginatorModule,
+    MatTabsModule,
+    MatTooltipModule,
     PeriodoEstadoBadgeComponent,
+    NgClass,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './movimientos-page.component.html',
@@ -72,9 +79,19 @@ export class MovimientosPageComponent implements OnInit {
   private readonly periodoApi = inject(PeriodoPlanillaApiService);
   private readonly movimientoApi = inject(MovimientoPlanillaApiService);
   private readonly exportApi = inject(ExportPlanillaApiService);
+  private readonly loteApi = inject(PlanillaLoteApiService);
   private readonly dialogs = inject(MatDialog);
   private readonly snack = inject(MatSnackBar);
   private readonly errors = inject(ErrorMessageService);
+
+  readonly columnsLotes = [
+    'descripcion',
+    'regimen',
+    'empleados',
+    'totalNeto',
+    'estado',
+    'acciones',
+  ] as const;
 
   readonly columns = [
     'empleado',
@@ -93,6 +110,12 @@ export class MovimientosPageComponent implements OnInit {
 
   readonly periodos = signal<readonly PeriodoPlanillaRow[]>([]);
   readonly periodoSeleccionado = signal<string | null>(null);
+  
+  readonly lotes = signal<readonly PlanillaLoteDashboardRow[]>([]);
+  readonly loteSeleccionado = signal<PlanillaLoteDashboardRow | null>(null);
+  readonly selectedTabIndex = signal(0);
+  readonly lotesLoading = signal(false);
+
   readonly rows = signal<readonly MovimientoPlanillaRow[]>([]);
   readonly loading = signal(true);
   readonly tableLoading = signal(false);
@@ -123,10 +146,16 @@ export class MovimientosPageComponent implements OnInit {
     return { verde, rojo, neutro };
   });
 
-  /** Filas tras aplicar el filtro de semáforo. */
+  /** Filas tras aplicar el filtro de semáforo Y el Lote seleccionado. */
   readonly rowsFiltradas = computed(() => {
     const f = this.filtroSemaforo();
-    const list = this.rows();
+    const lote = this.loteSeleccionado();
+    let list = this.rows();
+    
+    if (lote) {
+      list = list.filter((r) => r.loteId === lote.id);
+    }
+    
     if (f === 'TODOS') return list;
     if (f === 'SIN_VALIDAR') return list.filter((r) => r.estadoNeto == null);
     return list.filter((r) => r.estadoNeto === f);
@@ -172,6 +201,15 @@ export class MovimientosPageComponent implements OnInit {
     return codigo || nombre || 'Sin régimen';
   }
 
+  nombreRegimen(codigo: string | null | undefined): string {
+    switch(codigo?.trim()) {
+      case '1057': return 'CAS';
+      case '30057': return 'SERVIR';
+      case '276': return 'D.L. 276';
+      default: return codigo || '—';
+    }
+  }
+
   /** Estados distintos al actual (para el menú de transición). */
   estadosOtros(row: MovimientoPlanillaRow): readonly EstadoMovimiento[] {
     return this.estadosDisponibles.filter((e) => e !== row.estado);
@@ -183,9 +221,32 @@ export class MovimientosPageComponent implements OnInit {
 
   onPeriodoChange(periodo: string): void {
     this.periodoSeleccionado.set(periodo);
+    this.loteSeleccionado.set(null);
+    this.selectedTabIndex.set(0);
     this.pageIndex.set(0);
+  }
+
+  verDashboard(): void {
+    const periodo = this.periodoSeleccionado();
+    if (!periodo) return;
+    this.cargarLotes(periodo);
     this.cargarMovimientos(periodo);
     this.cargarHistorial(periodo);
+  }
+
+  seleccionarLote(lote: PlanillaLoteDashboardRow): void {
+    this.loteSeleccionado.set(lote);
+    this.pageIndex.set(0);
+    this.selectedTabIndex.set(1);
+  }
+
+  onTabChange(index: number): void {
+    this.selectedTabIndex.set(index);
+    if (index === 0) {
+      // Al volver al tab de Lotes, limpiamos el lote seleccionado
+      this.loteSeleccionado.set(null);
+      this.pageIndex.set(0);
+    }
   }
 
   descargarXlsx(): void {
@@ -320,6 +381,21 @@ export class MovimientosPageComponent implements OnInit {
     this.exportApi.historial(periodo).subscribe({
       next: (rows) => this.historial.set(rows),
       error: () => this.historial.set([]),
+    });
+  }
+
+  private cargarLotes(periodo: string): void {
+    this.lotesLoading.set(true);
+    this.loteApi.obtenerLotesDashboard(periodo).subscribe({
+      next: (rows) => {
+        this.lotes.set(rows);
+        this.lotesLoading.set(false);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.lotesLoading.set(false);
+        this.lotes.set([]);
+        this.onHttpSnack(err);
+      }
     });
   }
 

@@ -18,6 +18,7 @@ export interface EmpleadoPlanillaInput {
   readonly condicionLaboralId?: number | null;
   readonly tipoPersonaMefId?: number | null;
   readonly registroPlazaAirhsp?: string | null;
+  readonly fechaInicioContrato?: string | null;
 }
 
 /** Fila de la tabla consolidada (todos los empleados) — espejo de `PlanillaConsolidadaRowDto`. */
@@ -68,4 +69,5 @@ export interface EmpleadoPlanillaRow {
   readonly condicionLaboral: string | null;
   readonly tipoPersonaMefId: number | null;
   readonly registroPlazaAirhsp: string | null;
+  readonly fechaInicioContrato: string | null;
 }

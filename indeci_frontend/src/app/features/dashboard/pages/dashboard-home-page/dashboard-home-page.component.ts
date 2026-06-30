@@ -244,7 +244,7 @@ import { buildDashboardCards } from './dashboard-nav-cards';
 
         width: 4px;
 
-        background: var(--sisrh-color-cta, #0369a1);
+        background: var(--sisrh-primary, #0063A1);
 
       }
 
@@ -490,7 +490,7 @@ import { buildDashboardCards } from './dashboard-nav-cards';
 
       .dashboard__card:focus-visible {
 
-        outline: 3px solid var(--sisrh-color-cta, #0369a1);
+        outline: 3px solid var(--sisrh-primary, #0063A1);
 
         outline-offset: 3px;
 
@@ -546,7 +546,7 @@ import { buildDashboardCards } from './dashboard-nav-cards';
 
         background: #f1f5f9;
 
-        color: var(--sisrh-color-cta, #0369a1);
+        color: var(--sisrh-primary, #0063A1);
 
       }
 
@@ -598,7 +598,7 @@ import { buildDashboardCards } from './dashboard-nav-cards';
 
         text-transform: uppercase;
 
-        color: var(--sisrh-color-cta, #0369a1);
+        color: var(--sisrh-text-muted, #64748b);
 
       }
 
@@ -646,7 +646,7 @@ import { buildDashboardCards } from './dashboard-nav-cards';
 
         font-weight: 600;
 
-        color: var(--sisrh-color-cta, #0369a1);
+        color: var(--sisrh-primary, #0063A1);
 
       }
 

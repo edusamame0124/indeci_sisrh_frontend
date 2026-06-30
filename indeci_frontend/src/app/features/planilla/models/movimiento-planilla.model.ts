@@ -18,4 +18,7 @@ export interface MovimientoPlanillaRow {
   readonly neto50pctMinimo: number | null;
   /** 'BIEN' | 'NETO_NO_VA' — semáforo de validación neto 50%. */
   readonly estadoNeto: string | null;
+  readonly loteId: number | null;
+  readonly regimenPensionario?: string;
+  readonly dias?: number;
 }

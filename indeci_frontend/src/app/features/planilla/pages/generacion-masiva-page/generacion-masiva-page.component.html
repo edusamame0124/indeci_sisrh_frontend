@@ -24,8 +24,9 @@
         </p>
       } @else {
         <!-- Selector + acción -->
-        <div class="control-row">
-          <mat-form-field appearance="outline" class="periodo-select">
+        <div class="parametros-grid">
+          <!-- Fila 1 -->
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
             <mat-label>Periodo (solo ABIERTOS)</mat-label>
             <mat-select
               [value]="periodoSeleccionado()"
@@ -38,23 +39,184 @@
               }
             </mat-select>
           </mat-form-field>
-          <button
-            mat-flat-button
-            color="primary"
-            type="button"
-            [disabled]="!canGenerar()"
-            (click)="confirmarGeneracion()"
-          >
-            <mat-icon fontIcon="group_work" aria-hidden="true" />
-            Generar planilla
-          </button>
+
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
+            <mat-label>Régimen laboral *</mat-label>
+            <mat-select
+              [value]="regimenSeleccionado()"
+              (selectionChange)="onRegimenChange($event.value)"
+              [disabled]="fase() === 'generando'">
+              @for (r of regimenes(); track r.id) {
+                <mat-option [value]="r.id">{{ r.codigo }} - {{ r.nombre }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
+            <mat-label>Condición laboral</mat-label>
+            <mat-select [value]="condicionLaboralId()" (selectionChange)="condicionLaboralId.set($event.value)" [disabled]="fase() === 'generando' || regimenSeleccionado() === null || isRegimen1057()">
+              <mat-option [value]="null">Sin especificar</mat-option>
+              @for (c of condicionesLaborales(); track c.id) {
+                <mat-option [value]="c.id">{{ c.nombre }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
+            <mat-label>Tipo contrato</mat-label>
+            <mat-select [value]="tipoContratoId()" (selectionChange)="onTipoContratoChange($event.value)" [disabled]="fase() === 'generando' || regimenSeleccionado() === null || isRegimen276()">
+              <mat-option [value]="null">Sin especificar</mat-option>
+              @for (t of tiposContrato(); track t.id) {
+                <mat-option [value]="t.id">{{ t.nombre }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
+            <mat-label>Modalidad CAS</mat-label>
+            <mat-select [value]="modalidadCasId()" (selectionChange)="modalidadCasId.set($event.value)" [disabled]="fase() === 'generando' || regimenSeleccionado() === null || !isModalidadCasEnabled()">
+              <mat-option [value]="null">Sin especificar</mat-option>
+              @for (m of modalidadesCas(); track m.id) {
+                <mat-option [value]="m.id">{{ m.nombre }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
+            <mat-label>Concepto de Planilla</mat-label>
+            <mat-select
+              [value]="conceptoSeleccionado()"
+              (selectionChange)="conceptoSeleccionado.set($event.value)"
+              [disabled]="!regimenSeleccionado() || fase() === 'generando'">
+              @for (conc of conceptosPermitidos(); track conc.codigo) {
+                <mat-option [value]="conc.codigo">{{ conc.etiqueta }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <!-- Fila 2 -->
+          <div class="ejecucion-group">
+            <mat-radio-group
+              class="tipo-planilla-group"
+              [value]="tipoPlanilla()"
+              (change)="onTipoPlanillaChange($event.value)"
+              [disabled]="fase() === 'generando'">
+              <mat-radio-button value="ORDINARIA">Ordinaria</mat-radio-button>
+              <mat-radio-button value="ADICIONAL">Adicional</mat-radio-button>
+            </mat-radio-group>
+          </div>
+
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
+            <mat-label>Orden de Boleta</mat-label>
+            <mat-select
+              [value]="ordenBoletaSeleccionado()"
+              (selectionChange)="ordenBoletaSeleccionado.set($event.value)"
+              [disabled]="fase() === 'generando'">
+              <mat-option value="POR_DEPENDENCIA">Por Dependencia</mat-option>
+              <mat-option value="POR_NIVEL_REMUNERATIVO">Por Nivel Remunerativo</mat-option>
+              <mat-option value="ALFABETICO">Alfabético</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <div class="acciones-group">
+            <button
+              mat-flat-button
+              color="primary"
+              type="button"
+              class="btn-generar"
+              [disabled]="!canGenerar()"
+              (click)="confirmarGeneracion()"
+            >
+              <mat-icon fontIcon="group_work" aria-hidden="true" />
+              Generar planilla
+            </button>
+          </div>
         </div>
 
         <!-- Progress + aria-live -->
         @if (fase() === 'generando') {
           <div class="progress" role="status" aria-live="polite">
-            <p>Generando planilla para el periodo {{ periodoSeleccionado() }}…</p>
+            <p>Generando planilla {{ tipoPlanilla() === 'ORDINARIA' ? 'masiva' : 'adicional' }} para el periodo {{ periodoSeleccionado() }}…</p>
             <mat-progress-bar mode="indeterminate" aria-label="Generación en curso" />
+          </div>
+        }
+
+        <!-- Tabla de Candidatos (Solo Adicional) -->
+        @if (tipoPlanilla() === 'ADICIONAL' && fase() === 'idle') {
+          <div class="candidatos-section">
+            <div class="candidatos-header">
+              <div class="candidatos-header-text">
+                <h3>Candidatos a Planilla Adicional</h3>
+                <p class="candidatos-desc">Seleccione los empleados (Rezagados o con Cambio de Rol) que desea incluir en este lote adicional.</p>
+              </div>
+              <button mat-stroked-button color="primary" (click)="abrirDialogoManual()" [disabled]="loading()">
+                <mat-icon fontIcon="add_circle" aria-hidden="true" />
+                Añadir empleado manualmente
+              </button>
+            </div>
+            
+            @if (candidatos().length > 0) {
+              <div class="sisrh-table-scroll">
+                <table mat-table [dataSource]="candidatos()" class="tbl">
+                  <ng-container matColumnDef="select">
+                    <th mat-header-cell *matHeaderCellDef>
+                      <mat-checkbox (change)="$event ? toggleAllRows() : null"
+                                    [checked]="selection.hasValue() && isAllSelected()"
+                                    [indeterminate]="selection.hasValue() && !isAllSelected()"
+                                    aria-label="Seleccionar todos">
+                      </mat-checkbox>
+                    </th>
+                    <td mat-cell *matCellDef="let row">
+                      <mat-checkbox (click)="$event.stopPropagation()"
+                                    (change)="$event ? selection.toggle(row) : null"
+                                    [checked]="selection.isSelected(row)"
+                                    aria-label="Seleccionar fila">
+                      </mat-checkbox>
+                    </td>
+                  </ng-container>
+
+                  <ng-container matColumnDef="dni">
+                    <th mat-header-cell *matHeaderCellDef>DNI</th>
+                    <td mat-cell *matCellDef="let row">{{ row.dni }}</td>
+                  </ng-container>
+
+                  <ng-container matColumnDef="nombre">
+                    <th mat-header-cell *matHeaderCellDef>Nombre</th>
+                    <td mat-cell *matCellDef="let row">{{ row.nombre }}</td>
+                  </ng-container>
+
+                  <ng-container matColumnDef="regimenLaboral">
+                    <th mat-header-cell *matHeaderCellDef>Régimen</th>
+                    <td mat-cell *matCellDef="let row">{{ row.regimenLaboral }}</td>
+                  </ng-container>
+
+                  <ng-container matColumnDef="fechaIngreso">
+                    <th mat-header-cell *matHeaderCellDef>Fecha Ingreso</th>
+                    <td mat-cell *matCellDef="let row">{{ row.fechaIngreso }}</td>
+                  </ng-container>
+
+                  <ng-container matColumnDef="motivo">
+                    <th mat-header-cell *matHeaderCellDef>Motivo</th>
+                    <td mat-cell *matCellDef="let row">
+                      @if (row.motivo === 'INCLUSION_MANUAL') {
+                        <span class="motivo-badge motivo-manual" [title]="row.justificacionManual">
+                          Manual: {{ row.justificacionManual?.split(' - ')?.[0] || 'Inclusión Manual' }}
+                        </span>
+                      } @else {
+                        <span class="motivo-badge" [class.motivo-nuevo]="row.motivo === 'NUEVO_INGRESO'">
+                          {{ row.motivo === 'NUEVO_INGRESO' ? 'Nuevo Ingreso' : 'Cambio de Rol / Prorrateo' }}
+                        </span>
+                      }
+                    </td>
+                  </ng-container>
+
+                  <tr mat-header-row *matHeaderRowDef="columnsCandidatos"></tr>
+                  <tr mat-row *matRowDef="let row; columns: columnsCandidatos;" (click)="selection.toggle(row)"></tr>
+                </table>
+              </div>
+            } @else {
+              <p class="empty">No hay candidatos pendientes para planilla adicional en este periodo.</p>
+            }
           </div>
         }
 
@@ -108,25 +270,47 @@
             @if (movimientosPost().length > 0) {
               <div class="sisrh-table-scroll">
                 <table mat-table [dataSource]="movimientosPost()" class="tbl">
-                  <ng-container matColumnDef="empleadoId">
-                    <th mat-header-cell *matHeaderCellDef scope="col">Empleado</th>
-                    <td mat-cell *matCellDef="let row" class="sisrh-tabular">#{{ row.empleadoId }}</td>
+                  <ng-container matColumnDef="empleadoDni">
+                    <th mat-header-cell *matHeaderCellDef scope="col">DNI</th>
+                    <td mat-cell *matCellDef="let row" class="sisrh-tabular">{{ row.empleadoDni }}</td>
+                  </ng-container>
+                  <ng-container matColumnDef="empleadoNombre">
+                    <th mat-header-cell *matHeaderCellDef scope="col">Apellidos y Nombres</th>
+                    <td mat-cell *matCellDef="let row">{{ row.empleadoNombre }}</td>
+                  </ng-container>
+                  <ng-container matColumnDef="regimenPensionario">
+                    <th mat-header-cell *matHeaderCellDef scope="col">Régimen Pensionario</th>
+                    <td mat-cell *matCellDef="let row">{{ row.regimenPensionario || '-' }}</td>
+                  </ng-container>
+                  <ng-container matColumnDef="dias">
+                    <th mat-header-cell *matHeaderCellDef scope="col" class="sisrh-right">Días</th>
+                    <td mat-cell *matCellDef="let row" class="sisrh-right sisrh-tabular">{{ row.dias }}</td>
                   </ng-container>
                   <ng-container matColumnDef="totalIngresos">
-                    <th mat-header-cell *matHeaderCellDef scope="col">Ingresos</th>
-                    <td mat-cell *matCellDef="let row" class="sisrh-tabular">S/ {{ fmtMonto(row.totalIngresos) }}</td>
+                    <th mat-header-cell *matHeaderCellDef scope="col" class="sisrh-right">Ingresos</th>
+                    <td mat-cell *matCellDef="let row" class="sisrh-right sisrh-tabular">S/ {{ fmtMonto(row.totalIngresos) }}</td>
                   </ng-container>
                   <ng-container matColumnDef="totalDescuentos">
-                    <th mat-header-cell *matHeaderCellDef scope="col">Descuentos</th>
-                    <td mat-cell *matCellDef="let row" class="sisrh-tabular">S/ {{ fmtMonto(row.totalDescuentos) }}</td>
+                    <th mat-header-cell *matHeaderCellDef scope="col" class="sisrh-right">Descuentos</th>
+                    <td mat-cell *matCellDef="let row" class="sisrh-right sisrh-tabular">S/ {{ fmtMonto(row.totalDescuentos) }}</td>
                   </ng-container>
                   <ng-container matColumnDef="netoPagar">
-                    <th mat-header-cell *matHeaderCellDef scope="col">Neto</th>
-                    <td mat-cell *matCellDef="let row" class="sisrh-tabular">S/ {{ fmtMonto(row.netoPagar) }}</td>
+                    <th mat-header-cell *matHeaderCellDef scope="col" class="sisrh-right">Neto</th>
+                    <td mat-cell *matCellDef="let row" class="sisrh-right sisrh-tabular"><strong>S/ {{ fmtMonto(row.netoPagar) }}</strong></td>
                   </ng-container>
                   <ng-container matColumnDef="estado">
                     <th mat-header-cell *matHeaderCellDef scope="col">Estado</th>
-                    <td mat-cell *matCellDef="let row">{{ row.estado }}</td>
+                    <td mat-cell *matCellDef="let row">
+                      <span class="estado-badge" [class.estado-ok]="row.estado === 'PROCESADO' || row.estado === 'GENERADO'">{{ row.estado }}</span>
+                    </td>
+                  </ng-container>
+                  <ng-container matColumnDef="acciones">
+                    <th mat-header-cell *matHeaderCellDef scope="col">Acciones</th>
+                    <td mat-cell *matCellDef="let row">
+                      <button mat-icon-button type="button" title="Ver boleta" [routerLink]="['/boletas', row.id]">
+                        <mat-icon fontIcon="visibility" />
+                      </button>
+                    </td>
                   </ng-container>
                   <tr mat-header-row *matHeaderRowDef="columns"></tr>
                   <tr mat-row *matRowDef="let row; columns: columns"></tr>
@@ -139,5 +323,13 @@
         }
       }
     </mat-card-content>
+    
+    <!-- Footer Normativo -->
+    <mat-card-footer class="sisrh-card-footer-normativo">
+      <mat-icon fontIcon="gavel" class="footer-icon"></mat-icon>
+      <div class="footer-text">
+        <strong>Info. Normativa:</strong> La Planilla Adicional es de uso exclusivo para regularizar pagos de personal ingresante posterior al cierre del aplicativo AIRHSP (MEF) y/o recálculos por variaciones de rol en el mes en curso.
+      </div>
+    </mat-card-footer>
   </mat-card>
 </div>

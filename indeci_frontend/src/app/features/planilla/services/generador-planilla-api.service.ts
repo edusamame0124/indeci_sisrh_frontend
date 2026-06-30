@@ -4,7 +4,7 @@ import { map, type Observable } from 'rxjs';
 import type { ApiResponse } from '../../../core/models/api-response.model';
 import { extractApiData } from '../../../core/http/map-api-response';
 import type { ResumenPlanilla } from '../models/resumen-planilla.model';
-import type { GeneracionMasivaResultado } from '../models/generacion-masiva.model';
+import type { GeneracionMasivaResultado, GenerarPlanillaCabeceraPayload } from '../models/generacion-masiva.model';
 
 /**
  * Generador de planilla (Spec 009 / T151, Spec 011 / C2).
@@ -25,10 +25,10 @@ export class GeneradorPlanillaApiService {
       .pipe(map(extractApiData));
   }
 
-  /** Generación masiva: POST `/generador-planilla/masivo/{periodo}` → resultado con fallidos. */
-  generarMasivo(periodo: string): Observable<GeneracionMasivaResultado> {
+  /** Generación masiva: POST `/generador-planilla/masivo` → resultado con fallidos. */
+  generarMasivo(payload: GenerarPlanillaCabeceraPayload): Observable<GeneracionMasivaResultado> {
     return this.http
-      .post<ApiResponse<GeneracionMasivaResultado>>(`${this.baseUrl}/masivo/${periodo}`, null)
+      .post<ApiResponse<GeneracionMasivaResultado>>(`${this.baseUrl}/masivo`, payload)
       .pipe(map(extractApiData));
   }
 

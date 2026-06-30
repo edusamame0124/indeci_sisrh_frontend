@@ -24,6 +24,7 @@ import type { EstructuraOrganica } from '../../catalogos/models/estructura-organ
 import type { RegimenLaboral } from '../../catalogos/models/regimen-laboral.model';
 import type { TipoContrato } from '../../catalogos/models/tipo-contrato.model';
 import type { CondicionLaboral } from '../../catalogos/models/condicion-laboral.model';
+import type { ModalidadCas } from '../../catalogos/models/modalidad-cas.model';
 
 /** Payload escritura catálogo banco/tipo (contrato reservado BKD-001). */
 export interface CatalogoNombrePayload {
@@ -198,6 +199,12 @@ export class CatalogoApiService {
   listarCondicionesLaborales(): Observable<readonly CondicionLaboral[]> {
     return this.http
       .get<ApiResponse<CondicionLaboral[]>>('/api/catalogos/condiciones-laborales')
+      .pipe(map((r) => [...extractApiData(r)]));
+  }
+
+  listarModalidadesCas(): Observable<readonly ModalidadCas[]> {
+    return this.http
+      .get<ApiResponse<ModalidadCas[]>>('/api/catalogos/modalidades-cas')
       .pipe(map((r) => [...extractApiData(r)]));
   }
 }

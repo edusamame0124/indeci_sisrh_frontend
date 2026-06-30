@@ -74,10 +74,17 @@ export class DetallePageComponent implements OnInit {
     return 'neutro';
   });
 
-  readonly ingresos = computed(() => this.filas().filter((r) => r.tipoConcepto === 'INGRESO'));
-  readonly descuentos = computed(() => this.filas().filter((r) => r.tipoConcepto === 'DESCUENTO'));
+  readonly ingresos = computed(() => this.filas().filter((r) => r.tipoConcepto === 'REMUNERATIVO' || r.tipoConcepto === 'INGRESO' || r.tipoConcepto === 'NO_REMUNERATIVO'));
+  readonly descuentos = computed(() => this.filas().filter((r) => 
+    r.tipoConcepto === 'DESCUENTO' || 
+    r.tipoConcepto === 'RETENCION' || 
+    r.tipoConcepto === 'RETENCION_TRIBUTARIA' || 
+    r.tipoConcepto === 'DESCUENTO_JUDICIAL' || 
+    r.tipoConcepto === 'APORTE_TRABAJADOR' ||
+    r.tipoConcepto === 'APORTE' // legacy
+  ));
   readonly aportesEmpleador = computed(() =>
-    this.filas().filter((r) => r.tipoConcepto === 'APORTE'),
+    this.filas().filter((r) => r.tipoConcepto === 'APORTE_EMPLEADOR'),
   );
 
   readonly subtotalIngresos = computed(() =>

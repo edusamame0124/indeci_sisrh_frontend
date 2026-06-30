@@ -36,12 +36,13 @@ describe('GeneradorPlanillaApiService (Spec 009 / T151)', () => {
     expect(done).toBe(true);
   });
 
-  it('generarMasivo POST /generador-planilla/masivo/{periodo} (BKD-001: void)', () => {
+  it('generarMasivo POST /generador-planilla/masivo (BKD-001: void)', () => {
     let done = false;
-    service.generarMasivo('2026-05').subscribe(() => (done = true));
-    const req = httpMock.expectOne('/api/rrhh/generador-planilla/masivo/2026-05');
+    const payload: any = { periodo: '2026-05', regimen: '728', concepto: '1000', tipoPlanilla: 'ORDINARIA' };
+    service.generarMasivo(payload).subscribe(() => (done = true));
+    const req = httpMock.expectOne('/api/rrhh/generador-planilla/masivo');
     expect(req.request.method).toBe('POST');
-    expect(req.request.body).toBeNull();
+    expect(req.request.body).toEqual(payload);
     req.flush({ estado: 'OK', mensaje: 'Planilla masiva generada', data: null });
     expect(done).toBe(true);
   });

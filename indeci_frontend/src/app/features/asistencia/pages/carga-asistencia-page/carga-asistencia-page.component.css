@@ -17,10 +17,12 @@
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
-  gap: 0.75rem 1.25rem;
-  margin-bottom: 1rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid var(--sisrh-border-soft, #e7ecf2);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background-color: var(--sisrh-surface-muted, #f8fafc);
+  border: 1px solid var(--sisrh-border, #e2e8f0);
+  border-radius: var(--sisrh-radius-lg, 6px);
 }
 
 .sel-periodo {
@@ -431,11 +433,29 @@
   flex-wrap: wrap;
   align-items: flex-start;
   gap: 1rem;
+  margin-top: 1rem;
+  padding: 1rem;
+  background-color: var(--sisrh-surface-muted, #f8fafc);
+  border: 1px solid var(--sisrh-border, #e2e8f0);
+  border-radius: var(--sisrh-radius-lg, 6px);
+}
+
+.btn-guardar {
+  border-radius: var(--sisrh-radius-md, 4px);
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  background-color: var(--sisrh-primary);
+  color: white;
 }
 
 .acciones__pdf {
-  border-color: var(--indeci-red, #C8102E);
-  color: var(--indeci-red, #C8102E);
+  border-radius: var(--sisrh-radius-md, 4px);
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  border-color: var(--sisrh-danger, #D32F2F);
+  color: var(--sisrh-danger, #D32F2F);
 }
 
 .acc-obs {

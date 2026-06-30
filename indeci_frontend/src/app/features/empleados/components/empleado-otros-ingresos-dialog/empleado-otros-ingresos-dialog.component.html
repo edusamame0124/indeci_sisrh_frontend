@@ -1,0 +1,125 @@
+<h2 mat-dialog-title>Otros Ingresos - Quinta Categoría</h2>
+
+<mat-dialog-content>
+  <div class="dialog-header">
+    <p><strong>Empleado:</strong> {{ data.empleadoNombre }}</p>
+    <p><strong>Año Fiscal:</strong> {{ data.anioFiscal }}</p>
+  </div>
+
+  <div *ngIf="isLoading()" class="loading-container">
+    <mat-spinner diameter="40"></mat-spinner>
+    <p>Cargando información...</p>
+  </div>
+
+  <mat-tab-group *ngIf="!isLoading()" (selectedIndexChange)="selectedTab.set($event)" dynamicHeight>
+    
+    <!-- Pestaña 1: Registro de Certificado -->
+    <mat-tab label="Registro de Certificado">
+      <form [formGroup]="form" class="form-container">
+        <p class="form-description">
+          Ingrese los montos percibidos por el empleado en otras entidades o empresas durante el año fiscal actual, 
+          así como las retenciones de quinta categoría que ya se le han efectuado.
+        </p>
+    
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Total Ingresos (S/)</mat-label>
+          <input matInput type="number" formControlName="montoIngresos" min="0" step="0.01">
+          <mat-error *ngIf="form.get('montoIngresos')?.hasError('required')">
+            El monto es obligatorio
+          </mat-error>
+          <mat-error *ngIf="form.get('montoIngresos')?.hasError('min')">
+            El monto no puede ser negativo
+          </mat-error>
+        </mat-form-field>
+    
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Total Retenciones Efectuadas (S/)</mat-label>
+          <input matInput type="number" formControlName="montoRetenciones" min="0" step="0.01">
+          <mat-error *ngIf="form.get('montoRetenciones')?.hasError('required')">
+            El monto es obligatorio
+          </mat-error>
+          <mat-error *ngIf="form.get('montoRetenciones')?.hasError('min')">
+            El monto no puede ser negativo
+          </mat-error>
+          <mat-error *ngIf="form.get('montoRetenciones')?.hasError('mayorAIngresos')">
+            Las retenciones no pueden ser mayores a los ingresos
+          </mat-error>
+        </mat-form-field>
+      </form>
+    </mat-tab>
+
+    <!-- Pestaña 2: Hoja de Liquidación -->
+    <mat-tab label="Hoja de Liquidación">
+      <div class="liquidacion-container" *ngIf="liquidacion; else noData">
+        
+        <div class="block">
+          <h3>[1] Proyección de Ingresos Anuales (RBA)</h3>
+          <div class="row"><span class="label">Sueldo Mensual Proyectado:</span> <span class="value">{{ liquidacion.sueldoMensualProyectado | currency:'PEN':'S/ ' }}</span></div>
+          <div class="row"><span class="label">Gratificaciones Proyectadas:</span> <span class="value">{{ liquidacion.gratificacionesProyectadas | currency:'PEN':'S/ ' }}</span></div>
+          <div class="row"><span class="label">Remuneraciones Percibidas:</span> <span class="value">{{ liquidacion.remuneracionesPercibidasAnteriores | currency:'PEN':'S/ ' }}</span></div>
+          <div class="row">
+            <span class="label">
+              Ingresos de Otros Empleadores: 
+              <mat-icon class="info-icon" matTooltip="Ingresos registrados en la pestaña de Registro de Certificado" matTooltipPosition="right">info</mat-icon>
+            </span>
+            <span class="value">{{ liquidacion.ingresosOtrosEmpleadores | currency:'PEN':'S/ ' }}</span>
+          </div>
+          <div class="divider"></div>
+          <div class="row total"><span class="label">Total Renta Bruta Anual (RBA) =</span> <span class="value">{{ liquidacion.totalRentaBrutaAnual | currency:'PEN':'S/ ' }}</span></div>
+        </div>
+
+        <div class="block">
+          <h3>[2] Deducción de Ley</h3>
+          <div class="row"><span class="label">Deducción Fija (7 UIT):</span> <span class="value text-danger">-{{ liquidacion.montoDeduccionUIT | currency:'PEN':'S/ ' }}</span></div>
+          <div class="divider"></div>
+          <div class="row total"><span class="label">Total Renta Neta Imponible =</span> <span class="value">{{ liquidacion.totalRentaNetaImponible | currency:'PEN':'S/ ' }}</span></div>
+        </div>
+
+        <div class="block">
+          <h3>[3] Cálculo del Impuesto Anual (Tramos)</h3>
+          <div class="row"><span class="label">Tramo 1 (Hasta 5 UIT) 8%:</span> <span class="value">{{ liquidacion.tramo1 | currency:'PEN':'S/ ' }}</span></div>
+          <div class="row"><span class="label">Tramo 2 (Exceso 5 a 20 UIT) 14%:</span> <span class="value">{{ liquidacion.tramo2 | currency:'PEN':'S/ ' }}</span></div>
+          <div class="divider"></div>
+          <div class="row total"><span class="label">Impuesto Anual Proyectado (IAP) =</span> <span class="value">{{ liquidacion.impuestoAnualProyectado | currency:'PEN':'S/ ' }}</span></div>
+        </div>
+
+        <div class="block">
+          <h3>[4] Prorrateo del Mes</h3>
+          <div class="row"><span class="label">Retenciones Acumuladas:</span> <span class="value text-danger">-{{ liquidacion.retencionesAcumuladasExternas | currency:'PEN':'S/ ' }}</span></div>
+          <div class="row"><span class="label">Saldo a Retener en el Año:</span> <span class="value">{{ liquidacion.saldoRetenerAnual | currency:'PEN':'S/ ' }}</span></div>
+          <div class="row"><span class="label">Divisor del Mes:</span> <span class="value">/ {{ liquidacion.divisorMes }}</span></div>
+          <div class="divider-thick"></div>
+          <div class="row total highlight"><span class="label">🔴 MONTO A RETENER ESTE MES =</span> <span class="value">{{ liquidacion.montoRetenerMes | currency:'PEN':'S/ ' }}</span></div>
+        </div>
+
+        <div class="normative-footer">
+          <p>⚖️ Base Legal: Ley de Impuesto a la Renta (Arts. 34°, 40°, 44°, 46°, 53°)</p>
+          <p>🔗 Fuente Oficial: <a href="https://orientacion.sunat.gob.pe/3071-02-calculo-del-impuesto" target="_blank">Cálculo del impuesto - SUNAT</a></p>
+        </div>
+      </div>
+      
+      <ng-template #noData>
+        <p class="no-data">No se pudo cargar la hoja de liquidación.</p>
+      </ng-template>
+    </mat-tab>
+  </mat-tab-group>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <ng-container *ngIf="selectedTab() === 0">
+    <button mat-button mat-dialog-close [disabled]="isSaving()">Cancelar</button>
+    <button mat-flat-button color="primary" (click)="guardar()" [disabled]="form.invalid || isLoading() || isSaving()">
+      <mat-icon *ngIf="!isSaving()">save</mat-icon>
+      <mat-spinner *ngIf="isSaving()" diameter="20" class="btn-spinner"></mat-spinner>
+      <span *ngIf="!isSaving()">Guardar</span>
+      <span *ngIf="isSaving()">Guardando...</span>
+    </button>
+  </ng-container>
+
+  <ng-container *ngIf="selectedTab() === 1">
+    <button mat-button mat-dialog-close>Cerrar</button>
+    <button mat-flat-button color="primary" (click)="imprimir()" [disabled]="isLoading() || !liquidacion">
+      <mat-icon>print</mat-icon> Imprimir
+    </button>
+  </ng-container>
+</mat-dialog-actions>

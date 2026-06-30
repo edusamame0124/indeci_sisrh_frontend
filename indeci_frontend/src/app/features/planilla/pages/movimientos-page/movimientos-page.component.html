@@ -12,287 +12,317 @@
         Cabeceras de planilla generadas con totales por empleado y estado de proceso.
       </mat-card-subtitle>
     </mat-card-header>
+    <br>
     <mat-card-content>
       @if (loading()) {
-        <div class="loading" aria-busy="true">
-          <mat-progress-spinner mode="indeterminate" diameter="48" aria-label="Cargando periodos" />
-        </div>
+      <div class="loading" aria-busy="true">
+        <mat-progress-spinner mode="indeterminate" diameter="48" aria-label="Cargando periodos" />
+      </div>
       } @else if (periodos().length === 0) {
-        <p class="empty" role="status">
-          Aún no hay periodos registrados. Crea uno desde
-          <a mat-button routerLink="/planilla/periodos">Periodos</a>.
-        </p>
+      <p class="empty" role="status">
+        Aún no hay periodos registrados. Crea uno desde
+        <a mat-button routerLink="/planilla/periodos">Periodos</a>.
+      </p>
       } @else {
-        <!-- Selector de periodo -->
-        <div class="header-row">
-          <mat-form-field appearance="outline" class="periodo-select">
-            <mat-label>Periodo</mat-label>
-            <mat-select
-              [value]="periodoSeleccionado()"
-              (selectionChange)="onPeriodoChange($event.value)"
-              aria-label="Seleccionar periodo"
-            >
-              @for (p of periodos(); track p.id) {
-                <mat-option [value]="p.periodo">{{ p.periodo }} — {{ p.estado }}</mat-option>
-              }
-            </mat-select>
-          </mat-form-field>
-          @if (periodoActivo() !== null) {
-            <div class="header-row__badge">
-              <app-periodo-estado-badge [estado]="periodoActivo()!.estado" />
-            </div>
+      <!-- Selector de periodo -->
+      <div class="header-row">
+        <mat-form-field appearance="outline" class="periodo-select" subscriptSizing="dynamic">
+          <mat-label>Periodo</mat-label>
+          <mat-select [value]="periodoSeleccionado()" (selectionChange)="onPeriodoChange($event.value)"
+            aria-label="Seleccionar periodo">
+            @for (p of periodos(); track p.id) {
+            <mat-option [value]="p.periodo">{{ p.periodo }} — {{ p.estado }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <button mat-flat-button color="primary" type="button" class="btn-ver" [disabled]="!periodoSeleccionado()"
+          (click)="verDashboard()">
+          Ver
+        </button>
+        @if (periodoActivo() !== null) {
+        <div class="header-row__badge">
+          <app-periodo-estado-badge [estado]="periodoActivo()!.estado" />
+        </div>
+        }
+        <!-- B1 — Botón export XLSX -->
+        <div class="header-row__export">
+          <button mat-stroked-button color="primary" type="button" [disabled]="descargando() || rows().length === 0"
+            (click)="descargarXlsx()" aria-label="Descargar planilla consolidada en Excel">
+            @if (descargando()) {
+            <mat-progress-spinner diameter="16" mode="indeterminate" />
+            } @else {
+            <mat-icon fontIcon="table_view" aria-hidden="true" />
+            }
+            {{ descargando() ? 'Generando…' : 'Descargar XLSX' }}
+          </button>
+          <!-- P0 — Planilla CAS Consolidada (19 bloques) -->
+          <button mat-flat-button color="primary" type="button" [disabled]="descargandoCas() || rows().length === 0"
+            (click)="descargarCasConsolidada()"
+            matTooltip="Exporta los 19 bloques de la Planilla CAS (datos personales, banco, pensión, aportes, validaciones)"
+            aria-label="Descargar Planilla CAS Consolidada">
+            @if (descargandoCas()) {
+            <mat-progress-spinner diameter="16" mode="indeterminate" />
+            } @else {
+            <mat-icon fontIcon="description" aria-hidden="true" />
+            }
+            {{ descargandoCas() ? 'Generando…' : 'Planilla CAS Consolidada' }}
+          </button>
+          @if (historial().length > 0) {
+          <button mat-icon-button type="button"
+            [matTooltip]="historialVisible() ? 'Ocultar historial' : 'Ver historial de exports (' + historial().length + ')'"
+            (click)="toggleHistorial()" aria-label="Historial de exports">
+            <mat-icon fontIcon="history" aria-hidden="true" />
+          </button>
           }
-          <!-- B1 — Botón export XLSX -->
-          <div class="header-row__export">
-            <button
-              mat-stroked-button
-              color="primary"
-              type="button"
-              [disabled]="descargando() || rows().length === 0"
-              (click)="descargarXlsx()"
-              aria-label="Descargar planilla consolidada en Excel"
-            >
-              @if (descargando()) {
-                <mat-progress-spinner diameter="16" mode="indeterminate" />
-              } @else {
-                <mat-icon fontIcon="table_view" aria-hidden="true" />
+        </div>
+      </div>
+
+      <mat-tab-group [selectedIndex]="selectedTabIndex()" (selectedIndexChange)="onTabChange($event)" dynamicHeight>
+
+        <!-- TAB 1: DASHBOARD DE LOTES -->
+        <mat-tab label="1. Resumen de Lotes">
+          <div class="tab-content" style="padding-top: 24px;">
+            @if (lotesLoading()) {
+            <div class="sisrh-skeleton-table" aria-busy="true">
+              @for (i of [1, 2, 3]; track i) {
+              <div class="sisrh-skeleton-table__row"></div>
               }
-              {{ descargando() ? 'Generando…' : 'Descargar XLSX' }}
-            </button>
-            <!-- P0 — Planilla CAS Consolidada (19 bloques) -->
-            <button
-              mat-flat-button
-              color="primary"
-              type="button"
-              [disabled]="descargandoCas() || rows().length === 0"
-              (click)="descargarCasConsolidada()"
-              matTooltip="Exporta los 19 bloques de la Planilla CAS (datos personales, banco, pensión, aportes, validaciones)"
-              aria-label="Descargar Planilla CAS Consolidada"
-            >
-              @if (descargandoCas()) {
-                <mat-progress-spinner diameter="16" mode="indeterminate" />
-              } @else {
-                <mat-icon fontIcon="description" aria-hidden="true" />
-              }
-              {{ descargandoCas() ? 'Generando…' : 'Planilla CAS Consolidada' }}
-            </button>
-            @if (historial().length > 0) {
-              <button
-                mat-icon-button
-                type="button"
-                [matTooltip]="historialVisible() ? 'Ocultar historial' : 'Ver historial de exports (' + historial().length + ')'"
-                (click)="toggleHistorial()"
-                aria-label="Historial de exports"
-              >
-                <mat-icon fontIcon="history" aria-hidden="true" />
-              </button>
+            </div>
+            } @else if (lotes().length === 0) {
+            <p class="empty" role="status">
+              No hay lotes generados en este periodo.
+            </p>
+            } @else {
+            <div class="sisrh-table-scroll">
+              <table mat-table [dataSource]="lotes()" class="tbl table-hoverable">
+                <ng-container matColumnDef="descripcion">
+                  <th mat-header-cell *matHeaderCellDef>Descripción</th>
+                  <td mat-cell *matCellDef="let lote"><strong>{{ lote.descripcionConcatenada }}</strong></td>
+                </ng-container>
+                <ng-container matColumnDef="regimen">
+                  <th mat-header-cell *matHeaderCellDef>Régimen</th>
+                  <td mat-cell *matCellDef="let lote">{{ nombreRegimen(lote.regimenLaboralCodigo) }}</td>
+                </ng-container>
+                <ng-container matColumnDef="empleados">
+                  <th mat-header-cell *matHeaderCellDef class="num">N° Empleados</th>
+                  <td mat-cell *matCellDef="let lote" class="num sisrh-tabular">{{ lote.cantidadEmpleados }}</td>
+                </ng-container>
+                <ng-container matColumnDef="totalNeto">
+                  <th mat-header-cell *matHeaderCellDef class="num">Total Neto</th>
+                  <td mat-cell *matCellDef="let lote" class="num sisrh-tabular"
+                    [ngClass]="{'texto-negativo': lote.montoTotalNeto < 0}">
+                    @if (lote.montoTotalNeto < 0) { <mat-icon fontIcon="warning" inline="true" class="icon-negativo">
+                      </mat-icon>
+                      }
+                      S/ {{ fmtMonto(lote.montoTotalNeto) }}
+                  </td>
+                </ng-container>
+                <ng-container matColumnDef="estado">
+                  <th mat-header-cell *matHeaderCellDef>Estado</th>
+                  <td mat-cell *matCellDef="let lote">{{ lote.estado }}</td>
+                </ng-container>
+                <ng-container matColumnDef="acciones">
+                  <th mat-header-cell *matHeaderCellDef></th>
+                  <td mat-cell *matCellDef="let lote" style="text-align: right; width: 48px;">
+                    <mat-icon fontIcon="chevron_right" />
+                  </td>
+                </ng-container>
+
+                <tr mat-header-row *matHeaderRowDef="columnsLotes"></tr>
+                <tr mat-row *matRowDef="let row; columns: columnsLotes" (click)="seleccionarLote(row)"
+                  class="clickable-row"></tr>
+              </table>
+            </div>
             }
           </div>
-        </div>
+        </mat-tab>
 
-        <!-- Historial de exports XLSX -->
-        @if (historialVisible() && historial().length > 0) {
-          <div class="historial-exports" role="region" aria-label="Historial de exports">
-            <h4 class="historial-exports__titulo">
-              <mat-icon fontIcon="history" aria-hidden="true" />
-              Historial de exports del per&iacute;odo
-            </h4>
-            <table class="historial-tabla" aria-label="Exports anteriores">
-              <thead>
-                <tr>
-                  <th scope="col">Archivo</th>
-                  <th scope="col">Fecha generado</th>
-                  <th scope="col">Tama&ntilde;o</th>
-                  <th scope="col">SHA-256 (8 car.)</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (h of historial(); track h.id) {
+        <!-- TAB 2: DETALLE DE EMPLEADOS -->
+        <mat-tab label="2. Detalle de Empleados">
+          <div class="tab-content" style="padding-top: 24px;">
+            @if (loteSeleccionado() !== null) {
+            <div class="lote-seleccionado-info"
+              style="margin-bottom: 16px; padding: 12px; background: var(--sys-surface-container); border-radius: 8px; border: 1px solid var(--sys-outline-variant);">
+              <strong>Filtrando por Lote:</strong> {{ loteSeleccionado()?.descripcionConcatenada }}
+              (<em>{{ rowsFiltradas().length }} empleados</em>)
+            </div>
+            }
+
+            <!-- Historial de exports XLSX -->
+            @if (historialVisible() && historial().length > 0) {
+            <div class="historial-exports" role="region" aria-label="Historial de exports">
+              <h4 class="historial-exports__titulo">
+                <mat-icon fontIcon="history" aria-hidden="true" />
+                Historial de exports del per&iacute;odo
+              </h4>
+              <table class="historial-tabla" aria-label="Exports anteriores">
+                <thead>
+                  <tr>
+                    <th scope="col">Archivo</th>
+                    <th scope="col">Fecha generado</th>
+                    <th scope="col">Tama&ntilde;o</th>
+                    <th scope="col">SHA-256 (8 car.)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (h of historial(); track h.id) {
                   <tr>
                     <td>{{ h.nombreArchivo }}</td>
                     <td>{{ fmtFecha(h.fechaGenerado) }}</td>
                     <td>{{ (h.nroLineas / 1024).toFixed(1) }} KB</td>
                     <td class="hash">{{ h.hashSha256.slice(0, 8) }}&hellip;</td>
                   </tr>
-                }
-              </tbody>
-            </table>
-          </div>
-        }
-
-        <!-- Semáforo resumen + filtro (§12.2 PANTALLA-01) -->
-        @if (!tableLoading() && rows().length > 0) {
-          <div class="semaforo-bar">
-            <div class="semaforo-chips">
-              <span class="sem-chip sem-chip--ok">
-                <mat-icon fontIcon="check_circle" aria-hidden="true" />
-                {{ resumenSemaforo().verde }} con neto válido
-              </span>
-              <span class="sem-chip sem-chip--rojo">
-                <mat-icon fontIcon="error" aria-hidden="true" />
-                {{ resumenSemaforo().rojo }} NETO NO VA
-              </span>
-              <span class="sem-chip sem-chip--neutro">
-                <mat-icon fontIcon="help" aria-hidden="true" />
-                {{ resumenSemaforo().neutro }} sin validar
-              </span>
+                  }
+                </tbody>
+              </table>
             </div>
-            <mat-form-field appearance="outline" class="filtro-select" subscriptSizing="dynamic">
-              <mat-label>Filtrar por semáforo</mat-label>
-              <mat-select
-                [value]="filtroSemaforo()"
-                (selectionChange)="onFiltroSemaforo($event.value)"
-                aria-label="Filtrar por estado de semáforo"
-              >
-                <mat-option value="TODOS">Todos</mat-option>
-                <mat-option value="BIEN">Neto válido</mat-option>
-                <mat-option value="NETO_NO_VA">NETO NO VA</mat-option>
-                <mat-option value="SIN_VALIDAR">Sin validar</mat-option>
-              </mat-select>
-            </mat-form-field>
-          </div>
-        }
-
-        @if (tableLoading()) {
-          <div class="sisrh-skeleton-table" aria-busy="true" aria-label="Cargando movimientos">
-            @for (i of [1, 2, 3, 4, 5]; track i) {
-              <div class="sisrh-skeleton-table__row"></div>
             }
-          </div>
-        } @else if (rows().length === 0) {
-          <p class="empty" role="status">
-            No hay movimientos generados en este periodo. Genera planilla individual o masiva.
-          </p>
-        } @else if (rowsFiltradas().length === 0) {
-          <p class="empty" role="status">
-            Ningún movimiento coincide con el filtro de semáforo seleccionado.
-          </p>
-        } @else {
-          <div class="sisrh-table-scroll">
-            <table mat-table [dataSource]="pagedRows()" class="tbl">
-              <ng-container matColumnDef="empleado">
-                <th mat-header-cell *matHeaderCellDef scope="col">Empleado</th>
-                <td mat-cell *matCellDef="let row">
-                  <div class="empleado-cell">
-                    <strong>{{ empleadoNombre(row) }}</strong>
-                    <span>#{{ row.empleadoId }}</span>
-                  </div>
-                </td>
-              </ng-container>
-              <ng-container matColumnDef="empleadoDni">
-                <th mat-header-cell *matHeaderCellDef scope="col">DNI</th>
-                <td mat-cell *matCellDef="let row" class="sisrh-tabular">{{ empleadoDni(row) }}</td>
-              </ng-container>
-              <ng-container matColumnDef="regimenLaboral">
-                <th mat-header-cell *matHeaderCellDef scope="col">Tipo de régimen</th>
-                <td mat-cell *matCellDef="let row">{{ regimenLaboral(row) }}</td>
-              </ng-container>
-              <ng-container matColumnDef="totalIngresos">
-                <th mat-header-cell *matHeaderCellDef scope="col" class="num">Ingresos</th>
-                <td mat-cell *matCellDef="let row" class="num sisrh-tabular">S/ {{ fmtMonto(row.totalIngresos) }}</td>
-              </ng-container>
-              <ng-container matColumnDef="totalDescuentos">
-                <th mat-header-cell *matHeaderCellDef scope="col" class="num">Descuentos</th>
-                <td mat-cell *matCellDef="let row" class="num sisrh-tabular">S/ {{ fmtMonto(row.totalDescuentos) }}</td>
-              </ng-container>
-              <ng-container matColumnDef="netoPagar">
-                <th mat-header-cell *matHeaderCellDef scope="col" class="num">Neto</th>
-                <td mat-cell *matCellDef="let row" class="num sisrh-tabular">S/ {{ fmtMonto(row.netoPagar) }}</td>
-              </ng-container>
-              <ng-container matColumnDef="semaforo">
-                <th mat-header-cell *matHeaderCellDef scope="col">Semáforo</th>
-                <td mat-cell *matCellDef="let row">
-                  <span
-                    class="sem-dot sem-dot--{{ semaforoDe(row) }}"
-                    [matTooltip]="row.estadoNeto || 'Sin validación de neto'"
-                  >
-                    <mat-icon
-                      [fontIcon]="
+
+            <!-- Semáforo resumen + filtro (§12.2 PANTALLA-01) -->
+            @if (!tableLoading() && rows().length > 0) {
+            <div class="semaforo-bar">
+              <div class="semaforo-chips">
+                <span class="sem-chip sem-chip--ok">
+                  <mat-icon fontIcon="check_circle" aria-hidden="true" />
+                  {{ resumenSemaforo().verde }} con neto válido
+                </span>
+                <span class="sem-chip sem-chip--rojo">
+                  <mat-icon fontIcon="error" aria-hidden="true" />
+                  {{ resumenSemaforo().rojo }} NETO NO VA
+                </span>
+                <span class="sem-chip sem-chip--neutro">
+                  <mat-icon fontIcon="help" aria-hidden="true" />
+                  {{ resumenSemaforo().neutro }} sin validar
+                </span>
+              </div>
+              <mat-form-field appearance="outline" class="filtro-select" subscriptSizing="dynamic">
+                <mat-label>Filtrar por semáforo</mat-label>
+                <mat-select [value]="filtroSemaforo()" (selectionChange)="onFiltroSemaforo($event.value)"
+                  aria-label="Filtrar por estado de semáforo">
+                  <mat-option value="TODOS">Todos</mat-option>
+                  <mat-option value="BIEN">Neto válido</mat-option>
+                  <mat-option value="NETO_NO_VA">NETO NO VA</mat-option>
+                  <mat-option value="SIN_VALIDAR">Sin validar</mat-option>
+                </mat-select>
+              </mat-form-field>
+            </div>
+            }
+
+            @if (tableLoading()) {
+            <div class="sisrh-skeleton-table" aria-busy="true" aria-label="Cargando movimientos">
+              @for (i of [1, 2, 3, 4, 5]; track i) {
+              <div class="sisrh-skeleton-table__row"></div>
+              }
+            </div>
+            } @else if (rows().length === 0) {
+            <p class="empty" role="status">
+              No hay movimientos generados en este periodo. Genera planilla individual o masiva.
+            </p>
+            } @else if (rowsFiltradas().length === 0) {
+            <p class="empty" role="status">
+              Ningún movimiento coincide con el filtro de semáforo seleccionado.
+            </p>
+            } @else {
+            <div class="sisrh-table-scroll">
+              <table mat-table [dataSource]="pagedRows()" class="tbl">
+                <ng-container matColumnDef="empleado">
+                  <th mat-header-cell *matHeaderCellDef scope="col">Empleado</th>
+                  <td mat-cell *matCellDef="let row">
+                    <div class="empleado-cell">
+                      <strong>{{ empleadoNombre(row) }}</strong>
+                      <span>#{{ row.empleadoId }}</span>
+                    </div>
+                  </td>
+                </ng-container>
+                <ng-container matColumnDef="empleadoDni">
+                  <th mat-header-cell *matHeaderCellDef scope="col">DNI</th>
+                  <td mat-cell *matCellDef="let row" class="sisrh-tabular">{{ empleadoDni(row) }}</td>
+                </ng-container>
+                <ng-container matColumnDef="regimenLaboral">
+                  <th mat-header-cell *matHeaderCellDef scope="col">Tipo de régimen</th>
+                  <td mat-cell *matCellDef="let row">{{ regimenLaboral(row) }}</td>
+                </ng-container>
+                <ng-container matColumnDef="totalIngresos">
+                  <th mat-header-cell *matHeaderCellDef scope="col" class="num">Ingresos</th>
+                  <td mat-cell *matCellDef="let row" class="num sisrh-tabular">S/ {{ fmtMonto(row.totalIngresos) }}</td>
+                </ng-container>
+                <ng-container matColumnDef="totalDescuentos">
+                  <th mat-header-cell *matHeaderCellDef scope="col" class="num">Descuentos</th>
+                  <td mat-cell *matCellDef="let row" class="num sisrh-tabular">S/ {{ fmtMonto(row.totalDescuentos) }}
+                  </td>
+                </ng-container>
+                <ng-container matColumnDef="netoPagar">
+                  <th mat-header-cell *matHeaderCellDef scope="col" class="num">Neto</th>
+                  <td mat-cell *matCellDef="let row" class="num sisrh-tabular">S/ {{ fmtMonto(row.netoPagar) }}</td>
+                </ng-container>
+                <ng-container matColumnDef="semaforo">
+                  <th mat-header-cell *matHeaderCellDef scope="col">Semáforo</th>
+                  <td mat-cell *matCellDef="let row">
+                    <span class="sem-dot sem-dot--{{ semaforoDe(row) }}"
+                      [matTooltip]="row.estadoNeto || 'Sin validación de neto'">
+                      <mat-icon [fontIcon]="
                         semaforoDe(row) === 'rojo'
                           ? 'error'
                           : semaforoDe(row) === 'ok'
                             ? 'check_circle'
                             : 'help'
-                      "
-                      aria-hidden="true"
-                    />
-                  </span>
-                </td>
-              </ng-container>
-              <ng-container matColumnDef="estado">
-                <th mat-header-cell *matHeaderCellDef scope="col">Estado</th>
-                <td mat-cell *matCellDef="let row">{{ row.estado }}</td>
-              </ng-container>
-              <ng-container matColumnDef="observacion">
-                <th mat-header-cell *matHeaderCellDef scope="col">Observación</th>
-                <td mat-cell *matCellDef="let row">{{ row.observacion || '—' }}</td>
-              </ng-container>
-              <ng-container matColumnDef="acciones">
-                <th mat-header-cell *matHeaderCellDef scope="col">Acciones</th>
-                <td mat-cell *matCellDef="let row">
-                  <a
-                    mat-icon-button
-                    [routerLink]="['/planilla/resumen', row.empleadoId, row.periodo]"
-                    aria-label="Ver resumen del movimiento"
-                    matTooltip="Ver resumen"
-                  >
-                    <mat-icon fontIcon="summarize" aria-hidden="true" />
-                  </a>
-                  <a
-                    mat-icon-button
-                    [routerLink]="['/planilla/detalle', row.empleadoId, row.periodo]"
-                    aria-label="Ver detalle del movimiento"
-                    matTooltip="Ver detalle por concepto"
-                  >
-                    <mat-icon fontIcon="receipt_long" aria-hidden="true" />
-                  </a>
-                  <button
-                    mat-icon-button
-                    type="button"
-                    [matMenuTriggerFor]="estadoMenu"
-                    aria-label="Cambiar estado del movimiento"
-                    matTooltip="Cambiar estado"
-                  >
-                    <mat-icon fontIcon="swap_horiz" aria-hidden="true" />
-                  </button>
-                  <mat-menu #estadoMenu="matMenu">
-                    @for (estado of estadosOtros(row); track estado) {
+                      " aria-hidden="true" />
+                    </span>
+                  </td>
+                </ng-container>
+                <ng-container matColumnDef="estado">
+                  <th mat-header-cell *matHeaderCellDef scope="col">Estado</th>
+                  <td mat-cell *matCellDef="let row">{{ row.estado }}</td>
+                </ng-container>
+                <ng-container matColumnDef="observacion">
+                  <th mat-header-cell *matHeaderCellDef scope="col">Observación</th>
+                  <td mat-cell *matCellDef="let row">{{ row.observacion || '—' }}</td>
+                </ng-container>
+                <ng-container matColumnDef="acciones">
+                  <th mat-header-cell *matHeaderCellDef scope="col">Acciones</th>
+                  <td mat-cell *matCellDef="let row">
+                    <a mat-icon-button [routerLink]="['/planilla/resumen', row.empleadoId, row.periodo]"
+                      aria-label="Ver resumen del movimiento" matTooltip="Ver resumen">
+                      <mat-icon fontIcon="summarize" aria-hidden="true" />
+                    </a>
+                    <a mat-icon-button [routerLink]="['/planilla/detalle', row.empleadoId, row.periodo]"
+                      aria-label="Ver detalle del movimiento" matTooltip="Ver detalle por concepto">
+                      <mat-icon fontIcon="receipt_long" aria-hidden="true" />
+                    </a>
+                    <button mat-icon-button type="button" [matMenuTriggerFor]="estadoMenu"
+                      aria-label="Cambiar estado del movimiento" matTooltip="Cambiar estado">
+                      <mat-icon fontIcon="swap_horiz" aria-hidden="true" />
+                    </button>
+                    <mat-menu #estadoMenu="matMenu">
+                      @for (estado of estadosOtros(row); track estado) {
                       <button mat-menu-item type="button" (click)="cambiarEstado(row, estado)">
                         Marcar como {{ estado }}
                       </button>
-                    }
-                  </mat-menu>
-                  <button
-                    mat-icon-button
-                    type="button"
-                    aria-label="Eliminar movimiento"
-                    matTooltip="Eliminar"
-                    (click)="confirmEliminar(row)"
-                  >
-                    <mat-icon fontIcon="delete_outline" aria-hidden="true" />
-                  </button>
-                </td>
-              </ng-container>
-              <tr mat-header-row *matHeaderRowDef="columns"></tr>
-              <tr mat-row *matRowDef="let row; columns: columns"></tr>
-            </table>
+                      }
+                    </mat-menu>
+                    <button mat-icon-button type="button" aria-label="Eliminar movimiento" matTooltip="Eliminar"
+                      (click)="confirmEliminar(row)">
+                      <mat-icon fontIcon="delete_outline" aria-hidden="true" />
+                    </button>
+                  </td>
+                </ng-container>
+                <tr mat-header-row *matHeaderRowDef="columns"></tr>
+                <tr mat-row *matRowDef="let row; columns: columns"></tr>
+              </table>
+            </div>
+            <mat-paginator [length]="rowsFiltradas().length" [pageIndex]="pageIndex()" [pageSize]="pageSize()"
+              [pageSizeOptions]="pageSizeOptions" (page)="onPage($event)" showFirstLastButtons
+              aria-label="Paginador de movimientos" />
+            }
           </div>
-          <mat-paginator
-            [length]="rowsFiltradas().length"
-            [pageIndex]="pageIndex()"
-            [pageSize]="pageSize()"
-            [pageSizeOptions]="pageSizeOptions"
-            (page)="onPage($event)"
-            showFirstLastButtons
-            aria-label="Paginador de movimientos"
-          />
-        }
+        </mat-tab>
+      </mat-tab-group>
 
-        <p class="ref-nota">
-          Base: SPEC §12.2 PANTALLA-01 — Dashboard de periodo · semáforo de neto
-          según §5.4 (REGLA SERVIR-07). El estado AMARILLO (conciliación AIRHSP)
-          se habilitará con el PASO 16 del motor.
-        </p>
+      <p class="ref-nota">
+        Base: SPEC §12.2 PANTALLA-01 — Dashboard de periodo · semáforo de neto
+        según §5.4 (REGLA SERVIR-07). El estado AMARILLO (conciliación AIRHSP)
+        se habilitará con el PASO 16 del motor.
+      </p>
       }
     </mat-card-content>
   </mat-card>

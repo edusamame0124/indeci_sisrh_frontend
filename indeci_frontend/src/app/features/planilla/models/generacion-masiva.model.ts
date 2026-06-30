@@ -17,4 +17,19 @@ export interface GeneracionMasivaResultado {
   readonly exitosos: number;
   /** Empleados que fallaron, con el motivo. */
   readonly fallidos: ReadonlyArray<GeneracionMasivaFallido>;
+  /** IDs de los empleados generados exitosamente. */
+  readonly exitososIds?: ReadonlyArray<number>;
+}
+
+/** Payload para la generación masiva de planilla. */
+export interface GenerarPlanillaCabeceraPayload {
+  readonly periodo: string;
+  readonly regimenLaboralId: number;
+  readonly tipoContratoId?: number | null;
+  readonly condicionLaboralId?: number | null;
+  readonly modalidadCasId?: number | null;
+  readonly concepto: string;
+  readonly tipoPlanilla: string;
+  readonly ordenBoleta?: string | null;
+  readonly loteId?: number | null;
 }

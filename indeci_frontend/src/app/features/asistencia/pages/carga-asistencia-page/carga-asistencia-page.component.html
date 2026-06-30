@@ -57,7 +57,7 @@
         } @else if (calendarioListo()) {
           <!-- Controles: remuneración base (solo lectura, viene de la configuración del empleado) -->
           <div class="controles">
-            <mat-form-field appearance="outline" class="ctrl-remun">
+            <mat-form-field appearance="outline" class="ctrl-remun" subscriptSizing="dynamic">
               <mat-label>Remuneración base (S/)</mat-label>
               <input
                 matInput
@@ -208,7 +208,7 @@
           <div class="acciones">
          
 
-            <mat-form-field appearance="outline" class="acc-estado">
+            <mat-form-field appearance="outline" class="acc-estado" subscriptSizing="dynamic">
               <mat-label>Estado</mat-label>
               <mat-select
                 [value]="estadoAsistencia()"
@@ -225,6 +225,7 @@
               mat-flat-button
               color="primary"
               type="button"
+              class="btn-guardar"
               [disabled]="guardando()"
               (click)="guardar()"
             >

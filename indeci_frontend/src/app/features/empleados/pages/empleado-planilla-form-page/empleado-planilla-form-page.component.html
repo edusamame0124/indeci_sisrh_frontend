@@ -50,7 +50,7 @@
             </mat-form-field>
 
             <mat-form-field appearance="outline" subscriptSizing="dynamic">
-              <mat-label>Tipo de contrato</mat-label>
+              <mat-label>Condición de contrato</mat-label>
               <mat-select formControlName="tipoContratoId">
                 <mat-option [value]="null">— Sin especificar —</mat-option>
                 @for (t of tiposContrato(); track t.id) {
@@ -68,6 +68,18 @@
                 }
               </mat-select>
             </mat-form-field>
+
+            @if (!form.controls.modalidadCasId.disabled) {
+            <mat-form-field appearance="outline" subscriptSizing="dynamic">
+              <mat-label>Modalidad CAS</mat-label>
+              <mat-select formControlName="modalidadCasId">
+                <mat-option [value]="null">— Sin especificar —</mat-option>
+                @for (m of modalidadesCas(); track m.id) {
+                <mat-option [value]="m.id">{{ m.nombre }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+            }
 
             <!-- NUEVA FILA AÑADIDA: Tipo Persona MEF y Registro AIRHSP -->
             <mat-form-field appearance="outline" subscriptSizing="dynamic">
@@ -88,6 +100,11 @@
               @if (form.controls.registroPlazaAirhsp.hasError('pattern')) {
               <mat-error>Debe tener exactamente 6 caracteres (letras mayúsculas o números)</mat-error>
               }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" subscriptSizing="dynamic">
+              <mat-label>Fecha de inicio (Contrato)</mat-label>
+              <input matInput formControlName="fechaInicioContrato" type="date" placeholder="dd/mm/aaaa" />
             </mat-form-field>
 
             <!-- Contenedor flex para Monto Contratado y Número de Hijos (Tercera columna) -->

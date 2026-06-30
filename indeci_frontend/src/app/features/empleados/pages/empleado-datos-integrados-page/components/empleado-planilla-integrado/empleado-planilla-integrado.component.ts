@@ -43,6 +43,7 @@ import type { RegimenLaboral } from '../../../../../catalogos/models/regimen-lab
 import type { TipoContrato } from '../../../../../catalogos/models/tipo-contrato.model';
 import type { CondicionLaboral } from '../../../../../catalogos/models/condicion-laboral.model';
 import type { TipoPersonaMef } from '../../../../../planilla/models/tipo-persona-mef.model';
+import type { ModalidadCas } from '../../../../../catalogos/models/modalidad-cas.model';
 import type { EmpleadoPlanillaRow } from '../../../../models/empleado-planilla.model';
 import type { IncrementosDsResponse } from '../../../../models/incrementos-ds.model';
 
@@ -119,7 +120,7 @@ const AIRHSP_PATTERN = /^[A-Z0-9]{6}$/;
               </ng-container>
               <ng-container matColumnDef="condicion">
                 <th mat-header-cell *matHeaderCellDef scope="col">Condición</th>
-                <td mat-cell *matCellDef="let row">{{ row.condicionLaboral ?? '—' }}</td>
+                <td mat-cell *matCellDef="let row">{{ row.condicionLaboral || row.modalidadCas || '—' }}</td>
               </ng-container>
               <ng-container matColumnDef="codigoAirhsp">
                 <th mat-header-cell *matHeaderCellDef scope="col" matTooltip="Código AIRHSP">
@@ -234,6 +235,18 @@ const AIRHSP_PATTERN = /^[A-Z0-9]{6}$/;
                   }
                 </mat-select>
               </mat-form-field>
+
+              @if (!form.controls.modalidadCasId.disabled) {
+              <mat-form-field appearance="outline" class="half">
+                <mat-label>Modalidad CAS</mat-label>
+                <mat-select formControlName="modalidadCasId">
+                  <mat-option [value]="null">Sin especificar</mat-option>
+                  @for (m of modalidadesCas(); track m.id) {
+                    <mat-option [value]="m.id">{{ m.nombre }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+              }
               
               <mat-form-field appearance="outline" class="half">
                 <mat-label>Tipo persona MEF</mat-label>
@@ -279,6 +292,13 @@ const AIRHSP_PATTERN = /^[A-Z0-9]{6}$/;
                 <mat-label>Código Plaza AIRHSP (Opcional)</mat-label>
                 <input matInput formControlName="registroPlazaAirhsp" appUppercase maxlength="6" />
                 <mat-hint>Últimos 6 dígitos alfanuméricos</mat-hint>
+              </mat-form-field>
+            </div>
+
+            <div class="grid">
+              <mat-form-field appearance="outline" class="half">
+                <mat-label>Fecha de inicio (Contrato)</mat-label>
+                <input matInput formControlName="fechaInicioContrato" type="date" placeholder="dd/mm/aaaa" />
               </mat-form-field>
             </div>
 
@@ -428,11 +448,13 @@ export class EmpleadoPlanillaIntegradoComponent implements OnInit {
   readonly tiposContrato = signal<readonly TipoContrato[]>([]);
   readonly condiciones = signal<readonly CondicionLaboral[]>([]);
   readonly tiposPersonaMef = signal<readonly TipoPersonaMef[]>([]);
+  readonly modalidadesCas = signal<readonly ModalidadCas[]>([]);
 
   readonly form = this.fb.group({
     regimenLaboralId: this.fb.control<number | null>(null, [Validators.required]),
     tipoContratoId: this.fb.control<number | null>(null),
     condicionLaboralId: this.fb.control<number | null>(null),
+    modalidadCasId: this.fb.control<number | null>(null),
     montoContratado: this.fb.control<number | null>(null, [
       Validators.required,
       Validators.min(0.01),
@@ -449,6 +471,7 @@ export class EmpleadoPlanillaIntegradoComponent implements OnInit {
       Validators.pattern(AIRHSP_PATTERN),
       Validators.maxLength(6),
     ]),
+    fechaInicioContrato: this.fb.control<string | null>(null),
   });
 
   private readonly moneyFmt = new Intl.NumberFormat('es-PE', {
@@ -463,6 +486,16 @@ export class EmpleadoPlanillaIntegradoComponent implements OnInit {
     )
       .pipe(debounceTime(300), takeUntilDestroyed())
       .subscribe(() => this.recalcularIncrementos());
+
+    this.form.controls.regimenLaboralId.valueChanges
+      .pipe(takeUntilDestroyed())
+      .subscribe((id) => this.evaluarRegimen(id));
+
+    this.form.controls.tipoContratoId.valueChanges
+      .pipe(takeUntilDestroyed())
+      .subscribe((id) => {
+        this.evaluarModalidadCas(this.form.controls.regimenLaboralId.value, id);
+      });
   }
 
   ngOnInit(): void {
@@ -546,24 +579,69 @@ export class EmpleadoPlanillaIntegradoComponent implements OnInit {
       next: (list) => {
         const filtrados = list.filter((r) => r.codigo !== '728' && r.codigo !== '9999');
         this.regimenes.set(filtrados);
+        this.evaluarRegimen(this.form.controls.regimenLaboralId.value);
       },
     });
     this.catalogoApi.listarTiposContrato().subscribe({
-      next: (list) => this.tiposContrato.set(list),
+      next: (list) => {
+        this.tiposContrato.set(list);
+        this.evaluarModalidadCas(this.form.controls.regimenLaboralId.value, this.form.controls.tipoContratoId.value);
+      },
     });
     this.catalogoApi.listarCondicionesLaborales().subscribe({
-      next: (list) => this.condiciones.set(list),
+      next: (list) => {
+        this.condiciones.set(list);
+        this.evaluarRegimen(this.form.controls.regimenLaboralId.value);
+      },
     });
     this.tipoPersonaMefApi.listarActivos().subscribe({
       next: (list) => this.tiposPersonaMef.set(list),
     });
+    this.catalogoApi.listarModalidadesCas().subscribe({
+      next: (list) => this.modalidadesCas.set(list),
+    });
+  }
+
+  private evaluarRegimen(regimenId: number | null): void {
+    const reg = this.regimenes().find((r) => r.id === regimenId);
+    if (!reg) return;
+
+    if (reg.codigo === '1057') {
+      this.form.controls.condicionLaboralId.setValue(null, { emitEvent: false });
+      this.form.controls.condicionLaboralId.disable();
+      this.form.controls.tipoContratoId.enable();
+      this.evaluarModalidadCas(regimenId, this.form.controls.tipoContratoId.value);
+    } else if (reg.codigo === '276') {
+      this.form.controls.tipoContratoId.setValue(null);
+      this.form.controls.tipoContratoId.disable();
+      this.form.controls.condicionLaboralId.enable();
+      this.form.controls.modalidadCasId.setValue(null);
+      this.form.controls.modalidadCasId.disable();
+    } else {
+      this.form.controls.tipoContratoId.enable();
+      this.form.controls.condicionLaboralId.enable();
+      this.form.controls.modalidadCasId.setValue(null);
+      this.form.controls.modalidadCasId.disable();
+    }
+  }
+
+  private evaluarModalidadCas(regimenId: number | null, tipoContratoId: number | null): void {
+    const reg = this.regimenes().find((r) => r.id === regimenId);
+    const tc = this.tiposContrato().find((t) => t.id === tipoContratoId);
+    
+    if (reg?.codigo === '1057' && tc?.codigo === 'PLAZO_DETERMINADO') {
+      this.form.controls.modalidadCasId.enable();
+    } else {
+      this.form.controls.modalidadCasId.setValue(null);
+      this.form.controls.modalidadCasId.disable();
+    }
   }
 
   prepararNuevo(): void {
     if (!this.canRegistrar()) return;
     this.isEdit.set(false);
     this.editId.set(null);
-    this.form.reset({ regimenLaboralId: null, tipoContratoId: null, condicionLaboralId: null, montoContratado: null, sueldoBasico: null, numHijos: null, tipoPersonaMefId: null, registroPlazaAirhsp: '' });
+    this.form.reset({ regimenLaboralId: null, tipoContratoId: null, condicionLaboralId: null, modalidadCasId: null, montoContratado: null, sueldoBasico: null, numHijos: null, tipoPersonaMefId: null, registroPlazaAirhsp: '', fechaInicioContrato: null });
     this.viewState.set('form');
   }
 
@@ -580,11 +658,13 @@ export class EmpleadoPlanillaIntegradoComponent implements OnInit {
       regimenLaboralId: row.regimenLaboralId,
       tipoContratoId: row.tipoContratoId,
       condicionLaboralId: row.condicionLaboralId,
+      modalidadCasId: (row as any).modalidadCasId ?? null,
       montoContratado,
       sueldoBasico: row.sueldoBasico,
       numHijos: row.numHijos,
       tipoPersonaMefId: (row as any).tipoPersonaMefId ?? null,
       registroPlazaAirhsp: (row as any).registroPlazaAirhsp ?? '',
+      fechaInicioContrato: (row as any).fechaInicioContrato ?? null,
     });
     this.recalcularIncrementos();
     this.formLoading.set(false);
@@ -651,8 +731,10 @@ export class EmpleadoPlanillaIntegradoComponent implements OnInit {
       regimenLaboralId: v.regimenLaboralId,
       tipoContratoId: v.tipoContratoId ?? null,
       condicionLaboralId: v.condicionLaboralId ?? null,
+      modalidadCasId: v.modalidadCasId ?? null,
       tipoPersonaMefId: v.tipoPersonaMefId ?? null,
       registroPlazaAirhsp: v.registroPlazaAirhsp ?? '',
+      fechaInicioContrato: v.fechaInicioContrato ?? null,
     };
 
     this.saving.set(true);

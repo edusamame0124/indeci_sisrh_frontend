@@ -25,6 +25,7 @@ import { CatalogoApiService } from '../../services/catalogo-api.service';
 import type { RegimenLaboral } from '../../../catalogos/models/regimen-laboral.model';
 import type { TipoContrato } from '../../../catalogos/models/tipo-contrato.model';
 import type { CondicionLaboral } from '../../../catalogos/models/condicion-laboral.model';
+import type { ModalidadCas } from '../../../catalogos/models/modalidad-cas.model';
 import { PersonaApiService } from '../../services/persona-api.service';
 import { ErrorMessageService } from '../../../../core/services/error-message.service';
 import { NotificacionService } from '../../../../core/services/notificacion.service';
@@ -93,12 +94,14 @@ export class EmpleadoPlanillaFormPageComponent implements OnInit {
   readonly regimenes = signal<readonly RegimenLaboral[]>([]);
   readonly tiposContrato = signal<readonly TipoContrato[]>([]);
   readonly condiciones = signal<readonly CondicionLaboral[]>([]);
+  readonly modalidadesCas = signal<readonly ModalidadCas[]>([]);
   readonly tiposPersonaMef = signal<readonly TipoPersonaMef[]>([]);
 
   readonly form = this.fb.group({
     regimenLaboralId: this.fb.control<number | null>(null, [Validators.required]),
     tipoContratoId: this.fb.control<number | null>(null),
     condicionLaboralId: this.fb.control<number | null>(null),
+    modalidadCasId: this.fb.control<number | null>(null),
     montoContratado: this.fb.control<number | null>(null, [
       Validators.required,
       Validators.min(0.01),
@@ -115,6 +118,7 @@ export class EmpleadoPlanillaFormPageComponent implements OnInit {
       Validators.pattern(AIRHSP_PATTERN),
       Validators.maxLength(6),
     ]),
+    fechaInicioContrato: this.fb.control<string | null>(null),
   });
 
   readonly tieneHijos = computed(() => {
@@ -143,6 +147,7 @@ export class EmpleadoPlanillaFormPageComponent implements OnInit {
   private readonly numHijosSignal = signal<number | null>(null);
   private readonly regimenLaboralIdSignal = signal<number | null>(null);
   private readonly condicionLaboralIdSignal = signal<number | null>(null);
+  private readonly tipoContratoIdSignal = signal<number | null>(null);
 
   constructor() {
     this.form.controls.numHijos.valueChanges
@@ -157,12 +162,23 @@ export class EmpleadoPlanillaFormPageComponent implements OnInit {
       .pipe(takeUntilDestroyed())
       .subscribe((id) => this.condicionLaboralIdSignal.set(id));
 
+    this.form.controls.tipoContratoId.valueChanges
+      .pipe(takeUntilDestroyed())
+      .subscribe((id) => {
+        this.tipoContratoIdSignal.set(id);
+        this.evaluarModalidadCas(this.regimenLaboralIdSignal(), id);
+      });
+
     merge(
       this.form.controls.regimenLaboralId.valueChanges,
       this.form.controls.condicionLaboralId.valueChanges,
     )
       .pipe(debounceTime(300), takeUntilDestroyed())
       .subscribe(() => this.recalcularIncrementos());
+
+    this.form.controls.regimenLaboralId.valueChanges
+      .pipe(takeUntilDestroyed())
+      .subscribe((id) => this.evaluarRegimen(id));
   }
 
   ngOnInit(): void {
@@ -224,21 +240,67 @@ export class EmpleadoPlanillaFormPageComponent implements OnInit {
       next: (list) => {
         const filtrados = list.filter((r) => r.codigo !== '728' && r.codigo !== '9999');
         this.regimenes.set(filtrados);
+        this.evaluarRegimen(this.form.controls.regimenLaboralId.value);
       },
       error: () => this.regimenes.set([]),
     });
     this.catalogoApi.listarTiposContrato().subscribe({
-      next: (list) => this.tiposContrato.set(list),
+      next: (list) => {
+        this.tiposContrato.set(list);
+        this.evaluarModalidadCas(this.form.controls.regimenLaboralId.value, this.form.controls.tipoContratoId.value);
+      },
       error: () => this.tiposContrato.set([]),
     });
     this.catalogoApi.listarCondicionesLaborales().subscribe({
-      next: (list) => this.condiciones.set(list),
+      next: (list) => {
+        this.condiciones.set(list);
+        this.evaluarRegimen(this.form.controls.regimenLaboralId.value);
+      },
       error: () => this.condiciones.set([]),
     });
     this.tipoPersonaMefApi.listarActivos().subscribe({
       next: (list) => this.tiposPersonaMef.set(list),
       error: () => this.tiposPersonaMef.set([]),
     });
+    this.catalogoApi.listarModalidadesCas().subscribe({
+      next: (list) => this.modalidadesCas.set(list),
+      error: () => this.modalidadesCas.set([]),
+    });
+  }
+
+  private evaluarRegimen(regimenId: number | null): void {
+    const reg = this.regimenes().find((r) => r.id === regimenId);
+    if (!reg) return;
+
+    if (reg.codigo === '1057') {
+      this.form.controls.condicionLaboralId.setValue(null, { emitEvent: false });
+      this.form.controls.condicionLaboralId.disable();
+      this.form.controls.tipoContratoId.enable();
+      this.evaluarModalidadCas(regimenId, this.form.controls.tipoContratoId.value);
+    } else if (reg.codigo === '276') {
+      this.form.controls.tipoContratoId.setValue(null);
+      this.form.controls.tipoContratoId.disable();
+      this.form.controls.condicionLaboralId.enable();
+      this.form.controls.modalidadCasId.setValue(null);
+      this.form.controls.modalidadCasId.disable();
+    } else {
+      this.form.controls.tipoContratoId.enable();
+      this.form.controls.condicionLaboralId.enable();
+      this.form.controls.modalidadCasId.setValue(null);
+      this.form.controls.modalidadCasId.disable();
+    }
+  }
+
+  private evaluarModalidadCas(regimenId: number | null, tipoContratoId: number | null): void {
+    const reg = this.regimenes().find((r) => r.id === regimenId);
+    const tc = this.tiposContrato().find((t) => t.id === tipoContratoId);
+    
+    if (reg?.codigo === '1057' && tc?.codigo === 'PLAZO_DETERMINADO') {
+      this.form.controls.modalidadCasId.enable();
+    } else {
+      this.form.controls.modalidadCasId.setValue(null);
+      this.form.controls.modalidadCasId.disable();
+    }
   }
 
   private patchFromList(empleadoId: number, targetId: number): void {
@@ -255,11 +317,13 @@ export class EmpleadoPlanillaFormPageComponent implements OnInit {
           regimenLaboralId: row.regimenLaboralId,
           tipoContratoId: row.tipoContratoId,
           condicionLaboralId: row.condicionLaboralId,
+          modalidadCasId: (row as any).modalidadCasId ?? null,
           montoContratado,
           sueldoBasico: row.sueldoBasico,
           numHijos: row.numHijos,
           tipoPersonaMefId: (row as any).tipoPersonaMefId ?? null,
           registroPlazaAirhsp: (row as any).registroPlazaAirhsp ?? '',
+          fechaInicioContrato: (row as any).fechaInicioContrato ?? null,
         });
         this.regimenLaboralIdSignal.set(row.regimenLaboralId);
         this.condicionLaboralIdSignal.set(row.condicionLaboralId);
@@ -337,8 +401,10 @@ export class EmpleadoPlanillaFormPageComponent implements OnInit {
       regimenLaboralId: v.regimenLaboralId,
       tipoContratoId: v.tipoContratoId ?? null,
       condicionLaboralId: v.condicionLaboralId ?? null,
+      modalidadCasId: v.modalidadCasId ?? null,
       tipoPersonaMefId: v.tipoPersonaMefId ?? null,
       registroPlazaAirhsp: v.registroPlazaAirhsp ?? '',
+      fechaInicioContrato: v.fechaInicioContrato ?? null,
     };
 
     this.saving.set(true);

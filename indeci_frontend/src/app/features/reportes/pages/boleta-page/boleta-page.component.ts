@@ -15,14 +15,10 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
-import { PersonaApiService } from '../../../empleados/services/persona-api.service';
-import { MovimientoPlanillaApiService } from '../../../planilla/services/movimiento-planilla-api.service';
-import { PlanillaDetalleApiService } from '../../../planilla/services/planilla-detalle-api.service';
+import { BoletaApiService } from '../../services/boleta-api.service';
+import type { BoletaPagoResponseDto } from '../../models/boleta.model';
 import { ErrorMessageService } from '../../../../core/services/error-message.service';
 import { isErrorResponse } from '../../../../core/models/error-response.model';
-import type { PersonaEmpleado } from '../../../empleados/models/persona-empleado.model';
-import type { MovimientoPlanillaRow } from '../../../planilla/models/movimiento-planilla.model';
-import type { PlanillaDetalleRow } from '../../../planilla/models/planilla-detalle.model';
 
 /**
  * Boleta de pago imprimible (Spec 009 / T160 — FR-R2).
@@ -54,9 +50,7 @@ export class BoletaPageComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly http = inject(HttpClient);
-  private readonly personaApi = inject(PersonaApiService);
-  private readonly movimientoApi = inject(MovimientoPlanillaApiService);
-  private readonly detalleApi = inject(PlanillaDetalleApiService);
+  private readonly boletaApi = inject(BoletaApiService);
   private readonly snack = inject(MatSnackBar);
   private readonly errors = inject(ErrorMessageService);
 
@@ -65,21 +59,17 @@ export class BoletaPageComponent implements OnInit {
 
   readonly empleadoId = signal(0);
   readonly periodo = signal('');
-  readonly persona = signal<PersonaEmpleado | null>(null);
-  readonly movimiento = signal<MovimientoPlanillaRow | null>(null);
-  readonly detalle = signal<readonly PlanillaDetalleRow[]>([]);
+  readonly boleta = signal<BoletaPagoResponseDto | null>(null);
   readonly loading = signal(true);
 
-  readonly ingresos = computed(() => this.detalle().filter((r) => r.tipoConcepto === 'INGRESO'));
-  readonly descuentos = computed(() => this.detalle().filter((r) => r.tipoConcepto === 'DESCUENTO'));
-  readonly aportesEmpleador = computed(() =>
-    this.detalle().filter((r) => r.tipoConcepto === 'APORTE'),
-  );
+  readonly ingresos = computed(() => this.boleta()?.ingresos ?? []);
+  readonly descuentos = computed(() => this.boleta()?.descuentos ?? []);
+  readonly aportesEmpleador = computed(() => this.boleta()?.aportes ?? []);
 
   readonly subtotalEssalud = computed(() =>
-    this.aportesEmpleador().reduce((acc, r) => acc + (r.monto ?? 0), 0),
+    this.aportesEmpleador().reduce((acc: number, r) => acc + (r.monto ?? 0), 0),
   );
-  readonly netoPagar = computed(() => this.movimiento()?.netoPagar ?? 0);
+  readonly netoPagar = computed(() => this.boleta()?.netoPagar ?? 0);
   /** LEY-07: CUC ≈ neto + ESSALUD empleador (informativo en boleta). */
   readonly cucTotal = computed(() => this.netoPagar() + this.subtotalEssalud());
 
@@ -151,16 +141,9 @@ export class BoletaPageComponent implements OnInit {
 
   private cargar(empleadoId: number, periodo: string): void {
     this.loading.set(true);
-    forkJoin({
-      personas: this.personaApi.listar(),
-      movimiento: this.movimientoApi.obtenerEmpleado(empleadoId, periodo),
-      detalle: this.detalleApi.listarDetalle(empleadoId, periodo),
-    }).subscribe({
-      next: ({ personas, movimiento, detalle }) => {
-        const found = personas.find((p) => p.empleadoId === empleadoId) ?? null;
-        this.persona.set(found);
-        this.movimiento.set(movimiento);
-        this.detalle.set(detalle);
+    this.boletaApi.obtenerBoletaData(empleadoId, periodo).subscribe({
+      next: (boleta) => {
+        this.boleta.set(boleta);
         this.loading.set(false);
       },
       error: (err: HttpErrorResponse) => {

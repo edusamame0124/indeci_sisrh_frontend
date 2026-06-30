@@ -48,6 +48,7 @@ import {
   EmpleadoSaludEpsDialogComponent,
   type EmpleadoSaludEpsDialogData,
 } from '../empleado-salud-eps-page/empleado-salud-eps-dialog.component';
+import { EmpleadoOtrosIngresosDialogComponent } from '../../components/empleado-otros-ingresos-dialog/empleado-otros-ingresos-dialog.component';
 
 interface PersonaQuickAccess {
   readonly key: 'puesto' | 'cuentaBancaria' | 'pension' | 'planilla' | 'conceptos';
@@ -266,14 +267,37 @@ interface PersonaQuickAccess {
                         mat-icon-button
                         color="primary"
                         class="row-action row-action--quick"
-                        [routerLink]="['/empleados', 'suspension-4ta', 'personas', row.id]"
+                        [routerLink]="!isInactive(row) && isCas(row.regimenLaboral) ? ['/empleados', 'suspension-4ta', 'personas', row.id] : null"
+                        [disabled]="isInactive(row) || !isCas(row.regimenLaboral)"
                         [attr.aria-label]="'Suspensión 4ta de ' + row.nombreCompleto"
                         [matTooltip]="
-                          isInactive(row) ? 'Suspensión 4ta (inactivo)' : 'Gestionar Suspensión de 4ta'
+                          isInactive(row) ? 'Suspensión 4ta (inactivo)' : (!isCas(row.regimenLaboral) ? 'No aplica a este régimen' : 'Gestionar Suspensión de 4ta')
                         "
                       >
                         <mat-icon fontIcon="block" aria-hidden="true" />
                       </a>
+                    </td>
+                  </ng-container>
+
+                  <!-- Nueva Columna: Quinta Categoría -->
+                  <ng-container matColumnDef="quintaCat">
+                    <th mat-header-cell *matHeaderCellDef scope="col" matTooltip="Renta de Quinta Categoría">
+                      5ta Cat.
+                    </th>
+                    <td mat-cell *matCellDef="let row" [attr.data-inactive]="isInactive(row) ? 'true' : null">
+                      <button
+                        mat-icon-button
+                        color="primary"
+                        class="row-action row-action--quick"
+                        [disabled]="isInactive(row) || isCas(row.regimenLaboral)"
+                        (click)="openQuintaCat(row)"
+                        [attr.aria-label]="'Gestión 5ta Categoría de ' + row.nombreCompleto"
+                        [matTooltip]="
+                          isInactive(row) ? 'Quinta Categoría (inactivo)' : (isCas(row.regimenLaboral) ? 'No aplica a este régimen' : 'Gestionar Quinta Categoría')
+                        "
+                      >
+                        <mat-icon fontIcon="account_balance_wallet" aria-hidden="true" />
+                      </button>
                     </td>
                   </ng-container>
                   <ng-container matColumnDef="acciones">
@@ -427,10 +451,15 @@ interface PersonaQuickAccess {
         opacity: 0.55;
       }
       .row-action--quick {
-        color: var(--sisrh-color-cta, #0369a1);
+        color: var(--sisrh-primary-light, #5A96B4);
+        transition: color 0.2s ease;
+      }
+      .row-action--quick:not([disabled]):hover,
+      .row-action--quick:not([disabled]):focus {
+        color: var(--sisrh-primary, #0063A1);
       }
       .row-action:focus-visible {
-        outline: 3px solid var(--sisrh-color-cta, #0369a1);
+        outline: 3px solid var(--sisrh-primary, #0063A1);
         outline-offset: 2px;
         border-radius: 50%;
       }
@@ -471,9 +500,10 @@ export class PersonaListPageComponent {
         'dni',
         'codigoInterno',
         'estado',
+        'datosEmpleado',
         'conceptos',
         'suspension4ta',
-        'datosEmpleado',
+        'quintaCat',
         'acciones',
       ],
   );
@@ -537,6 +567,12 @@ export class PersonaListPageComponent {
 
   isInactive(row: Pick<PersonaResumen, 'estado'>): boolean {
     return (row.estado ?? '').toUpperCase() === 'INACTIVO';
+  }
+
+  isCas(regimen?: string): boolean {
+    if (!regimen) return false;
+    const r = regimen.trim().toUpperCase();
+    return r === 'CAS' || r === '1057';
   }
 
   onFilter(ev: Event): void {
@@ -605,6 +641,24 @@ export class PersonaListPageComponent {
       width: '900px',
       maxWidth: '96vw',
       maxHeight: '90vh',
+      autoFocus: false,
+    });
+  }
+
+  openQuintaCat(row: PersonaResumen): void {
+    if (!row.empleadoId) {
+      this.snack.open('Esta persona no tiene un empleado registrado.', 'Cerrar', { duration: 3000 });
+      return;
+    }
+    this.dialogs.open(EmpleadoOtrosIngresosDialogComponent, {
+      data: {
+        empleadoId: row.empleadoId,
+        empleadoNombre: row.nombreCompleto,
+        anioFiscal: 2026, // Año fiscal actual según contexto del sistema
+        mesFiscal: 5      // Mes fiscal actual (Mayo) según instrucciones
+      },
+      width: '600px',
+      maxWidth: '95vw',
       autoFocus: false,
     });
   }

@@ -14,7 +14,7 @@
       mat-stroked-button
       type="button"
       (click)="imprimir()"
-      [disabled]="loading() || movimiento() === null"
+      [disabled]="loading() || boleta() === null"
     >
       <mat-icon fontIcon="print" aria-hidden="true" />
       Imprimir
@@ -24,7 +24,7 @@
       color="primary"
       type="button"
       (click)="descargarPdf()"
-      [disabled]="loading() || movimiento() === null || descargando()"
+      [disabled]="loading() || boleta() === null || descargando()"
     >
       <mat-icon fontIcon="picture_as_pdf" aria-hidden="true" />
       {{ descargando() ? 'Generando…' : 'Descargar PDF' }}
@@ -35,7 +35,7 @@
     <div class="loading no-print" aria-busy="true">
       <mat-progress-spinner mode="indeterminate" diameter="48" aria-label="Cargando boleta" />
     </div>
-  } @else if (movimiento() === null) {
+  } @else if (boleta() === null) {
     <p class="empty no-print" role="status">
       No encontramos la planilla solicitada para este empleado y periodo.
     </p>
@@ -60,19 +60,27 @@
         <div class="sheet__grid">
           <div class="sheet__field">
             <span class="sheet__label">Nombre completo</span>
-            <span class="sheet__value">{{ persona()?.nombreCompleto ?? '—' }}</span>
+            <span class="sheet__value">{{ boleta()?.nombreCompleto ?? '—' }}</span>
           </div>
           <div class="sheet__field">
             <span class="sheet__label">DNI</span>
-            <span class="sheet__value">{{ persona()?.dni ?? '—' }}</span>
+            <span class="sheet__value">{{ boleta()?.dni ?? '—' }}</span>
           </div>
           <div class="sheet__field">
-            <span class="sheet__label">Código interno</span>
-            <span class="sheet__value">{{ persona()?.codigoInterno || '—' }}</span>
+            <span class="sheet__label">Régimen Laboral</span>
+            <span class="sheet__value">{{ boleta()?.regimenLaboral ?? '—' }}</span>
           </div>
           <div class="sheet__field">
-            <span class="sheet__label">Estado</span>
-            <span class="sheet__value">{{ persona()?.estado ?? '—' }}</span>
+            <span class="sheet__label">Modalidad / Nivel</span>
+            <span class="sheet__value">{{ boleta()?.modalidad ?? '—' }} / {{ boleta()?.nivelRemunerativo ?? '—' }}</span>
+          </div>
+          <div class="sheet__field">
+            <span class="sheet__label">Cuenta Bancaria</span>
+            <span class="sheet__value">{{ boleta()?.cuentaBancaria ?? '—' }}</span>
+          </div>
+          <div class="sheet__field">
+            <span class="sheet__label">Días Laborados</span>
+            <span class="sheet__value">{{ boleta()?.diasLaborados ?? '—' }}</span>
           </div>
         </div>
       </section>
@@ -94,7 +102,7 @@
                   </tr>
                 </thead>
                 <tbody>
-                  @for (r of ingresos(); track r.id) {
+                  @for (r of ingresos(); track r.codigo) {
                     <tr>
                       <td>{{ r.concepto }}</td>
                       <td class="num">S/ {{ fmtMonto(r.monto) }}</td>
@@ -104,7 +112,7 @@
                 <tfoot>
                   <tr>
                     <td><strong>Total ingresos</strong></td>
-                    <td class="num"><strong>S/ {{ fmtMonto(movimiento()!.totalIngresos) }}</strong></td>
+                    <td class="num"><strong>S/ {{ fmtMonto(boleta()!.totalIngresos) }}</strong></td>
                   </tr>
                 </tfoot>
               </table>
@@ -124,7 +132,7 @@
                   </tr>
                 </thead>
                 <tbody>
-                  @for (r of descuentos(); track r.id) {
+                  @for (r of descuentos(); track r.codigo) {
                     <tr>
                       <td>{{ r.concepto }}</td>
                       <td class="num">S/ {{ fmtMonto(r.monto) }}</td>
@@ -134,7 +142,7 @@
                 <tfoot>
                   <tr>
                     <td><strong>Total descuentos</strong></td>
-                    <td class="num"><strong>S/ {{ fmtMonto(movimiento()!.totalDescuentos) }}</strong></td>
+                    <td class="num"><strong>S/ {{ fmtMonto(boleta()!.totalDescuentos) }}</strong></td>
                   </tr>
                 </tfoot>
               </table>
@@ -162,7 +170,7 @@
               </tr>
             </thead>
             <tbody>
-              @for (r of aportesEmpleador(); track r.id) {
+              @for (r of aportesEmpleador(); track r.codigo) {
                 <tr>
                   <td>{{ r.concepto }}</td>
                   <td class="num">S/ {{ fmtMonto(r.monto) }}</td>
@@ -186,7 +194,7 @@
       <!-- Neto a pagar -->
       <section class="sheet__neto">
         <span class="sheet__neto-label">NETO A PAGAR</span>
-        <span class="sheet__neto-value">S/ {{ fmtMonto(movimiento()!.netoPagar) }}</span>
+        <span class="sheet__neto-value">S/ {{ fmtMonto(boleta()!.netoPagar) }}</span>
       </section>
 
       <!-- Pie con firma -->
