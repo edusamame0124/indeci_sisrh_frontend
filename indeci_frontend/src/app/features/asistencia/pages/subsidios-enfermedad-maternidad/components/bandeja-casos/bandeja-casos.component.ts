@@ -45,6 +45,16 @@ import {
   CrearCasoDialogComponent,
   type CrearCasoDialogResult,
 } from './crear-caso-dialog.component';
+import {
+  SubsidioEliminarDialogComponent,
+  type SubsidioEliminarDialogData,
+} from './subsidio-eliminar-dialog.component';
+
+const ESTADOS_ELIMINABLES: ReadonlySet<SubsidioEstadoCaso> = new Set([
+  'BORRADOR',
+  'PENDIENTE_VALIDACION',
+  'CALCULADO',
+]);
 
 @Component({
   selector: 'app-subsidio-bandeja-casos',
@@ -109,6 +119,10 @@ export class BandejaCasosComponent {
   ] as const;
 
   readonly puedeCrear = computed(() =>
+    tienePermisoSubsidio(this.auth.permisos(), 'SUB_WRITE'),
+  );
+
+  readonly puedeEliminar = computed(() =>
     tienePermisoSubsidio(this.auth.permisos(), 'SUB_WRITE'),
   );
 
@@ -203,6 +217,32 @@ export class BandejaCasosComponent {
 
   verCaso(caso: SubsidioCasoResponse): void {
     this.verDetalle.emit(caso.id);
+  }
+
+  esEliminable(caso: SubsidioCasoResponse): boolean {
+    return this.puedeEliminar() && ESTADOS_ELIMINABLES.has(caso.estado);
+  }
+
+  onEliminar(caso: SubsidioCasoResponse): void {
+    const ref = this.dialog.open<
+      SubsidioEliminarDialogComponent,
+      SubsidioEliminarDialogData,
+      string | null
+    >(SubsidioEliminarDialogComponent, {
+      width: '480px',
+      maxWidth: '95vw',
+      data: { codigoCaso: caso.codigoCaso, nombreEmpleado: caso.nombreEmpleado },
+    });
+    ref.afterClosed().subscribe((sustento) => {
+      if (!sustento) return;
+      this.api.eliminarCaso(caso.id, sustento).subscribe({
+        next: () => {
+          this.snack.open('Caso de subsidio eliminado', 'Cerrar', { duration: 4000 });
+          this.cargarCasos();
+        },
+        error: (err: HttpErrorResponse) => this.onHttpError(err),
+      });
+    });
   }
 
   periodoDesdeCaso(caso: SubsidioCasoResponse): string {

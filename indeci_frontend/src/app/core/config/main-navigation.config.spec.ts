@@ -180,14 +180,13 @@ describe('filterVisibleNavItems (Spec 009 — 5 módulos + Inicio)', () => {
     expect(spec009.every((c) => !c.comingSoon)).toBe(true);
   });
 
-  it('Planilla expone Centro de Validaciones, Generación masiva/individual y Asistente de Recálculo como menú directamente', () => {
+  it('Planilla expone Centro de Validaciones y Generación masiva/individual como menú directamente', () => {
     const r = filterVisibleNavItems(MAIN_NAV_ITEMS, [], ['ADMIN']);
     const pla = r.find((i) => i.label === 'Planilla');
-    // 12 ítems de primer nivel: todos directos en planilla.
-    expect(pla?.children?.length).toBe(12);
+    // 11 ítems de primer nivel: todos directos en planilla.
+    expect(pla?.children?.length).toBe(11);
     expect(pla?.children?.map((c) => c.route)).toContain('/planilla/generacion-masiva');
     expect(pla?.children?.map((c) => c.route)).toContain('/planilla/generacion-individual');
-    expect(pla?.children?.map((c) => c.route)).toContain('/planilla/recalculo');
     // Todas las rutas navegables (hojas).
     expect(flattenNavLeaves(pla?.children).map((c) => c.route).sort()).toEqual(
       [
@@ -198,7 +197,6 @@ describe('filterVisibleNavItems (Spec 009 — 5 módulos + Inicio)', () => {
         '/asistencia/subsidios',
         '/planilla/suspensiones',
         '/planilla/validaciones',
-        '/planilla/recalculo',
         '/planilla/generacion-masiva',
         '/planilla/generacion-individual',
         '/planilla/movimientos',

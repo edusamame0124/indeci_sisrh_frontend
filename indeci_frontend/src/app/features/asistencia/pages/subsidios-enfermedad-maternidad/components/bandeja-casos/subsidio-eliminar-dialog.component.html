@@ -1,0 +1,49 @@
+<h2 mat-dialog-title>Eliminar caso de subsidio</h2>
+
+<mat-dialog-content class="eliminar__content">
+  <p class="eliminar__intro">
+    Se dará de baja (anulación lógica) el caso
+    <strong>{{ data.codigoCaso }}</strong>
+    @if (data.nombreEmpleado) {
+      de <strong>{{ data.nombreEmpleado }}</strong>
+    }.
+    Dejará de aparecer en la bandeja y la acción quedará registrada en el historial del caso.
+  </p>
+
+  <mat-form-field appearance="outline" class="eliminar__field">
+    <mat-label>Sustento de eliminación</mat-label>
+    <textarea
+      matInput
+      rows="3"
+      [formControl]="sustentoCtrl"
+      maxlength="255"
+      placeholder="Motivo por el que se elimina el caso (mín. 5 caracteres)"
+      required
+    ></textarea>
+    <mat-hint align="end">{{ sustentoCtrl.value.length }}/255</mat-hint>
+    @if (sustentoCtrl.hasError('required') && sustentoCtrl.touched) {
+      <mat-error>El sustento es obligatorio.</mat-error>
+    } @else if (sustentoCtrl.hasError('minlength')) {
+      <mat-error>Ingrese al menos 5 caracteres.</mat-error>
+    }
+  </mat-form-field>
+
+  <p class="eliminar__ref">
+    Baja lógica con trazabilidad (evento ELIMINACION en el timeline) — SPEC Subsidios.
+    No aplica a casos ya aplicados a planilla.
+  </p>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button type="button" (click)="cancelar()">Cancelar</button>
+  <button
+    mat-flat-button
+    color="warn"
+    type="button"
+    (click)="confirmar()"
+    [disabled]="sustentoCtrl.invalid"
+  >
+    <mat-icon>delete</mat-icon>
+    Eliminar
+  </button>
+</mat-dialog-actions>

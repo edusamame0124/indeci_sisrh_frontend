@@ -57,6 +57,13 @@
   width: 100%;
 }
 
+.bandeja__acciones {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  justify-content: flex-end;
+}
+
 .bandeja__empleado {
   display: block;
   font-weight: 500;

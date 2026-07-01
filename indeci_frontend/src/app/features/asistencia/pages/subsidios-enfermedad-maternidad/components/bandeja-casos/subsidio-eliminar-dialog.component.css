@@ -1,0 +1,29 @@
+.eliminar__content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 420px;
+  max-width: 480px;
+}
+
+.eliminar__intro {
+  margin: 0 0 4px;
+  line-height: 1.45;
+}
+
+.eliminar__field {
+  width: 100%;
+}
+
+.eliminar__ref {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.4;
+  color: rgba(0, 0, 0, 0.55);
+}
+
+@media (max-width: 600px) {
+  .eliminar__content {
+    min-width: unset;
+  }
+}

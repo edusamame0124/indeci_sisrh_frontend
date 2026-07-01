@@ -72,6 +72,13 @@ export class SubsidioApiService {
       .pipe(map(extractApiData));
   }
 
+  /** Eliminación lógica (anulación) del caso con sustento obligatorio. */
+  eliminarCaso(id: number, sustento: string): Observable<void> {
+    return this.http
+      .post<ApiResponse<void>>(`${this.baseUrl}/casos/${id}/eliminar`, { sustento })
+      .pipe(map(extractApiData));
+  }
+
   timeline(casoId: number): Observable<readonly SubsidioTimelineEvento[]> {
     return this.http
       .get<ApiResponse<SubsidioTimelineEvento[]>>(`${this.baseUrl}/casos/${casoId}/timeline`)
