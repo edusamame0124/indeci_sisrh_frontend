@@ -27,6 +27,7 @@ describe('PortalEmpleadoPageComponent (Spec 010 PANTALLA-08 — Portal del emple
   });
 
   function build() {
+    TestBed.resetTestingModule();
     TestBed.configureTestingModule({
       imports: [PortalEmpleadoPageComponent],
       providers: [
@@ -45,6 +46,7 @@ describe('PortalEmpleadoPageComponent (Spec 010 PANTALLA-08 — Portal del emple
 
   afterEach(() => {
     httpMock.verify();
+    TestBed.resetTestingModule();
   });
 
   const persona = (empleadoId: number, nombre: string): PersonaEmpleado => ({
@@ -68,6 +70,7 @@ describe('PortalEmpleadoPageComponent (Spec 010 PANTALLA-08 — Portal del emple
     activo: 1,
     neto50pctMinimo: null,
     estadoNeto: null,
+    loteId: null,
   });
 
   const prestamoRow = (id: number, estado: string, saldo: number): PrestamoRow => ({

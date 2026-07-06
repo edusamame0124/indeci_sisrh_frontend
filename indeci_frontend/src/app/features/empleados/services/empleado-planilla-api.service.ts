@@ -4,9 +4,12 @@ import { map, type Observable } from 'rxjs';
 import type { ApiResponse } from '../../../core/models/api-response.model';
 import { extractApiData } from '../../../core/http/map-api-response';
 import type {
+  ElegibilidadVinculoRow,
   EmpleadoPlanillaInput,
   EmpleadoPlanillaRow,
+  EmpleadoRemuneracionHistRow,
   PlanillaConsolidadaRow,
+  RemuneracionCambioInput,
 } from '../models/empleado-planilla.model';
 import type {
   IncrementosDsQuery,
@@ -60,6 +63,46 @@ export class EmpleadoPlanillaApiService {
   eliminar(id: number): Observable<null> {
     return this.http
       .delete<ApiResponse<null>>(`/api/rrhh/planilla/${id}`)
+      .pipe(map(extractApiData));
+  }
+
+  /** F2 — Historial remunerativo del vínculo (por empleadoPlanillaId). */
+  listarRemuneracionHist(
+    empleadoPlanillaId: number,
+  ): Observable<readonly EmpleadoRemuneracionHistRow[]> {
+    return this.http
+      .get<ApiResponse<EmpleadoRemuneracionHistRow[]>>(
+        `/api/rrhh/empleado-planilla/${empleadoPlanillaId}/remuneracion-hist`,
+      )
+      .pipe(map((r) => [...extractApiData(r)]));
+  }
+
+  registrarCambioRemunerativo(
+    empleadoPlanillaId: number,
+    input: RemuneracionCambioInput,
+  ): Observable<EmpleadoRemuneracionHistRow> {
+    return this.http
+      .post<ApiResponse<EmpleadoRemuneracionHistRow>>(
+        `/api/rrhh/empleado-planilla/${empleadoPlanillaId}/remuneracion-hist`,
+        input,
+      )
+      .pipe(map(extractApiData));
+  }
+
+  eliminarCambioRemunerativo(empleadoPlanillaId: number, historialId: number): Observable<null> {
+    return this.http
+      .delete<ApiResponse<null>>(
+        `/api/rrhh/empleado-planilla/${empleadoPlanillaId}/remuneracion-hist/${historialId}`,
+      )
+      .pipe(map(extractApiData));
+  }
+
+  /** F4a — elegibilidad calculada del vínculo para planilla / MCPP. */
+  obtenerElegibilidad(empleadoPlanillaId: number): Observable<ElegibilidadVinculoRow> {
+    return this.http
+      .get<ApiResponse<ElegibilidadVinculoRow>>(
+        `/api/rrhh/empleado-planilla/${empleadoPlanillaId}/elegibilidad`,
+      )
       .pipe(map(extractApiData));
   }
 }

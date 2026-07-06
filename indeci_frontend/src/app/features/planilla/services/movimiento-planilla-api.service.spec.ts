@@ -38,6 +38,7 @@ describe('MovimientoPlanillaApiService (Spec 009 / T149)', () => {
     activo: 1,
     neto50pctMinimo: null,
     estadoNeto: null,
+    loteId: null,
   });
 
   it('obtenerEmpleado GET /movimiento-planilla/{empId}/{periodo}', () => {

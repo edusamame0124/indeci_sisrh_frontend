@@ -53,6 +53,26 @@ export const PLANILLA_ROUTES: Routes = [
         title: 'Periodos de planilla — SISRH-INDECI',
       },
 
+      /* ——— Track B — Generar aguinaldo (proceso aparte) ——— */
+      {
+        path: 'aguinaldo',
+        loadComponent: () =>
+          import('./pages/aguinaldo-generacion-page/aguinaldo-generacion-page.component').then(
+            (m) => m.AguinaldoGeneracionPageComponent,
+          ),
+        title: 'Generar aguinaldo — SISRH-INDECI',
+      },
+
+      /* ——— Track B — Generar planilla adicional (proceso aparte) ——— */
+      {
+        path: 'adicional',
+        loadComponent: () =>
+          import('./pages/planilla-adicional-page/planilla-adicional-page.component').then(
+            (m) => m.PlanillaAdicionalPageComponent,
+          ),
+        title: 'Planilla Adicional — SISRH-INDECI',
+      },
+
       /* ——— Generación masiva (T153) ——— */
       {
         path: 'generacion-masiva',

@@ -44,8 +44,9 @@ import type { TipoContrato } from '../../../../../catalogos/models/tipo-contrato
 import type { CondicionLaboral } from '../../../../../catalogos/models/condicion-laboral.model';
 import type { TipoPersonaMef } from '../../../../../planilla/models/tipo-persona-mef.model';
 import type { ModalidadCas } from '../../../../../catalogos/models/modalidad-cas.model';
-import type { EmpleadoPlanillaRow } from '../../../../models/empleado-planilla.model';
+import type { ElegibilidadVinculoRow, EmpleadoPlanillaRow, EmpleadoRemuneracionHistRow } from '../../../../models/empleado-planilla.model';
 import type { IncrementosDsResponse } from '../../../../models/incrementos-ds.model';
+import { RemuneracionCambioDialogComponent } from '../../../empleado-planilla-form-page/components/remuneracion-cambio-dialog/remuneracion-cambio-dialog.component';
 
 import { UppercaseDirective } from '../../../../../../shared/directives/uppercase.directive';
 import { IncrementosDsPanelComponent } from '../../../empleado-planilla-form-page/components/incrementos-ds-panel/incrementos-ds-panel.component';
@@ -89,7 +90,7 @@ const AIRHSP_PATTERN = /^[A-Z0-9]{6}$/;
             [matTooltip]="
               canRegistrar()
                 ? 'Registrar la configuración remunerativa del empleado'
-                : 'Ya existe una configuración activa. Edítala o desactívala para registrar una nueva.'
+                : 'Hay un contrato vigente. Ciérrelo con su cese para registrar uno nuevo.'
             "
           >
             <mat-icon fontIcon="add" aria-hidden="true" />
@@ -110,6 +111,14 @@ const AIRHSP_PATTERN = /^[A-Z0-9]{6}$/;
         } @else {
           <div class="sisrh-table-scroll">
             <table mat-table [dataSource]="pagedRows()" class="tbl">
+              <ng-container matColumnDef="estadoVinculo">
+                <th mat-header-cell *matHeaderCellDef scope="col">Estado</th>
+                <td mat-cell *matCellDef="let row">
+                  <span [class]="estadoBadgeClass(row.estadoVinculo)">
+                    {{ estadoLabel(row.estadoVinculo) }}
+                  </span>
+                </td>
+              </ng-container>
               <ng-container matColumnDef="regimen">
                 <th mat-header-cell *matHeaderCellDef scope="col">Régimen</th>
                 <td mat-cell *matCellDef="let row">{{ row.regimenLaboral ?? '—' }}</td>
@@ -121,6 +130,10 @@ const AIRHSP_PATTERN = /^[A-Z0-9]{6}$/;
               <ng-container matColumnDef="condicion">
                 <th mat-header-cell *matHeaderCellDef scope="col">Condición</th>
                 <td mat-cell *matCellDef="let row">{{ row.condicionLaboral || row.modalidadCas || '—' }}</td>
+              </ng-container>
+              <ng-container matColumnDef="vigenciaVinculo">
+                <th mat-header-cell *matHeaderCellDef scope="col">Vigencia</th>
+                <td mat-cell *matCellDef="let row" class="col-vigencia">{{ fmtVigencia(row) }}</td>
               </ng-container>
               <ng-container matColumnDef="codigoAirhsp">
                 <th mat-header-cell *matHeaderCellDef scope="col" matTooltip="Código AIRHSP">
@@ -215,19 +228,31 @@ const AIRHSP_PATTERN = /^[A-Z0-9]{6}$/;
                 }
               </mat-form-field>
               
+              <!-- F3.1 — Tipo persona MEF derivado del régimen (read-only). -->
+              <mat-form-field appearance="outline" class="half">
+                <mat-label>Tipo de persona MEF / AIRHSP</mat-label>
+                <input matInput [value]="tipoPersonaMefLabel()" readonly tabindex="-1" aria-readonly="true" />
+                <mat-hint>Derivado del régimen (no editable).</mat-hint>
+              </mat-form-field>
+            </div>
+
+            <!-- F3 — campos/etiquetas dinámicos por régimen (no un selector universal). -->
+            <div class="grid">
+              @if (esRegimen276()) {
               <mat-form-field appearance="outline" class="half">
                 <mat-label>Condición laboral</mat-label>
                 <mat-select formControlName="condicionLaboralId">
                   <mat-option [value]="null">Sin especificar</mat-option>
-                  @for (c of condiciones(); track c.id) {
+                  @for (c of condicionesFiltradas(); track c.id) {
                     <mat-option [value]="c.id">{{ c.nombre }}</mat-option>
                   }
                 </mat-select>
               </mat-form-field>
-            </div>
-            <div class="grid">
+              }
+
+              @if (esRegimenCas()) {
               <mat-form-field appearance="outline" class="half">
-                <mat-label>Tipo contrato</mat-label>
+                <mat-label>Tipo de contrato CAS</mat-label>
                 <mat-select formControlName="tipoContratoId">
                   <mat-option [value]="null">Sin especificar</mat-option>
                   @for (t of tiposContrato(); track t.id) {
@@ -235,28 +260,37 @@ const AIRHSP_PATTERN = /^[A-Z0-9]{6}$/;
                   }
                 </mat-select>
               </mat-form-field>
+                @if (!form.controls.modalidadCasId.disabled) {
+                <mat-form-field appearance="outline" class="half">
+                  <mat-label>Modalidad o causal CAS</mat-label>
+                  <mat-select formControlName="modalidadCasId">
+                    <mat-option [value]="null">Sin especificar</mat-option>
+                    @for (m of modalidadesCas(); track m.id) {
+                      <mat-option [value]="m.id">{{ m.nombre }}</mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+                }
+              }
 
-              @if (!form.controls.modalidadCasId.disabled) {
+              @if (esRegimenServir()) {
               <mat-form-field appearance="outline" class="half">
-                <mat-label>Modalidad CAS</mat-label>
-                <mat-select formControlName="modalidadCasId">
+                <mat-label>Grupo de servidor civil</mat-label>
+                <mat-select formControlName="grupoServidorCivil">
                   <mat-option [value]="null">Sin especificar</mat-option>
-                  @for (m of modalidadesCas(); track m.id) {
-                    <mat-option [value]="m.id">{{ m.nombre }}</mat-option>
+                  @for (g of GRUPOS_SERVIDOR_CIVIL; track g.valor) {
+                    <mat-option [value]="g.valor">{{ g.etiqueta }}</mat-option>
                   }
+                </mat-select>
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="half">
+                <mat-label>¿Servidor de confianza?</mat-label>
+                <mat-select formControlName="esConfianza">
+                  <mat-option [value]="0">No</mat-option>
+                  <mat-option [value]="1">Sí</mat-option>
                 </mat-select>
               </mat-form-field>
               }
-              
-              <mat-form-field appearance="outline" class="half">
-                <mat-label>Tipo persona MEF</mat-label>
-                <mat-select formControlName="tipoPersonaMefId">
-                  <mat-option [value]="null">Sin especificar</mat-option>
-                  @for (m of tiposPersonaMef(); track m.id) {
-                    <mat-option [value]="m.id">{{ m.codigo }} - {{ m.nombre }}</mat-option>
-                  }
-                </mat-select>
-              </mat-form-field>
             </div>
             
             <h4 class="section">Cálculo remunerativo</h4>
@@ -300,7 +334,147 @@ const AIRHSP_PATTERN = /^[A-Z0-9]{6}$/;
                 <mat-label>Fecha de inicio (Contrato)</mat-label>
                 <input matInput formControlName="fechaInicioContrato" type="date" placeholder="dd/mm/aaaa" />
               </mat-form-field>
+              <mat-form-field appearance="outline" class="half">
+                <mat-label>Fecha de término</mat-label>
+                <input matInput formControlName="fechaFin" type="date" placeholder="dd/mm/aaaa" />
+              </mat-form-field>
             </div>
+
+            <!-- F1 — estado derivado + cese del vínculo -->
+            @if (estadoVinculo()) {
+              <p class="vinc-estado">
+                Estado del vínculo:
+                <strong>{{ estadoVinculo()?.replaceAll('_', ' ') }}</strong>
+                <span class="vinc-estado__hint">(derivado por el sistema, no editable)</span>
+              </p>
+            }
+
+            <!-- F4a — elegibilidad calculada (solo en edición) -->
+            @if (elegibilidad(); as el) {
+              <div class="elegib" [class.elegib--ok]="el.elegiblePlanilla" [class.elegib--warn]="!el.elegiblePlanilla">
+                <p class="elegib__head">
+                  <mat-icon [fontIcon]="el.elegiblePlanilla ? 'check_circle' : 'warning'" aria-hidden="true" />
+                  {{ el.elegiblePlanilla ? 'Elegible para planilla interna' : 'No elegible para planilla interna' }}
+                  <span class="elegib__mcpp" [class.elegib__mcpp--ok]="el.elegibleMcpp">
+                    · MCPP: {{ el.elegibleMcpp ? 'listo' : 'pendiente' }}
+                  </span>
+                </p>
+                @if (el.pendientes.length > 0) {
+                  <ul class="elegib__list">
+                    @for (p of el.pendientes; track p) { <li>{{ p }}</li> }
+                  </ul>
+                }
+              </div>
+            }
+
+            <fieldset class="cese-block">
+              <legend>Cese del vínculo</legend>
+              <p class="cese-hint">Registre el cese solo cuando exista. Con vínculo vigente, deje estos campos vacíos.</p>
+              <div class="grid">
+                <mat-form-field appearance="outline" class="half">
+                  <mat-label>Fecha efectiva de cese</mat-label>
+                  <input matInput formControlName="fechaCese" type="date" placeholder="dd/mm/aaaa" />
+                </mat-form-field>
+                <mat-form-field appearance="outline" class="half">
+                  <mat-label>Motivo de cese</mat-label>
+                  <input matInput formControlName="motivoCese" maxlength="120"
+                         placeholder="Vencimiento de contrato, renuncia, etc." />
+                </mat-form-field>
+              </div>
+              <div class="grid">
+                <mat-form-field appearance="outline" class="half">
+                  <mat-label>Documento de sustento del cese</mat-label>
+                  <input matInput formControlName="documentoCese" maxlength="200"
+                         placeholder="Resolución / carta / memorando" />
+                </mat-form-field>
+              </div>
+              @if (habilitaLbs()) {
+                <button type="button" mat-stroked-button color="warn" (click)="onGenerarLbs()">
+                  <mat-icon fontIcon="request_quote" aria-hidden="true" />
+                  Generar liquidación de beneficios sociales
+                </button>
+              }
+            </fieldset>
+
+            <!-- F4b — Sustento del vínculo (documento de origen) -->
+            <fieldset class="cese-block">
+              <legend>Sustento del vínculo</legend>
+              <p class="cese-hint">Documento que origina el vínculo. Los cambios posteriores (cese, cambio remunerativo) llevan su propio sustento.</p>
+              <div class="grid">
+                <mat-form-field appearance="outline" class="half">
+                  <mat-label>Tipo de documento</mat-label>
+                  <mat-select formControlName="documentoOrigenTipo">
+                    <mat-option [value]="null">Sin especificar</mat-option>
+                    <mat-option value="CONTRATO">Contrato</mat-option>
+                    <mat-option value="RESOLUCION">Resolución</mat-option>
+                    <mat-option value="ADENDA">Adenda</mat-option>
+                    <mat-option value="DESIGNACION">Designación</mat-option>
+                  </mat-select>
+                </mat-form-field>
+                <mat-form-field appearance="outline" class="half">
+                  <mat-label>N° de documento</mat-label>
+                  <input matInput formControlName="documentoOrigenNumero" maxlength="60"
+                         placeholder="CAS-2026-00125" />
+                </mat-form-field>
+              </div>
+              <div class="grid">
+                <mat-form-field appearance="outline" class="half">
+                  <mat-label>Fecha del documento</mat-label>
+                  <input matInput formControlName="documentoOrigenFecha" type="date" placeholder="dd/mm/aaaa" />
+                </mat-form-field>
+              </div>
+            </fieldset>
+
+            <!-- F2 — historial remunerativo (solo en edición) -->
+            @if (isEdit()) {
+              <fieldset class="hist-block">
+                <legend>Historial remunerativo</legend>
+                <p class="cese-hint">La planilla usa la remuneración vigente en el período que procesa.</p>
+                @if (historial().length > 0) {
+                  <table mat-table [dataSource]="historial()" class="hist-table">
+                    <ng-container matColumnDef="vigencia">
+                      <th mat-header-cell *matHeaderCellDef scope="col">Vigencia</th>
+                      <td mat-cell *matCellDef="let h">{{ h.vigenciaDesde }} — {{ h.vigenciaHasta ?? 'Vigente' }}</td>
+                    </ng-container>
+                    <ng-container matColumnDef="remuneracion">
+                      <th mat-header-cell *matHeaderCellDef scope="col">Remuneración total</th>
+                      <td mat-cell *matCellDef="let h">S/ {{ h.remuneracionTotal }}</td>
+                    </ng-container>
+                    <ng-container matColumnDef="tipo">
+                      <th mat-header-cell *matHeaderCellDef scope="col">Motivo</th>
+                      <td mat-cell *matCellDef="let h">{{ h.tipoCambio ?? '—' }}</td>
+                    </ng-container>
+                    <ng-container matColumnDef="fuente">
+                      <th mat-header-cell *matHeaderCellDef scope="col">Fuente</th>
+                      <td mat-cell *matCellDef="let h">{{ h.fuente ?? '—' }}</td>
+                    </ng-container>
+                    <ng-container matColumnDef="estado">
+                      <th mat-header-cell *matHeaderCellDef scope="col">Estado</th>
+                      <td mat-cell *matCellDef="let h">{{ h.estado ?? '—' }}</td>
+                    </ng-container>
+                    <ng-container matColumnDef="acciones">
+                      <th mat-header-cell *matHeaderCellDef scope="col"></th>
+                      <td mat-cell *matCellDef="let h">
+                        <button mat-icon-button type="button" color="warn"
+                                (click)="onEliminarCambio(h)"
+                                matTooltip="Eliminar cambio remunerativo"
+                                [attr.aria-label]="'Eliminar vigencia desde ' + h.vigenciaDesde">
+                          <mat-icon fontIcon="delete" />
+                        </button>
+                      </td>
+                    </ng-container>
+                    <tr mat-header-row *matHeaderRowDef="historialCols"></tr>
+                    <tr mat-row *matRowDef="let row; columns: historialCols"></tr>
+                  </table>
+                } @else {
+                  <p class="cese-hint">Sin cambios remunerativos registrados.</p>
+                }
+                <button type="button" mat-stroked-button color="primary" (click)="abrirRegistrarCambio()">
+                  <mat-icon fontIcon="add" aria-hidden="true" />
+                  Registrar cambio remunerativo
+                </button>
+              </fieldset>
+            }
 
             @if (incrementosDs()) {
               <app-incrementos-ds-panel 
@@ -326,6 +500,63 @@ const AIRHSP_PATTERN = /^[A-Z0-9]{6}$/;
   `,
   styles: [
     `
+      /* F1/F2 — estado del vínculo, cese e historial remunerativo */
+      .vinc-estado {
+        margin: 4px 0 8px;
+        font-size: 13px;
+        color: var(--sisrh-text, #334155);
+      }
+      .vinc-estado__hint {
+        margin-left: 6px;
+        font-size: 11px;
+        color: var(--sisrh-text-soft, #94a3b8);
+      }
+      .cese-block, .hist-block {
+        margin: 8px 0;
+        padding: 12px 16px;
+        border: 1px solid var(--sisrh-border, #d9e1ea);
+        border-radius: 8px;
+      }
+      .cese-block legend, .hist-block legend {
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--sisrh-text, #334155);
+        padding: 0 6px;
+      }
+      .cese-hint {
+        margin: 0 0 8px;
+        font-size: 12px;
+        color: var(--sisrh-text-muted, #64748b);
+      }
+      .hist-table {
+        width: 100%;
+        margin-bottom: 8px;
+      }
+      .hist-table th {
+        background: var(--sisrh-surface-muted, #f8fafc);
+        font-weight: 600;
+      }
+      /* F4a — panel de elegibilidad */
+      .elegib {
+        margin: 8px 0;
+        padding: 10px 14px;
+        border-radius: 8px;
+        border: 1px solid var(--sisrh-border, #d9e1ea);
+        font-size: 13px;
+      }
+      .elegib--ok { background: #e7f5ee; border-color: #a7d8bf; }
+      .elegib--warn { background: #fff4db; border-color: #f0d9a7; }
+      .elegib__head {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin: 0;
+        font-weight: 700;
+        color: var(--sisrh-text, #334155);
+      }
+      .elegib__mcpp { font-weight: 500; color: var(--sisrh-warning, #b7791f); }
+      .elegib__mcpp--ok { color: var(--sisrh-success, #157347); }
+      .elegib__list { margin: 6px 0 0 18px; color: var(--sisrh-text-muted, #64748b); }
       .integrado-container {
         padding: 0.5rem 0;
       }
@@ -357,6 +588,40 @@ const AIRHSP_PATTERN = /^[A-Z0-9]{6}$/;
       }
       .col-airhsp {
         font-family: var(--sisrh-font-mono, ui-monospace, monospace);
+      }
+      .col-vigencia {
+        white-space: nowrap;
+        font-variant-numeric: tabular-nums;
+        color: #475569;
+      }
+      .badge {
+        display: inline-block;
+        padding: 0.15rem 0.55rem;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        line-height: 1.4;
+        white-space: nowrap;
+      }
+      .badge--success {
+        background: var(--sisrh-success-100, #e7f5ee);
+        color: var(--sisrh-success, #157347);
+      }
+      .badge--neutral {
+        background: #eef2f7;
+        color: #475569;
+      }
+      .badge--info {
+        background: var(--sisrh-info-100, #eaf2fb);
+        color: var(--sisrh-info, #2563a6);
+      }
+      .badge--warning {
+        background: var(--sisrh-warning-100, #fff4db);
+        color: var(--sisrh-warning, #b7791f);
+      }
+      .badge--danger {
+        background: var(--sisrh-danger-100, #fdecec);
+        color: var(--sisrh-danger, #b42318);
       }
       .col-sticky {
         position: sticky;
@@ -421,9 +686,11 @@ export class EmpleadoPlanillaIntegradoComponent implements OnInit {
   readonly pageSize = signal(10);
   readonly pageSizeOptions = [5, 10, 20] as const;
   readonly columns = [
+    'estadoVinculo',
     'regimen',
     'tipoContrato',
     'condicion',
+    'vigenciaVinculo',
     'codigoAirhsp',
     'montoContrato',
     'incrementosDs',
@@ -437,7 +704,11 @@ export class EmpleadoPlanillaIntegradoComponent implements OnInit {
     const start = this.pageIndex() * this.pageSize();
     return list.slice(start, start + this.pageSize());
   });
-  readonly canRegistrar = computed(() => this.rows().length === 0);
+  /**
+   * Vínculos secuenciales: se puede registrar uno nuevo salvo que exista un contrato
+   * vigente (activo sin cese). Los cesados quedan en el historial y no bloquean.
+   */
+  readonly canRegistrar = computed(() => !this.rows().some((r) => r.fechaCese == null));
 
   // FORM STATE
   readonly formLoading = signal(false);
@@ -455,6 +726,9 @@ export class EmpleadoPlanillaIntegradoComponent implements OnInit {
     tipoContratoId: this.fb.control<number | null>(null),
     condicionLaboralId: this.fb.control<number | null>(null),
     modalidadCasId: this.fb.control<number | null>(null),
+    // Ley 30057 (F3)
+    grupoServidorCivil: this.fb.control<string | null>(null),
+    esConfianza: this.fb.control<number>(0),
     montoContratado: this.fb.control<number | null>(null, [
       Validators.required,
       Validators.min(0.01),
@@ -472,6 +746,52 @@ export class EmpleadoPlanillaIntegradoComponent implements OnInit {
       Validators.maxLength(6),
     ]),
     fechaInicioContrato: this.fb.control<string | null>(null),
+    // Cese (F1): si hay fechaCese, motivo y documento son obligatorios.
+    fechaFin: this.fb.control<string | null>(null),
+    fechaCese: this.fb.control<string | null>(null),
+    motivoCese: this.fb.control<string | null>(null),
+    documentoCese: this.fb.control<string | null>(null),
+    // Sustento del vínculo (F4b)
+    documentoOrigenTipo: this.fb.control<string | null>(null),
+    documentoOrigenNumero: this.fb.control<string | null>(null),
+    documentoOrigenFecha: this.fb.control<string | null>(null),
+  });
+
+  // F1 — estado derivado + LBS ; F2 — historial ; F4 — elegibilidad.
+  readonly estadoVinculo = signal<string | null>(null);
+  readonly habilitaLbs = signal<boolean>(false);
+  readonly elegibilidad = signal<ElegibilidadVinculoRow | null>(null);
+  readonly historial = signal<readonly EmpleadoRemuneracionHistRow[]>([]);
+  readonly historialCols = ['vigencia', 'remuneracion', 'tipo', 'fuente', 'estado', 'acciones'] as const;
+
+  // F3 — campos/etiquetas dinámicos por régimen.
+  readonly GRUPOS_SERVIDOR_CIVIL = [
+    { valor: 'FUNCIONARIO', etiqueta: 'Funcionario público' },
+    { valor: 'DIRECTIVO', etiqueta: 'Directivo público' },
+    { valor: 'CARRERA', etiqueta: 'Servidor civil de carrera' },
+    { valor: 'ACTIVIDADES_COMPLEMENTARIAS', etiqueta: 'Actividades complementarias' },
+  ] as const;
+
+  /** Señal reactiva del código de régimen (se actualiza en evaluarRegimen). */
+  readonly regimenCodigoSignal = signal<string>('');
+  readonly esRegimen276 = computed(() => this.regimenCodigoSignal() === '276');
+  readonly esRegimenCas = computed(() => this.regimenCodigoSignal() === '1057');
+  readonly esRegimenServir = computed(() => this.regimenCodigoSignal() === '30057');
+
+  readonly condicionesFiltradas = computed(() =>
+    this.condiciones().filter((c) => {
+      const cod = `${c.codigo ?? ''} ${c.nombre ?? ''}`.toUpperCase();
+      return cod.includes('NOMBRADO') || cod.includes('CONTRATADO');
+    }),
+  );
+
+  // F3.1 — Tipo persona MEF derivado del régimen (read-only).
+  private readonly REGIMEN_A_TIPO_PERSONA_MEF: Record<string, string> = {
+    '1057': '4', '276': '1', '30057': '1', 'FORMATIVA': '6',
+  };
+  readonly tipoPersonaMefLabel = computed(() => {
+    const cod = this.REGIMEN_A_TIPO_PERSONA_MEF[this.regimenCodigoSignal()];
+    return this.tiposPersonaMef().find((t) => t.codigo === cod)?.nombre ?? '—';
   });
 
   private readonly moneyFmt = new Intl.NumberFormat('es-PE', {
@@ -562,6 +882,53 @@ export class EmpleadoPlanillaIntegradoComponent implements OnInit {
     return this.moneyFmt.format(value);
   }
 
+  estadoLabel(estado: string | null): string {
+    switch (estado) {
+      case 'VIGENTE':
+        return 'Vigente';
+      case 'CESADO':
+        return 'Cesado';
+      case 'PROGRAMADO':
+        return 'Programado';
+      case 'VENCIDO_PENDIENTE_DE_REGULARIZACION':
+        return 'Vencido';
+      case 'ANULADO':
+        return 'Anulado';
+      default:
+        return '—';
+    }
+  }
+
+  estadoBadgeClass(estado: string | null): string {
+    switch (estado) {
+      case 'VIGENTE':
+        return 'badge badge--success';
+      case 'CESADO':
+        return 'badge badge--neutral';
+      case 'PROGRAMADO':
+        return 'badge badge--info';
+      case 'VENCIDO_PENDIENTE_DE_REGULARIZACION':
+        return 'badge badge--warning';
+      case 'ANULADO':
+        return 'badge badge--danger';
+      default:
+        return 'badge badge--neutral';
+    }
+  }
+
+  private fmtDate(iso: string | null | undefined): string {
+    if (!iso) return '';
+    const [y, m, d] = iso.slice(0, 10).split('-');
+    return d && m && y ? `${d}/${m}/${y}` : iso;
+  }
+
+  fmtVigencia(row: EmpleadoPlanillaRow): string {
+    const inicio = this.fmtDate(row.fechaInicioContrato);
+    const fin = this.fmtDate(row.fechaCese ?? row.fechaFin);
+    if (!inicio && !fin) return '—';
+    return `${inicio || '—'} – ${fin || 'vigente'}`;
+  }
+
   fmtAirhsp(value: string | null): string {
     if (value == null || value.trim() === '') return '—';
     return value;
@@ -595,7 +962,10 @@ export class EmpleadoPlanillaIntegradoComponent implements OnInit {
       },
     });
     this.tipoPersonaMefApi.listarActivos().subscribe({
-      next: (list) => this.tiposPersonaMef.set(list),
+      next: (list) => {
+        this.tiposPersonaMef.set(list);
+        this.derivarTipoPersonaMef();
+      },
     });
     this.catalogoApi.listarModalidadesCas().subscribe({
       next: (list) => this.modalidadesCas.set(list),
@@ -604,6 +974,8 @@ export class EmpleadoPlanillaIntegradoComponent implements OnInit {
 
   private evaluarRegimen(regimenId: number | null): void {
     const reg = this.regimenes().find((r) => r.id === regimenId);
+    this.regimenCodigoSignal.set(reg?.codigo ?? '');
+    this.derivarTipoPersonaMef();
     if (!reg) return;
 
     if (reg.codigo === '1057') {
@@ -637,11 +1009,87 @@ export class EmpleadoPlanillaIntegradoComponent implements OnInit {
     }
   }
 
+  /** F3.1 — fija el tipoPersonaMefId derivado del régimen. */
+  private derivarTipoPersonaMef(): void {
+    const cod = this.REGIMEN_A_TIPO_PERSONA_MEF[this.regimenCodigoSignal()];
+    const item = cod ? this.tiposPersonaMef().find((t) => t.codigo === cod) : undefined;
+    this.form.controls.tipoPersonaMefId.setValue(item?.id ?? null, { emitEvent: false });
+  }
+
+  private cargarHistorial(planillaId: number): void {
+    this.planillaApi.listarRemuneracionHist(planillaId).subscribe({
+      next: (rows) => this.historial.set(rows),
+      error: () => this.historial.set([]),
+    });
+  }
+
+  private cargarElegibilidad(planillaId: number): void {
+    this.planillaApi.obtenerElegibilidad(planillaId).subscribe({
+      next: (e) => this.elegibilidad.set(e),
+      error: () => this.elegibilidad.set(null),
+    });
+  }
+
+  abrirRegistrarCambio(): void {
+    const planillaId = this.editId();
+    if (planillaId == null) {
+      this.notif.exito('Guarde la vinculación antes de registrar cambios remunerativos.');
+      return;
+    }
+    const ref = this.dialogs.open(RemuneracionCambioDialogComponent, { width: '480px', maxWidth: '95vw' });
+    ref.afterClosed().subscribe((input) => {
+      if (!input) return;
+      this.planillaApi.registrarCambioRemunerativo(planillaId, input).subscribe({
+        next: () => {
+          this.notif.exito('Cambio remunerativo registrado.');
+          this.cargarHistorial(planillaId);
+        },
+        error: (err: HttpErrorResponse) => this.onSaveErr(err),
+      });
+    });
+  }
+
+  onEliminarCambio(h: EmpleadoRemuneracionHistRow): void {
+    const planillaId = this.editId();
+    if (planillaId == null) return;
+    const ref = this.dialogs.open(
+      ConfirmDialogComponent,
+      sisrhConfirmDialogConfig({
+        title: 'Eliminar cambio remunerativo',
+        message: `Se eliminará la vigencia desde ${h.vigenciaDesde} (S/ ${h.remuneracionTotal}). La vigencia anterior se reabrirá para cubrir el período. ¿Continuar?`,
+        confirmLabel: 'Eliminar',
+        cancelLabel: 'Cancelar',
+        severity: 'danger',
+      }),
+    );
+    void ref.afterClosed().subscribe((ok: boolean | undefined) => {
+      if (ok !== true) return;
+      this.planillaApi.eliminarCambioRemunerativo(planillaId, h.id).subscribe({
+        next: () => {
+          this.notif.exito('Cambio remunerativo eliminado.');
+          this.cargarHistorial(planillaId);
+        },
+        error: (err: HttpErrorResponse) => this.onSaveErr(err),
+      });
+    });
+  }
+
+  onGenerarLbs(): void {
+    this.notif.exito(
+      'La Liquidación de Beneficios Sociales se generará en el módulo de Liquidaciones (en implementación).',
+    );
+  }
+
   prepararNuevo(): void {
     if (!this.canRegistrar()) return;
     this.isEdit.set(false);
     this.editId.set(null);
-    this.form.reset({ regimenLaboralId: null, tipoContratoId: null, condicionLaboralId: null, modalidadCasId: null, montoContratado: null, sueldoBasico: null, numHijos: null, tipoPersonaMefId: null, registroPlazaAirhsp: '', fechaInicioContrato: null });
+    this.form.reset({ regimenLaboralId: null, tipoContratoId: null, condicionLaboralId: null, modalidadCasId: null, grupoServidorCivil: null, esConfianza: 0, montoContratado: null, sueldoBasico: null, numHijos: null, tipoPersonaMefId: null, registroPlazaAirhsp: '', fechaInicioContrato: null, fechaFin: null, fechaCese: null, motivoCese: null, documentoCese: null, documentoOrigenTipo: null, documentoOrigenNumero: null, documentoOrigenFecha: null });
+    this.estadoVinculo.set(null);
+    this.habilitaLbs.set(false);
+    this.historial.set([]);
+    this.elegibilidad.set(null);
+    this.regimenCodigoSignal.set('');
     this.viewState.set('form');
   }
 
@@ -659,13 +1107,29 @@ export class EmpleadoPlanillaIntegradoComponent implements OnInit {
       tipoContratoId: row.tipoContratoId,
       condicionLaboralId: row.condicionLaboralId,
       modalidadCasId: (row as any).modalidadCasId ?? null,
+      grupoServidorCivil: (row as any).grupoServidorCivil ?? null,
+      esConfianza: (row as any).esConfianza ?? 0,
       montoContratado,
       sueldoBasico: row.sueldoBasico,
       numHijos: row.numHijos,
       tipoPersonaMefId: (row as any).tipoPersonaMefId ?? null,
       registroPlazaAirhsp: (row as any).registroPlazaAirhsp ?? '',
       fechaInicioContrato: (row as any).fechaInicioContrato ?? null,
+      fechaFin: (row as any).fechaFin ?? null,
+      fechaCese: (row as any).fechaCese ?? null,
+      motivoCese: (row as any).motivoCese ?? null,
+      documentoCese: (row as any).documentoCese ?? null,
+      documentoOrigenTipo: (row as any).documentoOrigenTipo ?? null,
+      documentoOrigenNumero: (row as any).documentoOrigenNumero ?? null,
+      documentoOrigenFecha: (row as any).documentoOrigenFecha ?? null,
     });
+    this.regimenCodigoSignal.set(
+      this.regimenes().find((r) => r.id === row.regimenLaboralId)?.codigo ?? '',
+    );
+    this.estadoVinculo.set((row as any).estadoVinculo ?? null);
+    this.habilitaLbs.set(Boolean((row as any).habilitaLbs));
+    this.cargarHistorial(row.id);
+    this.cargarElegibilidad(row.id);
     this.recalcularIncrementos();
     this.formLoading.set(false);
   }
@@ -721,6 +1185,12 @@ export class EmpleadoPlanillaIntegradoComponent implements OnInit {
     if (v.sueldoBasico == null || v.montoContratado == null) return;
     if (v.regimenLaboralId == null) return;
 
+    // Cese (F1): si hay fecha de cese, motivo y documento son obligatorios.
+    if (v.fechaCese && (!v.motivoCese?.trim() || !v.documentoCese?.trim())) {
+      this.notif.exito('Para registrar el cese indique fecha, motivo y documento de sustento.');
+      return;
+    }
+
     const body = {
       empleadoId: this.empleadoId(),
       codigoAirhsp: '000000',
@@ -732,9 +1202,18 @@ export class EmpleadoPlanillaIntegradoComponent implements OnInit {
       tipoContratoId: v.tipoContratoId ?? null,
       condicionLaboralId: v.condicionLaboralId ?? null,
       modalidadCasId: v.modalidadCasId ?? null,
+      grupoServidorCivil: v.grupoServidorCivil ?? null,
+      esConfianza: v.esConfianza ?? 0,
       tipoPersonaMefId: v.tipoPersonaMefId ?? null,
       registroPlazaAirhsp: v.registroPlazaAirhsp ?? '',
       fechaInicioContrato: v.fechaInicioContrato ?? null,
+      fechaFin: v.fechaFin ?? null,
+      fechaCese: v.fechaCese ?? null,
+      motivoCese: v.motivoCese?.trim() || null,
+      documentoCese: v.documentoCese?.trim() || null,
+      documentoOrigenTipo: v.documentoOrigenTipo ?? null,
+      documentoOrigenNumero: v.documentoOrigenNumero?.trim() || null,
+      documentoOrigenFecha: v.documentoOrigenFecha ?? null,
     };
 
     this.saving.set(true);

@@ -42,7 +42,156 @@
 
 .ejecucion-group {
   display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  justify-content: center;
+}
+
+.ejecucion-group__label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--sisrh-text-muted, #64748b);
+}
+
+/* ——— Selector visual "Tipo de planilla" (Track A) ——— */
+.tp-selector {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 1rem 1.25rem 1.25rem;
+  border: 1px solid var(--sisrh-border, #d9e1ea);
+  border-radius: var(--sisrh-radius-lg, 8px);
+  background: var(--sisrh-surface, #ffffff);
+}
+
+.tp-selector__legend {
+  display: flex;
   align-items: center;
+  gap: 0.6rem;
+  padding: 0 0.35rem;
+  color: var(--sisrh-primary, #1f3a5f);
+}
+
+.tp-selector__legend mat-icon {
+  color: var(--sisrh-primary, #1f3a5f);
+}
+
+.tp-selector__title {
+  display: block;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--sisrh-text, #1f2937);
+}
+
+.tp-selector__hint {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--sisrh-text-muted, #64748b);
+}
+
+.tp-selector__empty {
+  margin: 0.5rem 0 0;
+  padding: 0.75rem 1rem;
+  background: var(--sisrh-surface-muted, #f8fafc);
+  border: 1px dashed var(--sisrh-border, #d9e1ea);
+  border-radius: 6px;
+  color: var(--sisrh-text-muted, #64748b);
+  font-size: 0.875rem;
+}
+
+.tp-group__title {
+  margin: 1rem 0 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--sisrh-text-muted, #64748b);
+}
+
+.tp-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 0.75rem;
+}
+
+.tp-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 56px;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--sisrh-border, #d9e1ea);
+  border-radius: 8px;
+  background: var(--sisrh-surface, #ffffff);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.tp-card:hover:not(.tp-card--disabled) {
+  border-color: var(--sisrh-primary-600, #244a78);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.08);
+}
+
+/* Radio nativo accesible: invisible pero enfocable (selección única + teclado). */
+.tp-card__input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: inherit;
+}
+
+.tp-card:focus-within {
+  outline: 2px solid var(--sisrh-focus, #2563eb);
+  outline-offset: 2px;
+}
+
+.tp-card__icon {
+  flex: none;
+  color: var(--sisrh-text-muted, #64748b);
+}
+
+.tp-card__body {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.tp-card__name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--sisrh-text, #1f2937);
+}
+
+.tp-card__desc {
+  font-size: 0.78rem;
+  color: var(--sisrh-text-muted, #64748b);
+  line-height: 1.35;
+}
+
+.tp-card__mark {
+  flex: none;
+  color: var(--sisrh-text-soft, #94a3b8);
+}
+
+/* Seleccionada: borde + fondo + acento (no solo color: también icono check). */
+.tp-card--selected {
+  border-color: var(--sisrh-primary-600, #244a78);
+  border-width: 2px;
+  background: var(--sisrh-primary-100, #e8eef6);
+  box-shadow: 0 1px 4px rgb(31 58 95 / 0.12);
+}
+
+.tp-card--selected .tp-card__icon,
+.tp-card--selected .tp-card__mark {
+  color: var(--sisrh-primary, #1f3a5f);
+}
+
+.tp-card--disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  background: var(--sisrh-surface-muted, #f8fafc);
 }
 
 .acciones-group {

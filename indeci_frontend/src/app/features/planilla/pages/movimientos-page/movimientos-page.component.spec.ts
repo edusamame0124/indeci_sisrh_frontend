@@ -31,6 +31,9 @@ describe('MovimientosPageComponent (Spec 009 T155 + Spec 010 PANTALLA-01)', () =
   }
 
   afterEach(() => {
+    // El componente dispara un GET de historial de export al activar un periodo;
+    // se flushea aquí para no acoplar cada test a ese detalle secundario.
+    httpMock.match((r) => r.url.includes('/planilla/export/historial')).forEach((r) => r.flush({ data: [] }));
     httpMock.verify();
   });
 
@@ -69,6 +72,7 @@ describe('MovimientosPageComponent (Spec 009 T155 + Spec 010 PANTALLA-01)', () =
     activo: 1,
     neto50pctMinimo: 450,
     estadoNeto,
+    loteId: null,
     ...extra,
   });
 

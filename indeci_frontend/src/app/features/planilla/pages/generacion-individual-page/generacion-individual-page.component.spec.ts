@@ -61,6 +61,9 @@ describe('GeneracionIndividualPageComponent (Spec 009 / T154)', () => {
   }
 
   afterEach(() => {
+    // Al elegir periodo el componente dispara la validación preflight; se flushea
+    // aquí para no acoplar cada test a ese detalle secundario.
+    httpMock?.match((r) => r.url.includes('/validaciones/preflight')).forEach((r) => r.flush({ data: [] }));
     httpMock?.verify();
     TestBed.resetTestingModule();
   });
@@ -116,7 +119,10 @@ describe('GeneracionIndividualPageComponent (Spec 009 / T154)', () => {
     expect(text).toContain('Regla 50');
     expect(text).toContain('base libre de disponibilidad');
     expect(text).toContain('Subsidios CAS');
-    expect(text).toContain('PLAME 0915/0916');
+    // El componente cita los códigos de subsidio (maternidad 0915, enfermedad 0916)
+    // y el diferencial PLAME 2073.
+    expect(text).toContain('0915');
+    expect(text).toContain('0916');
     expect(text).toContain('2073');
     expect(text).toContain('Pensión');
     expect(text).toContain('Solo los regímenes ONP y AFP');

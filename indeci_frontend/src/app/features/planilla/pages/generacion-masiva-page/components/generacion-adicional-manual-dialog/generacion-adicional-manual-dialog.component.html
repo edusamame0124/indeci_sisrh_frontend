@@ -14,8 +14,22 @@
       </app-persona-picker>
     </div>
 
+    @if (loadingVinculo()) {
+      <div class="loading-container" style="display: flex; align-items: center; gap: 8px; margin-top: 16px;">
+        <mat-spinner diameter="24"></mat-spinner>
+        <span>Verificando vínculo laboral...</span>
+      </div>
+    }
+
+    @if (errorRegimen()) {
+      <div class="error-container" style="color: #f44336; background-color: #ffebee; padding: 12px; border-radius: 4px; margin-top: 16px; display: flex; align-items: start; gap: 8px;">
+        <mat-icon>error_outline</mat-icon>
+        <span>{{ errorRegimen() }}</span>
+      </div>
+    }
+
     <!-- Formulario de Motivo -->
-    @if (personaSeleccionada()) {
+    @if (personaSeleccionada() && vinculoActivo()) {
       <form [formGroup]="form" class="motivo-form">
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>Motivo de Inclusión</mat-label>
@@ -47,7 +61,7 @@
   <button 
     mat-flat-button 
     color="primary" 
-    [disabled]="!personaSeleccionada() || form.invalid"
+    [disabled]="!personaSeleccionada() || !vinculoActivo() || form.invalid || !!errorRegimen()"
     (click)="confirmar()">
     Añadir a la lista
   </button>

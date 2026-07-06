@@ -1,0 +1,40 @@
+h2[mat-dialog-title] {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.reintegro-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 420px;
+  padding-top: 8px;
+}
+
+.reintegro-hint {
+  margin: 0;
+  font-size: 13px;
+  color: var(--sisrh-text-muted, #64748b);
+}
+
+.reintegro-nota {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--sisrh-text-soft, #94a3b8);
+  line-height: 1.4;
+}
+
+mat-dialog-actions {
+  gap: 8px;
+  padding: 16px 24px;
+}
+
+@media (max-width: 600px) {
+  .reintegro-form {
+    min-width: unset;
+    width: 100%;
+  }
+}

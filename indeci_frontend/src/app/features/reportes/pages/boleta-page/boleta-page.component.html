@@ -191,11 +191,86 @@
         </div>
       </section>
 
-      <!-- Neto a pagar -->
+      <!-- Track B — Sección AGUINALDO consolidada (opción A). Solo si el período tiene aguinaldo. -->
+      @if (boleta()?.aguinaldo; as agui) {
+        <section class="sheet__section sheet__section--aguinaldo">
+          <h2 class="sheet__section-title sheet__section-title--aguinaldo">{{ agui.titulo }}</h2>
+          <div class="sheet__cols">
+            <div class="sheet__col">
+              <h3 class="sheet__col-title sheet__col-title--ingresos">Ingresos</h3>
+              <table class="sheet__table" aria-label="Ingresos del aguinaldo">
+                <thead>
+                  <tr>
+                    <th scope="col">Concepto</th>
+                    <th scope="col" class="num">Monto</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (r of agui.ingresos; track r.codigo) {
+                    <tr>
+                      <td>{{ r.concepto }}</td>
+                      <td class="num">S/ {{ fmtMonto(r.monto) }}</td>
+                    </tr>
+                  }
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <td><strong>Total ingresos</strong></td>
+                    <td class="num"><strong>S/ {{ fmtMonto(agui.totalIngresos) }}</strong></td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+            <div class="sheet__col">
+              <h3 class="sheet__col-title sheet__col-title--descuentos">Descuentos</h3>
+              @if (agui.descuentos.length === 0) {
+                <p class="sheet__empty">Sin descuentos.</p>
+              } @else {
+                <table class="sheet__table" aria-label="Descuentos del aguinaldo">
+                  <thead>
+                    <tr>
+                      <th scope="col">Concepto</th>
+                      <th scope="col" class="num">Monto</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (r of agui.descuentos; track r.codigo) {
+                      <tr>
+                        <td>{{ r.concepto }}</td>
+                        <td class="num">S/ {{ fmtMonto(r.monto) }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                  <tfoot>
+                    <tr>
+                      <td><strong>Total descuentos</strong></td>
+                      <td class="num"><strong>S/ {{ fmtMonto(agui.totalDescuentos) }}</strong></td>
+                    </tr>
+                  </tfoot>
+                </table>
+              }
+            </div>
+          </div>
+          <div class="sheet__aguinaldo-neto">
+            <span class="sheet__aguinaldo-neto-label">Neto aguinaldo</span>
+            <span class="sheet__aguinaldo-neto-value">S/ {{ fmtMonto(agui.neto) }}</span>
+          </div>
+        </section>
+      }
+
+      <!-- Neto a pagar (sección regular) -->
       <section class="sheet__neto">
-        <span class="sheet__neto-label">NETO A PAGAR</span>
+        <span class="sheet__neto-label">NETO A PAGAR@if (boleta()?.aguinaldo) { (REGULAR)}</span>
         <span class="sheet__neto-value">S/ {{ fmtMonto(boleta()!.netoPagar) }}</span>
       </section>
+
+      <!-- Track B — Neto total del documento (regular + aguinaldo). Solo si hay aguinaldo. -->
+      @if (boleta()?.aguinaldo) {
+        <section class="sheet__neto sheet__neto--total">
+          <span class="sheet__neto-label">NETO TOTAL DEL DOCUMENTO</span>
+          <span class="sheet__neto-value">S/ {{ fmtMonto(boleta()!.netoTotal ?? boleta()!.netoPagar) }}</span>
+        </section>
+      }
 
       <!-- Pie con firma -->
       <footer class="sheet__footer">

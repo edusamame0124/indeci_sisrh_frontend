@@ -16,9 +16,56 @@ export interface EmpleadoPlanillaInput {
   readonly regimenLaboralId: number;
   readonly tipoContratoId?: number | null;
   readonly condicionLaboralId?: number | null;
+  readonly modalidadCasId?: number | null;
+  // Ley 30057 (V012_07)
+  readonly grupoServidorCivil?: string | null;
+  readonly esConfianza?: number | null;
   readonly tipoPersonaMefId?: number | null;
   readonly registroPlazaAirhsp?: string | null;
   readonly fechaInicioContrato?: string | null;
+  readonly fechaFin?: string | null;
+  // Cese (V012_04) — hechos que registra RR.HH.; el estado se deriva en backend.
+  readonly fechaCese?: string | null;
+  readonly motivoCese?: string | null;
+  readonly documentoCese?: string | null;
+  // Sustento de origen del vínculo (V012_08)
+  readonly documentoOrigenTipo?: string | null;
+  readonly documentoOrigenNumero?: string | null;
+  readonly documentoOrigenFecha?: string | null;
+}
+
+/** Elegibilidad calculada del vínculo (F4a) — espejo de ElegibilidadVinculoDto. */
+export interface ElegibilidadVinculoRow {
+  readonly elegiblePlanilla: boolean;
+  readonly elegibleMcpp: boolean;
+  readonly cumple: readonly string[];
+  readonly pendientes: readonly string[];
+}
+
+/** Fila del historial remunerativo (F2) — espejo de EmpleadoRemuneracionHistDto. */
+export interface EmpleadoRemuneracionHistRow {
+  readonly id: number;
+  readonly vigenciaDesde: string;
+  readonly vigenciaHasta: string | null;
+  readonly montoBase: number | null;
+  readonly remuneracionTotal: number;
+  readonly tipoCambio: string | null;
+  readonly documentoSustento: string | null;
+  readonly fuente: string | null;
+  readonly estado: string | null;
+  readonly observacion: string | null;
+  readonly createdBy: string | null;
+  readonly createdAt: string | null;
+}
+
+/** Alta de cambio remunerativo (F2). */
+export interface RemuneracionCambioInput {
+  readonly vigenciaDesde: string;
+  readonly montoBase?: number | null;
+  readonly remuneracionTotal: number;
+  readonly tipoCambio?: string | null;
+  readonly documentoSustento?: string | null;
+  readonly observacion?: string | null;
 }
 
 /** Fila de la tabla consolidada (todos los empleados) — espejo de `PlanillaConsolidadaRowDto`. */
@@ -64,10 +111,26 @@ export interface EmpleadoPlanillaRow {
   readonly regimenLaboralId: number | null;
   readonly tipoContratoId: number | null;
   readonly condicionLaboralId: number | null;
+  readonly modalidadCasId?: number | null;
+  readonly grupoServidorCivil: string | null;
+  readonly esConfianza: number | null;
   readonly regimenLaboral: string | null;
   readonly tipoContrato: string | null;
   readonly condicionLaboral: string | null;
   readonly tipoPersonaMefId: number | null;
   readonly registroPlazaAirhsp: string | null;
   readonly fechaInicioContrato: string | null;
+  readonly fechaFin: string | null;
+  // ===== Cese + estado derivado (V012_04) =====
+  readonly fechaCese: string | null;
+  readonly motivoCese: string | null;
+  readonly documentoCese: string | null;
+  // Sustento de origen del vínculo (V012_08)
+  readonly documentoOrigenTipo: string | null;
+  readonly documentoOrigenNumero: string | null;
+  readonly documentoOrigenFecha: string | null;
+  /** Derivado en backend: PROGRAMADO/VIGENTE/VENCIDO_PENDIENTE_DE_REGULARIZACION/CESADO/ANULADO. */
+  readonly estadoVinculo: string | null;
+  /** true si el cese formal está completo (habilita generar LBS). */
+  readonly habilitaLbs: boolean | null;
 }

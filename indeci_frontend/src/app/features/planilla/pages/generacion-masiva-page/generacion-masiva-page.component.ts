@@ -6,7 +6,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -18,16 +18,17 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatRadioModule } from '@angular/material/radio';
-import { SelectionModel } from '@angular/cdk/collections';
 import { sisrhConfirmDialogConfig } from '../../../../core/config/sisrh-dialog.config';
+import { ConceptoPlanillaApiService } from '../../services/concepto-planilla-api.service';
+import type { ConceptoPlanillaRow } from '../../models/concepto-planilla.model';
 import { ConfirmDialogComponent } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
-import { GeneracionAdicionalManualDialogComponent, GeneracionAdicionalManualResult } from './components/generacion-adicional-manual-dialog/generacion-adicional-manual-dialog.component';
 import { PeriodoPlanillaApiService } from '../../services/periodo-planilla-api.service';
 import { MovimientoPlanillaApiService } from '../../services/movimiento-planilla-api.service';
 import { GeneradorPlanillaApiService } from '../../services/generador-planilla-api.service';
-import { PlanillaLoteApiService, CandidatoAdicionalDto } from '../../services/planilla-lote-api.service';
+import { PlanillaLoteApiService } from '../../services/planilla-lote-api.service';
 import { ErrorMessageService } from '../../../../core/services/error-message.service';
 import { isErrorResponse } from '../../../../core/models/error-response.model';
 import { CatalogoApiService } from '../../../empleados/services/catalogo-api.service';
@@ -56,21 +57,42 @@ export const REGIMENES_CATALOGO: CatalogoItem[] = [
   { codigo: 'REG_MOD_FORM', etiqueta: 'Modalidades Formativas' }
 ];
 
-export const CONCEPTOS_CATALOGO: CatalogoItem[] = [
-  { codigo: 'PLA_HABERES', etiqueta: 'Haberes / Sueldo Mensual' },
-  { codigo: 'PLA_ADICIONAL', etiqueta: 'Planilla Adicional / Reintegros' },
-  { codigo: 'PLA_AGUINALDO', etiqueta: 'Aguinaldos y Gratificaciones' },
-  { codigo: 'PLA_CTS', etiqueta: 'Compensación por Tiempo de Servicios (CTS)' },
-  { codigo: 'PLA_VAC_TRUN', etiqueta: 'Vacaciones Truncas y No Gozadas' },
-  { codigo: 'PLA_DESC_SUBV', etiqueta: 'Descanso Subvencionado' }
+/**
+ * Tarjeta del selector visual "Tipo de planilla" (Track A — solo presentación).
+ * `codigo` es el valor que se envía en el payload `concepto` (sin cambios de contrato).
+ */
+export interface TipoPlanillaCard {
+  codigo: string;
+  etiqueta: string;
+  grupo: 'PRINCIPAL' | 'BENEFICIO';
+  icono: string;
+  descripcion?: string;
+  /** true = código aún no registrado en catálogo MEF; pendiente de Track B (backend). */
+  placeholder?: boolean;
+}
+
+/**
+ * Catálogo de tipos de planilla (9). Códigos con `placeholder: true`
+ * (PLA_ADICIONAL_01/02/03, PLA_LBS) NO existen aún en el catálogo MEF: son de
+ * presentación y hoy el motor los ignora (calcula haberes por régimen). Su
+ * diferenciación real de cálculo/trazabilidad es Track B. Ver PLAN_SELECTOR_TIPO_PLANILLA.md.
+ */
+export const TIPOS_PLANILLA_CATALOGO: TipoPlanillaCard[] = [
+  { codigo: 'PLA_HABERES', etiqueta: 'Planilla regular', grupo: 'PRINCIPAL', icono: 'calendar_month', descripcion: 'Planilla mensual ordinaria del personal.' },
+  { codigo: 'PLA_ADICIONAL', etiqueta: 'Planilla Adicional', grupo: 'PRINCIPAL', icono: 'add_card', descripcion: 'Pago complementario o regularización.', placeholder: true },
+  { codigo: 'PLA_CTS', etiqueta: 'CTS', grupo: 'BENEFICIO', icono: 'savings' },
+  { codigo: 'PLA_AGUINALDO', etiqueta: 'Aguinaldo', grupo: 'BENEFICIO', icono: 'celebration' },
+  { codigo: 'PLA_LBS', etiqueta: 'Liquidación de Beneficios Sociales', grupo: 'BENEFICIO', icono: 'badge', placeholder: true },
+  { codigo: 'PLA_VAC_TRUN', etiqueta: 'Vacaciones truncas', grupo: 'BENEFICIO', icono: 'beach_access' },
+  { codigo: 'PLA_DESC_SUBV', etiqueta: 'Descanso Subvencionado', grupo: 'BENEFICIO', icono: 'medical_services' },
 ];
 
 export const COMPATIBILIDAD_PLANILLA_MAP: Record<string, string[]> = {
-  '276': ['PLA_HABERES', 'PLA_ADICIONAL', 'PLA_AGUINALDO', 'PLA_VAC_TRUN'],
-  '728': ['PLA_HABERES', 'PLA_ADICIONAL', 'PLA_AGUINALDO', 'PLA_CTS', 'PLA_VAC_TRUN'],
-  '1057': ['PLA_HABERES', 'PLA_ADICIONAL', 'PLA_AGUINALDO', 'PLA_VAC_TRUN'],
-  '30057': ['PLA_HABERES', 'PLA_ADICIONAL', 'PLA_AGUINALDO', 'PLA_CTS', 'PLA_VAC_TRUN'],
-  'FORMATIVA': ['PLA_HABERES', 'PLA_ADICIONAL', 'PLA_DESC_SUBV']
+  '276': ['PLA_HABERES', 'PLA_ADICIONAL', 'PLA_AGUINALDO', 'PLA_LBS', 'PLA_VAC_TRUN'],
+  '728': ['PLA_HABERES', 'PLA_ADICIONAL', 'PLA_CTS', 'PLA_AGUINALDO', 'PLA_LBS', 'PLA_VAC_TRUN'],
+  '1057': ['PLA_HABERES', 'PLA_ADICIONAL', 'PLA_AGUINALDO', 'PLA_LBS', 'PLA_VAC_TRUN'],
+  '30057': ['PLA_HABERES', 'PLA_ADICIONAL', 'PLA_CTS', 'PLA_AGUINALDO', 'PLA_LBS', 'PLA_VAC_TRUN'],
+  'FORMATIVA': ['PLA_HABERES', 'PLA_ADICIONAL', 'PLA_DESC_SUBV'],
 };
 
 /**
@@ -94,6 +116,7 @@ export const COMPATIBILIDAD_PLANILLA_MAP: Record<string, string[]> = {
     MatProgressBarModule,
     MatProgressSpinnerModule,
     MatTableModule,
+    MatTooltipModule,
     MatDialogModule,
     MatCheckboxModule,
     MatRadioModule,
@@ -111,6 +134,7 @@ export class GeneracionMasivaPageComponent implements OnInit {
   private readonly dialogs = inject(MatDialog);
   private readonly snack = inject(MatSnackBar);
   private readonly errors = inject(ErrorMessageService);
+  private readonly conceptoPlanillaApi = inject(ConceptoPlanillaApiService);
 
   readonly columns = [
     'empleadoDni', 
@@ -124,27 +148,22 @@ export class GeneracionMasivaPageComponent implements OnInit {
     'acciones'
   ] as const;
   readonly columnsFallidos = ['empleadoId', 'razon'] as const;
-  readonly columnsCandidatos = ['select', 'dni', 'nombre', 'regimenLaboral', 'fechaIngreso', 'motivo'] as const;
 
   readonly periodos = signal<readonly PeriodoPlanillaRow[]>([]);
   readonly periodoSeleccionado = signal<string | null>(null);
-  readonly tipoPlanilla = signal<'ORDINARIA' | 'ADICIONAL'>('ORDINARIA');
+  readonly conceptoSeleccionado = signal<string | null>(null);
   
   readonly regimenSeleccionado = signal<number | null>(null);
   readonly tipoContratoId = signal<number | null>(null);
   readonly condicionLaboralId = signal<number | null>(null);
   readonly modalidadCasId = signal<number | null>(null);
 
-  readonly conceptoSeleccionado = signal<string | null>(null);
   readonly ordenBoletaSeleccionado = signal<string>('POR_DEPENDENCIA');
   
   readonly regimenes = signal<readonly RegimenLaboral[]>([]);
   readonly tiposContrato = signal<readonly TipoContrato[]>([]);
   readonly condicionesLaborales = signal<readonly CondicionLaboral[]>([]);
   readonly modalidadesCas = signal<readonly ModalidadCas[]>([]);
-  
-  readonly candidatos = signal<readonly CandidatoAdicionalDto[]>([]);
-  readonly selection = new SelectionModel<CandidatoAdicionalDto>(true, []);
 
   readonly loading = signal(true);
   readonly fase = signal<FaseGeneracion>('idle');
@@ -154,16 +173,76 @@ export class GeneracionMasivaPageComponent implements OnInit {
 
   readonly periodosAbiertos = computed(() => this.periodos().filter((p) => p.estado === 'ABIERTO'));
 
-  readonly conceptosPermitidos = computed(() => {
+  // --- Selector visual "Tipo de planilla" (Track A) ---
+  readonly tiposPrincipales = TIPOS_PLANILLA_CATALOGO.filter((t) => t.grupo === 'PRINCIPAL');
+  readonly tiposBeneficios = TIPOS_PLANILLA_CATALOGO.filter((t) => t.grupo === 'BENEFICIO');
+
+  /** Códigos de tipo compatibles con el régimen elegido (vacío si no hay régimen). */
+  readonly codigosPermitidos = computed<ReadonlySet<string>>(() => {
     const regimenId = this.regimenSeleccionado();
-    if (!regimenId) return [];
-    
-    const regimenCode = this.regimenes().find(r => r.id === regimenId)?.codigo;
-    if (!regimenCode) return [];
-    
-    const allowedCodes = COMPATIBILIDAD_PLANILLA_MAP[regimenCode] || [];
-    return CONCEPTOS_CATALOGO.filter(c => allowedCodes.includes(c.codigo));
+    if (!regimenId) return new Set<string>();
+    const regimenCode = this.regimenes().find((r) => r.id === regimenId)?.codigo;
+    if (!regimenCode) return new Set<string>();
+    return new Set(COMPATIBILIDAD_PLANILLA_MAP[regimenCode] ?? []);
   });
+
+  esTipoHabilitado(codigo: string): boolean {
+    if (this.fase() === 'generando') return false;
+    if (!this.codigosPermitidos().has(codigo)) return false;
+
+    if (codigo === 'PLA_AGUINALDO') {
+      const periodo = this.periodoSeleccionado();
+      if (periodo && !periodo.endsWith('-07') && !periodo.endsWith('-12')) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  /** Motivo por el que una tarjeta está deshabilitada (null si está habilitada). */
+  motivoTipoDeshabilitado(codigo: string): string | null {
+    if (this.regimenSeleccionado() === null) return 'Seleccione un régimen laboral';
+    if (!this.codigosPermitidos().has(codigo)) return 'No aplica al régimen seleccionado';
+
+    if (codigo === 'PLA_AGUINALDO') {
+      const periodo = this.periodoSeleccionado();
+      if (periodo && !periodo.endsWith('-07') && !periodo.endsWith('-12')) {
+        return 'El Aguinaldo solo se procesa en los periodos de Julio (-07) y Diciembre (-12)';
+      }
+    }
+
+    return null;
+  }
+
+  private readonly router = inject(Router);
+
+  seleccionarTipo(codigo: string): void {
+    if (!this.esTipoHabilitado(codigo)) return;
+    
+    // Redirección inmediata a módulo dedicado (Requisito UX)
+    if (codigo === 'PLA_AGUINALDO') {
+      void this.router.navigate(['/planilla/aguinaldo'], {
+        queryParams: {
+          periodo: this.periodoSeleccionado(),
+          regimen: this.regimenSeleccionado()
+        }
+      });
+      return;
+    }
+
+    if (codigo === 'PLA_ADICIONAL') {
+      void this.router.navigate(['/planilla/adicional'], {
+        queryParams: {
+          periodo: this.periodoSeleccionado(),
+          regimen: this.regimenSeleccionado()
+        }
+      });
+      return;
+    }
+    
+    this.conceptoSeleccionado.set(codigo);
+  }
 
   readonly isRegimen1057 = computed(() => {
     const id = this.regimenSeleccionado();
@@ -182,9 +261,10 @@ export class GeneracionMasivaPageComponent implements OnInit {
   });
 
   readonly canGenerar = computed(() => {
-    if (this.fase() === 'generando' || this.periodoSeleccionado() === null) return false;
-    if (!this.regimenSeleccionado() || !this.conceptoSeleccionado()) return false;
-    if (this.tipoPlanilla() === 'ADICIONAL' && this.selection.selected.length === 0) return false;
+    if (!this.periodoSeleccionado() || !this.regimenSeleccionado() || !this.conceptoSeleccionado()) {
+      return false;
+    }
+
     return true;
   });
 
@@ -200,6 +280,8 @@ export class GeneracionMasivaPageComponent implements OnInit {
     this.cargarCatalogos();
   }
 
+
+
   private cargarCatalogos(): void {
     this.catalogoApi.listarRegimenesLaborales().subscribe({
       next: (list) => {
@@ -213,7 +295,10 @@ export class GeneracionMasivaPageComponent implements OnInit {
       error: () => this.tiposContrato.set([]),
     });
     this.catalogoApi.listarCondicionesLaborales().subscribe({
-      next: (list) => this.condicionesLaborales.set(list),
+      next: (list) => {
+        const filtradas = list.filter((c) => c.codigo === 'NOMBRADO' || c.codigo === 'CONTRATADO');
+        this.condicionesLaborales.set(filtradas);
+      },
       error: () => this.condicionesLaborales.set([]),
     });
     this.catalogoApi.listarModalidadesCas().subscribe({
@@ -225,18 +310,6 @@ export class GeneracionMasivaPageComponent implements OnInit {
   onPeriodoChange(periodo: string): void {
     this.periodoSeleccionado.set(periodo);
     this.resetState();
-    if (this.tipoPlanilla() === 'ADICIONAL') {
-      this.cargarCandidatos(periodo);
-    }
-  }
-
-  onTipoPlanillaChange(tipo: 'ORDINARIA' | 'ADICIONAL'): void {
-    this.tipoPlanilla.set(tipo);
-    this.resetState();
-    const periodo = this.periodoSeleccionado();
-    if (tipo === 'ADICIONAL' && periodo) {
-      this.cargarCandidatos(periodo);
-    }
   }
 
   onRegimenChange(id: number): void {
@@ -280,22 +353,6 @@ export class GeneracionMasivaPageComponent implements OnInit {
     this.fase.set('idle');
     this.movimientosPost.set([]);
     this.resultado.set(null);
-    this.selection.clear();
-    this.candidatos.set([]);
-  }
-
-  private cargarCandidatos(periodo: string): void {
-    this.loading.set(true);
-    this.planillaLoteApi.obtenerCandidatosAdicionales(periodo).subscribe({
-      next: (rows) => {
-        this.candidatos.set(rows);
-        this.loading.set(false);
-      },
-      error: (err: HttpErrorResponse) => {
-        this.loading.set(false);
-        this.onHttpSnack(err);
-      },
-    });
   }
 
   confirmarGeneracion(): void {
@@ -305,10 +362,8 @@ export class GeneracionMasivaPageComponent implements OnInit {
     const ref = this.dialogs.open(
       ConfirmDialogComponent,
       sisrhConfirmDialogConfig({
-        title: `Generar planilla ${this.tipoPlanilla() === 'ORDINARIA' ? 'masiva' : 'adicional'} — ${periodo}`,
-        message: this.tipoPlanilla() === 'ORDINARIA'
-          ? `Se ejecutará el cálculo de planilla para todos los empleados activos en el periodo ${periodo}. La operación puede tomar varios segundos. ¿Continuar?`
-          : `Se ejecutará el cálculo de planilla adicional para ${this.selection.selected.length} empleado(s). ¿Continuar?`,
+        title: `Generar planilla masiva — ${periodo}`,
+        message: `Se ejecutará el cálculo de planilla para todos los empleados activos en el periodo ${periodo}. La operación puede tomar varios segundos. ¿Continuar?`,
         confirmLabel: 'Generar planilla',
         cancelLabel: 'Cancelar',
         severity: 'info',
@@ -316,27 +371,6 @@ export class GeneracionMasivaPageComponent implements OnInit {
     );
     void ref.afterClosed().subscribe((ok: boolean | undefined) => {
       if (ok === true) this.ejecutar(periodo);
-    });
-  }
-
-  abrirDialogoManual(): void {
-    const ref = this.dialogs.open<GeneracionAdicionalManualDialogComponent, any, GeneracionAdicionalManualResult>(
-      GeneracionAdicionalManualDialogComponent,
-      { width: '500px', disableClose: true }
-    );
-    ref.afterClosed().subscribe(res => {
-      if (res && res.candidato) {
-        // Verificar si ya existe para no duplicar
-        const existe = this.candidatos().some(c => c.empleadoId === res.candidato.empleadoId);
-        if (!existe) {
-          const nuevaLista = [...this.candidatos(), res.candidato];
-          this.candidatos.set(nuevaLista);
-          this.selection.select(res.candidato);
-          this.snack.open('Candidato añadido manualmente a la lista', 'Cerrar', { duration: 3000 });
-        } else {
-          this.snack.open('El empleado ya está en la lista de candidatos', 'Cerrar', { duration: 3000 });
-        }
-      }
     });
   }
 
@@ -368,40 +402,27 @@ export class GeneracionMasivaPageComponent implements OnInit {
     const payloadCabecera = {
       periodo: periodo,
       regimenLaboralId: this.regimenSeleccionado()!,
-      tipoContratoId: this.tipoContratoId(),
-      condicionLaboralId: this.condicionLaboralId(),
-      modalidadCasId: this.modalidadCasId(),
+      tipoContratoId: this.tipoContratoId() ?? undefined,
+      condicionLaboralId: this.condicionLaboralId() ?? undefined,
+      modalidadCasId: this.modalidadCasId() ?? undefined,
       concepto: this.conceptoSeleccionado() ?? '',
-      ordenBoleta: this.ordenBoletaSeleccionado() ?? '',
-      tipoPlanilla: this.tipoPlanilla()
+      tipoPlanilla: 'ORDINARIA',
+      ordenBoleta: this.ordenBoletaSeleccionado(),
     };
 
-    if (this.tipoPlanilla() === 'ORDINARIA') {
-      this.generadorApi.generarMasivo(payloadCabecera).subscribe({
-        next: (resultado) => {
-          this.resultado.set(resultado);
-          this.snack.open(
-            `Generación completada: ${resultado.exitosos} de ${resultado.total} exitoso(s)` +
-              (resultado.fallidos.length > 0 ? `, ${resultado.fallidos.length} con error.` : '.'),
-            'Cerrar',
-            { duration: 6000 },
-          );
-          this.cargarMovimientosResultantes(periodo, resultado.exitososIds);
-        },
-        error: (err: HttpErrorResponse) => this.handleGenerarError(err),
-      });
-    } else {
-      const empleadosIds = this.selection.selected.map(c => c.empleadoId);
-      this.planillaLoteApi.generarLoteAdicional(payloadCabecera as any, { empleadosIds }).subscribe({
-        next: () => {
-          this.snack.open('Generación de planilla adicional completada.', 'Cerrar', { duration: 6000 });
-          this.cargarMovimientosResultantes(periodo, empleadosIds);
-          // Recargar candidatos para quitar los ya procesados o mantener la vista
-          this.cargarCandidatos(periodo);
-        },
-        error: (err: HttpErrorResponse) => this.handleGenerarError(err),
-      });
-    }
+    this.generadorApi.generarMasivo(payloadCabecera).subscribe({
+      next: (resultado) => {
+        this.resultado.set(resultado);
+        this.snack.open(
+          `Generación completada: ${resultado.exitosos} de ${resultado.total} exitoso(s)` +
+            (resultado.fallidos.length > 0 ? `, ${resultado.fallidos.length} con error.` : '.'),
+          'Cerrar',
+          { duration: 6000 },
+        );
+        this.cargarMovimientosResultantes(periodo, resultado.exitososIds);
+      },
+      error: (err: HttpErrorResponse) => this.handleGenerarError(err),
+    });
   }
 
   private cargarMovimientosResultantes(periodo: string, filterIds?: ReadonlyArray<number>): void {
@@ -424,20 +445,6 @@ export class GeneracionMasivaPageComponent implements OnInit {
   private handleGenerarError(err: HttpErrorResponse): void {
     this.fase.set('idle');
     this.onHttpSnack(err);
-  }
-
-  isAllSelected(): boolean {
-    const numSelected = this.selection.selected.length;
-    const numRows = this.candidatos().length;
-    return numSelected === numRows && numRows > 0;
-  }
-
-  toggleAllRows(): void {
-    if (this.isAllSelected()) {
-      this.selection.clear();
-      return;
-    }
-    this.selection.select(...this.candidatos());
   }
 
   private onHttpSnack(err: HttpErrorResponse): void {

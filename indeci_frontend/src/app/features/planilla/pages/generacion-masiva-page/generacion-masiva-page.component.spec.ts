@@ -28,6 +28,12 @@ describe('GeneracionMasivaPageComponent (Spec 009 / T153, Spec 011 / C2)', () =>
     httpMock = TestBed.inject(HttpTestingController);
     const fixture = TestBed.createComponent(GeneracionMasivaPageComponent);
     fixture.detectChanges();
+    // ngOnInit pide 4 catálogos además de periodos; se flushean vacíos aquí para
+    // que cada test solo maneje /periodo-planilla y no falle en httpMock.verify().
+    httpMock.expectOne('/api/catalogos/regimenes-laborales').flush({ data: [] });
+    httpMock.expectOne('/api/catalogos/tipos-contrato').flush({ data: [] });
+    httpMock.expectOne('/api/catalogos/condiciones-laborales').flush({ data: [] });
+    httpMock.expectOne('/api/catalogos/modalidades-cas').flush({ data: [] });
     return fixture;
   }
 
@@ -64,6 +70,7 @@ describe('GeneracionMasivaPageComponent (Spec 009 / T153, Spec 011 / C2)', () =>
     activo: 1,
     neto50pctMinimo: null,
     estadoNeto: null,
+    loteId: null,
   });
 
   const resultado = (
@@ -100,6 +107,9 @@ describe('GeneracionMasivaPageComponent (Spec 009 / T153, Spec 011 / C2)', () =>
     httpMock.expectOne('/api/rrhh/periodo-planilla').flush({ data: [periodoAbierto()] });
 
     const comp = fixture.componentInstance;
+    // canGenerar exige periodo + régimen + concepto (tipo de planilla).
+    comp.regimenSeleccionado.set(1);
+    comp.conceptoSeleccionado.set('PLA_HABERES');
     expect(comp.canGenerar()).toBe(true);
     comp.fase.set('generando');
     expect(comp.canGenerar()).toBe(false);
@@ -111,7 +121,7 @@ describe('GeneracionMasivaPageComponent (Spec 009 / T153, Spec 011 / C2)', () =>
 
     fixture.componentInstance.ejecutar('2026-05');
 
-    const postReq = httpMock.expectOne('/api/rrhh/generador-planilla/masivo/2026-05');
+    const postReq = httpMock.expectOne('/api/rrhh/generador-planilla/masivo');
     expect(postReq.request.method).toBe('POST');
     expect(fixture.componentInstance.fase()).toBe('generando');
     postReq.flush({ data: resultado(2, 2, []) });
@@ -132,7 +142,7 @@ describe('GeneracionMasivaPageComponent (Spec 009 / T153, Spec 011 / C2)', () =>
 
     fixture.componentInstance.ejecutar('2026-05');
     httpMock
-      .expectOne('/api/rrhh/generador-planilla/masivo/2026-05')
+      .expectOne('/api/rrhh/generador-planilla/masivo')
       .flush({
         data: resultado(3, 2, [{ empleadoId: 99, razon: 'Empleado sin configuración planilla' }]),
       });
@@ -151,7 +161,7 @@ describe('GeneracionMasivaPageComponent (Spec 009 / T153, Spec 011 / C2)', () =>
 
     fixture.componentInstance.ejecutar('2026-05');
     httpMock
-      .expectOne('/api/rrhh/generador-planilla/masivo/2026-05')
+      .expectOne('/api/rrhh/generador-planilla/masivo')
       .flush({ estado: 'ERROR', mensaje: 'Periodo cerrado', data: null }, {
         status: 400,
         statusText: 'Bad Request',
@@ -160,16 +170,20 @@ describe('GeneracionMasivaPageComponent (Spec 009 / T153, Spec 011 / C2)', () =>
     expect(fixture.componentInstance.fase()).toBe('idle');
   });
 
-  it('declara las 5 columnas en orden esperado', () => {
+  it('declara las columnas de la tabla de resultados en orden esperado', () => {
     const fixture = build();
     httpMock.expectOne('/api/rrhh/periodo-planilla').flush({ data: [periodoAbierto()] });
 
     expect([...fixture.componentInstance.columns]).toEqual([
-      'empleadoId',
+      'empleadoDni',
+      'empleadoNombre',
+      'regimenPensionario',
+      'dias',
       'totalIngresos',
       'totalDescuentos',
       'netoPagar',
       'estado',
+      'acciones',
     ]);
   });
 });

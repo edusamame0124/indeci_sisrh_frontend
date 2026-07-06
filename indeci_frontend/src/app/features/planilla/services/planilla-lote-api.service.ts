@@ -12,6 +12,10 @@ export interface CandidatoAdicionalDto {
   regimenLaboral: string;
   fechaIngreso: string;
   motivo: string;
+  /** F0 — clasificación laboral para el filtrado en Planilla Adicional. */
+  tipoContratoId: number | null;
+  condicionLaboralId: number | null;
+  modalidadCasId: number | null;
 }
 
 export interface GenerarAdicionalRequestDto {
@@ -32,10 +36,9 @@ export class PlanillaLoteApiService {
       .pipe(map((res) => res.data));
   }
 
-  generarLoteAdicional(periodo: string, request: GenerarAdicionalRequestDto): Observable<void> {
-    const params = new HttpParams().set('periodo', periodo);
+  generarLoteAdicional(request: any): Observable<void> {
     return this.http
-      .post<ApiResponse<void>>(`${this.baseUrl}/generar-adicional`, request, { params })
+      .post<ApiResponse<void>>(`${this.baseUrl}/generar-adicional`, request)
       .pipe(map(() => void 0));
   }
 

@@ -80,6 +80,7 @@ describe('CierrePeriodoPageComponent (Spec 011 / B7 — ciclo de aprobación)', 
     activo: 1,
     neto50pctMinimo: null,
     estadoNeto,
+    loteId: null,
   });
 
   const concil = (estado: string): ConciliacionAirhspRow => ({

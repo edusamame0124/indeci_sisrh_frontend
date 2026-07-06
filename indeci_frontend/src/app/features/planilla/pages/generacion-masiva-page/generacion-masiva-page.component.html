@@ -2,12 +2,12 @@
   <nav class="crumbs" aria-label="Ubicación">
     <a mat-button routerLink="/">Inicio</a>
     <span class="crumbs__sep" aria-hidden="true">/</span>
-    <span class="crumbs__here">Generación masiva</span>
+    <span class="crumbs__here">Nuevo proceso de planilla</span>
   </nav>
 
   <mat-card class="page-card sisrh-elevated">
     <mat-card-header>
-      <mat-card-title>Generación masiva de planilla</mat-card-title>
+      <mat-card-title>Nuevo proceso de planilla</mat-card-title>
       <mat-card-subtitle>
         Calcula la planilla para todos los empleados activos del periodo seleccionado.
       </mat-card-subtitle>
@@ -82,30 +82,100 @@
             </mat-select>
           </mat-form-field>
 
-          <mat-form-field appearance="outline" subscriptSizing="dynamic">
-            <mat-label>Concepto de Planilla</mat-label>
-            <mat-select
-              [value]="conceptoSeleccionado()"
-              (selectionChange)="conceptoSeleccionado.set($event.value)"
-              [disabled]="!regimenSeleccionado() || fase() === 'generando'">
-              @for (conc of conceptosPermitidos(); track conc.codigo) {
-                <mat-option [value]="conc.codigo">{{ conc.etiqueta }}</mat-option>
-              }
-            </mat-select>
-          </mat-form-field>
+          <!-- Selector visual: Tipo de planilla (reemplaza el mat-select "Concepto") -->
+          <fieldset class="tp-selector" [disabled]="fase() === 'generando'">
+            <legend class="tp-selector__legend">
+              <mat-icon fontIcon="receipt_long" aria-hidden="true" />
+              <span>
+                <span class="tp-selector__title">Tipo de planilla</span>
+                <span class="tp-selector__hint">Selecciona un proceso para continuar.</span>
+              </span>
+            </legend>
+
+            @if (regimenSeleccionado() === null) {
+              <p class="tp-selector__empty" role="status">
+                Seleccione un régimen laboral para ver los tipos disponibles.
+              </p>
+            }
+
+            <div
+              class="tp-group"
+              role="radiogroup"
+              aria-label="Tipo de planilla"
+            >
+              <h4 class="tp-group__title">Planillas principales</h4>
+              <div class="tp-grid">
+                @for (t of tiposPrincipales; track t.codigo) {
+                  <label
+                    class="tp-card"
+                    [class.tp-card--selected]="conceptoSeleccionado() === t.codigo"
+                    [class.tp-card--disabled]="!esTipoHabilitado(t.codigo)"
+                    [matTooltip]="motivoTipoDeshabilitado(t.codigo) ?? ''"
+                    [matTooltipDisabled]="esTipoHabilitado(t.codigo)"
+                  >
+                    <input
+                      type="radio"
+                      name="tp-tipo"
+                      class="tp-card__input"
+                      [value]="t.codigo"
+                      [checked]="conceptoSeleccionado() === t.codigo"
+                      [disabled]="!esTipoHabilitado(t.codigo)"
+                      (change)="seleccionarTipo(t.codigo)"
+                    />
+                    <mat-icon class="tp-card__icon" [fontIcon]="t.icono" aria-hidden="true" />
+                    <span class="tp-card__body">
+                      <span class="tp-card__name">{{ t.etiqueta }}</span>
+                      @if (t.descripcion) {
+                        <span class="tp-card__desc">{{ t.descripcion }}</span>
+                      }
+                    </span>
+                    <mat-icon
+                      class="tp-card__mark"
+                      aria-hidden="true"
+                      [fontIcon]="conceptoSeleccionado() === t.codigo ? 'check_circle' : 'chevron_right'"
+                    />
+                  </label>
+                }
+              </div>
+
+              <h4 class="tp-group__title">Beneficios y procesos especiales</h4>
+              <div class="tp-grid">
+                @for (t of tiposBeneficios; track t.codigo) {
+                  <label
+                    class="tp-card"
+                    [class.tp-card--selected]="conceptoSeleccionado() === t.codigo"
+                    [class.tp-card--disabled]="!esTipoHabilitado(t.codigo)"
+                    [matTooltip]="motivoTipoDeshabilitado(t.codigo) ?? ''"
+                    [matTooltipDisabled]="esTipoHabilitado(t.codigo)"
+                  >
+                    <input
+                      type="radio"
+                      name="tp-tipo"
+                      class="tp-card__input"
+                      [value]="t.codigo"
+                      [checked]="conceptoSeleccionado() === t.codigo"
+                      [disabled]="!esTipoHabilitado(t.codigo)"
+                      (change)="seleccionarTipo(t.codigo)"
+                    />
+                    <mat-icon class="tp-card__icon" [fontIcon]="t.icono" aria-hidden="true" />
+                    <span class="tp-card__body">
+                      <span class="tp-card__name">{{ t.etiqueta }}</span>
+                      @if (t.descripcion) {
+                        <span class="tp-card__desc">{{ t.descripcion }}</span>
+                      }
+                    </span>
+                    <mat-icon
+                      class="tp-card__mark"
+                      aria-hidden="true"
+                      [fontIcon]="conceptoSeleccionado() === t.codigo ? 'check_circle' : 'chevron_right'"
+                    />
+                  </label>
+                }
+              </div>
+            </div>
+          </fieldset>
 
           <!-- Fila 2 -->
-          <div class="ejecucion-group">
-            <mat-radio-group
-              class="tipo-planilla-group"
-              [value]="tipoPlanilla()"
-              (change)="onTipoPlanillaChange($event.value)"
-              [disabled]="fase() === 'generando'">
-              <mat-radio-button value="ORDINARIA">Ordinaria</mat-radio-button>
-              <mat-radio-button value="ADICIONAL">Adicional</mat-radio-button>
-            </mat-radio-group>
-          </div>
-
           <mat-form-field appearance="outline" subscriptSizing="dynamic">
             <mat-label>Orden de Boleta</mat-label>
             <mat-select
@@ -117,7 +187,7 @@
               <mat-option value="ALFABETICO">Alfabético</mat-option>
             </mat-select>
           </mat-form-field>
-
+          
           <div class="acciones-group">
             <button
               mat-flat-button
@@ -136,89 +206,11 @@
         <!-- Progress + aria-live -->
         @if (fase() === 'generando') {
           <div class="progress" role="status" aria-live="polite">
-            <p>Generando planilla {{ tipoPlanilla() === 'ORDINARIA' ? 'masiva' : 'adicional' }} para el periodo {{ periodoSeleccionado() }}…</p>
+            <p>Generando planilla masiva para el periodo {{ periodoSeleccionado() }}…</p>
             <mat-progress-bar mode="indeterminate" aria-label="Generación en curso" />
           </div>
         }
 
-        <!-- Tabla de Candidatos (Solo Adicional) -->
-        @if (tipoPlanilla() === 'ADICIONAL' && fase() === 'idle') {
-          <div class="candidatos-section">
-            <div class="candidatos-header">
-              <div class="candidatos-header-text">
-                <h3>Candidatos a Planilla Adicional</h3>
-                <p class="candidatos-desc">Seleccione los empleados (Rezagados o con Cambio de Rol) que desea incluir en este lote adicional.</p>
-              </div>
-              <button mat-stroked-button color="primary" (click)="abrirDialogoManual()" [disabled]="loading()">
-                <mat-icon fontIcon="add_circle" aria-hidden="true" />
-                Añadir empleado manualmente
-              </button>
-            </div>
-            
-            @if (candidatos().length > 0) {
-              <div class="sisrh-table-scroll">
-                <table mat-table [dataSource]="candidatos()" class="tbl">
-                  <ng-container matColumnDef="select">
-                    <th mat-header-cell *matHeaderCellDef>
-                      <mat-checkbox (change)="$event ? toggleAllRows() : null"
-                                    [checked]="selection.hasValue() && isAllSelected()"
-                                    [indeterminate]="selection.hasValue() && !isAllSelected()"
-                                    aria-label="Seleccionar todos">
-                      </mat-checkbox>
-                    </th>
-                    <td mat-cell *matCellDef="let row">
-                      <mat-checkbox (click)="$event.stopPropagation()"
-                                    (change)="$event ? selection.toggle(row) : null"
-                                    [checked]="selection.isSelected(row)"
-                                    aria-label="Seleccionar fila">
-                      </mat-checkbox>
-                    </td>
-                  </ng-container>
-
-                  <ng-container matColumnDef="dni">
-                    <th mat-header-cell *matHeaderCellDef>DNI</th>
-                    <td mat-cell *matCellDef="let row">{{ row.dni }}</td>
-                  </ng-container>
-
-                  <ng-container matColumnDef="nombre">
-                    <th mat-header-cell *matHeaderCellDef>Nombre</th>
-                    <td mat-cell *matCellDef="let row">{{ row.nombre }}</td>
-                  </ng-container>
-
-                  <ng-container matColumnDef="regimenLaboral">
-                    <th mat-header-cell *matHeaderCellDef>Régimen</th>
-                    <td mat-cell *matCellDef="let row">{{ row.regimenLaboral }}</td>
-                  </ng-container>
-
-                  <ng-container matColumnDef="fechaIngreso">
-                    <th mat-header-cell *matHeaderCellDef>Fecha Ingreso</th>
-                    <td mat-cell *matCellDef="let row">{{ row.fechaIngreso }}</td>
-                  </ng-container>
-
-                  <ng-container matColumnDef="motivo">
-                    <th mat-header-cell *matHeaderCellDef>Motivo</th>
-                    <td mat-cell *matCellDef="let row">
-                      @if (row.motivo === 'INCLUSION_MANUAL') {
-                        <span class="motivo-badge motivo-manual" [title]="row.justificacionManual">
-                          Manual: {{ row.justificacionManual?.split(' - ')?.[0] || 'Inclusión Manual' }}
-                        </span>
-                      } @else {
-                        <span class="motivo-badge" [class.motivo-nuevo]="row.motivo === 'NUEVO_INGRESO'">
-                          {{ row.motivo === 'NUEVO_INGRESO' ? 'Nuevo Ingreso' : 'Cambio de Rol / Prorrateo' }}
-                        </span>
-                      }
-                    </td>
-                  </ng-container>
-
-                  <tr mat-header-row *matHeaderRowDef="columnsCandidatos"></tr>
-                  <tr mat-row *matRowDef="let row; columns: columnsCandidatos;" (click)="selection.toggle(row)"></tr>
-                </table>
-              </div>
-            } @else {
-              <p class="empty">No hay candidatos pendientes para planilla adicional en este periodo.</p>
-            }
-          </div>
-        }
 
         <!-- Resultados post-ejecución -->
         @if (fase() === 'completado' && resultado() !== null) {

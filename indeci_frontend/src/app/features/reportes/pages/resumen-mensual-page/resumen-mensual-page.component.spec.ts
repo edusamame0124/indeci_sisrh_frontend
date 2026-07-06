@@ -71,6 +71,7 @@ describe('ResumenMensualPageComponent (Spec 010 PANTALLA-04 — Resumen general)
     activo: 1,
     neto50pctMinimo: null,
     estadoNeto: null,
+    loteId: null,
   });
 
   /** Arranca el componente con período actual + anterior cargados. */

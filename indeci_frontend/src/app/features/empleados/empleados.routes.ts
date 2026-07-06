@@ -207,23 +207,16 @@ export const EMPLEADOS_ROUTES: Routes = [
               ),
             title: 'Planilla — SISRH-INDECI',
           },
+          // El formulario standalone se eliminó: la configuración remunerativa vive
+          // en la pantalla integrada (/empleados/datos/:personaId). Se redirige
+          // preservando personaId para no romper enlaces del consolidado y el banner.
           {
             path: 'personas/:personaId/editar/:planillaId',
-            loadComponent: () =>
-              import('./pages/empleado-planilla-form-page/empleado-planilla-form-page.component').then(
-                (m) => m.EmpleadoPlanillaFormPageComponent,
-              ),
-            title: 'Editar configuración remunerativa — SISRH-INDECI',
-            data: { mode: 'edit' as const },
+            redirectTo: (r) => `/empleados/datos/${r.params['personaId']}`,
           },
           {
             path: 'personas/:personaId/nueva',
-            loadComponent: () =>
-              import('./pages/empleado-planilla-form-page/empleado-planilla-form-page.component').then(
-                (m) => m.EmpleadoPlanillaFormPageComponent,
-              ),
-            title: 'Nueva configuración remunerativa — SISRH-INDECI',
-            data: { mode: 'create' as const },
+            redirectTo: (r) => `/empleados/datos/${r.params['personaId']}`,
           },
         ],
       },

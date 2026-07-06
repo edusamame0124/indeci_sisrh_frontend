@@ -8,14 +8,13 @@ import {
 } from '@angular/common/http/testing';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { BoletaPageComponent } from './boleta-page.component';
-import type { MovimientoPlanillaRow } from '../../../planilla/models/movimiento-planilla.model';
-import type { PlanillaDetalleRow } from '../../../planilla/models/planilla-detalle.model';
+import type { BoletaPagoResponseDto, ConceptoBoletaDto } from '../../models/boleta.model';
 
 describe('BoletaPageComponent (Spec 009 / T160 — FR-R2)', () => {
   let httpMock: HttpTestingController;
   let router: Router;
 
-  function provideStubRoute(empleadoId: string = '42', periodo: string = '2026-05') {
+  function provideStubRoute(empleadoId = '42', periodo = '2026-05') {
     return {
       provide: ActivatedRoute,
       useValue: {
@@ -29,7 +28,7 @@ describe('BoletaPageComponent (Spec 009 / T160 — FR-R2)', () => {
     };
   }
 
-  function build(empleadoId: string = '42', periodo: string = '2026-05') {
+  function build(empleadoId = '42', periodo = '2026-05') {
     TestBed.configureTestingModule({
       imports: [BoletaPageComponent],
       providers: [
@@ -48,98 +47,65 @@ describe('BoletaPageComponent (Spec 009 / T160 — FR-R2)', () => {
     return fixture;
   }
 
-  const movimiento = (): MovimientoPlanillaRow => ({
-    id: 100,
-    empleadoId: 42,
+  const concepto = (codigo: string, nombre: string, monto: number): ConceptoBoletaDto => ({
+    codigo,
+    concepto: nombre,
+    monto,
+  });
+
+  // FASE 4 — la boleta se carga con un solo GET a /data (BoletaPagoResponseDto).
+  const boletaData = (opts?: Partial<BoletaPagoResponseDto>): BoletaPagoResponseDto => ({
     periodo: '2026-05',
-    totalIngresos: 3700,
-    totalDescuentos: 480,
-    netoPagar: 3220,
-    estado: 'PROCESADO',
-    observacion: null,
-    activo: 1,
-    neto50pctMinimo: null,
-    estadoNeto: null,
+    nombreCompleto: 'Ana Pérez',
+    dni: '11223344',
+    regimenLaboral: 'CAS',
+    nivelRemunerativo: '',
+    cuentaBancaria: '',
+    modalidad: '',
+    diasLaborados: 30,
+    ingresos: [],
+    descuentos: [],
+    aportes: [],
+    totalIngresos: 0,
+    totalDescuentos: 0,
+    netoPagar: 0,
+    ...opts,
   });
 
-  const detalleIngreso = (id: number, monto: number, concepto: string): PlanillaDetalleRow => ({
-    id,
-    conceptoPlanillaId: id * 10,
-    codigoConcepto: `I_${id}`,
-    concepto,
-    tipoConcepto: 'INGRESO',
-    monto,
-    cantidad: 1,
-    observacion: null,
-  });
-
-  const detalleDescuento = (id: number, monto: number, concepto: string): PlanillaDetalleRow => ({
-    id,
-    conceptoPlanillaId: id * 10,
-    codigoConcepto: `D_${id}`,
-    concepto,
-    tipoConcepto: 'DESCUENTO',
-    monto,
-    cantidad: 1,
-    observacion: null,
-  });
-
-  const detalleAporte = (id: number, monto: number, concepto: string): PlanillaDetalleRow => ({
-    id,
-    conceptoPlanillaId: id * 10,
-    codigoConcepto: '06001',
-    concepto,
-    tipoConcepto: 'APORTE',
-    monto,
-    cantidad: 1,
-    observacion: null,
-  });
-
-  function flushBoot(opts?: { detalle?: PlanillaDetalleRow[] }) {
-    httpMock.expectOne('/api/rrhh/persona').flush({
-      data: [
-        { id: 7, empleadoId: 42, nombreCompleto: 'Ana Pérez', dni: '11223344', email: 'ana@indeci.gob.pe', codigoInterno: 'IND-A001', estado: 'ACTIVO' },
-      ],
-    });
-    httpMock
-      .expectOne('/api/rrhh/movimiento-planilla/42/2026-05')
-      .flush({ data: movimiento() });
-    httpMock
-      .expectOne('/api/rrhh/planilla-detalle/42/2026-05')
-      .flush({ data: opts?.detalle ?? [] });
+  function flushData(data: BoletaPagoResponseDto = boletaData()) {
+    httpMock.expectOne('/api/rrhh/boleta/42/2026-05/data').flush(data);
   }
 
   afterEach(() => {
     httpMock.verify();
   });
 
-  it('compone los 3 GET (persona + movimiento + detalle) en paralelo (FR-R2)', () => {
+  it('carga la boleta desde el endpoint /data (FR-R2)', () => {
     const fixture = build();
-    flushBoot({
-      detalle: [
-        detalleIngreso(1, 3500, 'Sueldo básico'),
-        detalleIngreso(2, 200, 'Asignación movilidad'),
-        detalleDescuento(3, 380, 'Aporte AFP'),
-        detalleDescuento(4, 100, 'Otros descuentos'),
-      ],
-    });
+    flushData(
+      boletaData({
+        netoPagar: 3220,
+        ingresos: [concepto('I1', 'Sueldo básico', 3500), concepto('I2', 'Asignación movilidad', 200)],
+        descuentos: [concepto('D1', 'Aporte AFP', 380), concepto('D2', 'Otros descuentos', 100)],
+      }),
+    );
 
     const comp = fixture.componentInstance;
-    expect(comp.persona()?.nombreCompleto).toBe('Ana Pérez');
-    expect(comp.movimiento()?.netoPagar).toBe(3220);
-    expect(comp.detalle().length).toBe(4);
+    expect(comp.boleta()?.nombreCompleto).toBe('Ana Pérez');
+    expect(comp.boleta()?.netoPagar).toBe(3220);
+    expect(comp.ingresos().length).toBe(2);
+    expect(comp.descuentos().length).toBe(2);
     expect(comp.loading()).toBe(false);
   });
 
   it('agrupa ingresos y descuentos via computed', () => {
     const fixture = build();
-    flushBoot({
-      detalle: [
-        detalleIngreso(1, 3500, 'Sueldo'),
-        detalleDescuento(2, 200, 'AFP'),
-        detalleIngreso(3, 100, 'Movilidad'),
-      ],
-    });
+    flushData(
+      boletaData({
+        ingresos: [concepto('I1', 'Sueldo', 3500), concepto('I2', 'Movilidad', 100)],
+        descuentos: [concepto('D1', 'AFP', 200)],
+      }),
+    );
 
     const comp = fixture.componentInstance;
     expect(comp.ingresos().length).toBe(2);
@@ -148,13 +114,14 @@ describe('BoletaPageComponent (Spec 009 / T160 — FR-R2)', () => {
 
   it('agrupa ESSALUD en aportes empleador y calcula CUC', () => {
     const fixture = build();
-    flushBoot({
-      detalle: [
-        detalleIngreso(1, 6000, 'Remuneración CAS'),
-        detalleDescuento(2, 783.6, 'AFP total'),
-        detalleAporte(3, 540, 'ESSALUD 9% (Empleador)'),
-      ],
-    });
+    flushData(
+      boletaData({
+        netoPagar: 3220,
+        ingresos: [concepto('I1', 'Remuneración CAS', 6000)],
+        descuentos: [concepto('D1', 'AFP total', 783.6)],
+        aportes: [concepto('06001', 'ESSALUD 9% (Empleador)', 540)],
+      }),
+    );
     fixture.detectChanges();
 
     const comp = fixture.componentInstance;
@@ -166,12 +133,12 @@ describe('BoletaPageComponent (Spec 009 / T160 — FR-R2)', () => {
 
   it('muestra sección de aportes empleador en la boleta', () => {
     const fixture = build();
-    flushBoot({
-      detalle: [
-        detalleIngreso(1, 6000, 'Remuneración CAS'),
-        detalleAporte(2, 540, 'ESSALUD 9% (Empleador)'),
-      ],
-    });
+    flushData(
+      boletaData({
+        ingresos: [concepto('I1', 'Remuneración CAS', 6000)],
+        aportes: [concepto('06001', 'ESSALUD 9% (Empleador)', 540)],
+      }),
+    );
     fixture.detectChanges();
 
     const el: HTMLElement = fixture.nativeElement;
@@ -182,7 +149,7 @@ describe('BoletaPageComponent (Spec 009 / T160 — FR-R2)', () => {
 
   it('imprimir() llama window.print()', () => {
     const fixture = build();
-    flushBoot();
+    flushData();
     const printSpy = vi.spyOn(window, 'print').mockImplementation(() => undefined);
     fixture.componentInstance.imprimir();
     expect(printSpy).toHaveBeenCalledTimes(1);
@@ -191,7 +158,7 @@ describe('BoletaPageComponent (Spec 009 / T160 — FR-R2)', () => {
 
   it('descargarPdf() pide el PDF al backend como blob (Spec 011 / B1)', () => {
     const fixture = build();
-    flushBoot();
+    flushData();
 
     fixture.componentInstance.descargarPdf();
 
@@ -232,7 +199,7 @@ describe('BoletaPageComponent (Spec 009 / T160 — FR-R2)', () => {
 
   it('fmtMonto formatea con 2 decimales y fmtFechaCorta produce DD/MM/YYYY', () => {
     const fixture = build();
-    flushBoot();
+    flushData();
     const comp = fixture.componentInstance;
     expect(comp.fmtMonto(1234.5)).toMatch(/[.,]50$/);
     expect(comp.fmtFechaCorta('2026-05-13')).toMatch(/^\d{2}\/\d{2}\/\d{4}$/);

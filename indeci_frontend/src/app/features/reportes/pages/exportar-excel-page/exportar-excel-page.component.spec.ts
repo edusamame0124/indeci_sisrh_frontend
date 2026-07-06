@@ -66,6 +66,7 @@ describe('ExportarExcelPageComponent (Spec 011 / B6)', () => {
     activo: 1,
     neto50pctMinimo: null,
     estadoNeto: null,
+    loteId: null,
   });
 
   function conDatos(movimientos: MovimientoPlanillaRow[] = [mov(42, 900), mov(7, 1800)]) {

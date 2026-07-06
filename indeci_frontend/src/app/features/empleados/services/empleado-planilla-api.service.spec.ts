@@ -40,7 +40,10 @@ describe('EmpleadoPlanillaApiService', () => {
         regimenLaboral: 'CAS',
         tipoContrato: null,
         condicionLaboral: null,
-      },
+        tipoPersonaMefId: null,
+        registroPlazaAirhsp: null,
+        fechaInicioContrato: null,
+      } as unknown as EmpleadoPlanillaRow,
     ];
     let out: readonly EmpleadoPlanillaRow[] | undefined;
     service.listar(9).subscribe((x) => {

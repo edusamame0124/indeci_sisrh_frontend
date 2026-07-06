@@ -1,0 +1,324 @@
+<div class="sisrh-page page-container">
+  <div class="page-header">
+    <div class="header-titles">
+      <h1 class="page-title">
+        <mat-icon fontIcon="add_card" aria-hidden="true" />
+        Planilla Adicional
+      </h1>
+      <p class="page-subtitle">Generación y trazabilidad de planillas de pago complementario.</p>
+    </div>
+  </div>
+
+  @if (loading()) {
+    <div class="loading-state">
+      <mat-spinner diameter="40"></mat-spinner>
+      <p>Cargando datos...</p>
+    </div>
+  } @else {
+    <div class="filtros-globales">
+      <mat-card class="sisrh-card" appearance="outlined">
+        <mat-card-content class="filtros-grid">
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
+            <mat-label>Periodo Planilla</mat-label>
+            <mat-select
+              [value]="periodoSeleccionado()"
+              (selectionChange)="onPeriodoChange($event.value)"
+              [disabled]="generando()">
+              @for (p of periodosAbiertos(); track p.periodo) {
+                <mat-option [value]="p.periodo">{{ p.periodo }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
+            <mat-label>Régimen Laboral</mat-label>
+            <mat-select
+              [value]="regimenSeleccionado()"
+              (selectionChange)="onRegimenChange($event.value)"
+              [disabled]="generando()">
+              <mat-option [value]="null">Todos los regímenes</mat-option>
+              @for (r of regimenes(); track r.id) {
+                <mat-option [value]="r.id">{{ r.codigo }} - {{ r.nombre }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
+            <mat-label>Tipo de contrato</mat-label>
+            <mat-select
+              [value]="tipoContratoId()"
+              (selectionChange)="onTipoContratoChange($event.value)"
+              [disabled]="generando() || regimenSeleccionado() === null || isRegimen276()">
+              <mat-option [value]="null">Todos</mat-option>
+              @for (t of tiposContrato(); track t.id) {
+                <mat-option [value]="t.id">{{ t.nombre }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
+            <mat-label>Modalidad CAS</mat-label>
+            <mat-select
+              [value]="modalidadCasId()"
+              (selectionChange)="modalidadCasId.set($event.value)"
+              [disabled]="generando() || !isModalidadCasEnabled()">
+              <mat-option [value]="null">Todas</mat-option>
+              @for (m of modalidadesCas(); track m.id) {
+                <mat-option [value]="m.id">{{ m.nombre }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
+            <mat-label>Condición laboral</mat-label>
+            <mat-select
+              [value]="condicionLaboralId()"
+              (selectionChange)="condicionLaboralId.set($event.value)"
+              [disabled]="generando() || regimenSeleccionado() === null || isRegimen1057()">
+              <mat-option [value]="null">Todas</mat-option>
+              @for (c of condicionesLaborales(); track c.id) {
+                <mat-option [value]="c.id">{{ c.nombre }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    @if (periodoSeleccionado() && regimenSeleccionado()) {
+      <mat-tab-group class="sisrh-tabs" dynamicHeight animationDuration="0ms">
+        
+        <!-- TAB 1: Generación -->
+        <mat-tab label="Generación de Planilla">
+          <div class="tab-content">
+            <mat-card class="sisrh-card" appearance="outlined">
+              <mat-card-content>
+                <div class="adicional-params">
+                  <h3>1. Parámetros de Planilla Adicional</h3>
+                  <div class="parametros-grid">
+                    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                      <mat-label>Conceptos a procesar</mat-label>
+                      <mat-select
+                        [value]="conceptosSeleccionados()"
+                        (selectionChange)="conceptosSeleccionados.set($event.value)"
+                        multiple
+                        [disabled]="generando()">
+                        @for (c of conceptosOperativos(); track c.id) {
+                          <mat-option [value]="c.codigo">{{ c.codigo }} - {{ c.nombre }}</mat-option>
+                        }
+                      </mat-select>
+                    </mat-form-field>
+                    
+                    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                      <mat-label>Motivo</mat-label>
+                      <input matInput [value]="motivo()" (input)="motivo.set($any($event.target).value)" [disabled]="generando()">
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                      <mat-label>Sustento (Resolución / Memorando)</mat-label>
+                      <input matInput [value]="sustento()" (input)="sustento.set($any($event.target).value)" [disabled]="generando()">
+                    </mat-form-field>
+                  </div>
+                </div>
+
+                <mat-divider></mat-divider>
+
+                <div class="candidatos-section">
+                  <div class="candidatos-header">
+                    <div class="candidatos-header-text">
+                      <h3>2. Candidatos a Planilla Adicional</h3>
+                      <p class="candidatos-desc">Seleccione los empleados que desea incluir en este lote adicional.</p>
+                    </div>
+                    
+                    <div class="candidatos-actions">
+                      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="search-input">
+                        <mat-label>Buscar por DNI o Nombre</mat-label>
+                        <mat-icon matPrefix>search</mat-icon>
+                        <input matInput [value]="searchQuery()" (input)="searchQuery.set($any($event.target).value)" placeholder="Ej. 12345678" [disabled]="generando()">
+                      </mat-form-field>
+                      
+                      <button mat-stroked-button color="primary" (click)="abrirDialogoManual()" [disabled]="generando()">
+                        <mat-icon fontIcon="person_add" aria-hidden="true" />
+                        Añadir empleado
+                      </button>
+
+                      <button mat-stroked-button color="primary" (click)="abrirDialogoReintegro()" [disabled]="generando()">
+                        <mat-icon fontIcon="request_quote" aria-hidden="true" />
+                        Registrar reintegro
+                      </button>
+                    </div>
+                  </div>
+                  
+                  @if (candidatosFiltrados().length > 0) {
+                    <div class="sisrh-table-scroll">
+                      <table mat-table [dataSource]="candidatosFiltrados()" class="tbl">
+                        <ng-container matColumnDef="select">
+                          <th mat-header-cell *matHeaderCellDef>
+                            <mat-checkbox (change)="$event ? toggleAllRows() : null"
+                                          [checked]="selection.hasValue() && isAllSelected()"
+                                          [indeterminate]="selection.hasValue() && !isAllSelected()"
+                                          aria-label="Seleccionar todos">
+                            </mat-checkbox>
+                          </th>
+                          <td mat-cell *matCellDef="let row">
+                            <mat-checkbox (click)="$event.stopPropagation()"
+                                          (change)="$event ? selection.toggle(row) : null"
+                                          [checked]="selection.isSelected(row)"
+                                          aria-label="Seleccionar fila">
+                            </mat-checkbox>
+                          </td>
+                        </ng-container>
+
+                        <ng-container matColumnDef="dni">
+                          <th mat-header-cell *matHeaderCellDef>DNI</th>
+                          <td mat-cell *matCellDef="let row">{{ row.dni }}</td>
+                        </ng-container>
+
+                        <ng-container matColumnDef="nombre">
+                          <th mat-header-cell *matHeaderCellDef>Nombre</th>
+                          <td mat-cell *matCellDef="let row">{{ row.nombre }}</td>
+                        </ng-container>
+
+                        <ng-container matColumnDef="regimenLaboral">
+                          <th mat-header-cell *matHeaderCellDef>Régimen</th>
+                          <td mat-cell *matCellDef="let row">{{ row.regimenLaboral }}</td>
+                        </ng-container>
+
+                        <ng-container matColumnDef="fechaIngreso">
+                          <th mat-header-cell *matHeaderCellDef>F. Ingreso</th>
+                          <td mat-cell *matCellDef="let row">{{ row.fechaIngreso }}</td>
+                        </ng-container>
+
+                        <ng-container matColumnDef="motivo">
+                          <th mat-header-cell *matHeaderCellDef>Motivo SISRH</th>
+                          <td mat-cell *matCellDef="let row">{{ row.motivo }}</td>
+                        </ng-container>
+
+                        <tr mat-header-row *matHeaderRowDef="columnsCandidatos; sticky: true"></tr>
+                        <tr mat-row *matRowDef="let row; columns: columnsCandidatos;"></tr>
+                      </table>
+                    </div>
+                    
+                    <div class="seleccion-stats">
+                      <span>Empleados seleccionados: <strong>{{ selection.selected.length }}</strong> de {{ candidatosFiltrados().length }}</span>
+                    </div>
+                  } @else {
+                    <div class="empty">
+                      <mat-icon fontIcon="info" aria-hidden="true"></mat-icon>
+                      <p>No se encontraron candidatos para los filtros actuales.</p>
+                    </div>
+                  }
+                </div>
+
+                <div class="acciones-generacion">
+                  @if (generando()) {
+                    <div class="progress-container">
+                      <p>Generando planilla adicional, por favor espere...</p>
+                      <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+                    </div>
+                  } @else {
+                    <button mat-flat-button color="primary" [disabled]="!canGenerar" (click)="confirmarGeneracion()">
+                      <mat-icon fontIcon="play_circle"></mat-icon>
+                      Generar Planilla Adicional
+                    </button>
+                  }
+                </div>
+              </mat-card-content>
+            </mat-card>
+          </div>
+        </mat-tab>
+
+        <!-- TAB 2: Historial y Trazabilidad -->
+        <mat-tab label="Historial y Trazabilidad">
+          <div class="tab-content">
+            <mat-card class="sisrh-card" appearance="outlined">
+              <mat-card-header>
+                <mat-card-title>Lotes de Planilla Adicional</mat-card-title>
+                <mat-card-subtitle>Periodo {{ periodoSeleccionado() }}</mat-card-subtitle>
+              </mat-card-header>
+              <mat-card-content>
+                @if (lotesHistorial().length > 0) {
+                  <div class="sisrh-table-scroll">
+                    <table mat-table [dataSource]="lotesHistorial()" class="tbl">
+                      
+                      <ng-container matColumnDef="id">
+                        <th mat-header-cell *matHeaderCellDef>Lote ID</th>
+                        <td mat-cell *matCellDef="let row">{{ row.id }}</td>
+                      </ng-container>
+
+                      <ng-container matColumnDef="periodo">
+                        <th mat-header-cell *matHeaderCellDef>Periodo</th>
+                        <td mat-cell *matCellDef="let row">{{ row.periodo }}</td>
+                      </ng-container>
+
+                      <ng-container matColumnDef="regimen">
+                        <th mat-header-cell *matHeaderCellDef>Régimen</th>
+                        <td mat-cell *matCellDef="let row">
+                          <span class="badge gray">{{ row.regimenLaboralCodigo }}</span>
+                        </td>
+                      </ng-container>
+
+                      <ng-container matColumnDef="motivo">
+                        <th mat-header-cell *matHeaderCellDef>Motivo Adicional</th>
+                        <td mat-cell *matCellDef="let row">{{ row.motivo || 'N/A' }}</td>
+                      </ng-container>
+
+                      <ng-container matColumnDef="empleados">
+                        <th mat-header-cell *matHeaderCellDef class="num">Empleados</th>
+                        <td mat-cell *matCellDef="let row" class="num">{{ row.cantidadEmpleados }}</td>
+                      </ng-container>
+
+                      <ng-container matColumnDef="monto">
+                        <th mat-header-cell *matHeaderCellDef class="num">Total Neto</th>
+                        <td mat-cell *matCellDef="let row" class="num font-mono">S/ {{ fmtMonto(row.montoTotalNeto) }}</td>
+                      </ng-container>
+
+                      <ng-container matColumnDef="creadoEn">
+                        <th mat-header-cell *matHeaderCellDef>Generado el</th>
+                        <td mat-cell *matCellDef="let row">{{ row.creadoEn }}</td>
+                      </ng-container>
+
+                      <ng-container matColumnDef="estado">
+                        <th mat-header-cell *matHeaderCellDef>Estado</th>
+                        <td mat-cell *matCellDef="let row">
+                          <span class="badge" 
+                                [class.success]="row.estado === 'PROCESADO'" 
+                                [class.warning]="row.estado === 'PENDIENTE'"
+                                [class.danger]="row.estado === 'ERROR'">
+                            {{ row.estado }}
+                          </span>
+                        </td>
+                      </ng-container>
+
+                      <ng-container matColumnDef="acciones">
+                        <th mat-header-cell *matHeaderCellDef class="actions"></th>
+                        <td mat-cell *matCellDef="let row" class="actions">
+                          <button mat-icon-button matTooltip="Ver Trabajadores" (click)="verMovimientos(row.id)">
+                            <mat-icon fontIcon="people"></mat-icon>
+                          </button>
+                        </td>
+                      </ng-container>
+
+                      <tr mat-header-row *matHeaderRowDef="columnsHistorial; sticky: true"></tr>
+                      <tr mat-row *matRowDef="let row; columns: columnsHistorial;"></tr>
+                    </table>
+                  </div>
+                } @else {
+                  <div class="empty">
+                    <mat-icon fontIcon="inbox" aria-hidden="true"></mat-icon>
+                    <p>No se han generado planillas adicionales para este periodo y régimen.</p>
+                  </div>
+                }
+              </mat-card-content>
+            </mat-card>
+          </div>
+        </mat-tab>
+      </mat-tab-group>
+    } @else {
+      <div class="empty setup-empty">
+        <mat-icon fontIcon="tune" aria-hidden="true"></mat-icon>
+        <p>Seleccione un periodo y un régimen laboral para comenzar.</p>
+      </div>
+    }
+  }
+</div>

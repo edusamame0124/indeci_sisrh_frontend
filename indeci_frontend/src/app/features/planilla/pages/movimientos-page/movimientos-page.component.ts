@@ -6,7 +6,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { RouterLink, ActivatedRoute } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { NgClass } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
@@ -215,8 +215,43 @@ export class MovimientosPageComponent implements OnInit {
     return this.estadosDisponibles.filter((e) => e !== row.estado);
   }
 
+  readonly route = inject(ActivatedRoute);
+
   ngOnInit(): void {
-    this.cargarPeriodos();
+    this.loading.set(true);
+    this.periodoApi.listar().subscribe({
+      next: (rows) => {
+        const ordenados = [...rows].sort((a, b) => b.periodo.localeCompare(a.periodo));
+        this.periodos.set(ordenados);
+        
+        const qParams = this.route.snapshot.queryParams;
+        const paramPeriodo = qParams['periodo'];
+        const paramLoteId = Number(qParams['loteId']);
+
+        const inicial = paramPeriodo 
+          ? ordenados.find((p) => p.periodo === paramPeriodo) ?? ordenados[0]
+          : ordenados.find((p) => p.estado === 'ABIERTO') ?? ordenados[0];
+
+        if (inicial) {
+          this.periodoSeleccionado.set(inicial.periodo);
+          this.loading.set(false);
+          this.cargarMovimientos(inicial.periodo);
+          this.cargarHistorial(inicial.periodo);
+          
+          if (paramLoteId) {
+             // Mock the selected lote to filter rows immediately without loading all lotes
+             this.loteSeleccionado.set({ id: paramLoteId } as PlanillaLoteDashboardRow);
+             this.selectedTabIndex.set(1);
+          }
+        } else {
+          this.loading.set(false);
+        }
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loading.set(false);
+        this.onHttpSnack(err);
+      },
+    });
   }
 
   onPeriodoChange(periodo: string): void {
@@ -354,28 +389,7 @@ export class MovimientosPageComponent implements OnInit {
     });
   }
 
-  private cargarPeriodos(): void {
-    this.loading.set(true);
-    this.periodoApi.listar().subscribe({
-      next: (rows) => {
-        const ordenados = [...rows].sort((a, b) => b.periodo.localeCompare(a.periodo));
-        this.periodos.set(ordenados);
-        const inicial = ordenados.find((p) => p.estado === 'ABIERTO') ?? ordenados[0];
-        if (inicial) {
-          this.periodoSeleccionado.set(inicial.periodo);
-          this.loading.set(false);
-          this.cargarMovimientos(inicial.periodo);
-          this.cargarHistorial(inicial.periodo);
-        } else {
-          this.loading.set(false);
-        }
-      },
-      error: (err: HttpErrorResponse) => {
-        this.loading.set(false);
-        this.onHttpSnack(err);
-      },
-    });
-  }
+
 
   private cargarHistorial(periodo: string): void {
     this.exportApi.historial(periodo).subscribe({

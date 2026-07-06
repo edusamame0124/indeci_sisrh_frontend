@@ -66,7 +66,7 @@ import { calcIncrementosDsTotal } from '../../utils/calc-incrementos-ds-total';
           [matTooltip]="
             canRegistrar()
               ? 'Registrar la configuración remunerativa del empleado'
-              : 'Ya existe una configuración activa. Edítala o desactívala para registrar una nueva.'
+              : 'Hay un contrato vigente. Ciérrelo con su cese para registrar uno nuevo.'
           "
         >
           Registrar configuración
@@ -94,8 +94,8 @@ import { calcIncrementosDsTotal } from '../../utils/calc-incrementos-ds-total';
           <mat-card-content>
             @if (rows().length > 0) {
               <p class="hint">
-                Solo puede existir una planilla activa. Para ajustar montos usa Editar o desactiva y
-                registra una nueva.
+                Solo puede existir un contrato vigente. Al cesar el actual (con su sustento) podrá
+                registrar uno nuevo; el contrato cesado permanece en el historial.
               </p>
             }
 
@@ -112,6 +112,14 @@ import { calcIncrementosDsTotal } from '../../utils/calc-incrementos-ds-total';
             } @else {
               <div class="sisrh-table-scroll">
               <table mat-table [dataSource]="pagedRows()" class="tbl">
+                <ng-container matColumnDef="estado">
+                  <th mat-header-cell *matHeaderCellDef scope="col">Estado</th>
+                  <td mat-cell *matCellDef="let row">
+                    <span [class]="estadoBadgeClass(row.estadoVinculo)">
+                      {{ estadoLabel(row.estadoVinculo) }}
+                    </span>
+                  </td>
+                </ng-container>
                 <ng-container matColumnDef="regimen">
                   <th mat-header-cell *matHeaderCellDef scope="col">Régimen</th>
                   <td mat-cell *matCellDef="let row">{{ row.regimenLaboral ?? '—' }}</td>
@@ -123,6 +131,10 @@ import { calcIncrementosDsTotal } from '../../utils/calc-incrementos-ds-total';
                 <ng-container matColumnDef="condicion">
                   <th mat-header-cell *matHeaderCellDef scope="col">Condición</th>
                   <td mat-cell *matCellDef="let row">{{ row.condicionLaboral ?? '—' }}</td>
+                </ng-container>
+                <ng-container matColumnDef="vigencia">
+                  <th mat-header-cell *matHeaderCellDef scope="col">Vigencia</th>
+                  <td mat-cell *matCellDef="let row" class="col-vigencia">{{ fmtVigencia(row) }}</td>
                 </ng-container>
                 <ng-container matColumnDef="codigoAirhsp">
                   <th
@@ -280,6 +292,40 @@ import { calcIncrementosDsTotal } from '../../utils/calc-incrementos-ds-total';
       font-family: var(--sisrh-font-mono, ui-monospace, monospace);
       letter-spacing: 0.02em;
     }
+    .col-vigencia {
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+      color: #475569;
+    }
+    .badge {
+      display: inline-block;
+      padding: 0.15rem 0.55rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      line-height: 1.4;
+      white-space: nowrap;
+    }
+    .badge--success {
+      background: var(--sisrh-success-100, #e7f5ee);
+      color: var(--sisrh-success, #157347);
+    }
+    .badge--neutral {
+      background: #eef2f7;
+      color: #475569;
+    }
+    .badge--info {
+      background: var(--sisrh-info-100, #eaf2fb);
+      color: var(--sisrh-info, #2563a6);
+    }
+    .badge--warning {
+      background: var(--sisrh-warning-100, #fff4db);
+      color: var(--sisrh-warning, #b7791f);
+    }
+    .badge--danger {
+      background: var(--sisrh-danger-100, #fdecec);
+      color: var(--sisrh-danger, #b42318);
+    }
   .col-sticky {
     position: sticky;
     right: 0;
@@ -302,9 +348,11 @@ export class EmpleadoPlanillaListPageComponent implements OnInit {
   private readonly errors = inject(ErrorMessageService);
 
   readonly columns = [
+    'estado',
     'regimen',
     'tipoContrato',
     'condicion',
+    'vigencia',
     'codigoAirhsp',
     'montoContrato',
     'incrementosDs',
@@ -333,7 +381,13 @@ export class EmpleadoPlanillaListPageComponent implements OnInit {
     return list.slice(start, start + this.pageSize());
   });
 
-  readonly canRegistrar = computed(() => this.empleadoId() != null && this.rows().length === 0);
+  /**
+   * Vínculos secuenciales: se puede registrar uno nuevo salvo que exista un contrato
+   * vigente (activo sin cese). Los cesados quedan en el historial y no bloquean.
+   */
+  readonly canRegistrar = computed(
+    () => this.empleadoId() != null && !this.rows().some((r) => r.fechaCese == null),
+  );
 
   private readonly moneyFmt = new Intl.NumberFormat('es-PE', {
     minimumFractionDigits: 2,
@@ -389,6 +443,53 @@ export class EmpleadoPlanillaListPageComponent implements OnInit {
     const total = calcIncrementosDsTotal(row.sueldoBasico, row.montoContrato);
     if (total == null) return '—';
     return this.moneyFmt.format(total);
+  }
+
+  estadoLabel(estado: string | null): string {
+    switch (estado) {
+      case 'VIGENTE':
+        return 'Vigente';
+      case 'CESADO':
+        return 'Cesado';
+      case 'PROGRAMADO':
+        return 'Programado';
+      case 'VENCIDO_PENDIENTE_DE_REGULARIZACION':
+        return 'Vencido';
+      case 'ANULADO':
+        return 'Anulado';
+      default:
+        return '—';
+    }
+  }
+
+  estadoBadgeClass(estado: string | null): string {
+    switch (estado) {
+      case 'VIGENTE':
+        return 'badge badge--success';
+      case 'CESADO':
+        return 'badge badge--neutral';
+      case 'PROGRAMADO':
+        return 'badge badge--info';
+      case 'VENCIDO_PENDIENTE_DE_REGULARIZACION':
+        return 'badge badge--warning';
+      case 'ANULADO':
+        return 'badge badge--danger';
+      default:
+        return 'badge badge--neutral';
+    }
+  }
+
+  private fmtDate(iso: string | null | undefined): string {
+    if (!iso) return '';
+    const [y, m, d] = iso.slice(0, 10).split('-');
+    return d && m && y ? `${d}/${m}/${y}` : iso;
+  }
+
+  fmtVigencia(row: EmpleadoPlanillaRow): string {
+    const inicio = this.fmtDate(row.fechaInicioContrato);
+    const fin = this.fmtDate(row.fechaCese ?? row.fechaFin);
+    if (!inicio && !fin) return '—';
+    return `${inicio || '—'} – ${fin || 'vigente'}`;
   }
 
   confirmEliminar(row: EmpleadoPlanillaRow): void {

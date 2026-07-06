@@ -76,7 +76,8 @@ describe('DetallePageComponent (Spec 009 T156 + Spec 010 PANTALLA-03)', () => {
     conceptoPlanillaId: id * 10,
     codigoConcepto: '06001',
     concepto,
-    tipoConcepto: 'APORTE',
+    // ESSALUD es aporte del EMPLEADOR (LEY-02/07): tipo APORTE_EMPLEADOR, no reduce el neto.
+    tipoConcepto: 'APORTE_EMPLEADOR',
     monto,
     cantidad: 1,
     observacion: null,

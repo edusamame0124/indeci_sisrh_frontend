@@ -54,6 +54,7 @@ describe('HistorialEmpleadoPageComponent (Spec 011 / B6)', () => {
     activo: 1,
     neto50pctMinimo: null,
     estadoNeto: null,
+    loteId: null,
   });
 
   it('al cargar lista los empleados con vínculo', () => {

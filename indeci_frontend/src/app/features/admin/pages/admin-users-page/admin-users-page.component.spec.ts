@@ -18,6 +18,7 @@ describe('AdminUsersPageComponent — UI tabla', () => {
   let httpMock: HttpTestingController;
 
   beforeEach(() => {
+    TestBed.resetTestingModule();
     TestBed.configureTestingModule({
       imports: [AdminUsersPageComponent],
       providers: [
@@ -36,7 +37,11 @@ describe('AdminUsersPageComponent — UI tabla', () => {
     httpMock = TestBed.inject(HttpTestingController);
   });
 
-  afterEach(() => httpMock.verify());
+  afterEach(() => {
+    httpMock.match((r) => r.url.includes('/api/admin/sistemas')).forEach((r) => r.flush({ data: [] }));
+    httpMock.verify();
+    TestBed.resetTestingModule();
+  });
 
   it('scroll horizontal, paginador y acciones homogéneas (ícono + aria)', () => {
     const fixture = TestBed.createComponent(AdminUsersPageComponent);
