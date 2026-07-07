@@ -58,6 +58,13 @@ export const routes: Routes = [
           import('./features/planilla/planilla.routes').then((m) => m.PLANILLA_ROUTES),
       },
       {
+        path: 'liquidaciones',
+        loadChildren: () =>
+          import('./features/liquidaciones/liquidaciones.routes').then(
+            (m) => m.LIQUIDACIONES_ROUTES,
+          ),
+      },
+      {
         path: 'portal-empleado',
         loadChildren: () =>
           import('./features/portal-empleado/portal-empleado.routes').then(

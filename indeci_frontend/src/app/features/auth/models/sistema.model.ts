@@ -83,6 +83,7 @@ export const SISTEMAS_METADATA: ReadonlyArray<SistemaMetadata> = [
       SUPER_ADMIN: 'Super Administrador',
       ADMIN_TI: 'Administrador TI',
       ADMIN: 'Administrador',
+      GESTOR_USUARIOS: 'Gestor de Usuarios',
       RRHH_JEFE: 'Jefe RRHH',
       RRHH_ANALISTA: 'Analista RRHH',
       PLANILLA_ANALISTA: 'Analista de Planilla',

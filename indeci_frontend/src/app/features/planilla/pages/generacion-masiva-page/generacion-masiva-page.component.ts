@@ -69,6 +69,8 @@ export interface TipoPlanillaCard {
   descripcion?: string;
   /** true = código aún no registrado en catálogo MEF; pendiente de Track B (backend). */
   placeholder?: boolean;
+  /** Etiqueta corta arriba a la derecha (ej. 'REQ' para módulos dedicados). */
+  badge?: string;
 }
 
 /**
@@ -80,7 +82,7 @@ export interface TipoPlanillaCard {
 export const TIPOS_PLANILLA_CATALOGO: TipoPlanillaCard[] = [
   { codigo: 'PLA_HABERES', etiqueta: 'Planilla regular', grupo: 'PRINCIPAL', icono: 'calendar_month', descripcion: 'Planilla mensual ordinaria del personal.' },
   { codigo: 'PLA_ADICIONAL', etiqueta: 'Planilla Adicional', grupo: 'PRINCIPAL', icono: 'add_card', descripcion: 'Pago complementario o regularización.', placeholder: true },
-  { codigo: 'PLA_CTS', etiqueta: 'CTS', grupo: 'BENEFICIO', icono: 'savings' },
+  { codigo: 'PLA_CTS', etiqueta: 'CTS Trunca (Por Cese)', grupo: 'BENEFICIO', icono: 'business_center', descripcion: 'Liquidación exclusiva para personal con fecha de cese registrada en el periodo.', badge: 'REQ' },
   { codigo: 'PLA_AGUINALDO', etiqueta: 'Aguinaldo', grupo: 'BENEFICIO', icono: 'celebration' },
   { codigo: 'PLA_LBS', etiqueta: 'Liquidación de Beneficios Sociales', grupo: 'BENEFICIO', icono: 'badge', placeholder: true },
   { codigo: 'PLA_VAC_TRUN', etiqueta: 'Vacaciones truncas', grupo: 'BENEFICIO', icono: 'beach_access' },
@@ -88,8 +90,9 @@ export const TIPOS_PLANILLA_CATALOGO: TipoPlanillaCard[] = [
 ];
 
 export const COMPATIBILIDAD_PLANILLA_MAP: Record<string, string[]> = {
-  '276': ['PLA_HABERES', 'PLA_ADICIONAL', 'PLA_AGUINALDO', 'PLA_LBS', 'PLA_VAC_TRUN'],
-  '728': ['PLA_HABERES', 'PLA_ADICIONAL', 'PLA_CTS', 'PLA_AGUINALDO', 'PLA_LBS', 'PLA_VAC_TRUN'],
+  // Matriz F0 CTS: habilitado SOLO en 276 y SERVIR (30057). 728 descartado; CAS 1057 sin CTS.
+  '276': ['PLA_HABERES', 'PLA_ADICIONAL', 'PLA_CTS', 'PLA_AGUINALDO', 'PLA_LBS', 'PLA_VAC_TRUN'],
+  '728': ['PLA_HABERES', 'PLA_ADICIONAL', 'PLA_AGUINALDO', 'PLA_LBS', 'PLA_VAC_TRUN'],
   '1057': ['PLA_HABERES', 'PLA_ADICIONAL', 'PLA_AGUINALDO', 'PLA_LBS', 'PLA_VAC_TRUN'],
   '30057': ['PLA_HABERES', 'PLA_ADICIONAL', 'PLA_CTS', 'PLA_AGUINALDO', 'PLA_LBS', 'PLA_VAC_TRUN'],
   'FORMATIVA': ['PLA_HABERES', 'PLA_ADICIONAL', 'PLA_DESC_SUBV'],
@@ -240,7 +243,21 @@ export class GeneracionMasivaPageComponent implements OnInit {
       });
       return;
     }
-    
+
+    // Feature 016 — módulo dedicado de Liquidación de CTS Trunca.
+    if (codigo === 'PLA_CTS') {
+      const regId = this.regimenSeleccionado();
+      const regCodigo = this.regimenes().find((r) => r.id === regId)?.codigo;
+      void this.router.navigate(['/liquidaciones/cts'], {
+        queryParams: {
+          periodo: this.periodoSeleccionado(),
+          regimenLaboralId: regId,
+          regimen: regCodigo,
+        },
+      });
+      return;
+    }
+
     this.conceptoSeleccionado.set(codigo);
   }
 

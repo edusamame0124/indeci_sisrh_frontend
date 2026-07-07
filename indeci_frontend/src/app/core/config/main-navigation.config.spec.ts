@@ -72,6 +72,11 @@ describe('filterVisibleNavItems (Spec 009 — 5 módulos + Inicio)', () => {
     ]);
   });
 
+  it('GESTOR_USUARIOS (V012_16) ve SOLO Inicio + Administración, ningún módulo operativo', () => {
+    const r = filterVisibleNavItems(MAIN_NAV_ITEMS, [], ['GESTOR_USUARIOS']);
+    expect(r.map((i) => i.label)).toEqual(['Inicio', 'Administración']);
+  });
+
   it('PLANILLA_ANALISTA ve Planilla + Reportes, NO Administración', () => {
     const r = filterVisibleNavItems(MAIN_NAV_ITEMS, [], ['PLANILLA_ANALISTA']);
     expect(r.map((i) => i.label)).toContain('Planilla');

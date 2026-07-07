@@ -133,6 +133,43 @@ describe('SistemaSelectorPageComponent', () => {
     expect(blockedCard!.disabled).toBe(true);
   });
 
+  // ─── Entrada a Administración (canShowUserManagement) ───────────────────────
+
+  function mountWithRoles(roles: string[]): void {
+    const exp = Math.floor(Date.now() / 1000) + 600;
+    auth.setSession({
+      token: makeJwt({
+        sub: 'admin',
+        otpValidado: true,
+        newPassOk: true,
+        roles,
+        permisos: [],
+        sistemas: { sisrh: roles },
+        exp,
+      }),
+      roles,
+      permisos: [],
+    });
+    fixture = TestBed.createComponent(SistemaSelectorPageComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  }
+
+  it('canShowUserManagement true para GESTOR_USUARIOS (V012_16)', () => {
+    mountWithRoles(['GESTOR_USUARIOS']);
+    expect(component.canShowUserManagement()).toBe(true);
+  });
+
+  it('canShowUserManagement true para SUPER_ADMIN (sin regresión)', () => {
+    mountWithRoles(['SUPER_ADMIN']);
+    expect(component.canShowUserManagement()).toBe(true);
+  });
+
+  it('canShowUserManagement false sin rol del módulo Administración', () => {
+    mountWithRoles(['RRHH_CONSULTA']);
+    expect(component.canShowUserManagement()).toBe(false);
+  });
+
   // ─── Click handlers ────────────────────────────────────────────────────────
 
   it('click en SISRH → router.navigateByUrl(returnUrl) + clearReturnUrl', () => {

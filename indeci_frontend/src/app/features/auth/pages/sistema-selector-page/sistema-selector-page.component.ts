@@ -9,6 +9,7 @@ import { AuthService } from '../../../../core/services/auth.service';
 import { LoginFlowService } from '../../services/login-flow.service';
 import { SistemaSelectorService } from '../../services/sistema-selector.service';
 import { SistemaCard } from '../../models/sistema.model';
+import { hasAdminModuleAccess } from '../../../../core/guards/admin-access.guard';
 
 /**
  * Fase 3 SSO — Portal Selector.
@@ -386,7 +387,10 @@ export class SistemaSelectorPageComponent {
   readonly username = this.auth.username;
   readonly cards = this.selector.cards;
   readonly loggingOut = signal(false);
-  readonly canShowUserManagement = computed(() => this.auth.roles().includes('SUPER_ADMIN'));
+  /** Entrada al módulo de Administración: mismo predicado que el guard de ruta
+   *  (adminAccessGuard) para evitar deriva. Incluye SUPER_ADMIN, ADMIN_TI/ADMIN
+   *  y el rol acotado GESTOR_USUARIOS (V012_16). */
+  readonly canShowUserManagement = computed(() => hasAdminModuleAccess(this.auth.roles()));
 
   /** True si el usuario no tiene roles en NINGÚN sistema (todas las cards bloqueadas). */
   readonly allBlocked = computed(() => {

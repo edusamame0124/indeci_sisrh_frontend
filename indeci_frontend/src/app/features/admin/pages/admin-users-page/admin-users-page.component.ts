@@ -5,6 +5,7 @@ import {
   signal,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { HttpErrorResponse } from '@angular/common/http';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -24,6 +25,7 @@ import { ClientTelemetryService } from '../../../../core/services/client-telemet
 import type { AccesoSistema, AdminUserSummary, SistemaAdmin } from '../../models/admin.models';
 import { isErrorResponse } from '../../../../core/models/error-response.model';
 import { EmptyStateComponent } from '../../../../shared/components/empty-state/empty-state.component';
+import { AdminPersonaCrudDialogComponent } from './components/admin-persona-crud-dialog/admin-persona-crud-dialog.component';
 
 @Component({
   selector: 'app-admin-users-page',
@@ -42,6 +44,7 @@ import { EmptyStateComponent } from '../../../../shared/components/empty-state/e
     MatSelectModule,
     MatTooltipModule,
     EmptyStateComponent,
+    MatDialogModule,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -95,6 +98,10 @@ import { EmptyStateComponent } from '../../../../shared/components/empty-state/e
               {{ total() }} registro{{ total() === 1 ? '' : 's' }}
             </span>
             <div class="toolbar__actions">
+              <button mat-stroked-button color="primary" type="button" (click)="openPersonaCrud()">
+                <mat-icon fontIcon="search" aria-hidden="true" />
+                Buscar Persona
+              </button>
               <button mat-flat-button color="primary" type="button" routerLink="/admin/usuarios/nueva">
                 <mat-icon fontIcon="person_add" aria-hidden="true" />
                 Nuevo usuario
@@ -221,6 +228,7 @@ export class AdminUsersPageComponent {
   private readonly api = inject(AdminApiService);
   private readonly errors = inject(ErrorMessageService);
   private readonly telemetry = inject(ClientTelemetryService);
+  private readonly dialog = inject(MatDialog);
 
   readonly columns = ['username', 'status', 'accesos', 'acciones'] as const;
   readonly rows = signal<readonly AdminUserSummary[]>([]);
@@ -237,6 +245,14 @@ export class AdminUsersPageComponent {
   constructor() {
     this.loadSistemas();
     this.reload();
+  }
+
+  openPersonaCrud(): void {
+    this.dialog.open(AdminPersonaCrudDialogComponent, {
+      width: '1000px',
+      disableClose: true,
+      panelClass: 'sisrh-dialog-shell--large',
+    });
   }
 
   onPage(ev: PageEvent): void {

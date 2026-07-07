@@ -100,59 +100,66 @@ import type {
             </form>
           </section>
 
-          <section class="form-section" aria-labelledby="st-roles">
-            <h3 id="st-roles">Asignación de roles</h3>
-            <p class="page-hint">El usuario heredará automáticamente los permisos de los roles seleccionados.</p>
-            <form [formGroup]="rolesForm" class="stack" (ngSubmit)="guardarRoles()" novalidate>
-              <mat-form-field appearance="outline">
-                <mat-label>Roles</mat-label>
-                <mat-select formControlName="roleIds" multiple>
-                  @for (r of rolesCat(); track r.id) {
-                    <mat-option [value]="r.id">{{ r.codigo }} — {{ r.nombre }}</mat-option>
-                  }
-                </mat-select>
-              </mat-form-field>
-              <div class="acts">
-                <button mat-flat-button color="primary" type="submit" [disabled]="savingRoles() || rolesForm.invalid">
-                  Guardar roles
-                </button>
-              </div>
-            </form>
-          </section>
-
-          <section class="form-section" aria-labelledby="st-permisos-rol">
-            <h3 id="st-permisos-rol">Permisos de los roles asignados</h3>
+          <section class="form-section" aria-labelledby="st-accesos">
+            <h3 id="st-accesos">Accesos por sistema</h3>
             <p class="page-hint">
-              Asignados automáticamente según el rol. Solo lectura.
+              Los accesos a SISRH aplican de inmediato. Los cambios a Convocatoria y
+              Rendimiento se aplican al siguiente ingreso del usuario.
             </p>
-            @if (loadingPermisos()) {
-              <p class="page-hint">Cargando permisos...</p>
-            } @else if (permisosDelRol().length === 0) {
-              <p class="perm-empty">Sin rol asignado o el rol no tiene permisos configurados.</p>
-            } @else {
-              <div class="perm-grupos">
-                @for (g of gruposPermiso(); track g.grupo) {
-                  <div class="perm-grupo">
-                    <span class="perm-grupo__label">{{ g.grupo }}</span>
-                    <div class="perm-chips">
-                      @for (p of g.permisos; track p.id) {
-                        <span class="perm-chip" [title]="p.nombre">{{ p.codigo }}</span>
+
+            <div class="access-stack">
+              <!-- Sistema anfitrión: SISRH. El acceso se gobierna por roles internos,
+                   no por un toggle (siempre se opera desde dentro de SISRH). -->
+              <div class="access-row access-row--host">
+                <div class="access-row__head">
+                  <div>
+                    <strong>SISRH</strong>
+                    <p>Sistema integrador de RRHH y planillas. El acceso lo definen los roles asignados.</p>
+                  </div>
+                  <span class="access-badge" aria-hidden="true">Sistema actual</span>
+                </div>
+
+                <form [formGroup]="rolesForm" class="stack" (ngSubmit)="guardarRoles()" novalidate>
+                  <mat-form-field appearance="outline">
+                    <mat-label>Roles SISRH</mat-label>
+                    <mat-select formControlName="roleIds" multiple>
+                      @for (r of rolesCat(); track r.id) {
+                        <mat-option [value]="r.id">{{ r.codigo }} — {{ r.nombre }}</mat-option>
+                      }
+                    </mat-select>
+                    <mat-hint>El usuario heredará automáticamente los permisos de los roles seleccionados.</mat-hint>
+                  </mat-form-field>
+                  <div class="acts">
+                    <button mat-flat-button color="primary" type="submit" [disabled]="savingRoles() || rolesForm.invalid">
+                      Guardar roles
+                    </button>
+                  </div>
+                </form>
+
+                <div class="perm-block">
+                  <span class="perm-block__title">Permisos heredados de los roles</span>
+                  @if (loadingPermisos()) {
+                    <p class="page-hint">Cargando permisos...</p>
+                  } @else if (permisosDelRol().length === 0) {
+                    <p class="perm-empty">Sin rol asignado o el rol no tiene permisos configurados.</p>
+                  } @else {
+                    <div class="perm-grupos">
+                      @for (g of gruposPermiso(); track g.grupo) {
+                        <div class="perm-grupo">
+                          <span class="perm-grupo__label">{{ g.grupo }}</span>
+                          <div class="perm-chips">
+                            @for (p of g.permisos; track p.id) {
+                              <span class="perm-chip" [title]="p.nombre">{{ p.codigo }}</span>
+                            }
+                          </div>
+                        </div>
                       }
                     </div>
-                  </div>
-                }
+                  }
+                </div>
               </div>
-            }
-          </section>
 
-          @if (canManageAccesos()) {
-            <section class="form-section" aria-labelledby="st-accesos">
-              <h3 id="st-accesos">Accesos por sistema</h3>
-              <p class="page-hint">
-                Los cambios de acceso a Convocatoria y Rendimiento se aplican al siguiente ingreso del usuario.
-              </p>
-
-              <div class="access-stack">
+              @if (canManageAccesos()) {
                 @for (sistema of sistemasExternos(); track sistema.codigo) {
                   <div class="access-row">
                     <div class="access-row__head">
@@ -193,8 +200,10 @@ import type {
                     </mat-form-field>
                   </div>
                 }
-              </div>
+              }
+            </div>
 
+            @if (canManageAccesos()) {
               @if (accesosInvalidos()) {
                 <p class="page-hint access-hint-error" role="alert">
                   Para cada sistema con acceso activo, seleccione la oficina (si aplica) y al menos un rol.
@@ -212,8 +221,8 @@ import type {
                   Guardar accesos
                 </button>
               </div>
-            </section>
-          }
+            }
+          </section>
 
           <section class="form-section" aria-labelledby="st-reset">
             <h3 id="st-reset">Reinicio institucional de clave</h3>
@@ -260,6 +269,39 @@ import type {
         border-radius: 8px;
         padding: 1rem;
         background: #fff;
+      }
+      /* Tarjeta del sistema anfitrión: acento institucional sutil para
+         distinguirla de los sistemas externos, sin ruido visual. */
+      .access-row--host {
+        border-color: var(--sisrh-primary-100, #e8eef6);
+        border-left: 3px solid var(--sisrh-primary, #1f3a5f);
+        background: var(--sisrh-surface-muted, #f8fafc);
+      }
+      .access-badge {
+        align-self: flex-start;
+        padding: 0.15rem 0.55rem;
+        border-radius: 999px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        color: var(--sisrh-primary, #1f3a5f);
+        background: var(--sisrh-primary-100, #e8eef6);
+        border: 1px solid var(--sisrh-border-soft, #e7ecf2);
+        white-space: nowrap;
+      }
+      .perm-block {
+        margin-top: 0.5rem;
+        padding-top: 0.75rem;
+        border-top: 1px solid var(--sisrh-border-soft, #e7ecf2);
+      }
+      .perm-block__title {
+        display: block;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--sisrh-text-muted, #64748b);
+        margin-bottom: 0.5rem;
       }
       .access-row__head {
         display: flex;
@@ -365,7 +407,13 @@ export class AdminUserEditPageComponent {
   readonly savingRoles = signal(false);
   readonly savingAccesos = signal(false);
   readonly resetting = signal(false);
-  readonly canManageAccesos = computed(() => this.auth.roles().includes('SUPER_ADMIN'));
+  // Gestión de «Accesos por sistema» (SISRH + sistemas externos SSO). Se gobierna
+  // por el permiso ADM_USERS —que GESTOR_USUARIOS también posee— y no por el rol
+  // SUPER_ADMIN, que en backend salta los guards por bypass (ROLE_SUPER_ADMIN) y
+  // puede no traer el permiso explícito en el JWT: por eso se mantiene como fallback.
+  readonly canManageAccesos = computed(
+    () => this.auth.permisos().includes('ADM_USERS') || this.auth.roles().includes('SUPER_ADMIN'),
+  );
   readonly sistemasExternos = computed(() =>
     this.sistemasCat().filter((s) => s.codigo !== 'sisrh'),
   );

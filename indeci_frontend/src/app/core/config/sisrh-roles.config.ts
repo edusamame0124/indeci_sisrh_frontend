@@ -10,6 +10,13 @@ export const TI_ADMIN_ROLES = ['ADMIN_TI', 'ADMIN'] as const;
 /** ADMIN: legacy en BD; ADMIN_TI: rol institucional TI Fase 1. */
 export const TI_ALL_ROLES = [...TI_SUPER_ROLES, ...TI_ADMIN_ROLES] as const;
 
+/**
+ * Rol SISRH acotado (V012_16): acceso EXCLUSIVO al módulo Administración
+ * (Usuarios + Roles/Permisos + Auditoría). Deliberadamente NO es un rol TI:
+ * no debe entrar a Catálogos, Empleados, Planilla ni Reportes. Por eso vive
+ * solo aquí y se suma únicamente a ADMIN_MODULE_ACCESS_ROLES. */
+export const USER_ADMIN_ROLES = ['GESTOR_USUARIOS'] as const;
+
 /** RRHH — procesos de negocio (nunca roles TI). */
 export const RRHH_JEFE_ROLES = ['RRHH_JEFE'] as const;
 export const RRHH_ANALISTA_ROLES = ['RRHH_ANALISTA'] as const;
@@ -28,8 +35,9 @@ export const RRHH_ALL_OPERATIONAL_ROLES = [
   ...RRHH_LEGACY_ROLES,
 ] as const;
 
-/** Módulo Administración — solo TI. */
-export const ADMIN_MODULE_ACCESS_ROLES = [...TI_ALL_ROLES] as const;
+/** Módulo Administración — TI + rol acotado GESTOR_USUARIOS (V012_16).
+ *  GESTOR_USUARIOS accede solo a este módulo, a ninguno de los operativos. */
+export const ADMIN_MODULE_ACCESS_ROLES = [...TI_ALL_ROLES, ...USER_ADMIN_ROLES] as const;
 
 /** Catálogos: lectura RRHH + TI; escritura solo TI (Fase 2 por permiso CAT_WRITE). */
 export const CATALOGOS_ACCESS_ROLES = [...TI_ALL_ROLES, ...RRHH_ALL_OPERATIONAL_ROLES] as const;

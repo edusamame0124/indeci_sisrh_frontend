@@ -122,6 +122,9 @@
                       [disabled]="!esTipoHabilitado(t.codigo)"
                       (change)="seleccionarTipo(t.codigo)"
                     />
+                    @if (t.badge) {
+                      <span class="tp-card__badge">{{ t.badge }}</span>
+                    }
                     <mat-icon class="tp-card__icon" [fontIcon]="t.icono" aria-hidden="true" />
                     <span class="tp-card__body">
                       <span class="tp-card__name">{{ t.etiqueta }}</span>
@@ -157,6 +160,9 @@
                       [disabled]="!esTipoHabilitado(t.codigo)"
                       (change)="seleccionarTipo(t.codigo)"
                     />
+                    @if (t.badge) {
+                      <span class="tp-card__badge">{{ t.badge }}</span>
+                    }
                     <mat-icon class="tp-card__icon" [fontIcon]="t.icono" aria-hidden="true" />
                     <span class="tp-card__body">
                       <span class="tp-card__name">{{ t.etiqueta }}</span>

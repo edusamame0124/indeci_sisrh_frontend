@@ -10,6 +10,10 @@ export interface PersonaResumen {
   readonly codigoInterno?: string | null;
   readonly estado?: string | null;
   readonly regimenLaboral?: string | null;
+  readonly ruc?: string | null;
+  readonly estadoCivil?: string | null;
+  readonly profesion?: string | null;
+  readonly gradoAcademico?: string | null;
 }
 
 /** Respuesta paginada de GET /api/rrhh/persona/page */

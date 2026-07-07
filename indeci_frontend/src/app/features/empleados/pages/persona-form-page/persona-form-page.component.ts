@@ -176,14 +176,14 @@ export interface PersonaFormDialogResult {
                   <input
                     matInput
                     formControlName="ruc"
-                    maxlength="12"
+                    maxlength="11"
                     inputmode="numeric"
                     autocomplete="off"
                     (input)="onRucInput($event)"
                   />
-                  <mat-hint>12 dígitos numéricos (opcional)</mat-hint>
+                  <mat-hint>11 dígitos numéricos (opcional)</mat-hint>
                   @if (form.controls.ruc.errors?.['pattern']) {
-                    <mat-error>El RUC debe tener exactamente 12 dígitos</mat-error>
+                    <mat-error>El RUC debe tener exactamente 11 dígitos</mat-error>
                   }
                 </mat-form-field>
               </div>
@@ -652,7 +652,7 @@ export class PersonaFormPageComponent implements OnInit {
     nombreCompleto: this.fb.nonNullable.control('', [Validators.required, Validators.maxLength(240)]),
     dni: this.fb.nonNullable.control('', [Validators.required, Validators.pattern(/^[0-9]{8}$/)]),
     ruc: this.fb.nonNullable.control('', [
-      Validators.pattern(/^[0-9]{12}$/),
+      Validators.pattern(/^[0-9]{11}$/),
     ]),
     email: this.fb.nonNullable.control('', [
       Validators.required,
@@ -748,7 +748,7 @@ export class PersonaFormPageComponent implements OnInit {
 
   onRucInput(event: Event): void {
     const input = event.target as HTMLInputElement;
-    const clean = input.value.replace(/[^0-9]/g, '').slice(0, 12);
+    const clean = input.value.replace(/[^0-9]/g, '').slice(0, 11);
     if (input.value !== clean) {
       input.value = clean;
       this.form.controls.ruc.setValue(clean, { emitEvent: true });
