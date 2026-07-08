@@ -204,6 +204,7 @@ export class PortalEmpleadoPageComponent implements OnInit {
         distritoId: persona.distritoId ?? '',
         codigoInterno: persona.codigoInterno ?? '',
         estado: persona.estado ?? '',
+        fechaNacimiento: persona.fechaNacimiento ?? null,
         sexoId: persona.sexoId ?? null,
         estadoCivilId: persona.estadoCivilId ?? null,
         tipoDocumentoId: persona.tipoDocumentoId ?? null,

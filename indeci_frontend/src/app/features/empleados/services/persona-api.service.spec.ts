@@ -55,6 +55,7 @@ describe('PersonaApiService', () => {
       distritoId: '150131',
       codigoInterno: '',
       estado: 'ACTIVO',
+      fechaNacimiento: null,
       // ===== Spec 009 / T134 — campos opcionales catálogos (null = sin selección) =====
       sexoId: null,
       estadoCivilId: null,

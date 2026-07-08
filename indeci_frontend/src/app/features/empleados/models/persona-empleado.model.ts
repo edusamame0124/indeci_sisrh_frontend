@@ -39,6 +39,7 @@ export interface PersonaEmpleado {
   readonly distritoId?: string | null;
   readonly codigoInterno?: string | null;
   readonly estado?: string | null;
+  readonly fechaNacimiento?: string | null;
   // ===== Spec 009 / T134 — catálogos demográficos y académicos (nullable) =====
   readonly sexoId?: number | null;
   readonly sexo?: string | null;
@@ -65,6 +66,7 @@ export interface PersonaEmpleadoInput {
   distritoId: string;
   codigoInterno: string;
   estado: string;
+  fechaNacimiento: string | null;
   // ===== Spec 009 / T134 — IDs nullable mapeados a Long en backend =====
   sexoId: number | null;
   estadoCivilId: number | null;

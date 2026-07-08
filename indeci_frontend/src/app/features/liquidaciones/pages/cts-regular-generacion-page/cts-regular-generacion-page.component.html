@@ -1,0 +1,107 @@
+<section class="cts sisrh-page">
+  <div class="cts__toolbar">
+    <a mat-stroked-button routerLink="/planilla/generacion-masiva" class="cts__back">
+      <mat-icon fontIcon="arrow_back" aria-hidden="true" />
+      Volver a generación de planilla
+    </a>
+  </div>
+
+  <header class="cts__header">
+    <div>
+      <h1 class="cts__title">Generación de CTS Regular (Depósito Semestral)</h1>
+      <p class="cts__subtitle">
+        Depósito correspondiente a Mayo y Noviembre. Personal bajo régimen CAS (1057) está excluido normativamente.
+      </p>
+    </div>
+  </header>
+
+  <!-- Parámetros heredados del módulo de generación de planilla (solo lectura) -->
+  <div class="cts__context" role="group" aria-label="Parámetros definidos en generación de planilla">
+    <div class="cts__context-item">
+      <span class="cts__context-label">Período</span>
+      <span class="cts__context-value">{{ periodo() || 'No definido' }}</span>
+    </div>
+    <div class="cts__context-item">
+      <span class="cts__context-label">Régimen laboral</span>
+      <span class="cts__context-value">{{ regimenTexto() }}</span>
+    </div>
+    <span class="cts__context-hint">
+      <mat-icon fontIcon="lock" aria-hidden="true" />
+      Definidos en Generación de planilla
+    </span>
+  </div>
+
+  <mat-tab-group mat-stretch-tabs="false" mat-align-tabs="start">
+    <!-- Tab 1: Generación -->
+    <mat-tab label="Generación">
+      <div class="cts__tab-content">
+        <mat-card class="cts__card sisrh-elevated">
+          <mat-card-content>
+            @if (!periodo()) {
+              <div class="cts__aviso">
+                <mat-icon fontIcon="info" />
+                <p>Selecciona el período y el régimen desde <strong>Generación de planilla</strong> para habilitar el proceso.</p>
+              </div>
+            } @else if (!puedeGenerar()) {
+              <div class="cts__aviso cts__aviso--warning">
+                <mat-icon fontIcon="warning" />
+                <p>La CTS Regular solo aplica en <strong>Mayo (-05)</strong> o <strong>Noviembre (-11)</strong>. El período heredado no corresponde a un depósito semestral.</p>
+              </div>
+            } @else {
+              <p class="cts__ready">
+                Listo para generar el Depósito Semestral de CTS del período <strong>{{ periodo() }}</strong>.
+              </p>
+            }
+          </mat-card-content>
+
+          <mat-card-actions class="cts__actions">
+            <button
+              mat-flat-button
+              class="btn-indeci-orange"
+              type="button"
+              [disabled]="!puedeGenerar() || generando()"
+              (click)="confirmarYGenerar()"
+            >
+              <mat-icon fontIcon="account_balance" aria-hidden="true" />
+              Generar CTS Regular
+            </button>
+          </mat-card-actions>
+
+          @if (generando()) {
+            <mat-progress-bar mode="indeterminate" aria-label="Generando CTS" />
+          }
+        </mat-card>
+  
+        @if (resultado(); as r) {
+          <mat-card class="cts__card cts__resultado sisrh-elevated">
+            <mat-card-content>
+              <p class="cts__ok">
+                <mat-icon fontIcon="check_circle" aria-hidden="true" />
+                CTS Regular generada con éxito: <strong>{{ r.exitosos }}</strong> trabajador(es).
+              </p>
+  
+              @if (r.fallidos > 0) {
+                <h2 class="cts__subtitulo">Excluidos o con error ({{ r.fallidos }})</h2>
+                <div class="cts__aviso">
+                  <mat-icon fontIcon="info" />
+                  <p>Revisa la sección de Movimientos de Planilla o el Centro de Validaciones para ver el detalle de los trabajadores que no procesaron.</p>
+                </div>
+              }
+            </mat-card-content>
+          </mat-card>
+        }
+      </div>
+    </mat-tab>
+
+    <!-- Tab 2: Historial / Trazabilidad -->
+    <mat-tab label="Historial de Generaciones CTS">
+      <div class="cts__tab-content">
+        <app-historial-lotes
+          [lotes]="lotesHistorial()"
+          [cargando]="cargandoHistorial()"
+          [mensajeVacio]="'No hay generaciones de CTS Regular para el período ' + (periodo() || 'seleccionado') + '.'"
+        />
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+</section>

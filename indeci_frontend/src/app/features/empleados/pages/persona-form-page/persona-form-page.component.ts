@@ -218,6 +218,10 @@ export interface PersonaFormDialogResult {
                 <div class="form-section__fields">
               <div class="row two">
                 <mat-form-field appearance="outline">
+                  <mat-label>Fecha de nacimiento</mat-label>
+                  <input matInput type="date" formControlName="fechaNacimiento" />
+                </mat-form-field>
+                <mat-form-field appearance="outline">
                   <mat-label>Sexo</mat-label>
                   <mat-select formControlName="sexoId">
                     <mat-option [value]="null">Sin especificar</mat-option>
@@ -226,6 +230,8 @@ export interface PersonaFormDialogResult {
                     }
                   </mat-select>
                 </mat-form-field>
+              </div>
+              <div class="row two">
                 <mat-form-field appearance="outline">
                   <mat-label>Estado civil</mat-label>
                   <mat-select formControlName="estadoCivilId">
@@ -665,6 +671,7 @@ export class PersonaFormPageComponent implements OnInit {
     distritoId: this.fb.nonNullable.control('', Validators.required),
     codigoInterno: this.fb.nonNullable.control(''),
     estado: this.fb.nonNullable.control('ACTIVO', Validators.required),
+    fechaNacimiento: this.fb.control<string | null>(null),
     sexoId: this.fb.nonNullable.control<number | null>(null),
     estadoCivilId: this.fb.nonNullable.control<number | null>(null),
     tipoDocumentoId: this.fb.nonNullable.control<number | null>(null),
@@ -792,6 +799,7 @@ export class PersonaFormPageComponent implements OnInit {
       distritoId: v.distritoId,
       codigoInterno: v.codigoInterno.trim(),
       estado: v.estado,
+      fechaNacimiento: v.fechaNacimiento ? v.fechaNacimiento : null,
       sexoId: v.sexoId,
       estadoCivilId: v.estadoCivilId,
       tipoDocumentoId: v.tipoDocumentoId,
@@ -868,6 +876,7 @@ export class PersonaFormPageComponent implements OnInit {
           distritoId: String(p.distritoId ?? ''),
           codigoInterno: (p.codigoInterno ?? '').trim(),
           estado: (p.estado ?? 'ACTIVO').toUpperCase() === 'INACTIVO' ? 'INACTIVO' : 'ACTIVO',
+          fechaNacimiento: p.fechaNacimiento ? p.fechaNacimiento.substring(0, 10) : null,
           sexoId: p.sexoId ?? null,
           estadoCivilId: p.estadoCivilId ?? null,
           tipoDocumentoId: p.tipoDocumentoId ?? null,

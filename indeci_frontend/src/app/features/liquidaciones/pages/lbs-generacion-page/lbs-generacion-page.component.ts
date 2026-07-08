@@ -1,77 +1,77 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal, OnInit } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
-import { ReactiveFormsModule, FormControl, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
-import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
+import { CurrencyPipe, DatePipe } from '@angular/common';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
-import { ActivatedRoute } from '@angular/router';
-import { HistorialLotesComponent } from '../../components/historial-lotes/historial-lotes.component';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { sisrhConfirmDialogConfig } from '../../../../core/config/sisrh-dialog.config';
 import { ConfirmDialogComponent } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { ErrorMessageService } from '../../../../core/services/error-message.service';
-import { AguinaldoApiService } from '../../services/aguinaldo-api.service';
+import { LbsApiService } from '../../../planilla/services/lbs-api.service';
 import { CatalogoApiService } from '../../../empleados/services/catalogo-api.service';
-import { PlanillaLoteApiService } from '../../services/planilla-lote-api.service';
-import type { AguinaldoResult } from '../../models/aguinaldo.model';
+import { PlanillaLoteApiService } from '../../../planilla/services/planilla-lote-api.service';
 import type { RegimenLaboral } from '../../../catalogos/models/regimen-laboral.model';
-import type { PlanillaLoteDashboardRow } from '../../models/planilla-lote.model';
+import type { PlanillaLoteDashboardRow } from '../../../planilla/models/planilla-lote.model';
+import type { LbsResult } from '../../../planilla/models/lbs.model';
 
 @Component({
-  selector: 'app-aguinaldo-generacion-page',
+  selector: 'app-lbs-generacion-page',
   standalone: true,
   imports: [
-    ReactiveFormsModule,
+    CurrencyPipe,
+    DatePipe,
+    RouterLink,
     MatButtonModule,
     MatCardModule,
     MatDialogModule,
-    MatFormFieldModule,
     MatIconModule,
-    MatInputModule,
-    MatSelectModule,
     MatTabsModule,
     MatProgressBarModule,
     MatTableModule,
-    HistorialLotesComponent,
+    MatTooltipModule,
   ],
+  templateUrl: './lbs-generacion-page.component.html',
+  styleUrl: './lbs-generacion-page.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  templateUrl: './aguinaldo-generacion-page.component.html',
-  styleUrl: './aguinaldo-generacion-page.component.scss',
 })
-export class AguinaldoGeneracionPageComponent implements OnInit {
+export class LbsGeneracionPageComponent implements OnInit {
   private readonly dialogs = inject(MatDialog);
-  private readonly api = inject(AguinaldoApiService);
+  private readonly api = inject(LbsApiService);
   private readonly catalogos = inject(CatalogoApiService);
   private readonly loteApi = inject(PlanillaLoteApiService);
   private readonly errors = inject(ErrorMessageService);
   private readonly snack = inject(MatSnackBar);
   private readonly route = inject(ActivatedRoute);
 
-  readonly colsExcluidos = ['empleadoId', 'motivo'] as const;
+  readonly colsHistorial = ['id', 'periodo', 'regimenLaboralCodigo', 'estado', 'trabajadoresGenerados', 'netoTotal', 'creadoEn', 'acciones'] as const;
 
   readonly periodo = signal<string>('');
-  readonly fechaCorte = signal<string>('');
   readonly regimenLaboralId = signal<number | null>(null);
   
   readonly regimenes = signal<readonly RegimenLaboral[]>([]);
   readonly lotesHistorial = signal<PlanillaLoteDashboardRow[]>([]);
   readonly cargandoHistorial = signal(false);
 
-  /** % CAS con validación reactiva (min 0 / max 100). */
-  readonly pctCas = new FormControl<number | null>(null, [Validators.min(0), Validators.max(100)]);
-
   readonly generando = signal(false);
-  readonly resultado = signal<AguinaldoResult | null>(null);
+  readonly resultado = signal<LbsResult | null>(null);
 
   readonly puedeGenerar = computed(() => this.periodo().trim().length >= 6);
+
+  // Texto legible del régimen heredado del módulo de generación (solo lectura).
+  readonly regimenTexto = computed(() => {
+    const id = this.regimenLaboralId();
+    if (id == null) return 'Todos los regímenes';
+    const r = this.regimenes().find((x) => x.id === id);
+    return r ? `${r.codigo} - ${r.nombre}` : '—';
+  });
 
   ngOnInit(): void {
     this.cargarCatalogos();
@@ -98,15 +98,13 @@ export class AguinaldoGeneracionPageComponent implements OnInit {
     if (!p) return;
     
     this.cargandoHistorial.set(true);
-    // Fetch lotes for TIPO_PLANILLA=AGUINALDO based on period.
-    // The backend should return lotes associated with this period and regimen.
     const regimenCode = this.regimenLaboralId() 
       ? this.regimenes().find(r => r.id === this.regimenLaboralId())?.codigo 
       : undefined;
 
     this.loteApi.obtenerLotesDashboard(p, regimenCode).subscribe({
       next: (lotes) => {
-        this.lotesHistorial.set(lotes.filter(l => l.tipoPlanilla === 'AGUINALDO'));
+        this.lotesHistorial.set(lotes.filter(l => l.tipoPlanilla === 'LBS'));
         this.cargandoHistorial.set(false);
       },
       error: () => {
@@ -116,17 +114,9 @@ export class AguinaldoGeneracionPageComponent implements OnInit {
     });
   }
 
-  isRegimen1057(): boolean {
-    const rId = this.regimenLaboralId();
-    if (!rId) return false;
-    const reg = this.regimenes().find(r => r.id === rId);
-    return reg?.codigo === '1057';
-  }
-
   confirmarYGenerar(): void {
     const periodo = this.periodo().trim();
-    if (periodo.length < 6 || this.pctCas.invalid) return;
-    const pct = this.pctCas.value;
+    if (periodo.length < 6) return;
 
     const regimenTexto = this.regimenLaboralId() 
         ? this.regimenes().find(r => r.id === this.regimenLaboralId())?.nombre 
@@ -135,14 +125,12 @@ export class AguinaldoGeneracionPageComponent implements OnInit {
     const ref = this.dialogs.open(
       ConfirmDialogComponent,
       sisrhConfirmDialogConfig({
-        title: 'Generar aguinaldo',
+        title: 'Generar Liquidación de Beneficios Sociales (LBS)',
         message:
-          `Se generará el aguinaldo del período ${periodo} para ${regimenTexto}` +
-          (pct != null ? ` con ${pct}% para CAS` : '') +
-          `.\n\n` +
-          `Nota: si se vuelve a generar para el mismo régimen y período, se actualizará el lote existente (Upsert). ` +
+          `Se generará la liquidación del período ${periodo} para personal cesado de ${regimenTexto}.\n\n` +
+          `Nota: si se vuelve a generar, se actualizará el lote existente para aquellos sin boleta cerrada.\n\n` +
           `¿Continuar?`,
-        confirmLabel: 'Generar',
+        confirmLabel: 'Generar LBS',
         cancelLabel: 'Cancelar',
         severity: 'info',
       }),
@@ -150,18 +138,16 @@ export class AguinaldoGeneracionPageComponent implements OnInit {
 
     void ref.afterClosed().subscribe((ok: boolean | undefined) => {
       if (ok !== true) return;
-      this.generar(periodo, pct);
+      this.generar(periodo);
     });
   }
 
-  private generar(periodo: string, pct: number | null): void {
+  private generar(periodo: string): void {
     this.generando.set(true);
     this.resultado.set(null);
     this.api
       .generar({
         periodo,
-        pctCas: pct,
-        fechaCorte: this.fechaCorte() || null,
         regimenLaboralId: this.regimenLaboralId() || null,
       })
       .subscribe({
@@ -176,5 +162,19 @@ export class AguinaldoGeneracionPageComponent implements OnInit {
           this.snack.open(this.errors.translate(mensaje), 'Cerrar', { duration: 6000 });
         },
       });
+  }
+
+  descargarReporte(empleadoId: number, periodo: string): void {
+    this.api.descargarReporte(empleadoId, periodo).subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `LBS_${periodo}_${empleadoId}.pdf`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+      },
+      error: () => this.snack.open('Error al descargar el PDF', 'Cerrar', { duration: 3000 })
+    });
   }
 }

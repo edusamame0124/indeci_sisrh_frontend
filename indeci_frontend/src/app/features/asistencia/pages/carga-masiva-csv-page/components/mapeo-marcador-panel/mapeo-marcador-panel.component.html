@@ -1,0 +1,65 @@
+@if (cargando()) {
+  <div class="mm-loading">
+    <mat-progress-spinner mode="indeterminate" [diameter]="22" />
+    <span>Buscando nombres sin mapear…</span>
+  </div>
+} @else if (total() > 0) {
+  <section class="mm-panel" aria-label="Trabajadores sin mapear">
+    <div class="mm-alert" role="alert">
+      <mat-icon aria-hidden="true">person_off</mat-icon>
+      <div class="mm-alert__text">
+        <strong>{{ total() }} trabajador(es) del archivo no están mapeados a un empleado.</strong>
+        <span>Su asistencia no se calculará hasta mapearlos o registrarlos en Empleados.</span>
+      </div>
+    </div>
+
+    <ul class="mm-list">
+      @for (item of items(); track item.nombreMarcador) {
+        <li class="mm-row">
+          <div class="mm-row__info">
+            <span class="mm-row__name">{{ item.nombreMarcador }}</span>
+            <span class="mm-row__days">{{ item.dias }} día(s)</span>
+          </div>
+
+          @if (mapeandoNombre() === item.nombreMarcador) {
+            <div class="mm-row__picker">
+              <app-persona-picker
+                [flat]="true"
+                hint="Busca al empleado por nombre o DNI"
+                (seleccionar)="onSeleccionar(item.nombreMarcador, $event)"
+              />
+              <button
+                mat-button
+                type="button"
+                (click)="cancelarMapeo()"
+                [disabled]="guardando()"
+              >
+                Cancelar
+              </button>
+            </div>
+          } @else {
+            <div class="mm-row__actions">
+              <button
+                mat-flat-button
+                color="primary"
+                type="button"
+                (click)="iniciarMapeo(item.nombreMarcador)"
+                [disabled]="guardando()"
+              >
+                <mat-icon>link</mat-icon> Mapear a empleado
+              </button>
+              <a mat-button routerLink="/empleados">
+                <mat-icon>person_add</mat-icon> Registrar en Empleados
+              </a>
+            </div>
+          }
+        </li>
+      }
+    </ul>
+
+    <p class="mm-note">
+      Identidad por alias — base: SPEC_ASISTENCIA_COEN (D1). El mapeo queda guardado para las
+      próximas cargas de este marcador.
+    </p>
+  </section>
+}

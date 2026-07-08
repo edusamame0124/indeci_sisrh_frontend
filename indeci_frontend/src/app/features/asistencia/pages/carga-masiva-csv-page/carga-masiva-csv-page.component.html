@@ -115,6 +115,14 @@
           </section>
         }
 
+        @if (preview()?.importacionId; as impId) {
+          <app-mapeo-marcador-panel
+            class="masiva__mapeo"
+            [importacionId]="impId"
+            (mapeado)="onMapeadoAlias()"
+          />
+        }
+
         @if (hayObservadas()) {
           <section class="masiva__aceptar" aria-label="Aceptar filas observadas">
             <div class="masiva__aceptar-texto">

@@ -1,0 +1,91 @@
+:host {
+  display: block;
+}
+
+.hist-scroll {
+  overflow-x: auto;
+}
+
+.hist-tabla {
+  width: 100%;
+
+  th {
+    background-color: var(--sisrh-surface-muted, #f8fafc);
+    color: var(--sisrh-text, #334155);
+    font-weight: 600;
+    border-bottom: 2px solid var(--sisrh-border, #cbd5e1);
+    white-space: nowrap;
+  }
+
+  td {
+    border-bottom: 1px solid var(--sisrh-border-soft, #e7ecf2);
+    padding-top: 12px;
+    padding-bottom: 12px;
+    color: var(--sisrh-text, #1f2937);
+  }
+}
+
+.sisrh-right {
+  text-align: right;
+}
+
+.sisrh-tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ——— Empty state ——— */
+.hist-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1rem;
+  text-align: center;
+  color: var(--sisrh-text-muted, #64748b);
+
+  &__icon {
+    font-size: 2.75rem;
+    width: 2.75rem;
+    height: 2.75rem;
+    margin-bottom: 0.75rem;
+    opacity: 0.5;
+  }
+
+  &__text {
+    margin: 0;
+    font-size: 0.9rem;
+  }
+}
+
+/* ——— Badges de estado (texto + color, contraste AA) ——— */
+.badge {
+  display: inline-block;
+  padding: 0.25rem 0.55rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  border-radius: 0.375rem;
+  background-color: var(--sisrh-border-soft, #e2e8f0);
+  color: var(--sisrh-text, #334155);
+
+  &-success {
+    background-color: var(--sisrh-success-100, #e7f5ee);
+    color: var(--sisrh-success, #157347);
+  }
+
+  &-info {
+    background-color: var(--sisrh-info-100, #eaf2fb);
+    color: var(--sisrh-info, #2563a6);
+  }
+
+  &-warning {
+    background-color: var(--sisrh-warning-100, #fff4db);
+    color: var(--sisrh-warning, #b7791f);
+  }
+
+  &-danger {
+    background-color: var(--sisrh-danger-100, #fdecec);
+    color: var(--sisrh-danger, #b42318);
+  }
+}

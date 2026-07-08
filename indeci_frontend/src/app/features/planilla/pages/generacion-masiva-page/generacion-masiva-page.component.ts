@@ -18,9 +18,11 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
+import { MatTabsModule } from '@angular/material/tabs';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatRadioModule } from '@angular/material/radio';
+import { HistorialLotesComponent } from '../../components/historial-lotes/historial-lotes.component';
 import { sisrhConfirmDialogConfig } from '../../../../core/config/sisrh-dialog.config';
 import { ConceptoPlanillaApiService } from '../../services/concepto-planilla-api.service';
 import type { ConceptoPlanillaRow } from '../../models/concepto-planilla.model';
@@ -40,6 +42,7 @@ import type { ModalidadCas } from '../../../catalogos/models/modalidad-cas.model
 import type { PeriodoPlanillaRow } from '../../models/periodo-planilla.model';
 import type { MovimientoPlanillaRow } from '../../models/movimiento-planilla.model';
 import type { GeneracionMasivaResultado } from '../../models/generacion-masiva.model';
+import type { PlanillaLoteDashboardRow } from '../../models/planilla-lote.model';
 
 type FaseGeneracion = 'idle' | 'generando' | 'completado';
 
@@ -82,19 +85,17 @@ export interface TipoPlanillaCard {
 export const TIPOS_PLANILLA_CATALOGO: TipoPlanillaCard[] = [
   { codigo: 'PLA_HABERES', etiqueta: 'Planilla regular', grupo: 'PRINCIPAL', icono: 'calendar_month', descripcion: 'Planilla mensual ordinaria del personal.' },
   { codigo: 'PLA_ADICIONAL', etiqueta: 'Planilla Adicional', grupo: 'PRINCIPAL', icono: 'add_card', descripcion: 'Pago complementario o regularización.', placeholder: true },
-  { codigo: 'PLA_CTS', etiqueta: 'CTS Trunca (Por Cese)', grupo: 'BENEFICIO', icono: 'business_center', descripcion: 'Liquidación exclusiva para personal con fecha de cese registrada en el periodo.', badge: 'REQ' },
-  { codigo: 'PLA_AGUINALDO', etiqueta: 'Aguinaldo', grupo: 'BENEFICIO', icono: 'celebration' },
-  { codigo: 'PLA_LBS', etiqueta: 'Liquidación de Beneficios Sociales', grupo: 'BENEFICIO', icono: 'badge', placeholder: true },
-  { codigo: 'PLA_VAC_TRUN', etiqueta: 'Vacaciones truncas', grupo: 'BENEFICIO', icono: 'beach_access' },
-  { codigo: 'PLA_DESC_SUBV', etiqueta: 'Descanso Subvencionado', grupo: 'BENEFICIO', icono: 'medical_services' },
+  { codigo: 'PLA_CTS', etiqueta: 'CTS Regular (Mayo/Noviembre)', grupo: 'BENEFICIO', icono: 'business_center', descripcion: 'Generación de planilla semestral de Depósito CTS.' },
+  { codigo: 'PLA_AGUINALDO', etiqueta: 'Aguinaldo Regular (Julio/Diciembre)', grupo: 'BENEFICIO', icono: 'celebration' },
+  { codigo: 'PLA_LBS', etiqueta: 'Liquidación de Beneficios Sociales', grupo: 'BENEFICIO', icono: 'badge', placeholder: true, descripcion: 'Liquidación de Vacaciones, Aguinaldo y CTS para personal cesado.' }
 ];
 
 export const COMPATIBILIDAD_PLANILLA_MAP: Record<string, string[]> = {
   // Matriz F0 CTS: habilitado SOLO en 276 y SERVIR (30057). 728 descartado; CAS 1057 sin CTS.
-  '276': ['PLA_HABERES', 'PLA_ADICIONAL', 'PLA_CTS', 'PLA_AGUINALDO', 'PLA_LBS', 'PLA_VAC_TRUN'],
-  '728': ['PLA_HABERES', 'PLA_ADICIONAL', 'PLA_AGUINALDO', 'PLA_LBS', 'PLA_VAC_TRUN'],
-  '1057': ['PLA_HABERES', 'PLA_ADICIONAL', 'PLA_AGUINALDO', 'PLA_LBS', 'PLA_VAC_TRUN'],
-  '30057': ['PLA_HABERES', 'PLA_ADICIONAL', 'PLA_CTS', 'PLA_AGUINALDO', 'PLA_LBS', 'PLA_VAC_TRUN'],
+  '276': ['PLA_HABERES', 'PLA_ADICIONAL', 'PLA_CTS', 'PLA_AGUINALDO', 'PLA_LBS', 'PLA_DESC_SUBV'],
+  '728': ['PLA_HABERES', 'PLA_ADICIONAL', 'PLA_AGUINALDO', 'PLA_LBS', 'PLA_DESC_SUBV'],
+  '1057': ['PLA_HABERES', 'PLA_ADICIONAL', 'PLA_AGUINALDO', 'PLA_LBS', 'PLA_DESC_SUBV'],
+  '30057': ['PLA_HABERES', 'PLA_ADICIONAL', 'PLA_CTS', 'PLA_AGUINALDO', 'PLA_LBS', 'PLA_DESC_SUBV'],
   'FORMATIVA': ['PLA_HABERES', 'PLA_ADICIONAL', 'PLA_DESC_SUBV'],
 };
 
@@ -119,10 +120,12 @@ export const COMPATIBILIDAD_PLANILLA_MAP: Record<string, string[]> = {
     MatProgressBarModule,
     MatProgressSpinnerModule,
     MatTableModule,
+    MatTabsModule,
     MatTooltipModule,
     MatDialogModule,
     MatCheckboxModule,
     MatRadioModule,
+    HistorialLotesComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './generacion-masiva-page.component.html',
@@ -173,6 +176,33 @@ export class GeneracionMasivaPageComponent implements OnInit {
   readonly movimientosPost = signal<readonly MovimientoPlanillaRow[]>([]);
   /** Resultado de la última generación masiva (Spec 011 / C2). */
   readonly resultado = signal<GeneracionMasivaResultado | null>(null);
+
+  /** Historial de lotes ORDINARIA del periodo seleccionado (tab "Historial"). */
+  readonly lotesHistorial = signal<readonly PlanillaLoteDashboardRow[]>([]);
+  readonly cargandoHistorial = signal(false);
+  /** Filtro por régimen del tab Historial (null = todos). Independiente del formulario. */
+  readonly historialRegimenFiltro = signal<string | null>(null);
+
+  /** Códigos de régimen presentes en el historial (para poblar el filtro sin opciones vacías). */
+  readonly regimenesEnHistorial = computed<readonly string[]>(() => {
+    const codigos = this.lotesHistorial()
+      .map((l) => l.regimenLaboralCodigo)
+      .filter((c): c is string => !!c);
+    return [...new Set(codigos)].sort();
+  });
+
+  /** Historial ya filtrado por el régimen elegido en el tab (o todos). */
+  readonly lotesHistorialFiltrados = computed<readonly PlanillaLoteDashboardRow[]>(() => {
+    const filtro = this.historialRegimenFiltro();
+    const lotes = this.lotesHistorial();
+    return filtro ? lotes.filter((l) => l.regimenLaboralCodigo === filtro) : lotes;
+  });
+
+  /** Etiqueta legible de un código de régimen (usa el catálogo ya cargado). */
+  etiquetaRegimen(codigo: string): string {
+    const reg = this.regimenes().find((r) => r.codigo === codigo);
+    return reg ? `${reg.codigo} - ${reg.nombre}` : codigo;
+  }
 
   readonly periodosAbiertos = computed(() => this.periodos().filter((p) => p.estado === 'ABIERTO'));
 
@@ -244,11 +274,22 @@ export class GeneracionMasivaPageComponent implements OnInit {
       return;
     }
 
-    // Feature 016 — módulo dedicado de Liquidación de CTS Trunca.
+    // Redirección inmediata a módulo LBS.
+    if (codigo === 'PLA_LBS') {
+      void this.router.navigate(['/liquidaciones/lbs'], {
+        queryParams: {
+          periodo: this.periodoSeleccionado(),
+          regimen: this.regimenSeleccionado()
+        }
+      });
+      return;
+    }
+
+    // Feature 016 — módulo dedicado de Liquidación de CTS Regular.
     if (codigo === 'PLA_CTS') {
       const regId = this.regimenSeleccionado();
       const regCodigo = this.regimenes().find((r) => r.id === regId)?.codigo;
-      void this.router.navigate(['/liquidaciones/cts'], {
+      void this.router.navigate(['/liquidaciones/cts-regular'], {
         queryParams: {
           periodo: this.periodoSeleccionado(),
           regimenLaboralId: regId,
@@ -278,6 +319,9 @@ export class GeneracionMasivaPageComponent implements OnInit {
   });
 
   readonly canGenerar = computed(() => {
+    if (this.fase() === 'generando') {
+      return false;
+    }
     if (!this.periodoSeleccionado() || !this.regimenSeleccionado() || !this.conceptoSeleccionado()) {
       return false;
     }
@@ -327,6 +371,39 @@ export class GeneracionMasivaPageComponent implements OnInit {
   onPeriodoChange(periodo: string): void {
     this.periodoSeleccionado.set(periodo);
     this.resetState();
+    this.cargarHistorial();
+  }
+
+  /** Al abrir el tab "Historial" (índice 1) refresca la lista de lotes. */
+  onTabChange(index: number): void {
+    if (index === 1) {
+      this.cargarHistorial();
+    }
+  }
+
+  /**
+   * Historial de planillas ORDINARIA (regulares) del periodo seleccionado.
+   * Muestra todos los regímenes; la columna "Régimen" los distingue.
+   * Solo lectura — reutiliza el endpoint de lotes existente (sin tocar backend).
+   */
+  cargarHistorial(): void {
+    const periodo = this.periodoSeleccionado();
+    if (!periodo) {
+      this.lotesHistorial.set([]);
+      return;
+    }
+    this.cargandoHistorial.set(true);
+    this.historialRegimenFiltro.set(null); // cada recarga vuelve a "Todos".
+    this.planillaLoteApi.obtenerLotesDashboard(periodo).subscribe({
+      next: (lotes) => {
+        this.lotesHistorial.set(lotes.filter((l) => l.tipoPlanilla === 'ORDINARIA'));
+        this.cargandoHistorial.set(false);
+      },
+      error: () => {
+        this.lotesHistorial.set([]);
+        this.cargandoHistorial.set(false);
+      },
+    });
   }
 
   onRegimenChange(id: number): void {
@@ -400,6 +477,7 @@ export class GeneracionMasivaPageComponent implements OnInit {
         const inicial = ordenados.find((p) => p.estado === 'ABIERTO');
         if (inicial) {
           this.periodoSeleccionado.set(inicial.periodo);
+          this.cargarHistorial();
         }
         this.loading.set(false);
       },
@@ -451,9 +529,11 @@ export class GeneracionMasivaPageComponent implements OnInit {
         }
         this.movimientosPost.set(finalRows);
         this.fase.set('completado');
+        this.cargarHistorial();
       },
       error: (err: HttpErrorResponse) => {
         this.fase.set('completado');
+        this.cargarHistorial();
         this.onHttpSnack(err);
       },
     });

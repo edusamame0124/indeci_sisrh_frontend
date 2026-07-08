@@ -11,7 +11,23 @@ export const LIQUIDACIONES_ROUTES: Routes = [
       import('./pages/cts-liquidacion-page/cts-liquidacion-page.component').then(
         (m) => m.CtsLiquidacionPageComponent,
       ),
-    title: 'Liquidación de CTS Trunca — SISRH-INDECI',
+    title: 'CTS Trunca — SISRH-INDECI',
   },
-  { path: '', redirectTo: 'cts', pathMatch: 'full' },
+  {
+    path: 'cts-regular',
+    loadComponent: () =>
+      import('./pages/cts-regular-generacion-page/cts-regular-generacion-page.component').then(
+        (m) => m.CtsRegularGeneracionPageComponent,
+      ),
+    title: 'CTS Regular (Mayo/Noviembre) — SISRH-INDECI',
+  },
+  {
+    path: 'lbs',
+    loadComponent: () =>
+      import('./pages/lbs-generacion-page/lbs-generacion-page.component').then(
+        (m) => m.LbsGeneracionPageComponent,
+      ),
+    title: 'Liquidación de Beneficios Sociales — SISRH-INDECI',
+  },
+  { path: '', redirectTo: 'lbs', pathMatch: 'full' },
 ];

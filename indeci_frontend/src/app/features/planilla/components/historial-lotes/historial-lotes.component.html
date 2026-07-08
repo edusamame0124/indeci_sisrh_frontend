@@ -1,0 +1,76 @@
+@if (cargando()) {
+  <mat-progress-bar mode="indeterminate" aria-label="Cargando historial de planillas" />
+}
+
+@if (sinDatos()) {
+  <div class="hist-empty" role="status">
+    <mat-icon fontIcon="history" class="hist-empty__icon" aria-hidden="true" />
+    <p class="hist-empty__text">{{ mensajeVacio() }}</p>
+  </div>
+} @else {
+  <div class="hist-scroll">
+    <table mat-table [dataSource]="lotes()" class="hist-tabla">
+      <ng-container matColumnDef="id">
+        <th mat-header-cell *matHeaderCellDef scope="col">Lote</th>
+        <td mat-cell *matCellDef="let lote" class="sisrh-tabular">#{{ lote.id }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="periodo">
+        <th mat-header-cell *matHeaderCellDef scope="col">Periodo</th>
+        <td mat-cell *matCellDef="let lote" class="sisrh-tabular">{{ lote.periodo }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="regimenLaboralCodigo">
+        <th mat-header-cell *matHeaderCellDef scope="col">Régimen</th>
+        <td mat-cell *matCellDef="let lote">{{ lote.regimenLaboralCodigo || 'Todos' }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="estado">
+        <th mat-header-cell *matHeaderCellDef scope="col">Estado</th>
+        <td mat-cell *matCellDef="let lote">
+          <span [class]="badgeClase(lote.estado)">{{ lote.estado }}</span>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="cantidadEmpleados">
+        <th mat-header-cell *matHeaderCellDef scope="col" class="sisrh-right">Trabajadores</th>
+        <td mat-cell *matCellDef="let lote" class="sisrh-right sisrh-tabular">
+          {{ lote.cantidadEmpleados ?? 0 }}
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="montoTotalNeto">
+        <th mat-header-cell *matHeaderCellDef scope="col" class="sisrh-right">Neto total</th>
+        <td mat-cell *matCellDef="let lote" class="sisrh-right sisrh-tabular">
+          {{ lote.montoTotalNeto ?? 0 | currency: 'PEN' : 'symbol-narrow' : '1.2-2' }}
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="creadoEn">
+        <th mat-header-cell *matHeaderCellDef scope="col">Fecha de generación</th>
+        <td mat-cell *matCellDef="let lote" class="sisrh-tabular">
+          {{ lote.creadoEn | date: 'dd/MM/yyyy HH:mm' }}
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="acciones">
+        <th mat-header-cell *matHeaderCellDef scope="col" class="sisrh-right">Acciones</th>
+        <td mat-cell *matCellDef="let lote" class="sisrh-right">
+          <a
+            mat-icon-button
+            color="primary"
+            [routerLink]="['/planilla/movimientos']"
+            [queryParams]="{ periodo: lote.periodo, loteId: lote.id }"
+            matTooltip="Ver trabajadores del lote"
+            aria-label="Ver trabajadores del lote"
+          >
+            <mat-icon fontIcon="visibility" aria-hidden="true" />
+          </a>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+      <tr mat-row *matRowDef="let row; columns: columnas"></tr>
+    </table>
+  </div>
+}

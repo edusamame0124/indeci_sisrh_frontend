@@ -28,6 +28,7 @@ import { ErrorMessageService } from '../../../../core/services/error-message.ser
 import { isErrorResponse } from '../../../../core/models/error-response.model';
 import { AsistenciaImportApiService } from '../../services/asistencia-import-api.service';
 import { AsistenciaTabService } from '../../services/asistencia-tab.service';
+import { MapeoMarcadorPanelComponent } from './components/mapeo-marcador-panel/mapeo-marcador-panel.component';
 import type { PeriodoPlanillaRow } from '../../../planilla/models/periodo-planilla.model';
 import type {
   AsistenciaImportFilaDetalle,
@@ -57,6 +58,7 @@ type FiltroEstado = 'TODOS' | EstadoFila;
     MatStepperModule,
     MatTableModule,
     MatTooltipModule,
+    MapeoMarcadorPanelComponent,
   ],
   templateUrl: './carga-masiva-csv-page.component.html',
   styleUrl: './carga-masiva-csv-page.component.css',
@@ -225,6 +227,14 @@ export class CargaMasivaCsvPageComponent implements OnInit, OnDestroy {
         this.onHttpSnack(err);
       },
     });
+  }
+
+  /**
+   * F2 (COEN) — tras mapear un nombre a un empleado, regenera la vista previa para
+   * que esos días dejen de estar "sin mapeo" y se recalculen con la identidad resuelta.
+   */
+  onMapeadoAlias(): void {
+    this.generarPreview();
   }
 
   confirmar(): void {

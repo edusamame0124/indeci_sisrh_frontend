@@ -1,0 +1,193 @@
+.cts {
+  display: block;
+  padding: 1.5rem;
+
+  &__toolbar {
+    margin-bottom: 1rem;
+  }
+
+  &__back {
+    --mat-standard-button-toggle-height: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    color: var(--sisrh-primary, #1F3A5F);
+  }
+
+  &__header {
+    margin-bottom: 1.5rem;
+  }
+
+  &__context {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 2rem;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.5rem;
+    background: var(--sisrh-surface-muted, #f8fafc);
+    border: 1px solid var(--sisrh-border, #d9e1ea);
+    border-radius: 8px;
+  }
+
+  &__context-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  &__context-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--sisrh-text-muted, #64748b);
+  }
+
+  &__context-value {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--sisrh-text, #1f2937);
+  }
+
+  &__context-hint {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    margin-left: auto;
+    font-size: 0.8rem;
+    color: var(--sisrh-text-muted, #64748b);
+
+    mat-icon {
+      font-size: 1rem;
+      width: 1rem;
+      height: 1rem;
+    }
+  }
+
+  &__ready {
+    margin: 0;
+    color: var(--sisrh-text, #1f2937);
+    font-size: 0.925rem;
+  }
+
+  &__title {
+    margin: 0;
+    font-size: 1.4rem;
+    color: var(--sisrh-primary, #1F3A5F); /* INDECI Blue */
+  }
+  
+  &__subtitle {
+    margin: 0.25rem 0 0;
+    color: var(--sisrh-text-muted, #64748b);
+    font-size: 0.9rem;
+  }
+  
+  &__tab-content {
+    padding-top: 1.5rem;
+  }
+
+  &__card {
+    margin-bottom: 1rem;
+  }
+  
+  &__form {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    
+    @media (max-width: 800px) {
+      grid-template-columns: 1fr;
+    }
+  }
+  
+  &__actions {
+    padding: 0 1rem 1rem;
+  }
+  
+  &__ok {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--sisrh-success, #157347);
+    font-weight: 600;
+  }
+  
+  &__aviso {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    background: var(--sisrh-info-100, #eaf2fb);
+    color: var(--sisrh-text, #1f2937);
+    border-left: 3px solid var(--sisrh-primary, #1F3A5F); /* INDECI Blue */
+    padding: 0.6rem 0.9rem;
+    border-radius: 6px;
+    margin: 0.25rem 0;
+    font-size: 0.875rem;
+
+    p { margin: 0; }
+
+    mat-icon { flex-shrink: 0; }
+
+    &--warning {
+      background: var(--sisrh-warning-100, #fff4db);
+      border-left-color: var(--sisrh-warning, #b7791f);
+    }
+  }
+  
+  &__subtitulo {
+    font-size: 1rem;
+    margin: 1rem 0 0.5rem;
+  }
+  
+  &__tabla {
+    width: 100%;
+  }
+
+  &__empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem;
+    color: var(--sisrh-text-muted, #64748b);
+    text-align: center;
+
+    .empty-icon {
+      font-size: 3rem;
+      width: 3rem;
+      height: 3rem;
+      margin-bottom: 1rem;
+      opacity: 0.5;
+    }
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: baseline;
+    border-radius: 0.375rem;
+    background-color: var(--sisrh-gray-200, #e2e8f0);
+    color: var(--sisrh-gray-700, #334155);
+
+    &-success {
+      background-color: var(--sisrh-success-100, #d1e7dd);
+      color: var(--sisrh-success-800, #0f5132);
+    }
+  }
+}
+
+/* Colores INDECI */
+.btn-indeci-orange {
+  background-color: #F26522 !important; /* INDECI Orange */
+  color: white !important;
+}
+
+.text-indeci-blue {
+  color: #1F3A5F !important; /* INDECI Blue */
+}

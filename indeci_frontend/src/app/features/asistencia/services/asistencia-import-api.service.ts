@@ -11,6 +11,9 @@ import type {
   AsistenciaImportResumen,
   AsistenciaValidacionBatch,
   EstrategiaConflicto,
+  MarcadorAlias,
+  MarcadorAliasRequest,
+  MarcadorSinMapeo,
   SpringPage,
 } from '../models/asistencia-import.model';
 
@@ -122,6 +125,20 @@ export class AsistenciaImportApiService {
         `${this.baseUrl}/${importacionId}/validar-cabeceras`,
         {},
       )
+      .pipe(map(extractApiData));
+  }
+
+  /** F2 (COEN) — nombres del marcador sin mapear a un empleado. */
+  sinMapeo(importacionId: number): Observable<readonly MarcadorSinMapeo[]> {
+    return this.http
+      .get<ApiResponse<readonly MarcadorSinMapeo[]>>(`${this.baseUrl}/${importacionId}/sin-mapeo`)
+      .pipe(map(extractApiData));
+  }
+
+  /** F2 (COEN) — mapea un nombre del marcador a un empleado (crea/actualiza alias). */
+  mapearAlias(request: MarcadorAliasRequest): Observable<MarcadorAlias> {
+    return this.http
+      .post<ApiResponse<MarcadorAlias>>(`${this.baseUrl}/marcador-alias`, request)
       .pipe(map(extractApiData));
   }
 }

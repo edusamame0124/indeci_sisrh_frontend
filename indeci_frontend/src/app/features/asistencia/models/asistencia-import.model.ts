@@ -153,3 +153,25 @@ export interface AsistenciaImportDetalleFiltro {
   readonly estado?: string;
   readonly soloErrores?: boolean;
 }
+
+/** F2 (COEN) — nombre del marcador sin mapear a un empleado + días afectados. */
+export interface MarcadorSinMapeo {
+  readonly nombreMarcador: string;
+  readonly dias: number;
+}
+
+/** F2 (COEN) — petición para mapear un nombre del marcador a un empleado. */
+export interface MarcadorAliasRequest {
+  readonly empleadoId: number;
+  readonly nombreMarcador: string;
+  readonly origen?: string;
+}
+
+/** F2 (COEN) — alias creado/actualizado. */
+export interface MarcadorAlias {
+  readonly id: number;
+  readonly empleadoId: number;
+  readonly nombreMarcadorNorm: string;
+  readonly nombreMarcadorOriginal: string | null;
+  readonly origen: string;
+}

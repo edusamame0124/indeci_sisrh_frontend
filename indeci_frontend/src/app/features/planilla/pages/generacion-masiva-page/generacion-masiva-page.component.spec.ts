@@ -11,6 +11,7 @@ import { GeneracionMasivaPageComponent } from './generacion-masiva-page.componen
 import type { PeriodoPlanillaRow } from '../../models/periodo-planilla.model';
 import type { MovimientoPlanillaRow } from '../../models/movimiento-planilla.model';
 import type { GeneracionMasivaResultado } from '../../models/generacion-masiva.model';
+import type { PlanillaLoteDashboardRow } from '../../models/planilla-lote.model';
 
 describe('GeneracionMasivaPageComponent (Spec 009 / T153, Spec 011 / C2)', () => {
   let httpMock: HttpTestingController;
@@ -38,6 +39,11 @@ describe('GeneracionMasivaPageComponent (Spec 009 / T153, Spec 011 / C2)', () =>
   }
 
   afterEach(() => {
+    // El tab "Historial" dispara GET /planillas-lote/lotes al cargar periodos y
+    // tras cada generación; se drenan aquí para que verify() no falle por ellos.
+    httpMock
+      .match((req) => req.url.endsWith('/planillas-lote/lotes'))
+      .forEach((r) => r.flush({ data: [] }));
     httpMock.verify();
   });
 
@@ -78,6 +84,19 @@ describe('GeneracionMasivaPageComponent (Spec 009 / T153, Spec 011 / C2)', () =>
     exitosos: number,
     fallidos: { empleadoId: number; razon: string }[] = [],
   ): GeneracionMasivaResultado => ({ total, exitosos, fallidos });
+
+  const loteHist = (id: number, regimen: string): PlanillaLoteDashboardRow => ({
+    id,
+    periodo: '2026-05',
+    regimenLaboralCodigo: regimen,
+    tipoPlanilla: 'ORDINARIA',
+    correlativo: 1,
+    estado: 'GENERADO',
+    creadoEn: '2026-05-10T09:00:00',
+    cantidadEmpleados: 5,
+    montoTotalNeto: 1000,
+    descripcionConcatenada: `Planilla Ordinaria - ${regimen}`,
+  });
 
   it('selecciona el primer periodo ABIERTO por defecto', () => {
     const fixture = build();
@@ -168,6 +187,24 @@ describe('GeneracionMasivaPageComponent (Spec 009 / T153, Spec 011 / C2)', () =>
       });
 
     expect(fixture.componentInstance.fase()).toBe('idle');
+  });
+
+  it('historial: deriva los regímenes presentes y filtra por el seleccionado (1a)', () => {
+    const fixture = build();
+    httpMock.expectOne('/api/rrhh/periodo-planilla').flush({ data: [periodoAbierto()] });
+
+    const comp = fixture.componentInstance;
+    comp.lotesHistorial.set([loteHist(1, '276'), loteHist(2, 'CAS'), loteHist(3, '276')]);
+
+    // Opciones del filtro = solo los regímenes presentes (sin duplicados, ordenados).
+    expect([...comp.regimenesEnHistorial()]).toEqual(['276', 'CAS']);
+    // Por defecto (null) muestra todos.
+    expect(comp.historialRegimenFiltro()).toBeNull();
+    expect(comp.lotesHistorialFiltrados().length).toBe(3);
+    // Al filtrar por un régimen, solo quedan sus lotes.
+    comp.historialRegimenFiltro.set('276');
+    expect(comp.lotesHistorialFiltrados().length).toBe(2);
+    expect(comp.lotesHistorialFiltrados().every((l) => l.regimenLaboralCodigo === '276')).toBe(true);
   });
 
   it('declara las columnas de la tabla de resultados en orden esperado', () => {

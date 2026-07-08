@@ -1,0 +1,168 @@
+<section class="lbs sisrh-page">
+  <div class="lbs__toolbar">
+    <a mat-stroked-button routerLink="/planilla/generacion-masiva" class="lbs__back">
+      <mat-icon fontIcon="arrow_back" aria-hidden="true" />
+      Volver a generación de planilla
+    </a>
+  </div>
+
+  <header class="lbs__header">
+    <div>
+      <h1 class="lbs__title">Generar Liquidación de Beneficios Sociales (LBS)</h1>
+      <p class="lbs__subtitle">
+        Liquidación exclusiva para personal cesado (vacaciones, aguinaldo y CTS según régimen). Proceso terminal y boleta independiente.
+      </p>
+    </div>
+  </header>
+
+  <!-- Parámetros heredados del módulo de generación de planilla (solo lectura) -->
+  <div class="lbs__context" role="group" aria-label="Parámetros definidos en generación de planilla">
+    <div class="lbs__context-item">
+      <span class="lbs__context-label">Período de cese</span>
+      <span class="lbs__context-value">{{ periodo() || 'No definido' }}</span>
+    </div>
+    <div class="lbs__context-item">
+      <span class="lbs__context-label">Régimen laboral</span>
+      <span class="lbs__context-value">{{ regimenTexto() }}</span>
+    </div>
+    <span class="lbs__context-hint">
+      <mat-icon fontIcon="lock" aria-hidden="true" />
+      Definidos en Generación de planilla
+    </span>
+  </div>
+
+  <mat-tab-group mat-stretch-tabs="false" mat-align-tabs="start">
+    <!-- Tab 1: Generación -->
+    <mat-tab label="Generación">
+      <div class="lbs__tab-content">
+        <mat-card class="lbs__card sisrh-elevated">
+          <mat-card-content>
+            @if (!periodo()) {
+              <div class="lbs__aviso">
+                <mat-icon fontIcon="info" />
+                <p>Selecciona el período de cese y el régimen desde <strong>Generación de planilla</strong> para habilitar el proceso.</p>
+              </div>
+            } @else {
+              <p class="lbs__ready">
+                Listo para generar la liquidación de personal cesado del período <strong>{{ periodo() }}</strong>.
+              </p>
+            }
+          </mat-card-content>
+
+          <mat-card-actions class="lbs__actions">
+            <button
+              mat-flat-button
+              class="btn-indeci-orange"
+              type="button"
+              [disabled]="!puedeGenerar() || generando()"
+              (click)="confirmarYGenerar()"
+            >
+              <mat-icon fontIcon="badge" aria-hidden="true" />
+              Generar LBS
+            </button>
+          </mat-card-actions>
+
+          @if (generando()) {
+            <mat-progress-bar mode="indeterminate" aria-label="Generando LBS" />
+          }
+        </mat-card>
+  
+        @if (resultado(); as r) {
+          <mat-card class="lbs__card lbs__resultado sisrh-elevated">
+            <mat-card-content>
+              <p class="lbs__ok">
+                <mat-icon fontIcon="check_circle" aria-hidden="true" />
+                LBS generada con éxito: <strong>{{ r.exitosos }}</strong> trabajador(es).
+              </p>
+  
+              @if (r.fallidos.length > 0) {
+                <h2 class="lbs__subtitulo">Con error o excluidos ({{ r.fallidos.length }})</h2>
+                <table mat-table [dataSource]="r.fallidos" class="lbs__tabla">
+                  <ng-container matColumnDef="empleadoId">
+                    <th mat-header-cell *matHeaderCellDef scope="col">Empleado</th>
+                    <td mat-cell *matCellDef="let e">{{ e.empleadoId }}</td>
+                  </ng-container>
+                  <ng-container matColumnDef="razon">
+                    <th mat-header-cell *matHeaderCellDef scope="col">Motivo</th>
+                    <td mat-cell *matCellDef="let e">{{ e.razon }}</td>
+                  </ng-container>
+                  <tr mat-header-row *matHeaderRowDef="['empleadoId', 'razon']"></tr>
+                  <tr mat-row *matRowDef="let row; columns: ['empleadoId', 'razon']"></tr>
+                </table>
+              }
+            </mat-card-content>
+          </mat-card>
+        }
+      </div>
+    </mat-tab>
+
+    <!-- Tab 2: Historial / Trazabilidad -->
+    <mat-tab label="Historial y Reportes LBS">
+      <div class="lbs__tab-content">
+        @if (cargandoHistorial()) {
+          <mat-progress-bar mode="indeterminate" aria-label="Cargando historial" />
+        } @else {
+          @if (lotesHistorial().length === 0) {
+            <div class="lbs__empty-state">
+              <mat-icon fontIcon="history" class="empty-icon"></mat-icon>
+              <p>No hay generaciones de LBS previas para el período {{ periodo() || 'seleccionado' }}.</p>
+            </div>
+          } @else {
+            <table mat-table [dataSource]="lotesHistorial()" class="lbs__tabla">
+              
+              <ng-container matColumnDef="id">
+                <th mat-header-cell *matHeaderCellDef>Lote ID</th>
+                <td mat-cell *matCellDef="let lote">{{ lote.id }}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="periodo">
+                <th mat-header-cell *matHeaderCellDef>Período</th>
+                <td mat-cell *matCellDef="let lote">{{ lote.periodo }}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="regimenLaboralCodigo">
+                <th mat-header-cell *matHeaderCellDef>Régimen</th>
+                <td mat-cell *matCellDef="let lote">{{ lote.regimenLaboralCodigo || 'Todos' }}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="estado">
+                <th mat-header-cell *matHeaderCellDef>Estado</th>
+                <td mat-cell *matCellDef="let lote">
+                  <span class="badge" [class.badge-success]="lote.estado === 'GENERADO'">{{ lote.estado }}</span>
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="trabajadoresGenerados">
+                <th mat-header-cell *matHeaderCellDef>Cesados LBS</th>
+                <td mat-cell *matCellDef="let lote">{{ lote.trabajadoresGenerados }}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="netoTotal">
+                <th mat-header-cell *matHeaderCellDef>Total LBS</th>
+                <td mat-cell *matCellDef="let lote">{{ lote.netoTotal | currency:'PEN' }}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="creadoEn">
+                <th mat-header-cell *matHeaderCellDef>Fecha Generación</th>
+                <td mat-cell *matCellDef="let lote">{{ lote.creadoEn | date:'dd/MM/yyyy HH:mm' }}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="acciones">
+                <th mat-header-cell *matHeaderCellDef aria-label="Acciones">Acciones</th>
+                <td mat-cell *matCellDef="let lote">
+                  <a mat-icon-button class="text-indeci-blue" [routerLink]="['/planilla/movimientos']" [queryParams]="{ periodo: lote.periodo, loteId: lote.id }" matTooltip="Ver detalles de LBS">
+                    <mat-icon fontIcon="visibility" />
+                  </a>
+                  <!-- Solo es ejemplo para un boton de descarga, en un caso real se listan los empleados de ese lote -->
+                </td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="colsHistorial"></tr>
+              <tr mat-row *matRowDef="let row; columns: colsHistorial"></tr>
+            </table>
+          }
+        }
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+</section>

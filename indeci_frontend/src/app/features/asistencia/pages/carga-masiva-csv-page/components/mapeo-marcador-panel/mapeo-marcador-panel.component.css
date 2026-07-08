@@ -1,0 +1,126 @@
+:host {
+  display: block;
+}
+
+.mm-loading {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: rgba(0, 0, 0, 0.6);
+  font-size: 0.875rem;
+  padding: 0.5rem 0;
+}
+
+.mm-panel {
+  border: 1px solid #f0c36d;
+  border-radius: 10px;
+  background: #fffdf5;
+  padding: 0.875rem 1rem 1rem;
+}
+
+/* Banda de advertencia (ámbar institucional, no error rojo). */
+.mm-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  color: #7a5300;
+  margin-bottom: 0.75rem;
+}
+
+.mm-alert mat-icon {
+  color: #b9770e;
+  flex: 0 0 auto;
+}
+
+.mm-alert__text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  line-height: 1.35;
+}
+
+.mm-alert__text strong {
+  font-weight: 600;
+}
+
+.mm-alert__text span {
+  font-size: 0.8125rem;
+  color: #8a6a1f;
+}
+
+.mm-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.mm-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid #ececec;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.mm-row__info {
+  display: flex;
+  flex-direction: column;
+  min-width: 12rem;
+}
+
+.mm-row__name {
+  font-weight: 600;
+  color: #222;
+}
+
+.mm-row__days {
+  font-size: 0.75rem;
+  color: rgba(0, 0, 0, 0.55);
+  font-variant-numeric: tabular-nums;
+}
+
+.mm-row__actions,
+.mm-row__picker {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1 1 auto;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.mm-row__picker app-persona-picker {
+  flex: 1 1 16rem;
+  min-width: 14rem;
+}
+
+.mm-note {
+  margin: 0.75rem 0 0;
+  font-size: 0.6875rem;
+  color: rgba(0, 0, 0, 0.5);
+}
+
+@media (prefers-color-scheme: dark) {
+  .mm-panel {
+    background: #2a2413;
+    border-color: #5c4a1c;
+  }
+  .mm-row {
+    background: #1f1f1f;
+    border-color: #3a3a3a;
+  }
+  .mm-row__name {
+    color: #eee;
+  }
+  .mm-alert,
+  .mm-alert__text span {
+    color: #e6c86b;
+  }
+}
