@@ -13,8 +13,16 @@ export const TIPOS_DIA = [
   'DESCANSO',
   'FERIADO',
   'OBSERVADO',
+  'SANCION_PAD',
 ] as const;
 export type TipoDia = (typeof TIPOS_DIA)[number];
+
+/**
+ * Tipos seleccionables por click directo en la celda del calendario (ciclo).
+ * SANCION_PAD queda fuera: exige motivo obligatorio, por lo que solo se asigna
+ * vía el modal dedicado (evita marcarlo por accidente en el ciclo).
+ */
+export const TIPOS_DIA_CICLABLES = TIPOS_DIA.filter((t) => t !== 'SANCION_PAD');
 
 export const ESTADOS_ASISTENCIA = [
   'BORRADOR',

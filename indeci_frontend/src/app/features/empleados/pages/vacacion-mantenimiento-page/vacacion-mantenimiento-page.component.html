@@ -25,15 +25,48 @@
       } @else {
         <mat-form-field appearance="outline" class="sel-empleado">
           <mat-label>Empleado</mat-label>
-          <mat-select
-            [value]="empleadoSeleccionado()"
-            (selectionChange)="onEmpleadoChange($event.value)"
-            aria-label="Seleccionar empleado"
+          <mat-icon matPrefix fontIcon="search" aria-hidden="true" class="sel-empleado__pref" />
+          <input
+            matInput
+            type="text"
+            placeholder="Buscar por nombre o DNI…"
+            [matAutocomplete]="autoEmpleado"
+            [ngModel]="seleccionEmpleado()"
+            (ngModelChange)="seleccionEmpleado.set($event)"
+            aria-label="Buscar y seleccionar empleado"
+          />
+          @if (empleadoSeleccionado() !== null) {
+            <button
+              matSuffix
+              mat-icon-button
+              type="button"
+              (click)="limpiarEmpleado()"
+              aria-label="Limpiar empleado seleccionado"
+            >
+              <mat-icon fontIcon="close" aria-hidden="true" />
+            </button>
+          }
+          <mat-autocomplete
+            #autoEmpleado="matAutocomplete"
+            [displayWith]="displayEmpleado"
+            (optionSelected)="onEmpleadoSeleccionado($event.option.value)"
           >
-            @for (e of empleados(); track e.empleadoId) {
-              <mat-option [value]="e.empleadoId">{{ e.nombreCompleto }} — DNI {{ e.dni }}</mat-option>
+            @for (e of empleadosFiltrados(); track e.empleadoId) {
+              <mat-option [value]="e">
+                <span class="opt-emp">
+                  <span class="opt-emp__nom">{{ e.nombreCompleto }}</span>
+                  <span class="opt-emp__meta">
+                    DNI {{ e.dni ?? '—' }}{{ e.regimenLaboral ? ' · ' + e.regimenLaboral : '' }}
+                  </span>
+                </span>
+              </mat-option>
             }
-          </mat-select>
+            @if (empleadosFiltrados().length === 0) {
+              <mat-option disabled class="opt-empty">
+                Sin resultados. Revisa el nombre o el DNI.
+              </mat-option>
+            }
+          </mat-autocomplete>
         </mat-form-field>
 
         @if (empleadoSeleccionado() !== null) {
@@ -42,11 +75,15 @@
               <mat-progress-spinner mode="indeterminate" diameter="40" aria-label="Cargando vacaciones" />
             </div>
           } @else {
-            <div class="acciones-row">
+            <div class="acciones-row" style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem;">
               @if (!mostrarForm()) {
                 <button mat-flat-button color="primary" type="button" (click)="abrirForm()">
                   <mat-icon fontIcon="add" aria-hidden="true" />
-                  Registrar año
+                  Registrar año (Manual)
+                </button>
+                <button mat-stroked-button color="accent" type="button" (click)="provisionar()" [disabled]="guardando() || datosLoading()">
+                  <mat-icon fontIcon="auto_awesome" aria-hidden="true" />
+                  Provisionar (Auto)
                 </button>
               }
             </div>

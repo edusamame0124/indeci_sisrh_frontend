@@ -8,6 +8,29 @@
     <strong>Estado actual:</strong> {{ solicitud.estadoSolicitud }}
   </section>
 
+  <section
+    class="actividades"
+    *ngIf="solicitud.detallesTeletrabajo && solicitud.detallesTeletrabajo.length > 0"
+  >
+    <h3>Actividades reportadas (teletrabajo)</h3>
+    <table class="tabla-actividades">
+      <thead>
+        <tr>
+          <th class="col-orden">N°</th>
+          <th>Actividad</th>
+          <th>Medio de verificación</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let det of solicitud.detallesTeletrabajo; let i = index">
+          <td class="col-orden">{{ det.nroOrden ?? i + 1 }}</td>
+          <td>{{ det.actividad }}</td>
+          <td>{{ det.medioVerificacion || '—' }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
   <section class="step">
     <h3>1. Descargar papeleta firmada por el empleado</h3>
     <p>
@@ -18,6 +41,10 @@
     <button mat-stroked-button type="button" (click)="descargarPapeleta()" [disabled]="procesando()">
       <mat-icon>download</mat-icon>
       Descargar papeleta
+    </button>
+    <button mat-stroked-button type="button" (click)="descargarSustento()" [disabled]="procesando()">
+      <mat-icon>attach_file</mat-icon>
+      Descargar sustento
     </button>
   </section>
 

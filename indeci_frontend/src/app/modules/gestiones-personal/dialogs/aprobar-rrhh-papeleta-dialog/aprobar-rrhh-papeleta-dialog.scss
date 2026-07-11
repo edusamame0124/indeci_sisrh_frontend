@@ -24,6 +24,11 @@
   color: #064e3b;
 }
 
+/* Separación entre los botones de descarga (papeleta / sustento). */
+.step button + button {
+  margin-left: 0.6rem;
+}
+
 .step p {
   margin: 0 0 0.8rem;
   color: #64748b;
@@ -51,6 +56,45 @@ textarea {
 
 textarea {
   resize: vertical;
+}
+
+.actividades {
+  border: 1px solid #d1fae5;
+  border-radius: 14px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.actividades h3 {
+  margin: 0 0 0.6rem;
+  font-size: 0.95rem;
+  color: #064e3b;
+}
+
+.tabla-actividades {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+.tabla-actividades th,
+.tabla-actividades td {
+  text-align: left;
+  padding: 0.5rem 0.6rem;
+  border-bottom: 1px solid #eef2f7;
+  vertical-align: top;
+  color: #334155;
+}
+
+.tabla-actividades thead th {
+  background: #f0fdf4;
+  font-weight: 700;
+  color: #064e3b;
+}
+
+.tabla-actividades .col-orden {
+  width: 44px;
+  text-align: center;
 }
 
 .error {

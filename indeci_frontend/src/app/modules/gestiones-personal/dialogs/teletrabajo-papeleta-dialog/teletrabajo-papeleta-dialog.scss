@@ -1,0 +1,137 @@
+h2[mat-dialog-title] {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.title-icon {
+  color: #0284c7;
+}
+
+.dialog-body {
+  min-width: 620px;
+}
+
+.hint {
+  margin: 0 0 1rem;
+  font-size: 0.85rem;
+  color: #475569;
+  line-height: 1.4;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.field--grow {
+  flex: 1;
+}
+
+input,
+textarea {
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 0.65rem;
+  font-size: 0.85rem;
+  font-weight: 400;
+  outline: none;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+textarea {
+  resize: vertical;
+}
+
+input:focus,
+textarea:focus {
+  border-color: #0284c7;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+}
+
+.actividades {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1rem;
+  background: #f8fafc;
+}
+
+.actividades__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.btn-agregar {
+  font-size: 0.8rem;
+}
+
+.actividad-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem 0;
+  border-top: 1px dashed #e2e8f0;
+}
+
+.actividad-row:first-of-type {
+  border-top: none;
+  padding-top: 0;
+}
+
+.btn-quitar {
+  margin-top: 1.4rem;
+  color: #b91c1c;
+}
+
+.error {
+  margin-top: 1rem;
+  background: #fee2e2;
+  color: #991b1b;
+  border-radius: 10px;
+  padding: 0.65rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.norma {
+  margin: 1rem 0 0;
+  font-size: 0.72rem;
+  color: #94a3b8;
+  font-style: italic;
+}
+
+@media (max-width: 720px) {
+  .dialog-body {
+    min-width: auto;
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .actividad-row {
+    flex-direction: column;
+  }
+
+  .btn-quitar {
+    margin-top: 0;
+    align-self: flex-end;
+  }
+}

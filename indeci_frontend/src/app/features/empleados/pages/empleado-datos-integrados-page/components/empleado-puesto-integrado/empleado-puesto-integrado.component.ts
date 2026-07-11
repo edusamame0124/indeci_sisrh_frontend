@@ -25,6 +25,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { EmpleadoPuestoApiService } from '../../../../services/empleado-puesto-api.service';
+import { PersonaApiService } from '../../../../services/persona-api.service';
 import { CatalogoApiService } from '../../../../services/catalogo-api.service';
 import { CargoApiService } from '../../../../services/cargo-api.service';
 import { ErrorMessageService } from '../../../../../../core/services/error-message.service';
@@ -33,6 +34,8 @@ import { sisrhConfirmDialogConfig } from '../../../../../../core/config/sisrh-di
 import { ConfirmDialogComponent } from '../../../../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { EmptyStateComponent } from '../../../../../../shared/components/empty-state/empty-state.component';
 import type { EmpleadoPuestoRow, EmpleadoPuestoInput } from '../../../../models/empleado-puesto.model';
+import type { PersonaEmpleado } from '../../../../models/persona-empleado.model';
+import { EmpleadoAutocompleteComponent } from '../../../../components/empleado-autocomplete/empleado-autocomplete.component';
 import type { Cargo } from '../../../../models/cargo.model';
 import type { Nivel } from '../../../../../catalogos/models/nivel.model';
 import type { Sede } from '../../../../../catalogos/models/sede.model';
@@ -56,6 +59,7 @@ import type { EstructuraOrganica } from '../../../../../catalogos/models/estruct
     MatProgressSpinnerModule,
     MatDialogModule,
     EmptyStateComponent,
+    EmpleadoAutocompleteComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './empleado-puesto-integrado.component.html',
@@ -136,6 +140,7 @@ export class EmpleadoPuestoIntegradoComponent implements OnInit {
 
   private readonly fb = inject(FormBuilder);
   private readonly puestoApi = inject(EmpleadoPuestoApiService);
+  private readonly personaApi = inject(PersonaApiService);
   private readonly catalogos = inject(CatalogoApiService);
   private readonly cargoApi = inject(CargoApiService);
   private readonly snack = inject(MatSnackBar);
@@ -159,6 +164,7 @@ export class EmpleadoPuestoIntegradoComponent implements OnInit {
   readonly oficinasLoading = signal(false);
   readonly dependencias = signal<readonly Dependencia[]>([]);
   readonly estructuras = signal<readonly EstructuraOrganica[]>([]);
+  readonly empleadosJefe = signal<readonly PersonaEmpleado[]>([]);
 
   // Table states
   readonly rows = signal<readonly EmpleadoPuestoRow[]>([]);
@@ -177,6 +183,7 @@ export class EmpleadoPuestoIntegradoComponent implements OnInit {
     oficinaId: this.fb.control<number | null>(null),
     dependenciaId: this.fb.control<number | null>(null),
     estructuraOrganicaId: this.fb.control<number | null>(null),
+    jefeId: this.fb.control<number | null>(null),
   });
 
   readonly pagedRows = computed(() => {
@@ -206,6 +213,7 @@ export class EmpleadoPuestoIntegradoComponent implements OnInit {
       sedes: this.catalogos.listarSedes(),
       dependencias: this.catalogos.listarDependencias(),
       estructuras: this.catalogos.listarEstructurasOrganicas(),
+      empleados: this.personaApi.listar(),
     }).subscribe({
       next: (res) => {
         this.cargos.set(res.cargos);
@@ -213,6 +221,7 @@ export class EmpleadoPuestoIntegradoComponent implements OnInit {
         this.sedes.set(res.sedes);
         this.dependencias.set(res.dependencias);
         this.estructuras.set(res.estructuras);
+        this.empleadosJefe.set(res.empleados);
         this.loadList();
         this.pageLoading.set(false);
       },
@@ -284,6 +293,7 @@ export class EmpleadoPuestoIntegradoComponent implements OnInit {
       sedeId: row.sedeId,
       dependenciaId: row.dependenciaId ?? null,
       estructuraOrganicaId: row.estructuraOrganicaId ?? null,
+      jefeId: row.jefeId ?? null,
     });
 
     const sedeId = row.sedeId;
@@ -379,6 +389,7 @@ export class EmpleadoPuestoIntegradoComponent implements OnInit {
         v.estructuraOrganicaId != null && v.estructuraOrganicaId > 0
           ? v.estructuraOrganicaId
           : undefined,
+      jefeId: v.jefeId != null && v.jefeId > 0 ? v.jefeId : undefined,
     };
 
     this.saving.set(true);

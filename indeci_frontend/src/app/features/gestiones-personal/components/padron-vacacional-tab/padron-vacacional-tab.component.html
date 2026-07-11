@@ -1,0 +1,143 @@
+<mat-card class="page-card sisrh-elevated">
+  <mat-card-header>
+    <div mat-card-avatar class="page-card__avatar">
+      <mat-icon>flight_takeoff</mat-icon>
+    </div>
+    <mat-card-title>Padrón Vacacional</mat-card-title>
+    <mat-card-subtitle>
+      Control de días que corresponden, saldos y récords vacacionales. Base normativa: D.Leg. 1405.
+    </mat-card-subtitle>
+  </mat-card-header>
+
+  <mat-card-content>
+    <section class="toolbar">
+      <div class="toolbar__filters">
+        <input
+          type="text"
+          placeholder="Buscar por DNI o nombres"
+          [ngModel]="filtroBusqueda()"
+          (ngModelChange)="filtroBusqueda.set($event)"
+          (keyup.enter)="buscar()"
+        />
+
+        <button mat-flat-button color="primary" type="button" (click)="buscar()">
+          <mat-icon>search</mat-icon> Buscar
+        </button>
+
+        <button mat-stroked-button type="button" (click)="limpiarFiltros()">
+          <mat-icon>cleaning_services</mat-icon> Limpiar
+        </button>
+
+        <span class="spacer" style="flex: 1 1 auto;"></span>
+
+        <!-- Botón para importar Excel (Fase 8) -->
+        <input type="file" #fileInput (change)="onFileSelected($event)" accept=".xlsx, .xls" style="display: none;" />
+        <button mat-flat-button color="accent" type="button" (click)="fileInput.click()" [disabled]="cargando()">
+          <mat-icon>upload_file</mat-icon> Importar Excel DATOS
+        </button>
+      </div>
+    </section>
+
+    <div *ngIf="cargando()" class="loading">
+      <mat-spinner diameter="36"></mat-spinner>
+      <span>Cargando padrón vacacional...</span>
+    </div>
+
+    <div *ngIf="error()" class="alert">
+      {{ error() }}
+    </div>
+
+    <div class="table-wrap" *ngIf="!cargando() && !error()">
+      <table>
+        <thead>
+          <tr>
+            <th>DNI</th>
+            <th>Empleado</th>
+            <th>Régimen</th>
+            <th>Cargo</th>
+            <th>T. Servicio</th>
+            <th title="Licencia sin goce + faltas injustificadas (no computan al récord — D.S. 013-2019-PCM art. 11)">
+              No comput.
+            </th>
+            <th title="T. Servicio − LSG − faltas. Es el tiempo que cuenta para el récord vacacional.">
+              Efectivos
+            </th>
+            <th class="text-right">Corresponden</th>
+            <th class="text-right">Gozados</th>
+            <th class="text-right">Saldo</th>
+            <th>Récord</th>
+            <th class="acciones">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of datos()" [class.sin-vinculo]="item.sinVinculo">
+            <td>{{ item.dni }}</td>
+            <td>
+              <strong>{{ item.nombreCompleto }}</strong>
+              <div class="text-muted small">{{ item.dependencia }}</div>
+            </td>
+            <td>{{ item.regimenLaboral }}</td>
+            <td>{{ item.cargo }}</td>
+            <td>
+              <span *ngIf="item.aniosServicio > 0">{{ item.aniosServicio }}a </span>
+              <span *ngIf="item.mesesServicio > 0">{{ item.mesesServicio }}m </span>
+              <span>{{ item.diasServicio }}d</span>
+            </td>
+            <td>
+              <span *ngIf="!item.sinVinculo; else guion" [class.text-muted]="!tieneNoComputables(item)">
+                <ng-container *ngIf="tieneNoComputables(item); else cero">
+                  {{ item.diasNoComputablesLsg }}d LSG · {{ item.diasNoComputablesFaltas }}d falta
+                </ng-container>
+                <ng-template #cero>0</ng-template>
+              </span>
+              <ng-template #guion><span class="text-muted">—</span></ng-template>
+            </td>
+            <td>
+              <ng-container *ngIf="!item.sinVinculo; else guionEf">
+                <span *ngIf="item.aniosEfectivos! > 0">{{ item.aniosEfectivos }}a </span>
+                <span *ngIf="item.mesesEfectivos! > 0">{{ item.mesesEfectivos }}m </span>
+                <span>{{ item.diasEfectivos }}d</span>
+              </ng-container>
+              <ng-template #guionEf><span class="text-muted">—</span></ng-template>
+            </td>
+            <td class="text-right">{{ item.diasCorresponden }}</td>
+            <td class="text-right">{{ item.diasGozados }}</td>
+            <td class="text-right">
+              <span [ngClass]="claseSemaforo(item.saldo)">
+                {{ item.saldo }}
+              </span>
+            </td>
+            <td>
+              <span [ngClass]="claseRecord(item.estadoRecord)">
+                {{ item.estadoRecord }}
+              </span>
+            </td>
+            <td class="acciones" style="white-space: nowrap;">
+              <button mat-icon-button title="Ver detalle" (click)="abrirDetalle(item)">
+                <mat-icon>visibility</mat-icon>
+              </button>
+              <button mat-icon-button color="primary" title="Registrar Goce Directo" (click)="abrirGoceDirecto(item)">
+                <mat-icon>edit_calendar</mat-icon>
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="datos().length === 0">
+            <td colspan="12" class="empty">
+              No se encontraron registros en el padrón vacacional.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <mat-paginator
+      [length]="totalElements()"
+      [pageSize]="pageSize()"
+      [pageIndex]="pageIndex()"
+      [pageSizeOptions]="[10, 25, 50, 100]"
+      (page)="onPage($event)"
+      aria-label="Seleccionar página"
+      *ngIf="!cargando() && !error()"
+    ></mat-paginator>
+  </mat-card-content>
+</mat-card>

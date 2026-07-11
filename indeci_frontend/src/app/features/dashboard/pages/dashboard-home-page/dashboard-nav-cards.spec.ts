@@ -4,15 +4,15 @@ import { buildDashboardCards, resolveNavRoute } from './dashboard-nav-cards';
 
 describe('dashboard-nav-cards', () => {
   it('resolveNavRoute usa la primera ruta hija cuando el ítem es agrupador', () => {
-    const empleados = MAIN_NAV_ITEMS.find((i) => i.label === 'Empleados');
+    const empleados = MAIN_NAV_ITEMS.find((i) => i.label === 'Módulo Vinculación');
     expect(empleados).toBeDefined();
     expect(resolveNavRoute(empleados!)).toBe('/empleados/personas');
   });
 
   it('buildDashboardCards marca accesibles según etiquetas visibles', () => {
-    const visible = new Set(['Empleados', 'Planilla']);
+    const visible = new Set(['Módulo Vinculación', 'Planilla']);
     const cards = buildDashboardCards(MAIN_NAV_ITEMS, visible);
-    const empleados = cards.find((c) => c.label === 'Empleados');
+    const empleados = cards.find((c) => c.label === 'Módulo Vinculación');
     const admin = cards.find((c) => c.label === 'Administración');
     expect(empleados?.accessible).toBe(true);
     expect(admin?.accessible).toBe(false);

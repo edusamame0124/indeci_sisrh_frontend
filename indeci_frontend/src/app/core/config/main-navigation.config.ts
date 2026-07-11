@@ -86,6 +86,7 @@ export const MAIN_NAV_ITEMS: readonly MainNavItem[] = [
     requiredAnyRole: [...EMPLEADOS_ACCESS_ROLES],
     children: [
       { label: 'Datos personales', route: '/empleados/personas', icon: 'person' },
+      { label: 'Mantenimiento de Vacaciones', route: '/empleados/vacaciones', icon: 'flight_takeoff' },
       { label: 'Eventos del período', route: '/empleados/eventos', icon: 'event_note' },
       { label: 'Ficha 360', route: '/empleados/ficha', icon: 'manage_search' },
     ],
@@ -102,8 +103,20 @@ export const MAIN_NAV_ITEMS: readonly MainNavItem[] = [
         label: 'Gestión del jefe inmediato',
         route: '/gestiones-personal/jefe-inmediato',
         icon: 'supervisor_account',
+        requiredPermissions: ['PAP_JEFE'],
       },
-      { label: 'Gestión de RRHH', route: '/gestiones-personal/rrhh', icon: 'diversity_3' },
+      {
+        label: 'Gestión de RRHH',
+        route: '/gestiones-personal/rrhh',
+        icon: 'diversity_3',
+        requiredPermissions: ['PAP_RRHH'],
+      },
+      {
+        label: 'Mis Asistencias',
+        route: '/asistencia-empleado/mis-asistencias',
+        icon: 'event_available',
+      },
+      { label: 'Teletrabajo', route: '/teletrabajo', icon: 'home_work', requiredPermissions: ['PAP_RRHH'] },
     ],
   },
 
@@ -117,32 +130,6 @@ export const MAIN_NAV_ITEMS: readonly MainNavItem[] = [
         label: 'Legajo',
         route: '/legajo',
         icon: 'folder_shared',
-      },
-    ],
-  },
-  {
-    label: 'Teletrabajo',
-    route: '',
-    icon: 'folder_shared',
-    requiredAnyRole: [...EMPLEADOS_ACCESS_ROLES],
-    children: [
-      {
-        label: 'teletrabajo',
-        route: '/teletrabajo',
-        icon: 'folder_shared',
-      },
-    ],
-  },
-  {
-    label: 'Mis asistencias',
-    route: '',
-    icon: 'folder_shared',
-    requiredAnyRole: [...EMPLEADOS_ACCESS_ROLES],
-    children: [
-      {
-        label: 'Mis Asistencias',
-        route: '/asistencia-empleado/mis-asistencias',
-        icon: 'event_available',
       },
     ],
   },
@@ -231,11 +218,21 @@ export function filterNavChildrenByQuery(
   return out;
 }
 
-function pruneNavChildren(children: readonly MainNavChildItem[]): readonly MainNavChildItem[] {
+function pruneNavChildren(
+  children: readonly MainNavChildItem[],
+  pSet: ReadonlySet<string>,
+  rSet: ReadonlySet<string>,
+): readonly MainNavChildItem[] {
   const pruned: MainNavChildItem[] = [];
   for (const child of children) {
+    // Control de acceso por sub-ítem (segregación dentro del módulo).
+    const reqs = child.requiredPermissions;
+    if (reqs?.length && !reqs.every((p) => pSet.has(p))) continue;
+    const anyRoles = child.requiredAnyRole;
+    if (anyRoles?.length && !anyRoles.some((r) => rSet.has(r))) continue;
+
     if (child.children?.length) {
-      const nested = pruneNavChildren(child.children);
+      const nested = pruneNavChildren(child.children, pSet, rSet);
       if (nested.length > 0) {
         pruned.push({ ...child, children: nested });
       }
@@ -263,7 +260,7 @@ export function filterVisibleNavItems(
     if (anyRoles?.length && !anyRoles.some((r) => rSet.has(r))) continue;
 
     if (item.children?.length) {
-      const children = pruneNavChildren(item.children);
+      const children = pruneNavChildren(item.children, pSet, rSet);
       if (children.length === 0) continue;
       visible.push({ ...item, children });
     } else {

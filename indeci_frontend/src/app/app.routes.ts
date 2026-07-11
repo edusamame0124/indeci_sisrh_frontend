@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
+import { requirePermisos } from './core/guards/permiso-access.guard';
 
 export const routes: Routes = [
   {
@@ -82,6 +83,7 @@ export const routes: Routes = [
       },
       {
         path: 'teletrabajo',
+        canActivate: [requirePermisos('PAP_RRHH')],
         loadChildren: () =>
           import('./features/teletrabajo/teletrabajo.routes').then((m) => m.TELETRABAJO_ROUTES),
       },

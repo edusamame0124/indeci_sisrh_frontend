@@ -3,7 +3,11 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { EmpleadoPlanillaApiService } from './empleado-planilla-api.service';
-import type { EmpleadoPlanillaInput, EmpleadoPlanillaRow } from '../models/empleado-planilla.model';
+import type {
+  EmpleadoPlanillaInput,
+  EmpleadoPlanillaRow,
+  TiempoServicioRow,
+} from '../models/empleado-planilla.model';
 import type { IncrementosDsResponse } from '../models/incrementos-ds.model';
 
 describe('EmpleadoPlanillaApiService', () => {
@@ -50,6 +54,28 @@ describe('EmpleadoPlanillaApiService', () => {
       out = x;
     });
     const req = httpMock.expectOne('/api/rrhh/planilla/9');
+    expect(req.request.method).toBe('GET');
+    req.flush({ estado: 'OK', mensaje: 'ok', data });
+    expect(out).toEqual(data);
+  });
+
+  it('obtenerTiempoServicio hace GET al endpoint F1 y extrae data', () => {
+    const data = {
+      empleadoId: 9,
+      fechaIngreso: '2018-12-14',
+      fechaCorte: '2026-05-30',
+      anios: 7,
+      meses: 5,
+      dias: 17,
+      totalDias360: 2687,
+      numVinculos: 1,
+      tieneTraslape: false,
+    };
+    let out: TiempoServicioRow | undefined;
+    service.obtenerTiempoServicio(9).subscribe((x) => {
+      out = x;
+    });
+    const req = httpMock.expectOne('/api/rrhh/vacaciones/tiempo-servicio/9');
     expect(req.request.method).toBe('GET');
     req.flush({ estado: 'OK', mensaje: 'ok', data });
     expect(out).toEqual(data);

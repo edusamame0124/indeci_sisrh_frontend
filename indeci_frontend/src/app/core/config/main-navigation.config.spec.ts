@@ -14,7 +14,7 @@ describe('filterVisibleNavItems (Spec 009 — 5 módulos + Inicio)', () => {
     expect(r.map((i) => i.route)).toEqual(['/']);
   });
 
-  it('ADMIN ve todos los módulos (Inicio + Catálogos + Módulo Vinculación + Gestiones del personal + Legajo Personal + Teletrabajo + Mis asistencias + Planilla + Reportes + Administración)', () => {
+  it('ADMIN ve todos los módulos (Inicio + Catálogos + Módulo Vinculación + Gestiones del personal + Legajo Personal + Planilla + Reportes + Administración)', () => {
     const r = filterVisibleNavItems(MAIN_NAV_ITEMS, [], ['ADMIN']);
     expect(r.map((i) => i.label)).toEqual([
       'Inicio',
@@ -22,8 +22,6 @@ describe('filterVisibleNavItems (Spec 009 — 5 módulos + Inicio)', () => {
       'Módulo Vinculación',
       'Gestiones del personal',
       'Legajo Personal',
-      'Teletrabajo',
-      'Mis asistencias',
       'Planilla',
       'Reportes',
       'Administración',
@@ -48,8 +46,6 @@ describe('filterVisibleNavItems (Spec 009 — 5 módulos + Inicio)', () => {
       'Módulo Vinculación',
       'Gestiones del personal',
       'Legajo Personal',
-      'Teletrabajo',
-      'Mis asistencias',
       'Planilla',
       'Portal del empleado',
     ]);
@@ -63,8 +59,6 @@ describe('filterVisibleNavItems (Spec 009 — 5 módulos + Inicio)', () => {
       'Módulo Vinculación',
       'Gestiones del personal',
       'Legajo Personal',
-      'Teletrabajo',
-      'Mis asistencias',
       'Planilla',
       'Reportes',
       'Administración',
@@ -92,8 +86,6 @@ describe('filterVisibleNavItems (Spec 009 — 5 módulos + Inicio)', () => {
       'Módulo Vinculación',
       'Gestiones del personal',
       'Legajo Personal',
-      'Teletrabajo',
-      'Mis asistencias',
       'Planilla',
       'Reportes',
       'Portal del empleado',
@@ -125,32 +117,53 @@ describe('filterVisibleNavItems (Spec 009 — 5 módulos + Inicio)', () => {
     expect(leaves.map((l) => l.label)).toEqual(['Bancos']);
   });
 
-  it('Módulo Vinculación expone 3 sub-items con etiquetas del flujo', () => {
+  it('Módulo Vinculación expone 4 sub-items con etiquetas del flujo', () => {
     const r = filterVisibleNavItems(MAIN_NAV_ITEMS, [], ['RRHH_ADMIN']);
     const emp = r.find((i) => i.label === 'Módulo Vinculación');
-    expect(emp?.children?.length).toBe(3);
+    expect(emp?.children?.length).toBe(4);
     expect(emp?.children?.map((c) => c.label)).toEqual([
       'Datos personales',
+      'Mantenimiento de Vacaciones',
       'Eventos del período',
       'Ficha 360',
     ]);
   });
 
-  it('Gestiones del personal expone 3 sub-items navegables bajo /gestiones-personal/', () => {
-    const r = filterVisibleNavItems(MAIN_NAV_ITEMS, [], ['ADMIN']);
+  it('Gestiones del personal expone 5 sub-items con PAP_JEFE+PAP_RRHH (3 gestiones + Mis Asistencias + Teletrabajo)', () => {
+    const r = filterVisibleNavItems(MAIN_NAV_ITEMS, ['PAP_JEFE', 'PAP_RRHH'], ['ADMIN']);
     const gp = r.find((i) => i.label === 'Gestiones del personal');
-    expect(gp?.children?.length).toBe(3);
+    expect(gp?.children?.length).toBe(5);
     expect(gp?.children?.every((c) => !c.comingSoon)).toBe(true);
     expect(gp?.children?.map((c) => c.label)).toEqual([
       'Gestión del empleado',
       'Gestión del jefe inmediato',
       'Gestión de RRHH',
+      'Mis Asistencias',
+      'Teletrabajo',
     ]);
     const routes = gp?.children?.map((c) => c.route).filter((p): p is string => Boolean(p)) ?? [];
     expect(routes).toEqual([
       '/gestiones-personal/empleado',
       '/gestiones-personal/jefe-inmediato',
       '/gestiones-personal/rrhh',
+      '/asistencia-empleado/mis-asistencias',
+      '/teletrabajo',
+    ]);
+  });
+
+  it('EMPLEADO (PAP_EMPLEADO) solo ve Gestión del empleado + Mis Asistencias en Gestiones del personal', () => {
+    const r = filterVisibleNavItems(MAIN_NAV_ITEMS, ['PAP_EMPLEADO'], ['EMPLEADO']);
+    const gp = r.find((i) => i.label === 'Gestiones del personal');
+    expect(gp?.children?.map((c) => c.label)).toEqual(['Gestión del empleado', 'Mis Asistencias']);
+  });
+
+  it('Jefe (PAP_JEFE) ve su gestión pero NO Gestión de RRHH ni Teletrabajo', () => {
+    const r = filterVisibleNavItems(MAIN_NAV_ITEMS, ['PAP_JEFE'], ['JEFE']);
+    const gp = r.find((i) => i.label === 'Gestiones del personal');
+    expect(gp?.children?.map((c) => c.label)).toEqual([
+      'Gestión del empleado',
+      'Gestión del jefe inmediato',
+      'Mis Asistencias',
     ]);
   });
 

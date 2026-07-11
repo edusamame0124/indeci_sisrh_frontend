@@ -1,5 +1,5 @@
 import { Component, Inject, OnInit, inject, signal } from '@angular/core';
-import { NgFor, NgIf } from '@angular/common';
+import { DatePipe, NgFor, NgIf } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -9,6 +9,9 @@ import { MatIconModule } from '@angular/material/icon';
 import {
   CrearSolicitudRrhhRequest,
   DetalleVacacionRequest,
+  PeriodoProgramado,
+  SaldoProporcional,
+  SaldoVacacional,
   SolicitudesRrhhService,
   TipoSolicitudRrhh,
   TipoVacacion,
@@ -20,6 +23,8 @@ interface DetalleVacacionForm {
   fechaInicio: string;
   fechaFin: string;
   totalDias: number | null;
+  /** Hub Vacacional — id del período origen elegido del dropdown (solo detalles "_ACTUAL"). */
+  vacacionOrigenId?: number | null;
 }
 
 interface VacacionesDialogData {
@@ -31,7 +36,7 @@ interface VacacionesDialogData {
 @Component({
   selector: 'app-vacaciones-dialog',
   standalone: true,
-  imports: [NgIf, NgFor, FormsModule, MatDialogModule, MatButtonModule, MatIconModule],
+  imports: [NgIf, NgFor, DatePipe, FormsModule, MatDialogModule, MatButtonModule, MatIconModule],
   templateUrl: './vacaciones-dialog.html',
   styleUrl: './vacaciones-dialog.scss',
 })
@@ -43,6 +48,20 @@ export class VacacionesDialog implements OnInit {
   cargandoTipos = signal(false);
   guardando = signal(false);
   error = signal<string | null>(null);
+
+  // Adelanto de Vacaciones (Art. 10 D.S. 013-2019-PCM): tope proporcional (meses × 2.5).
+  saldoProporcional = signal<SaldoProporcional | null>(null);
+  cargandoProporcional = signal(false);
+
+  // Saldo general (Obtenidos/Gozados/Saldo) — visible SIEMPRE, en cualquier tipo de papeleta
+  // (Programación/Adelanto/Fraccionamiento), a pedido de RR.HH.
+  saldoVacacional = signal<SaldoVacacional | null>(null);
+  cargandoSaldo = signal(false);
+
+  // Hub Vacacional — Poka-Yoke: periodos ya aprobados disponibles para reprogramar/fraccionar
+  // (dropdown, reemplaza el ingreso manual de fechas en REPROG_ACTUAL/FRACC_ACTUAL).
+  periodosProgramados = signal<PeriodoProgramado[]>([]);
+  cargandoPeriodos = signal(false);
 
   tituloDialog = 'Solicitud de vacaciones';
 
@@ -74,6 +93,22 @@ export class VacacionesDialog implements OnInit {
 
   ngOnInit(): void {
     this.cargarTiposVacacion();
+    this.cargarSaldoVacacional();
+  }
+
+  /** Obtenidos/Gozados/Saldo — SIEMPRE visible, independiente del tipo elegido (pedido RR.HH.). */
+  private cargarSaldoVacacional(): void {
+    this.cargandoSaldo.set(true);
+    this.service.obtenerMiSaldo().subscribe({
+      next: (resp) => {
+        this.saldoVacacional.set(resp?.data ?? null);
+        this.cargandoSaldo.set(false);
+      },
+      error: () => {
+        this.saldoVacacional.set(null);
+        this.cargandoSaldo.set(false);
+      },
+    });
   }
 
   cargarTiposVacacion(): void {
@@ -225,6 +260,7 @@ export class VacacionesDialog implements OnInit {
   onTipoVacacionChange(): void {
     this.error.set(null);
     this.detallesVacacion = [];
+    this.saldoProporcional.set(null);
 
     const codigo = this.codigoTipoVacacion();
 
@@ -246,6 +282,7 @@ export class VacacionesDialog implements OnInit {
         fechaFin: '',
         totalDias: null,
       });
+      this.cargarSaldoProporcional();
     }
 
     if (codigo === '003') {
@@ -256,6 +293,7 @@ export class VacacionesDialog implements OnInit {
           fechaInicio: '',
           fechaFin: '',
           totalDias: null,
+          vacacionOrigenId: null,
         },
         {
           tipo: 'REPROG_NUEVO',
@@ -265,6 +303,7 @@ export class VacacionesDialog implements OnInit {
           totalDias: null,
         },
       );
+      this.cargarPeriodosProgramados();
     }
 
     if (codigo === '004') {
@@ -275,6 +314,7 @@ export class VacacionesDialog implements OnInit {
           fechaInicio: '',
           fechaFin: '',
           totalDias: null,
+          vacacionOrigenId: null,
         },
         {
           tipo: 'FRACC_1',
@@ -307,6 +347,77 @@ export class VacacionesDialog implements OnInit {
     }
 
     this.error.set(null);
+  }
+
+  // ── Adelanto de Vacaciones: tope proporcional (Art. 10 D.S. 013-2019-PCM) ──
+
+  esAdelanto(): boolean {
+    return this.codigoTipoVacacion() === '002';
+  }
+
+  /** Días de adelanto que el usuario está solicitando (suma de detalles ADELANTO). */
+  diasAdelantoSolicitados(): number {
+    return this.detallesVacacion
+      .filter((d) => d.tipo === 'ADELANTO')
+      .reduce((acc, d) => acc + (d.totalDias ?? 0), 0);
+  }
+
+  /** true si el adelanto solicitado supera el saldo proporcional disponible (bloquea Guardar). */
+  excedeAdelanto(): boolean {
+    const saldo = this.saldoProporcional();
+    if (!this.esAdelanto() || !saldo) {
+      return false;
+    }
+    return this.diasAdelantoSolicitados() > saldo.saldoDisponible;
+  }
+
+  // ── Hub Vacacional: dropdown Poka-Yoke (periodo origen, no texto libre) ──
+
+  esDetalleActual(tipo: string): boolean {
+    return tipo === 'REPROG_ACTUAL' || tipo === 'FRACC_ACTUAL';
+  }
+
+  private cargarPeriodosProgramados(): void {
+    this.cargandoPeriodos.set(true);
+    this.service.obtenerPeriodosProgramados().subscribe({
+      next: (resp) => {
+        this.periodosProgramados.set(resp?.data ?? []);
+        this.cargandoPeriodos.set(false);
+      },
+      error: () => {
+        this.periodosProgramados.set([]);
+        this.cargandoPeriodos.set(false);
+      },
+    });
+  }
+
+  /** Al elegir un período del dropdown: autocompleta fechas/días y guarda el id origen. */
+  seleccionarPeriodoOrigen(detalle: DetalleVacacionForm, periodoId: string | number | null): void {
+    const id = periodoId != null ? Number(periodoId) : null;
+    const periodo = this.periodosProgramados().find((p) => p.id === id) ?? null;
+
+    detalle.vacacionOrigenId = periodo?.id ?? null;
+    detalle.fechaInicio = periodo?.periodoDesde ?? '';
+    detalle.fechaFin = periodo?.periodoHasta ?? '';
+    detalle.totalDias = periodo?.dias ?? null;
+    this.error.set(null);
+  }
+
+  private cargarSaldoProporcional(): void {
+    this.cargandoProporcional.set(true);
+    this.saldoProporcional.set(null);
+
+    this.service.obtenerMiSaldoProporcional().subscribe({
+      next: (resp) => {
+        this.saldoProporcional.set(resp?.data ?? null);
+        this.cargandoProporcional.set(false);
+      },
+      error: () => {
+        // No bloqueamos la UI si el preview falla; el candado del backend igual protege.
+        this.saldoProporcional.set(null);
+        this.cargandoProporcional.set(false);
+      },
+    });
   }
 
   puedeAgregarReprogramacion(): boolean {
@@ -438,6 +549,17 @@ export class VacacionesDialog implements OnInit {
       }
     }
 
+    if (this.esAdelanto() && this.excedeAdelanto()) {
+      const saldo = this.saldoProporcional();
+      this.error.set(
+        `El adelanto (${this.diasAdelantoSolicitados()} día(s)) excede el saldo proporcional disponible` +
+          (saldo
+            ? ` (${saldo.saldoDisponible} día(s) = ${saldo.mesesEfectivos} mes(es) × 2.5).`
+            : '.'),
+      );
+      return;
+    }
+
     if (this.requiereMotivo() && !this.motivo.trim()) {
       this.error.set('Ingrese el motivo de la solicitud.');
       return;
@@ -469,6 +591,7 @@ export class VacacionesDialog implements OnInit {
       fechaInicio: x.fechaInicio,
       fechaFin: x.fechaFin,
       totalDias: Number(x.totalDias),
+      vacacionOrigenId: x.vacacionOrigenId ?? null,
     }));
 
     const payload: CrearSolicitudRrhhRequest = {

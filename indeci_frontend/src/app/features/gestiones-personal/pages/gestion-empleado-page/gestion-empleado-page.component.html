@@ -20,6 +20,8 @@
     </mat-card-header>
 
     <mat-card-content>
+      <mat-tab-group mat-stretch-tabs="false" mat-align-tabs="start">
+        <mat-tab label="Todas mis papeletas">
       <section class="toolbar">
         <div class="toolbar__main">
           <button
@@ -32,6 +34,27 @@
             <mat-icon>add</mat-icon>
             Nueva papeleta
           </button>
+
+          <span
+            class="btn-teletrabajo-wrap"
+            [matTooltip]="
+              esTeletrabajador()
+                ? 'Registre su reporte diario de teletrabajo'
+                : 'No cuenta con resolución de teletrabajo activa en su legajo'
+            "
+          >
+            <button
+              class="btn-teletrabajo"
+              mat-stroked-button
+              color="primary"
+              type="button"
+              [disabled]="!esTeletrabajador()"
+              (click)="abrirTeletrabajo()"
+            >
+              <mat-icon>home_work</mat-icon>
+              Reporte Teletrabajo
+            </button>
+          </span>
 
           <button class="btn-regresar" mat-stroked-button routerLink="/">
             <mat-icon>arrow_back</mat-icon>
@@ -267,6 +290,100 @@
           </tbody>
         </table>
       </div>
+        </mat-tab>
+
+        <!-- Hub Vacacional (pedido RR.HH.): vacaciones separadas del resto, con saldo -->
+        <!-- SIEMPRE visible (Obtenidos/Gozados/Saldo) para que el empleado lo tenga en cuenta. -->
+        <mat-tab label="Programación de Vacaciones">
+          <div class="hub-vac">
+            <div *ngIf="cargandoSaldoVacacional()" class="loading">Calculando saldo…</div>
+
+            <div *ngIf="!cargandoSaldoVacacional() && saldoVacacional() as sv" class="hub-vac__saldo">
+              <div class="hub-vac__item">
+                <span class="hub-vac__label">Obtenidos</span>
+                <strong class="hub-vac__value">{{ sv.diasGanados }}</strong>
+              </div>
+              <div class="hub-vac__item">
+                <span class="hub-vac__label">Gozados</span>
+                <strong class="hub-vac__value">{{ sv.diasGozados }}</strong>
+              </div>
+              <div class="hub-vac__item">
+                <span class="hub-vac__label">Saldo</span>
+                <strong class="hub-vac__value">{{ sv.saldo }}</strong>
+              </div>
+            </div>
+
+            <div class="hub-vac__actions">
+              <button
+                mat-flat-button
+                color="primary"
+                type="button"
+                [matMenuTriggerFor]="menuVacaciones"
+              >
+                <mat-icon>add</mat-icon>
+                Nueva papeleta de vacaciones
+              </button>
+            </div>
+
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Tipo</th>
+                    <th>Estado</th>
+                    <th>Fecha inicio</th>
+                    <th>Fecha fin</th>
+                    <th>Días</th>
+                    <th>Observación</th>
+                    <th class="acciones">Acciones</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  <tr *ngFor="let item of solicitudesVacaciones()">
+                    <td>{{ item.id }}</td>
+                    <td>{{ item.tipoSolicitud || '-' }}</td>
+                    <td>
+                      <span [ngClass]="claseEstado(item.estadoSolicitud)">
+                        {{ item.estadoSolicitud || '-' }}
+                      </span>
+                    </td>
+                    <td>{{ item.fechaInicio | date: 'dd/MM/yyyy' }}</td>
+                    <td>{{ item.fechaFin | date: 'dd/MM/yyyy' }}</td>
+                    <td>
+                      <ng-container *ngIf="item.cantidadDias !== null && item.cantidadDias !== undefined">
+                        {{ item.cantidadDias }}
+                      </ng-container>
+                      <ng-container *ngIf="item.cantidadDias === null || item.cantidadDias === undefined">
+                        -
+                      </ng-container>
+                    </td>
+                    <td>{{ item.observacion || '-' }}</td>
+                    <td class="acciones">
+                      <button mat-icon-button title="Descargar papeleta" (click)="descargarFormato(item)">
+                        <mat-icon>picture_as_pdf</mat-icon>
+                      </button>
+
+                      <button mat-icon-button title="Enviar papeleta firmada" (click)="abrirEnvio(item)">
+                        <mat-icon>upload_file</mat-icon>
+                      </button>
+
+                      <button mat-icon-button title="Trazabilidad documental" (click)="abrirTrazabilidad(item)">
+                        <mat-icon>history</mat-icon>
+                      </button>
+                    </td>
+                  </tr>
+
+                  <tr *ngIf="solicitudesVacaciones().length === 0">
+                    <td colspan="8" class="empty">No tiene solicitudes de vacaciones registradas.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </mat-tab>
+      </mat-tab-group>
     </mat-card-content>
   </mat-card>
 </div>

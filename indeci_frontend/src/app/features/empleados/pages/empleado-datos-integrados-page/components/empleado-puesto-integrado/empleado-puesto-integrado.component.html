@@ -117,6 +117,18 @@
           </mat-form-field>
         </div>
 
+        <h3 class="section">Jefe inmediato</h3>
+        <div class="grid">
+          <app-empleado-autocomplete
+            class="full"
+            label="Jefe inmediato (opcional)"
+            [empleados]="empleadosJefe()"
+            [selectedId]="form.controls.jefeId.value"
+            [excluirId]="empleadoId()"
+            (selectedIdChange)="form.controls.jefeId.setValue($event)"
+          />
+        </div>
+
         <div class="actions">
           <button
             mat-stroked-button

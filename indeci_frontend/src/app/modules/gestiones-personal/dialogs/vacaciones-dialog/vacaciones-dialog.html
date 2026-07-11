@@ -1,6 +1,35 @@
 <h2 mat-dialog-title>{{ tituloDialog }}</h2>
 
 <mat-dialog-content class="dialog-body">
+  <!-- Saldo vacacional SIEMPRE visible (Obtenidos/Gozados/Saldo) — pedido RR.HH.: -->
+  <!-- el empleado debe verlo antes de elegir el tipo de papeleta, en cualquier caso. -->
+  <div class="saldo-universal">
+    <div *ngIf="cargandoSaldo()" class="saldo-universal__loading">Calculando saldo…</div>
+
+    <div *ngIf="!cargandoSaldo() && saldoVacacional() as sv" class="saldo-universal__box">
+      <div class="saldo-universal__item">
+        <span class="saldo-universal__label">Obtenidos</span>
+        <strong class="saldo-universal__value">{{ sv.diasGanados }}</strong>
+      </div>
+      <div class="saldo-universal__item">
+        <span class="saldo-universal__label">Gozados</span>
+        <strong class="saldo-universal__value">{{ sv.diasGozados }}</strong>
+      </div>
+      <div class="saldo-universal__item">
+        <span class="saldo-universal__label">Saldo</span>
+        <strong class="saldo-universal__value">{{ sv.saldo }}</strong>
+      </div>
+    </div>
+
+    <p class="saldo-universal__nota">
+      <mat-icon>info</mat-icon>
+      Base normativa: D.Leg. 1405 y D.S. 013-2019-PCM. Recomendación: verifique su saldo antes
+      de solicitar — el <strong>Adelanto</strong> se limita al saldo proporcional acumulado
+      (meses efectivos × 2.5) y el <strong>Fraccionamiento</strong> queda sujeto a la
+      autorización de RR.HH.
+    </p>
+  </div>
+
   <div *ngIf="cargandoTipos()" class="loading">Cargando tipos de vacación...</div>
 
   <div class="grid">
@@ -22,21 +51,77 @@
     <div class="field field--full" *ngFor="let detalle of detallesVacacion">
       <strong>{{ detalle.titulo }}</strong>
 
-      <div class="grid">
-        <label class="field">
-          <span>Desde</span>
-          <input type="date" [(ngModel)]="detalle.fechaInicio" (change)="calcularDias(detalle)" />
-        </label>
+      <!-- Hub Vacacional (Poka-Yoke): el periodo ORIGEN se ELIGE de lo ya aprobado en el -->
+      <!-- sistema — prohibido tipear fechas de memoria (rompe el saldo neto si se equivoca). -->
+      <ng-container *ngIf="esDetalleActual(detalle.tipo); else fechasLibres">
+        <div class="grid">
+          <label class="field field--full">
+            <span>Periodo origen (ya aprobado)</span>
+            <select
+              [ngModel]="detalle.vacacionOrigenId"
+              (ngModelChange)="seleccionarPeriodoOrigen(detalle, $event)"
+              [disabled]="cargandoPeriodos()"
+            >
+              <option [ngValue]="null">
+                {{ cargandoPeriodos() ? 'Cargando periodos…' : 'Seleccione un periodo' }}
+              </option>
+              <option *ngFor="let p of periodosProgramados()" [ngValue]="p.id">
+                Del {{ p.periodoDesde | date: 'dd/MM/yyyy' }} al
+                {{ p.periodoHasta | date: 'dd/MM/yyyy' }} — {{ p.dias }} días
+              </option>
+            </select>
+            <small
+              *ngIf="!cargandoPeriodos() && periodosProgramados().length === 0"
+              class="field__hint"
+            >
+              No tiene periodos de vacaciones aprobados pendientes de goce.
+            </small>
+          </label>
+        </div>
+      </ng-container>
 
-        <label class="field">
-          <span>Hasta</span>
-          <input type="date" [(ngModel)]="detalle.fechaFin" (change)="calcularDias(detalle)" />
-        </label>
+      <ng-template #fechasLibres>
+        <div class="grid">
+          <label class="field">
+            <span>Desde</span>
+            <input type="date" [(ngModel)]="detalle.fechaInicio" (change)="calcularDias(detalle)" />
+          </label>
 
-        <label class="field">
-          <span>Días</span>
-          <input type="number" [ngModel]="detalle.totalDias" disabled />
-        </label>
+          <label class="field">
+            <span>Hasta</span>
+            <input type="date" [(ngModel)]="detalle.fechaFin" (change)="calcularDias(detalle)" />
+          </label>
+
+          <label class="field">
+            <span>Días</span>
+            <input type="number" [ngModel]="detalle.totalDias" disabled />
+          </label>
+        </div>
+      </ng-template>
+    </div>
+
+    <!-- Adelanto de Vacaciones (Art. 10 D.S. 013-2019-PCM): tope proporcional -->
+    <div class="field field--full adelanto-info" *ngIf="esAdelanto()">
+      <div *ngIf="cargandoProporcional()" class="adelanto-info__loading">
+        Calculando saldo proporcional…
+      </div>
+
+      <div *ngIf="!cargandoProporcional() && saldoProporcional() as saldo" class="adelanto-info__box">
+        <mat-icon>info</mat-icon>
+        <div>
+          <strong>Saldo proporcional disponible: {{ saldo.saldoDisponible }} día(s)</strong>
+          <span class="adelanto-info__detalle">
+            {{ saldo.mesesEfectivos }} mes(es) efectivo(s) × 2.5
+            <ng-container *ngIf="saldo.diasAdelantados > 0">
+              — ya adelantó {{ saldo.diasAdelantados }} día(s)
+            </ng-container>
+          </span>
+        </div>
+      </div>
+
+      <div *ngIf="excedeAdelanto()" class="adelanto-info__error">
+        ⚠ El adelanto ({{ diasAdelantoSolicitados() }} día(s)) excede el saldo proporcional
+        disponible. Reduzca los días solicitados.
       </div>
     </div>
 
@@ -92,7 +177,7 @@
     color="primary"
     type="button"
     (click)="guardar()"
-    [disabled]="guardando()"
+    [disabled]="guardando() || excedeAdelanto()"
   >
     <mat-icon>save</mat-icon>
     {{ guardando() ? 'Guardando...' : 'Guardar borrador' }}

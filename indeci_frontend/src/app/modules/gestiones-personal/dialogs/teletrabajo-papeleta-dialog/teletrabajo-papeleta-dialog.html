@@ -1,0 +1,88 @@
+<h2 mat-dialog-title>
+  <mat-icon class="title-icon">home_work</mat-icon>
+  Reporte de Teletrabajo
+</h2>
+
+<mat-dialog-content class="dialog-body">
+  <p class="hint">
+    Registre las actividades efectivamente realizadas durante su jornada de teletrabajo.
+    Al enviar, la papeleta será remitida a su jefe inmediato para su V°B° y luego a la
+    Unidad de Recursos Humanos.
+  </p>
+
+  <div class="grid">
+    <label class="field">
+      <span>Fecha del reporte</span>
+      <input type="date" [(ngModel)]="fechaReporte" [max]="hoy" />
+    </label>
+  </div>
+
+  <section class="actividades">
+    <header class="actividades__head">
+      <span>Actividades del día</span>
+      <button
+        mat-stroked-button
+        type="button"
+        class="btn-agregar"
+        (click)="agregarActividad()"
+      >
+        <mat-icon>add</mat-icon>
+        Agregar actividad
+      </button>
+    </header>
+
+    <div class="actividad-row" *ngFor="let fila of actividades; let i = index">
+      <label class="field field--grow">
+        <span>Actividad {{ i + 1 }} *</span>
+        <textarea
+          rows="2"
+          [(ngModel)]="fila.actividad"
+          placeholder="Describa la actividad realizada"
+        ></textarea>
+      </label>
+
+      <label class="field field--grow">
+        <span>Medio de verificación</span>
+        <input
+          type="text"
+          [(ngModel)]="fila.medioVerificacion"
+          placeholder="Entregable, informe, correo, etc."
+        />
+      </label>
+
+      <button
+        mat-icon-button
+        type="button"
+        class="btn-quitar"
+        aria-label="Quitar actividad"
+        [disabled]="actividades.length <= 1"
+        (click)="quitarActividad(i)"
+      >
+        <mat-icon>delete_outline</mat-icon>
+      </button>
+    </div>
+  </section>
+
+  <div *ngIf="error()" class="error">
+    {{ error() }}
+  </div>
+
+  <p class="norma">Base legal: Ley N° 31572 (Ley del Teletrabajo) y directivas SERVIR.</p>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-stroked-button type="button" (click)="cerrar()" [disabled]="guardando()">
+    Cancelar
+  </button>
+
+  <button
+    mat-flat-button
+    color="primary"
+    type="button"
+    (click)="guardar()"
+    [disabled]="guardando()"
+  >
+    <mat-icon>save</mat-icon>
+    {{ guardando() ? 'Guardando...' : 'Guardar borrador' }}
+  </button>
+</mat-dialog-actions>

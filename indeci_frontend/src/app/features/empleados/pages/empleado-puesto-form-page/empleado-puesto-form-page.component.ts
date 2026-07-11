@@ -35,6 +35,8 @@ import { EmpleadoFlowService } from '../../services/empleado-flow.service';
 import { EmpleadoFlowBackendSyncService } from '../../services/empleado-flow-backend-sync.service';
 import { CargoApiService } from '../../services/cargo-api.service';
 import type { Cargo } from '../../models/cargo.model';
+import type { PersonaEmpleado } from '../../models/persona-empleado.model';
+import { EmpleadoAutocompleteComponent } from '../../components/empleado-autocomplete/empleado-autocomplete.component';
 
 @Component({
   selector: 'app-empleado-puesto-form-page',
@@ -49,6 +51,7 @@ import type { Cargo } from '../../models/cargo.model';
     MatButtonModule,
     MatProgressSpinnerModule,
     EmpleadoFlowWarningBannerComponent,
+    EmpleadoAutocompleteComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -178,6 +181,18 @@ import type { Cargo } from '../../models/cargo.model';
                 </mat-form-field>
               </div>
 
+              <h3 class="section">Jefe inmediato</h3>
+              <div class="grid">
+                <app-empleado-autocomplete
+                  class="full"
+                  label="Jefe inmediato (opcional)"
+                  [empleados]="empleadosJefe()"
+                  [selectedId]="form.controls.jefeId.value"
+                  [excluirId]="empleadoId()"
+                  (selectedIdChange)="form.controls.jefeId.setValue($event)"
+                />
+              </div>
+
               <div class="actions">
                 <button
                   mat-flat-button
@@ -287,6 +302,7 @@ export class EmpleadoPuestoFormPageComponent implements OnInit {
   readonly oficinasLoading = signal(false);
   readonly dependencias = signal<readonly Dependencia[]>([]);
   readonly estructuras = signal<readonly EstructuraOrganica[]>([]);
+  readonly empleadosJefe = signal<readonly PersonaEmpleado[]>([]);
 
   readonly form = this.fb.group({
     cargoId: this.fb.nonNullable.control(0, [
@@ -297,6 +313,7 @@ export class EmpleadoPuestoFormPageComponent implements OnInit {
     oficinaId: this.fb.control<number | null>(null),
     dependenciaId: this.fb.control<number | null>(null),
     estructuraOrganicaId: this.fb.control<number | null>(null),
+    jefeId: this.fb.control<number | null>(null),
   });
 
   constructor() {
@@ -348,6 +365,7 @@ export class EmpleadoPuestoFormPageComponent implements OnInit {
             sedes: this.catalogos.listarSedes(),
             dependencias: this.catalogos.listarDependencias(),
             estructuras: this.catalogos.listarEstructurasOrganicas(),
+            empleados: this.personaApi.listar(),
           }).pipe(
             switchMap((rest) =>
               this.flowBackendSync.syncCompletedStepsFromBackend(eid).pipe(
@@ -359,7 +377,8 @@ export class EmpleadoPuestoFormPageComponent implements OnInit {
       )
       .subscribe({
         next: (res) => {
-          const { persona, eid, historial, cargos, niveles, sedes, dependencias, estructuras } = res;
+          const { persona, eid, historial, cargos, niveles, sedes, dependencias, estructuras, empleados } =
+            res;
           this.personaLabel.set(persona.nombreCompleto);
           this.empleadoId.set(eid);
           this.primerRegistroDePuesto.set(historial.length === 0);
@@ -369,6 +388,7 @@ export class EmpleadoPuestoFormPageComponent implements OnInit {
           this.sedes.set(sedes);
           this.dependencias.set(dependencias);
           this.estructuras.set(estructuras);
+          this.empleadosJefe.set(empleados);
           if (this.isEdit()) {
             this.patchFromHistorial(eid, this.puestoId()!);
           } else {
@@ -406,6 +426,7 @@ export class EmpleadoPuestoFormPageComponent implements OnInit {
       sedeId: row.sedeId,
       dependenciaId: row.dependenciaId ?? null,
       estructuraOrganicaId: row.estructuraOrganicaId ?? null,
+      jefeId: row.jefeId ?? null,
     });
 
     const sedeId = row.sedeId;
@@ -480,6 +501,7 @@ export class EmpleadoPuestoFormPageComponent implements OnInit {
         v.estructuraOrganicaId != null && v.estructuraOrganicaId > 0
           ? v.estructuraOrganicaId
           : undefined,
+      jefeId: v.jefeId != null && v.jefeId > 0 ? v.jefeId : undefined,
     };
 
     this.saving.set(true);

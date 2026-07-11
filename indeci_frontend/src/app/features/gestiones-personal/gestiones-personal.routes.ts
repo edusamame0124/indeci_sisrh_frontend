@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { empleadosAccessGuard } from '../../core/guards/empleados-access.guard';
+import { requirePermisos } from '../../core/guards/permiso-access.guard';
 
 /**
  * Rutas del módulo "Gestiones del personal".
@@ -23,6 +24,7 @@ export const GESTIONES_PERSONAL_ROUTES: Routes = [
       },
       {
         path: 'jefe-inmediato',
+        canActivate: [requirePermisos('PAP_JEFE')],
         loadComponent: () =>
           import('./pages/gestion-jefe-page/gestion-jefe-page.component').then(
             (m) => m.GestionJefePageComponent,
@@ -31,6 +33,7 @@ export const GESTIONES_PERSONAL_ROUTES: Routes = [
       },
       {
         path: 'rrhh',
+        canActivate: [requirePermisos('PAP_RRHH')],
         loadComponent: () =>
           import('./pages/gestion-rrhh-page/gestion-rrhh-page.component').then(
             (m) => m.GestionRrhhPageComponent,

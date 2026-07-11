@@ -8,6 +8,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatTabsModule } from '@angular/material/tabs';
 
 import {
   SolicitudRrhh,
@@ -17,6 +18,9 @@ import {
 import { AprobarRrhhPapeletaDialogComponent } from '../../../../modules/gestiones-personal/dialogs/aprobar-rrhh-papeleta-dialog/aprobar-rrhh-papeleta-dialog';
 
 import { TrazabilidadPapeletaDialogComponent } from '../../../../modules/gestiones-personal/dialogs/trazabilidad-papeleta-dialog/trazabilidad-papeleta-dialog';
+
+import { PadronVacacionalTabComponent } from '../../components/padron-vacacional-tab/padron-vacacional-tab.component';
+import { AuthService } from '../../../../core/services/auth.service';
 
 @Component({
   selector: 'app-gestion-rrhh-page',
@@ -33,6 +37,8 @@ import { TrazabilidadPapeletaDialogComponent } from '../../../../modules/gestion
     MatIconModule,
     MatDialogModule,
     MatProgressSpinnerModule,
+    MatTabsModule,
+    PadronVacacionalTabComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './gestion-rrhh-page.component.html',
@@ -41,6 +47,14 @@ import { TrazabilidadPapeletaDialogComponent } from '../../../../modules/gestion
 export class GestionRrhhPageComponent implements OnInit {
   private readonly service = inject(SolicitudesRrhhService);
   private readonly dialog = inject(MatDialog);
+  private readonly auth = inject(AuthService);
+
+  /**
+   * Aprobar/Rechazar papeletas RRHH exige el permiso de APROBACIÓN (SoD): el
+   * analista opera el módulo (PAP_RRHH) pero no aprueba. El backend además lo
+   * exige con @PreAuthorize('PAP_APROBAR_RRHH') como fuente de verdad.
+   */
+  readonly puedeAprobarRrhh = computed(() => this.auth.permisos().includes('PAP_APROBAR_RRHH'));
 
   solicitudes = signal<SolicitudRrhh[]>([]);
   cargando = signal(false);

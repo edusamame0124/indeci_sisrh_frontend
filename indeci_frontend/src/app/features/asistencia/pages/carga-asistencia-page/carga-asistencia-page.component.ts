@@ -12,6 +12,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatDialog } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
@@ -31,10 +32,16 @@ import type { PeriodoPlanillaRow } from '../../../planilla/models/periodo-planil
 import {
   ESTADOS_ASISTENCIA,
   TIPOS_DIA,
+  TIPOS_DIA_CICLABLES,
   type AsistenciaDia,
   type EstadoAsistencia,
   type TipoDia,
 } from '../../models/asistencia.model';
+import { CONDICION_LABELS } from '../../models/asistencia-diaria.model';
+import {
+  SancionPadDialogComponent,
+  type SancionPadDialogData,
+} from './components/sancion-pad-dialog/sancion-pad-dialog.component';
 
 /** OpciÃ³n del selector de empleado (SPEC Â§12.2 PANTALLA-02). */
 interface EmpleadoOpcion {
@@ -46,7 +53,10 @@ interface EmpleadoOpcion {
 /** Resumen de la asistencia cargada (SPEC Â§12.2 PANTALLA-02). */
 interface ResumenAsistencia {
   readonly diasLaborados: number;
+  /** Total que descuenta como falta (FALTA + SANCION_PAD) — espejo de cab.diasFalta backend. */
   readonly diasFalta: number;
+  /** Subconjunto informativo de diasFalta: solo días marcados como Sanción PAD. */
+  readonly diasSancionPad: number;
   readonly totalMinTardanza: number;
   readonly descuentoTardanza: number;
   readonly descuentoFalta: number;
@@ -55,6 +65,12 @@ interface ResumenAsistencia {
 
 /** Tipos que cuentan como dÃ­a efectivamente laborado. */
 const TIPOS_LABORADOS: ReadonlySet<TipoDia> = new Set<TipoDia>(['LABORAL', 'TARDANZA']);
+
+/** Tipos que descuentan como falta (D.Leg. 276 Art. 24) — FALTA y SANCION_PAD. */
+const TIPOS_DESCUENTAN_COMO_FALTA: ReadonlySet<TipoDia> = new Set<TipoDia>([
+  'FALTA',
+  'SANCION_PAD',
+]);
 
 /**
  * PANTALLA-02 â€” Carga de Asistencia (SPEC Â§12.2, ROL_RRHH).
@@ -94,10 +110,12 @@ export class CargaAsistenciaPageComponent implements OnInit {
   private readonly tabs = inject(AsistenciaTabService);
   private readonly snack = inject(MatSnackBar);
   private readonly errors = inject(ErrorMessageService);
+  private readonly dialog = inject(MatDialog);
 
   /** DÃ­as de la semana (lunes a domingo) para el encabezado de la grilla. */
   readonly diasSemana = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'] as const;
   readonly tiposDia = TIPOS_DIA;
+  readonly condicionLabels = CONDICION_LABELS;
   readonly estadosAsistencia = ESTADOS_ASISTENCIA;
 
   readonly periodos = signal<readonly PeriodoPlanillaRow[]>([]);
@@ -142,10 +160,12 @@ export class CargaAsistenciaPageComponent implements OnInit {
   readonly resumen = computed<ResumenAsistencia>(() => {
     let diasLaborados = 0;
     let diasFalta = 0;
+    let diasSancionPad = 0;
     let totalMinTardanza = 0;
     for (const d of this.dias()) {
       if (TIPOS_LABORADOS.has(d.tipoDia)) diasLaborados++;
-      if (d.tipoDia === 'FALTA') diasFalta++;
+      if (TIPOS_DESCUENTAN_COMO_FALTA.has(d.tipoDia)) diasFalta++;
+      if (d.tipoDia === 'SANCION_PAD') diasSancionPad++;
       if (d.tipoDia === 'TARDANZA') totalMinTardanza += Math.max(0, d.minutosTardanza);
     }
     const remun = this.remuneracionBase() ?? 0;
@@ -154,6 +174,7 @@ export class CargaAsistenciaPageComponent implements OnInit {
     return {
       diasLaborados,
       diasFalta,
+      diasSancionPad,
       totalMinTardanza,
       descuentoTardanza,
       descuentoFalta,
@@ -267,10 +288,19 @@ export class CargaAsistenciaPageComponent implements OnInit {
 
   // ============ EdiciÃ³n del calendario ============
 
-  /** Cicla el tipo de dÃ­a (LABORAL â†’ TARDANZA â†’ FALTA â†’ â€¦ â†’ DESCANSO â†’ LABORAL). */
+  /**
+   * Cicla el tipo de dÃ­a (LABORAL â†’ TARDANZA â†’ FALTA â†’ â€¦ â†’ DESCANSO â†’ LABORAL).
+   * SANCION_PAD queda fuera del ciclo (exige motivo obligatorio): si el dÃ­a ya
+   * estÃ¡ marcado asÃ­, el click reabre el modal para editar el motivo en vez de
+   * pisarlo con el siguiente estado del ciclo.
+   */
   cycleTipo(dia: AsistenciaDia): void {
-    const idx = this.tiposDia.indexOf(dia.tipoDia);
-    const siguiente = this.tiposDia[(idx + 1) % this.tiposDia.length];
+    if (dia.tipoDia === 'SANCION_PAD') {
+      this.abrirModalSancionPad(dia);
+      return;
+    }
+    const idx = TIPOS_DIA_CICLABLES.indexOf(dia.tipoDia);
+    const siguiente = TIPOS_DIA_CICLABLES[(idx + 1) % TIPOS_DIA_CICLABLES.length];
     this.setTipo(dia, siguiente);
   }
 
@@ -278,10 +308,38 @@ export class CargaAsistenciaPageComponent implements OnInit {
     this.dias.update((lista) =>
       lista.map((d) =>
         d.dia === dia.dia
-          ? { ...d, tipoDia: tipo, minutosTardanza: tipo === 'TARDANZA' ? d.minutosTardanza : 0 }
+          ? {
+              ...d,
+              tipoDia: tipo,
+              minutosTardanza: tipo === 'TARDANZA' ? d.minutosTardanza : 0,
+              observacion: tipo === 'SANCION_PAD' ? d.observacion : null,
+            }
           : d,
       ),
     );
+  }
+
+  /** Abre el modal de Sanción PAD (motivo/expediente obligatorio) para el día. */
+  abrirModalSancionPad(dia: AsistenciaDia): void {
+    const ref = this.dialog.open<
+      SancionPadDialogComponent,
+      SancionPadDialogData,
+      string | undefined
+    >(SancionPadDialogComponent, {
+      width: '520px',
+      maxWidth: '95vw',
+      data: { fecha: dia.dia, motivoActual: dia.tipoDia === 'SANCION_PAD' ? dia.observacion : null },
+    });
+    ref.afterClosed().subscribe((motivo) => {
+      if (motivo == null) return;
+      this.dias.update((lista) =>
+        lista.map((d) =>
+          d.dia === dia.dia
+            ? { ...d, tipoDia: 'SANCION_PAD', minutosTardanza: 0, observacion: motivo }
+            : d,
+        ),
+      );
+    });
   }
 
   onMinutos(dia: AsistenciaDia, valor: number | string): void {
@@ -307,7 +365,7 @@ export class CargaAsistenciaPageComponent implements OnInit {
     if (dia.tipoDia === 'TARDANZA') {
       return this.round2((remun * Math.max(0, dia.minutosTardanza)) / (30 * 8 * 60));
     }
-    if (dia.tipoDia === 'FALTA') {
+    if (TIPOS_DESCUENTAN_COMO_FALTA.has(dia.tipoDia)) {
       return this.round2(remun / 30);
     }
     return 0;
@@ -315,7 +373,9 @@ export class CargaAsistenciaPageComponent implements OnInit {
 
   /** Tooltip del día con el descuento referencial cuando aplica. */
   tooltipDia(dia: AsistenciaDia): string {
-    const base = `${dia.dia} — ${dia.tipoDia} (clic para cambiar)`;
+    const etiqueta = this.condicionLabels[dia.tipoDia] ?? dia.tipoDia;
+    const accion = dia.tipoDia === 'SANCION_PAD' ? 'clic para editar motivo' : 'clic para cambiar';
+    const base = `${dia.dia} — ${etiqueta} (${accion})`;
     const desc = this.descuentoDia(dia);
     return desc > 0 ? `${base} · Descuento S/ ${this.fmtMonto(desc)}` : base;
   }
@@ -326,6 +386,18 @@ export class CargaAsistenciaPageComponent implements OnInit {
     const empleadoId = this.empleadoSeleccionado();
     const periodo = this.periodoSeleccionado();
     if (empleadoId == null || periodo == null) return;
+
+    const diaSinMotivoPad = this.dias().find(
+      (d) => d.tipoDia === 'SANCION_PAD' && !d.observacion?.trim(),
+    );
+    if (diaSinMotivoPad) {
+      this.snack.open(
+        `Falta el motivo de Sanción PAD del día ${this.numeroDia(diaSinMotivoPad)}.`,
+        'Cerrar',
+        { duration: 6000 },
+      );
+      return;
+    }
 
     this.guardando.set(true);
     this.asistenciaApi

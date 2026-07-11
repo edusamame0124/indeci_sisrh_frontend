@@ -30,6 +30,16 @@ export interface SolicitudRrhh {
   horaInicio: string | null;
   horaFin: string | null;
   cantidadHoras: number | null;
+  /** Papeleta de Teletrabajo (Ley N° 31572): actividades del día. */
+  detallesTeletrabajo?: DetalleTeletrabajo[] | null;
+}
+
+/** Papeleta de Teletrabajo (Ley N° 31572): actividad del día (respuesta). */
+export interface DetalleTeletrabajo {
+  nroOrden?: number | null;
+  actividad: string;
+  medioVerificacion?: string | null;
+  evidenciaArchivo?: string | null;
 }
 
 export interface DocumentoSolicitud {
@@ -64,6 +74,12 @@ export interface TipoLicencia {
   id: number;
   nombre: string;
   activo?: number;
+  /** SPEC_VACACIONES F9.1 — 1 = licencia sin goce de haber. */
+  esSinGoce?: number;
+  /** 1 = requiere N° de Resolución Directoral de sustento. */
+  requiereResolucion?: number;
+  /** Código Tabla 21 PLAME (SUNAT). */
+  codPlameSunat?: string;
 }
 
 export interface TipoVacacion {
@@ -71,6 +87,21 @@ export interface TipoVacacion {
   nombre: string;
   codigo?: string;
   activo?: number;
+}
+
+/** Espejo de `SaldoProporcionalDto` (backend) — tope del Adelanto de Vacaciones. */
+export interface SaldoProporcional {
+  mesesEfectivos: number;
+  saldoProporcional: number;
+  diasAdelantados: number;
+  saldoDisponible: number;
+}
+
+/** Espejo de `SaldoVacacionalDto` (backend) — Obtenidos/Gozados/Saldo, visible en toda papeleta. */
+export interface SaldoVacacional {
+  diasGanados: number;
+  diasGozados: number;
+  saldo: number;
 }
 
 export interface TipoDescansoMedico {
@@ -97,6 +128,17 @@ export interface DetalleVacacionRequest {
   fechaInicio: string;
   fechaFin: string;
   totalDias: number;
+  /** Hub Vacacional — id del período origen elegido del dropdown (solo en detalles "_ACTUAL"). */
+  vacacionOrigenId?: number | null;
+}
+
+/** Hub Vacacional — espejo de `PeriodoProgramadoDto` (backend). Dropdown Poka-Yoke. */
+export interface PeriodoProgramado {
+  id: number;
+  periodoDesde: string;
+  periodoHasta: string;
+  dias: number;
+  tipoGoce: string | null;
 }
 
 export interface DetalleCompensacionRequest {
@@ -104,6 +146,14 @@ export interface DetalleCompensacionRequest {
   horaInicio: string;
   horaFin: string;
   cantidadHoras: number;
+}
+
+/** Papeleta de Teletrabajo (Ley N° 31572): actividad del día. */
+export interface DetalleTeletrabajoRequest {
+  nroOrden?: number | null;
+  actividad: string;
+  medioVerificacion?: string | null;
+  evidenciaArchivo?: string | null;
 }
 
 export interface CrearSolicitudRrhhRequest {
@@ -137,6 +187,9 @@ export interface CrearSolicitudRrhhRequest {
   detallesVacacion?: DetalleVacacionRequest[] | null;
 
   detallesCompensacion?: DetalleCompensacionRequest[] | null;
+
+  /** Papeleta de Teletrabajo (Ley N° 31572): actividades del día. */
+  detallesTeletrabajo?: DetalleTeletrabajoRequest[] | null;
 }
 
 @Injectable({
@@ -152,6 +205,17 @@ export class SolicitudesRrhhService {
     );
   }
 
+  /**
+   * Gate de Modalidad de Teletrabajo (Ley N° 31572): indica si el empleado
+   * logueado tiene resolución de teletrabajo activa en su legajo. Alimenta el
+   * bloqueo Poka-Yoke del botón "Reporte Teletrabajo".
+   */
+  obtenerMiTeletrabajo(): Observable<ApiResponse<boolean>> {
+    return this.http.get<ApiResponse<boolean>>(
+      `${this.apiUrl}/rrhh/solicitudes/mi-teletrabajo`,
+    );
+  }
+
   listarTiposSolicitud(): Observable<ApiResponse<TipoSolicitudRrhh[]>> {
     return this.http.get<ApiResponse<TipoSolicitudRrhh[]>>(
       `${this.apiUrl}/catalogos/tipos-solicitud-rrhh`,
@@ -164,6 +228,34 @@ export class SolicitudesRrhhService {
 
   listarTiposVacacion(): Observable<ApiResponse<TipoVacacion[]>> {
     return this.http.get<ApiResponse<TipoVacacion[]>>(`${this.apiUrl}/catalogos/tipos-vacacion`);
+  }
+
+  /**
+   * Saldo proporcional del solicitante para el Adelanto de Vacaciones
+   * (Art. 10 D.S. 013-2019-PCM). Espeja el candado del backend en el modal.
+   */
+  obtenerMiSaldoProporcional(): Observable<ApiResponse<SaldoProporcional>> {
+    return this.http.get<ApiResponse<SaldoProporcional>>(
+      `${this.apiUrl}/rrhh/vacaciones/mi-saldo-proporcional`,
+    );
+  }
+
+  /**
+   * Saldo vacacional (Obtenidos/Gozados/Saldo) del solicitante — visible SIEMPRE en la
+   * papeleta, para cualquier tipo (Programación/Adelanto/Fraccionamiento), a pedido de RR.HH.
+   */
+  obtenerMiSaldo(): Observable<ApiResponse<SaldoVacacional>> {
+    return this.http.get<ApiResponse<SaldoVacacional>>(`${this.apiUrl}/rrhh/vacaciones/saldo`);
+  }
+
+  /**
+   * Hub Vacacional — períodos aprobados aún no gozados, disponibles para reprogramar o
+   * fraccionar. Fuente del dropdown Poka-Yoke (reemplaza el ingreso manual de fechas).
+   */
+  obtenerPeriodosProgramados(): Observable<ApiResponse<PeriodoProgramado[]>> {
+    return this.http.get<ApiResponse<PeriodoProgramado[]>>(
+      `${this.apiUrl}/rrhh/vacaciones/periodos-programados`,
+    );
   }
 
   listarTiposDescansoMedico(): Observable<ApiResponse<TipoDescansoMedico[]>> {
@@ -275,7 +367,8 @@ export class SolicitudesRrhhService {
   }
 
   descargarFormatoPapeleta(idPapeleta: number): Observable<Blob> {
-    return this.http.post(`${this.apiUrl}/rrhh/reportes/papeleta/${idPapeleta}`, null, {
+    // SPEC_VACACIONES F9.1-bis — endpoint real que genera el PDF oficial (Jasper) y lo stremea.
+    return this.http.get(`${this.apiUrl}/rrhh/solicitudes/${idPapeleta}/papeleta/pdf`, {
       responseType: 'blob',
     });
   }

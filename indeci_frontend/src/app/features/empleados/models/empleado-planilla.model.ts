@@ -17,6 +17,8 @@ export interface EmpleadoPlanillaInput {
   readonly tipoContratoId?: number | null;
   readonly condicionLaboralId?: number | null;
   readonly modalidadCasId?: number | null;
+  /** Gate de Teletrabajo (Ley N° 31572, V012_28): 1 = habilitado por RR.HH. */
+  readonly esTeletrabajador?: number | null;
   // Ley 30057 (V012_07)
   readonly grupoServidorCivil?: string | null;
   readonly esConfianza?: number | null;
@@ -24,6 +26,8 @@ export interface EmpleadoPlanillaInput {
   readonly registroPlazaAirhsp?: string | null;
   readonly fechaInicioContrato?: string | null;
   readonly fechaFin?: string | null;
+  /** SPEC_VACACIONES F9.1 — override de jornada (null=hereda régimen; 6=operativo COEN/DDI). */
+  readonly diasSemanaOperativo?: number | null;
   // Cese (V012_04) — hechos que registra RR.HH.; el estado se deriva en backend.
   readonly fechaCese?: string | null;
   readonly motivoCese?: string | null;
@@ -112,6 +116,8 @@ export interface EmpleadoPlanillaRow {
   readonly tipoContratoId: number | null;
   readonly condicionLaboralId: number | null;
   readonly modalidadCasId?: number | null;
+  /** Gate de Teletrabajo (Ley N° 31572, V012_28): 1 = habilitado por RR.HH. */
+  readonly esTeletrabajador: number | null;
   readonly grupoServidorCivil: string | null;
   readonly esConfianza: number | null;
   readonly regimenLaboral: string | null;
@@ -121,6 +127,8 @@ export interface EmpleadoPlanillaRow {
   readonly registroPlazaAirhsp: string | null;
   readonly fechaInicioContrato: string | null;
   readonly fechaFin: string | null;
+  /** SPEC_VACACIONES F9.1 — override de jornada (null=hereda régimen; 6=operativo). */
+  readonly diasSemanaOperativo: number | null;
   // ===== Cese + estado derivado (V012_04) =====
   readonly fechaCese: string | null;
   readonly motivoCese: string | null;
@@ -133,4 +141,34 @@ export interface EmpleadoPlanillaRow {
   readonly estadoVinculo: string | null;
   /** true si el cese formal está completo (habilita generar LBS). */
   readonly habilitaLbs: boolean | null;
+}
+
+/**
+ * SPEC_VACACIONES F1/F2 — tiempo de servicio del empleado (espejo de `TiempoServicioDto`).
+ * Cómputo 30/360 (D.Leg. 1405) acumulando vínculos secuenciales; read-only.
+ */
+export interface TiempoServicioRow {
+  readonly empleadoId: number;
+  readonly fechaIngreso: string | null;
+  readonly fechaCorte: string | null;
+  readonly anios: number;
+  readonly meses: number;
+  readonly dias: number;
+  readonly totalDias360: number;
+  readonly numVinculos: number;
+  readonly tieneTraslape: boolean;
+}
+
+/** SPEC_VACACIONES F9.1 — desglose de días no computables (LSG + faltas). */
+export interface DiasNoComputablesRow {
+  readonly lsg: number;
+  readonly faltas: number;
+  readonly total: number;
+}
+
+/** Espejo de `TiempoServicioDetalleDto` — antigüedad + días no computables + aniversario efectivo. */
+export interface TiempoServicioDetalleRow {
+  readonly tiempoServicio: TiempoServicioRow | null;
+  readonly diasNoComputables: DiasNoComputablesRow;
+  readonly aniversarioEfectivo: string | null;
 }

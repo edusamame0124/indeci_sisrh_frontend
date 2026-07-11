@@ -121,6 +121,15 @@
   color: var(--sisrh-badge-danger-fg);
 }
 
+.resumen-item--pad {
+  background: var(--sisrh-badge-danger-bg);
+  border-color: color-mix(in srgb, var(--sisrh-badge-danger-fg) 25%, transparent);
+}
+
+.resumen-item--pad .resumen-item__valor {
+  color: var(--sisrh-badge-danger-fg);
+}
+
 .leyenda {
   display: flex;
   flex-wrap: wrap;
@@ -170,11 +179,50 @@
 }
 
 .cal-celda {
+  position: relative;
   min-height: 64px;
   border: 0.5px solid var(--sisrh-border);
   border-radius: var(--sisrh-radius-md);
   display: flex;
   flex-direction: column;
+}
+
+/* Botón dedicado para marcar Sanción PAD (fuera del ciclo de click normal). */
+.cal-celda__sancion-btn {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--sisrh-text-muted, #64748b);
+  opacity: 0.45;
+  cursor: pointer;
+}
+
+.cal-celda__sancion-btn:hover,
+.cal-celda__sancion-btn:focus-visible {
+  opacity: 1;
+  background: var(--sisrh-badge-danger-bg);
+  color: var(--sisrh-badge-danger-fg);
+}
+
+.cal-celda__sancion-btn mat-icon {
+  font-size: 13px;
+  width: 13px;
+  height: 13px;
+}
+
+.cal-celda__sancion-btn--activo {
+  opacity: 1;
+  color: var(--sisrh-badge-danger-fg);
 }
 
 .cal-celda--vacia {
@@ -396,6 +444,17 @@
   color: var(--status-warn, #854F0B);
 }
 
+.cal-dia--sancion_pad {
+  background: var(--sisrh-danger-100, #fdecec);
+  border-color: var(--sisrh-danger, #b42318);
+  border-width: 1px;
+}
+
+.cal-dia--sancion_pad .cal-celda__tipo {
+  color: var(--sisrh-danger, #b42318);
+  font-weight: 700;
+}
+
 .leyenda-dot.cal-dia--laboral {
   background: var(--sisrh-badge-success-fg);
 }
@@ -426,6 +485,10 @@
 
 .leyenda-dot.cal-dia--observado {
   background: var(--status-warn, #854F0B);
+}
+
+.leyenda-dot.cal-dia--sancion_pad {
+  background: var(--sisrh-danger, #b42318);
 }
 
 .acciones {

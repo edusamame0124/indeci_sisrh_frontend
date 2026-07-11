@@ -55,7 +55,7 @@ describe('MainLayoutComponent (Spec 009 — sidebar reorganizado)', () => {
     fixture.detectChanges();
     const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
     expect(text).toContain('Inicio');
-    expect(text).not.toContain('Empleados');
+    expect(text).not.toContain('Módulo Vinculación');
     expect(text).not.toContain('Catálogos');
     expect(text).not.toContain('Planilla');
     expect(text).not.toContain('Reportes');
@@ -71,15 +71,15 @@ describe('MainLayoutComponent (Spec 009 — sidebar reorganizado)', () => {
     fixture.detectChanges();
     const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
     expect(text).toContain('Catálogos');
-    expect(text).toContain('Empleados');
+    expect(text).toContain('Módulo Vinculación');
     expect(text).toContain('Planilla');
     expect(text).toContain('Reportes');
     expect(text).toContain('Administración');
-    // Sub-items con etiquetas del brief
+    // Sub-items reales del módulo de vinculación y gestiones del personal
     expect(text).toContain('Datos personales');
-    expect(text).toContain('Puesto laboral');
-    expect(text).toContain('Cuenta bancaria');
-    expect(text).toContain('Configuración pensión');
+    expect(text).toContain('Eventos del período');
+    expect(text).toContain('Ficha 360');
+    expect(text).toContain('Gestiones del personal');
   });
 
   it('RRHH_ADMIN ve Catálogos (lectura) y NO ve Reportes ni Administración', () => {
@@ -92,7 +92,7 @@ describe('MainLayoutComponent (Spec 009 — sidebar reorganizado)', () => {
     fixture.detectChanges();
     const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
     expect(text).toContain('Catálogos');
-    expect(text).toContain('Empleados');
+    expect(text).toContain('Módulo Vinculación');
     expect(text).toContain('Planilla');
     expect(text).not.toContain('Reportes');
     expect(text).not.toContain('Administración');

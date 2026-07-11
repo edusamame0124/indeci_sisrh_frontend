@@ -69,4 +69,5 @@ export const CONDICION_LABELS: Record<string, string> = {
   DESCANSO: 'Descanso',
   FERIADO: 'Feriado',
   OBSERVADO: 'Observado',
+  SANCION_PAD: 'Sanción PAD',
 };

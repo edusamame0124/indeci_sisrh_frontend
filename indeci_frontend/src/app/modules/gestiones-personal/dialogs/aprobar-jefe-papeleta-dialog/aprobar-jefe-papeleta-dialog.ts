@@ -1,5 +1,5 @@
 import { Component, Inject, signal } from '@angular/core';
-import { NgIf } from '@angular/common';
+import { NgFor, NgIf } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -14,7 +14,7 @@ import {
 @Component({
   selector: 'app-aprobar-jefe-papeleta-dialog',
   standalone: true,
-  imports: [NgIf, FormsModule, MatDialogModule, MatButtonModule, MatIconModule],
+  imports: [NgIf, NgFor, FormsModule, MatDialogModule, MatButtonModule, MatIconModule],
   templateUrl: './aprobar-jefe-papeleta-dialog.html',
   styleUrl: './aprobar-jefe-papeleta-dialog.scss',
 })
@@ -36,23 +36,37 @@ export class AprobarJefePapeletaDialogComponent {
     this.archivo = input.files?.[0] ?? null;
   }
 
+  /** SPEC_VACACIONES F9.1-bis — descarga la papeleta FIRMADA por el empleado (etapa EMPLEADO). */
   descargarPapeleta(): void {
+    this.descargarPorEtapa('EMPLEADO', 'No existe la papeleta firmada por el empleado.', true);
+  }
+
+  /** SPEC_VACACIONES F9.1-bis — descarga el SUSTENTO subido por el empleado (etapa SUSTENTO). */
+  descargarSustento(): void {
+    this.descargarPorEtapa('SUSTENTO', 'No existe documento de sustento adjunto.', false);
+  }
+
+  /**
+   * Descarga el documento ya almacenado (rápido, sin regenerar) de la etapa indicada.
+   * @param conFallback si true y no hay doc de esa etapa, usa el de mayor versión.
+   */
+  private descargarPorEtapa(etapa: string, msgVacio: string, conFallback: boolean): void {
     this.service.listarDocumentosSolicitud(this.solicitud.id).subscribe({
       next: (resp) => {
         const docs = resp.data ?? [];
+        const porVersion = (a: { versionDoc: number }, b: { versionDoc: number }) =>
+          Number(b.versionDoc) - Number(a.versionDoc);
+        const doc =
+          docs.filter((d) => d.etapa === etapa).slice().sort(porVersion)[0] ??
+          (conFallback ? docs.slice().sort(porVersion)[0] : undefined);
 
-        if (docs.length === 0) {
-          this.error.set('No existe documento firmado por el empleado para descargar.');
+        if (!doc) {
+          this.error.set(msgVacio);
           return;
         }
-
-        const ultimo = docs
-          .slice()
-          .sort((a, b) => Number(b.versionDoc) - Number(a.versionDoc))[0];
-
-        this.service.descargarDocumento(ultimo.rutaArchivo).subscribe({
-          next: (blob) => this.descargarBlob(blob, ultimo.nombreArchivo),
-          error: () => this.error.set('No se pudo descargar la papeleta.'),
+        this.service.descargarDocumento(doc.rutaArchivo).subscribe({
+          next: (blob) => this.descargarBlob(blob, doc.nombreArchivo),
+          error: () => this.error.set('No se pudo descargar el documento.'),
         });
       },
       error: () => {

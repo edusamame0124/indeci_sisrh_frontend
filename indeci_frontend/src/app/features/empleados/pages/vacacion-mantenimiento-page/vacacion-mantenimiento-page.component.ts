@@ -15,7 +15,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatSelectModule } from '@angular/material/select';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
 import { PersonaApiService } from '../../services/persona-api.service';
@@ -40,7 +40,7 @@ import type { VacacionSaldoRow } from '../../models/beneficio.model';
     MatIconModule,
     MatFormFieldModule,
     MatInputModule,
-    MatSelectModule,
+    MatAutocompleteModule,
     MatTableModule,
     MatProgressSpinnerModule,
   ],
@@ -77,6 +77,52 @@ export class VacacionMantenimientoPageComponent implements OnInit {
       .slice()
       .sort((a, b) => a.nombreCompleto.localeCompare(b.nombreCompleto)),
   );
+
+  /** Texto tecleado o empleado elegido en el combobox (buscador + select). */
+  readonly seleccionEmpleado = signal<string | PersonaEmpleado>('');
+
+  /** Empleados filtrados dinámicamente por nombre o DNI (sin acentos, case-insensitive). */
+  readonly empleadosFiltrados = computed<readonly PersonaEmpleado[]>(() => {
+    const valor = this.seleccionEmpleado();
+    const q = this.normalizar(typeof valor === 'string' ? valor : '');
+    const lista = this.empleados();
+    if (!q) return lista;
+    return lista.filter(
+      (e) =>
+        this.normalizar(e.nombreCompleto).includes(q) ||
+        this.normalizar(e.dni ?? '').includes(q),
+    );
+  });
+
+  /** Formatea el empleado seleccionado dentro del input (displayWith de mat-autocomplete). */
+  readonly displayEmpleado = (value: string | PersonaEmpleado | null): string => {
+    if (!value || typeof value === 'string') return value ?? '';
+    return `${value.nombreCompleto} — DNI ${value.dni ?? '—'}`;
+  };
+
+  private normalizar(texto: string): string {
+    return texto
+      .normalize('NFD')
+      .replace(/[̀-ͯ]/g, '')
+      .toLowerCase()
+      .trim();
+  }
+
+  /** Selección desde el panel del combobox. */
+  onEmpleadoSeleccionado(emp: PersonaEmpleado): void {
+    this.seleccionEmpleado.set(emp);
+    if (emp.empleadoId != null) {
+      this.onEmpleadoChange(emp.empleadoId);
+    }
+  }
+
+  /** Limpia el buscador y oculta la tabla/formulario. */
+  limpiarEmpleado(): void {
+    this.seleccionEmpleado.set('');
+    this.empleadoSeleccionado.set(null);
+    this.vacaciones.set([]);
+    this.mostrarForm.set(false);
+  }
 
   fmtDias(value: number | null | undefined): string {
     return new Intl.NumberFormat('es-PE', {
@@ -154,6 +200,23 @@ export class VacacionMantenimientoPageComponent implements OnInit {
           this.onHttpSnack(err);
         },
       });
+  }
+
+  provisionar(): void {
+    const empleadoId = this.empleadoSeleccionado();
+    if (empleadoId == null) return;
+
+    this.datosLoading.set(true);
+    this.vacacionApi.provisionar(empleadoId).subscribe({
+      next: () => {
+        this.snack.open('Provisión automática ejecutada correctamente.', 'Cerrar', { duration: 4000 });
+        this.cargarVacaciones(empleadoId);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.datosLoading.set(false);
+        this.onHttpSnack(err);
+      }
+    });
   }
 
   private cargarPersonas(): void {

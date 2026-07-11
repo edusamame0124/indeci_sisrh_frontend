@@ -1,5 +1,5 @@
 import { Component, Inject, signal } from '@angular/core';
-import { NgIf } from '@angular/common';
+import { NgFor, NgIf } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -14,7 +14,7 @@ import {
 @Component({
   selector: 'app-aprobar-rrhh-papeleta-dialog',
   standalone: true,
-  imports: [NgIf, FormsModule, MatDialogModule, MatButtonModule, MatIconModule],
+  imports: [NgIf, NgFor, FormsModule, MatDialogModule, MatButtonModule, MatIconModule],
   templateUrl: './aprobar-rrhh-papeleta-dialog.html',
   styleUrl: './aprobar-rrhh-papeleta-dialog.scss',
 })
@@ -36,25 +36,43 @@ export class AprobarRrhhPapeletaDialogComponent {
     this.archivo = input.files?.[0] ?? null;
   }
 
+  /** SPEC_VACACIONES F9.1-bis — descarga la papeleta firmada más reciente (excluye el sustento). */
   descargarPapeleta(): void {
-    this.error.set(null);
+    this.descargarDoc(
+      (docs) => docs.filter((d) => d.etapa !== 'SUSTENTO'),
+      'No existe la papeleta firmada para descargar.',
+    );
+  }
 
+  /** SPEC_VACACIONES F9.1-bis — descarga el sustento subido por el empleado (etapa SUSTENTO). */
+  descargarSustento(): void {
+    this.descargarDoc(
+      (docs) => docs.filter((d) => d.etapa === 'SUSTENTO'),
+      'No existe documento de sustento adjunto.',
+    );
+  }
+
+  private descargarDoc(
+    filtro: (docs: { etapa: string; versionDoc: number; rutaArchivo: string; nombreArchivo: string }[]) => {
+      etapa: string; versionDoc: number; rutaArchivo: string; nombreArchivo: string;
+    }[],
+    msgVacio: string,
+  ): void {
+    this.error.set(null);
     this.service.listarDocumentosSolicitud(this.solicitud.id).subscribe({
       next: (resp) => {
         const docs = resp.data ?? [];
-
-        if (docs.length === 0) {
-          this.error.set('No existe documento firmado para descargar.');
-          return;
-        }
-
-        const ultimo = docs
+        const doc = filtro(docs)
           .slice()
           .sort((a, b) => Number(b.versionDoc) - Number(a.versionDoc))[0];
 
-        this.service.descargarDocumento(ultimo.rutaArchivo).subscribe({
-          next: (blob) => this.descargarBlob(blob, ultimo.nombreArchivo),
-          error: () => this.error.set('No se pudo descargar la papeleta.'),
+        if (!doc) {
+          this.error.set(msgVacio);
+          return;
+        }
+        this.service.descargarDocumento(doc.rutaArchivo).subscribe({
+          next: (blob) => this.descargarBlob(blob, doc.nombreArchivo),
+          error: () => this.error.set('No se pudo descargar el documento.'),
         });
       },
       error: () => {

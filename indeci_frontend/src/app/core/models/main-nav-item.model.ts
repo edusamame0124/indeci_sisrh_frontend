@@ -20,6 +20,14 @@ export interface MainNavChildItem {
   readonly comingSoon?: boolean;
   /** Subgrupo anidado (Fase 5 — catálogos escaneables). */
   readonly children?: readonly MainNavChildItem[];
+  /**
+   * Control de acceso POR SUB-ÍTEM (segregación dentro de un módulo).
+   * Mismos semánticos que en {@link MainNavItem}: `requiredPermissions` exige TODOS
+   * los permisos; `requiredAnyRole` exige AL MENOS uno de los roles. Si se omiten,
+   * el sub-ítem hereda la visibilidad del grupo padre.
+   */
+  readonly requiredPermissions?: readonly string[];
+  readonly requiredAnyRole?: readonly string[];
 }
 
 /**

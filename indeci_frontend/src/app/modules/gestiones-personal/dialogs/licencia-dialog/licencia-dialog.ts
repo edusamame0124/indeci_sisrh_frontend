@@ -30,7 +30,13 @@ export class LicenciaDialog implements OnInit {
   tiposLicencia = signal<TipoLicencia[]>([]);
   cargandoTipos = signal(false);
   guardando = signal(false);
+  enviando = signal(false);
   error = signal<string | null>(null);
+
+  // SPEC_VACACIONES F9.1-bis — mini-asistente sin goce: form → (generar+firmar) → enviar.
+  paso = signal<'form' | 'firma'>('form');
+  solicitudId = signal<number | null>(null);
+  papeletaFirmada: File | null = null;
 
   tituloDialog = 'Licencia';
 
@@ -95,8 +101,30 @@ export class LicenciaDialog implements OnInit {
       .trim();
   }
 
+  /** SPEC_VACACIONES F9.1 — el flujo es "sin goce" si el nombre inicial lo indica. */
+  esFlujoSinGoce(): boolean {
+    return this.normalizarTexto(this.tipoLicenciaNombre).includes('SIN GOCE');
+  }
+
+  /** En flujo sin-goce, solo los subtipos legales es_sin_goce=1; si no, todos los activos. */
+  tiposFiltrados(): TipoLicencia[] {
+    const todos = this.tiposLicencia();
+    return this.esFlujoSinGoce() ? todos.filter((t) => Number(t.esSinGoce ?? 0) === 1) : todos;
+  }
+
+  /** El subtipo elegido exige N° de Resolución Directoral. */
+  requiereResolucionTipo(): boolean {
+    return Number(this.tipoLicenciaSeleccionado()?.requiereResolucion ?? 0) === 1;
+  }
+
   seleccionarTipoLicenciaInicial(): void {
     if (!this.tipoLicenciaNombre) {
+      return;
+    }
+
+    // Flujo sin goce: NO se fuerza un tipo; el usuario elige el subtipo legal del dropdown.
+    if (this.esFlujoSinGoce()) {
+      this.tituloDialog = `${this.tipoSolicitud.nombre} - Sin goce de haber`;
       return;
     }
 
@@ -164,6 +192,131 @@ export class LicenciaDialog implements OnInit {
   onArchivoSeleccionado(event: Event): void {
     const input = event.target as HTMLInputElement;
     this.archivoSustento = input.files?.[0] ?? null;
+    if (this.archivoSustento) this.error.set(null); // limpiar error stale al elegir archivo
+  }
+
+  // ============ SPEC_VACACIONES F9.1-bis — asistente de firma (licencia sin goce) ============
+
+  onPapeletaFirmadaSeleccionada(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.papeletaFirmada = input.files?.[0] ?? null;
+    if (this.papeletaFirmada) this.error.set(null);
+  }
+
+  private descargarBlob(blob: Blob, nombre: string): void {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = nombre;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  /** Paso 1 (sin goce): valida, crea la papeleta (PENDIENTE_FIRMA), descarga el PDF y pasa a "firma". */
+  generarPapeleta(): void {
+    this.error.set(null);
+
+    if (!this.tipoLicenciaId) {
+      this.error.set('Seleccione el subtipo de licencia sin goce.');
+      return;
+    }
+    if (!this.fechaInicio || !this.fechaFin) {
+      this.error.set('Ingrese la fecha de inicio y fin.');
+      return;
+    }
+    this.calcularDias();
+    if (!this.cantidadDias || this.cantidadDias <= 0) {
+      this.error.set('La fecha fin no puede ser menor que la fecha inicio.');
+      return;
+    }
+    if (!this.totalFolios || this.totalFolios <= 0) {
+      this.error.set('Ingrese el total de folios.');
+      return;
+    }
+    if (!this.archivoSustento) {
+      this.error.set('Debe adjuntar el archivo de sustento (obligatorio para licencia sin goce).');
+      return;
+    }
+
+    const payload: CrearSolicitudRrhhRequest = {
+      tipoSolicitudId: Number(this.tipoSolicitud.id),
+      tipoLicenciaId: Number(this.tipoLicenciaId),
+      fechaInicio: this.fechaInicio,
+      fechaFin: this.fechaFin,
+      cantidadDias: this.cantidadDias,
+      motivo: null,
+      observacion: null,
+      horaInicio: null,
+      horaFin: null,
+      cantidadHoras: null,
+      lugarComision: null,
+      documento1: null,
+      documento2: null,
+      totalFolios: this.totalFolios,
+    };
+
+    this.guardando.set(true);
+    this.service.crearSolicitud(payload, this.archivoSustento).subscribe({
+      next: (resp) => {
+        const id = Number((resp as { data?: unknown })?.data);
+        if (!id) {
+          this.guardando.set(false);
+          this.error.set('No se obtuvo el ID de la papeleta creada.');
+          return;
+        }
+        this.solicitudId.set(id);
+        this.service.descargarFormatoPapeleta(id).subscribe({
+          next: (blob) => {
+            this.descargarBlob(blob, `papeleta_${id}.pdf`);
+            this.guardando.set(false);
+            this.paso.set('firma');
+          },
+          error: () => {
+            this.guardando.set(false);
+            this.paso.set('firma');
+            this.error.set(
+              'Papeleta creada, pero no se pudo descargar el PDF. Use "Descargar papeleta" abajo.',
+            );
+          },
+        });
+      },
+      error: (err) => {
+        this.guardando.set(false);
+        this.error.set(err?.error?.mensaje ?? err?.error?.message ?? 'No se pudo generar la papeleta.');
+      },
+    });
+  }
+
+  /** Re-descarga el PDF oficial (por si el empleado lo perdió). */
+  descargarPapeletaOtraVez(): void {
+    const id = this.solicitudId();
+    if (!id) return;
+    this.service.descargarFormatoPapeleta(id).subscribe({
+      next: (blob) => this.descargarBlob(blob, `papeleta_${id}.pdf`),
+      error: () => this.error.set('No se pudo descargar el PDF.'),
+    });
+  }
+
+  /** Paso 2 (sin goce): sube la papeleta firmada y envía al jefe. */
+  enviarAlJefe(): void {
+    this.error.set(null);
+    const id = this.solicitudId();
+    if (!id) return;
+    if (!this.papeletaFirmada) {
+      this.error.set('Adjunte la papeleta firmada antes de enviar.');
+      return;
+    }
+    this.enviando.set(true);
+    this.service.enviarPapeletaFirmada(id, this.papeletaFirmada).subscribe({
+      next: () => {
+        this.enviando.set(false);
+        this.dialogRef.close(true);
+      },
+      error: (err) => {
+        this.enviando.set(false);
+        this.error.set(err?.error?.mensaje ?? err?.error?.message ?? 'No se pudo enviar la papeleta.');
+      },
+    });
   }
 
   guardar(): void {
@@ -196,7 +349,8 @@ export class LicenciaDialog implements OnInit {
       return;
     }
 
-    if (!this.documento1.trim()) {
+    // Licencia SIN GOCE: no pide "documento presentado"; el sustento es el archivo (obligatorio).
+    if (!this.esFlujoSinGoce() && !this.documento1.trim()) {
       this.error.set('Ingrese el documento presentado 1.');
       return;
     }
@@ -206,8 +360,12 @@ export class LicenciaDialog implements OnInit {
       return;
     }
 
-    if (this.requiereSustento() && !this.archivoSustento) {
-      this.error.set('Debe adjuntar el documento de sustento.');
+    if ((this.esFlujoSinGoce() || this.requiereSustento()) && !this.archivoSustento) {
+      this.error.set(
+        this.esFlujoSinGoce()
+          ? 'Debe adjuntar el archivo de sustento (obligatorio para licencia sin goce).'
+          : 'Debe adjuntar el documento de sustento.',
+      );
       return;
     }
 
@@ -216,7 +374,7 @@ export class LicenciaDialog implements OnInit {
       return;
     }
 
-    if (!this.requiereSustento()) {
+    if (!this.requiereSustento() && !this.esFlujoSinGoce()) {
       this.archivoSustento = null;
     }
 

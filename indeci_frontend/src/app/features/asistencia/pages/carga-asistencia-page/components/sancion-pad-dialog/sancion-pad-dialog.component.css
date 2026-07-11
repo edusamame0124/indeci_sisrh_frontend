@@ -1,0 +1,22 @@
+.pad-dialog__context {
+  margin: 0 0 0.75rem;
+  font-size: 0.8125rem;
+  color: var(--sisrh-text-muted, #64748b);
+}
+
+.pad-dialog__form {
+  display: flex;
+  flex-direction: column;
+  min-width: 420px;
+  max-width: 100%;
+}
+
+.pad-dialog__full {
+  width: 100%;
+}
+
+.pad-dialog__nota {
+  margin: 0.5rem 0 0;
+  font-size: 0.72rem;
+  color: var(--sisrh-text-muted, #64748b);
+}

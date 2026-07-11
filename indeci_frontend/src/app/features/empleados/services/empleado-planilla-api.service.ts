@@ -10,6 +10,8 @@ import type {
   EmpleadoRemuneracionHistRow,
   PlanillaConsolidadaRow,
   RemuneracionCambioInput,
+  TiempoServicioDetalleRow,
+  TiempoServicioRow,
 } from '../models/empleado-planilla.model';
 import type {
   IncrementosDsQuery,
@@ -31,6 +33,22 @@ export class EmpleadoPlanillaApiService {
     return this.http
       .get<ApiResponse<EmpleadoPlanillaRow[]>>(`/api/rrhh/planilla/${empleadoId}`)
       .pipe(map((r) => [...extractApiData(r)]));
+  }
+
+  /** SPEC_VACACIONES F1/F2 — tiempo de servicio acumulado del empleado (read-only). */
+  obtenerTiempoServicio(empleadoId: number): Observable<TiempoServicioRow> {
+    return this.http
+      .get<ApiResponse<TiempoServicioRow>>(`/api/rrhh/vacaciones/tiempo-servicio/${empleadoId}`)
+      .pipe(map(extractApiData));
+  }
+
+  /** SPEC_VACACIONES F9.1 — tiempo de servicio + días no computables (LSG/faltas) + aniversario efectivo. */
+  obtenerTiempoServicioDetalle(empleadoId: number): Observable<TiempoServicioDetalleRow> {
+    return this.http
+      .get<ApiResponse<TiempoServicioDetalleRow>>(
+        `/api/rrhh/vacaciones/tiempo-servicio-detalle/${empleadoId}`,
+      )
+      .pipe(map(extractApiData));
   }
 
   /** Preview UI: incrementos DS sin persistir. */

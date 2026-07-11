@@ -51,21 +51,26 @@ describe('EmpleadoPuestoFormPageComponent (Spec 009 / T135 — catálogos puesto
   function flushParaleloHistorialYCatalogos(opts?: {
     empleadoId?: number;
     historial?: unknown[];
+    cargos?: unknown[];
     niveles?: unknown[];
     sedes?: unknown[];
     dependencias?: unknown[];
     estructuras?: unknown[];
+    empleados?: unknown[];
   }): void {
     const eid = opts?.empleadoId ?? 42;
     // forkJoin dispara GET en paralelo: expectOne por URL exacta (un predicado
     // "está en el mapa de URLs" coincide con las 5 a la vez y rompe HttpTestingBackend).
     httpMock.expectOne(`/api/rrhh/puesto/${eid}`).flush({ data: opts?.historial ?? [] });
+    httpMock.expectOne('/api/catalogos/cargos').flush({ data: opts?.cargos ?? [] });
     httpMock.expectOne('/api/catalogos/niveles').flush({ data: opts?.niveles ?? [] });
     httpMock.expectOne('/api/catalogos/sedes').flush({ data: opts?.sedes ?? [] });
     httpMock.expectOne('/api/catalogos/dependencias').flush({ data: opts?.dependencias ?? [] });
     httpMock.expectOne('/api/catalogos/estructuras-organicas').flush({
       data: opts?.estructuras ?? [],
     });
+    // Lista de empleados para el combobox de "Jefe inmediato".
+    httpMock.expectOne('/api/rrhh/persona').flush({ data: opts?.empleados ?? [] });
   }
 
   function flushBoot(opts?: {
@@ -93,14 +98,22 @@ describe('EmpleadoPuestoFormPageComponent (Spec 009 / T135 — catálogos puesto
     TestBed.resetTestingModule();
   });
 
-  it('declara los 6 controles del form (cargo + 5 catálogos)', () => {
+  it('declara los 7 controles del form (cargo + 5 catálogos + jefe)', () => {
     const fixture = buildFixture();
     const comp = fixture.componentInstance;
     fixture.detectChanges();
 
     const names = Object.keys(comp.form.controls).sort();
     expect(names).toEqual(
-      ['cargo', 'nivelId', 'sedeId', 'oficinaId', 'dependenciaId', 'estructuraOrganicaId'].sort(),
+      [
+        'cargoId',
+        'nivelId',
+        'sedeId',
+        'oficinaId',
+        'dependenciaId',
+        'estructuraOrganicaId',
+        'jefeId',
+      ].sort(),
     );
     expect(comp.form.controls.nivelId.value).toBeNull();
     expect(comp.form.controls.dependenciaId.value).toBeNull();

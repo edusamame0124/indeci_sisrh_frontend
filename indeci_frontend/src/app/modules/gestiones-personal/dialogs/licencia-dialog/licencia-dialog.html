@@ -3,19 +3,25 @@
 <mat-dialog-content class="dialog-body">
   <div *ngIf="cargandoTipos()" class="loading">Cargando tipos de licencia...</div>
 
-  <div class="grid">
+  <!-- PASO 1: formulario (todas las licencias). En sin goce, tras "Generar" pasa a firma. -->
+  <div class="grid" *ngIf="paso() === 'form'">
     <!-- TIPO DE LICENCIA -->
-    <label class="field field--full" *ngIf="!tipoLicenciaNombre">
-      <span>Tipo de licencia</span>
+    <!-- Select cuando no hay tipo fijo, o cuando es flujo "sin goce" (subtipos legales). -->
+    <label class="field field--full" *ngIf="!tipoLicenciaNombre || esFlujoSinGoce()">
+      <span>Tipo de licencia{{ esFlujoSinGoce() ? ' (sin goce de haber)' : '' }}</span>
       <select [(ngModel)]="tipoLicenciaId">
-        <option [ngValue]="null">Seleccione</option>
-        <option *ngFor="let tipo of tiposLicencia()" [ngValue]="tipo.id">
+        <option [ngValue]="null">Seleccione el subtipo</option>
+        <option *ngFor="let tipo of tiposFiltrados()" [ngValue]="tipo.id">
           {{ tipo.nombre }}
         </option>
       </select>
+      <small *ngIf="esFlujoSinGoce()" class="hint">
+        Cada subtipo tiene plazos y sustento propios (Contraloría/SERVIR).
+      </small>
     </label>
 
-    <div class="field field--full" *ngIf="tipoLicenciaNombre">
+    <!-- Label estático solo para un tipo fijo con goce. -->
+    <div class="field field--full" *ngIf="tipoLicenciaNombre && !esFlujoSinGoce()">
       <span>Tipo de licencia</span>
       <strong>{{ nombreTipoLicenciaSeleccionado() }}</strong>
     </div>
@@ -41,8 +47,8 @@
       <textarea rows="3" [(ngModel)]="motivo"></textarea>
     </label>
 
-    <!-- DOCUMENTOS PRESENTADOS -->
-    <label class="field field--full">
+    <!-- DOCUMENTOS PRESENTADOS (no aplican para licencia sin goce: el sustento es el archivo) -->
+    <label class="field field--full" *ngIf="!esFlujoSinGoce()">
       <span>Documento presentado 1</span>
       <input
         type="text"
@@ -51,7 +57,7 @@
       />
     </label>
 
-    <label class="field field--full">
+    <label class="field field--full" *ngIf="!esFlujoSinGoce()">
       <span>Documento presentado 2</span>
       <input type="text" [(ngModel)]="documento2" placeholder="Opcional" />
     </label>
@@ -61,10 +67,13 @@
       <input type="number" min="1" [(ngModel)]="totalFolios" />
     </label>
 
-    <!-- ARCHIVO DE SUSTENTO -->
-    <label class="field field--full" *ngIf="requiereSustento()">
-      <span>Archivo de sustento</span>
+    <!-- ARCHIVO DE SUSTENTO — obligatorio para licencia sin goce -->
+    <label class="field field--full" *ngIf="esFlujoSinGoce() || requiereSustento()">
+      <span>Archivo de sustento{{ esFlujoSinGoce() ? ' *' : '' }}</span>
       <input type="file" (change)="onArchivoSeleccionado($event)" />
+      <small *ngIf="esFlujoSinGoce()" class="hint">
+        Obligatorio: adjunte la Resolución / documento que autoriza la licencia sin goce.
+      </small>
     </label>
 
     <!-- OBSERVACIÓN -->
@@ -74,22 +83,59 @@
     </label>
   </div>
 
+  <!-- PASO 2: firma (solo licencia sin goce) -->
+  <div class="grid" *ngIf="paso() === 'firma'">
+    <div class="field field--full">
+      <p class="hint">
+        Papeleta generada. <strong>Descárguela, fírmela y vuelva a subirla</strong> para enviarla al jefe.
+      </p>
+      <button mat-stroked-button type="button" (click)="descargarPapeletaOtraVez()">
+        <mat-icon>download</mat-icon> Descargar papeleta
+      </button>
+    </div>
+
+    <label class="field field--full">
+      <span>Papeleta firmada *</span>
+      <input type="file" accept=".pdf" (change)="onPapeletaFirmadaSeleccionada($event)" />
+      <small class="hint">Suba el PDF de la papeleta ya firmado.</small>
+    </label>
+  </div>
+
   <div *ngIf="error()" class="error">
     {{ error() }}
   </div>
 </mat-dialog-content>
 
 <mat-dialog-actions align="end">
-  <button mat-stroked-button type="button" (click)="cerrar()" [disabled]="guardando()">
+  <button mat-stroked-button type="button" (click)="cerrar()" [disabled]="guardando() || enviando()">
     Cancelar
   </button>
 
+  <!-- Sin goce, paso 1: generar papeleta -->
   <button
-    mat-flat-button
-    color="primary"
-    type="button"
-    (click)="guardar()"
-    [disabled]="guardando()"
+    *ngIf="esFlujoSinGoce() && paso() === 'form'"
+    mat-flat-button color="primary" type="button"
+    (click)="generarPapeleta()" [disabled]="guardando()"
+  >
+    <mat-icon>picture_as_pdf</mat-icon>
+    {{ guardando() ? 'Generando...' : 'Generar papeleta' }}
+  </button>
+
+  <!-- Sin goce, paso 2: enviar al jefe -->
+  <button
+    *ngIf="esFlujoSinGoce() && paso() === 'firma'"
+    mat-flat-button color="primary" type="button"
+    (click)="enviarAlJefe()" [disabled]="enviando()"
+  >
+    <mat-icon>send</mat-icon>
+    {{ enviando() ? 'Enviando...' : 'Enviar al jefe' }}
+  </button>
+
+  <!-- Otras licencias (con goce): guardar borrador -->
+  <button
+    *ngIf="!esFlujoSinGoce()"
+    mat-flat-button color="primary" type="button"
+    (click)="guardar()" [disabled]="guardando()"
   >
     <mat-icon>save</mat-icon>
     {{ guardando() ? 'Guardando...' : 'Guardar borrador' }}

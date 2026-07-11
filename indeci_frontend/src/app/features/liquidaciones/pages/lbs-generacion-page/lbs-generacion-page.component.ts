@@ -10,7 +10,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { sisrhConfirmDialogConfig } from '../../../../core/config/sisrh-dialog.config';
 import { ConfirmDialogComponent } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
@@ -50,6 +50,7 @@ export class LbsGeneracionPageComponent implements OnInit {
   private readonly errors = inject(ErrorMessageService);
   private readonly snack = inject(MatSnackBar);
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
 
   readonly colsHistorial = ['id', 'periodo', 'regimenLaboralCodigo', 'estado', 'trabajadoresGenerados', 'netoTotal', 'creadoEn', 'acciones'] as const;
 
@@ -159,6 +160,29 @@ export class LbsGeneracionPageComponent implements OnInit {
         error: (err: HttpErrorResponse) => {
           this.generando.set(false);
           const mensaje = (err.error as { mensaje?: string } | null)?.mensaje ?? null;
+          
+          if (mensaje && mensaje.startsWith('ERR_LBS_TIEMPO_SERVICIO|')) {
+            const empId = mensaje.split('|')[1];
+            const ref = this.dialogs.open(
+              ConfirmDialogComponent,
+              sisrhConfirmDialogConfig({
+                title: '🔴 Cálculo de LBS Detenido',
+                message: 'El motor de nóminas no pudo determinar el tiempo de servicios computable para el servidor. Esto ocurre cuando el historial laboral en EmpleadoPlanilla no registra una fecha de inicio de contrato válida, carece de fecha oficial de cese o presenta vacíos incompatibles en sus vínculos.',
+                confirmLabel: 'Ir a Configuración Remunerativa',
+                cancelLabel: 'Cerrar',
+                severity: 'danger',
+              }),
+            );
+
+            void ref.afterClosed().subscribe((ok: boolean | undefined) => {
+              if (ok === true && empId) {
+                // Navegar a la pantalla de vinculacin de planillas (Configuracin Remunerativa)
+                this.router.navigate(['/empleados/planilla/personas', empId]);
+              }
+            });
+            return;
+          }
+
           this.snack.open(this.errors.translate(mensaje), 'Cerrar', { duration: 6000 });
         },
       });

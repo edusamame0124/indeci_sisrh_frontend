@@ -27,4 +27,11 @@ export class VacacionSaldoApiService {
       .post<ApiResponse<null>>(this.baseUrl, body)
       .pipe(map(extractApiData));
   }
+
+  /** Llama al motor de provisión automática para calcular el saldo del empleado. */
+  provisionar(empleadoId: number): Observable<null> {
+    return this.http
+      .post<ApiResponse<null>>(`${this.baseUrl}/provisionar/${empleadoId}`, {})
+      .pipe(map(extractApiData));
+  }
 }

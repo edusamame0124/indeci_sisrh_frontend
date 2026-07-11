@@ -16,6 +16,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatMenuModule } from '@angular/material/menu';
+import { MatTabsModule } from '@angular/material/tabs';
+import { MatTooltipModule } from '@angular/material/tooltip';
 
 import { EnviarPapeletaDialogComponent } from '../../../../modules/gestiones-personal/dialogs/enviar-papeleta-dialog/enviar-papeleta-dialog';
 import { TrazabilidadPapeletaDialogComponent } from '../../../../modules/gestiones-personal/dialogs/trazabilidad-papeleta-dialog/trazabilidad-papeleta-dialog';
@@ -26,8 +28,10 @@ import { LicenciaDialog } from '../../../../modules/gestiones-personal/dialogs/l
 import { DescansoMedicoDialog } from '../../../../modules/gestiones-personal/dialogs/descanso-medico-dialog/descanso-medico-dialog';
 import { VacacionesDialog } from '../../../../modules/gestiones-personal/dialogs/vacaciones-dialog/vacaciones-dialog';
 import { CompensacionDialog } from '../../../../modules/gestiones-personal/dialogs/compensacion-dialog/compensacion-dialog';
+import { TeletrabajoPapeletaDialog } from '../../../../modules/gestiones-personal/dialogs/teletrabajo-papeleta-dialog/teletrabajo-papeleta-dialog';
 
 import {
+  SaldoVacacional,
   SolicitudRrhh,
   SolicitudesRrhhService,
   TipoSolicitudRrhh,
@@ -49,6 +53,8 @@ import {
     MatProgressSpinnerModule,
     MatDialogModule,
     MatMenuModule,
+    MatTabsModule,
+    MatTooltipModule,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './gestion-empleado-page.component.html',
@@ -64,6 +70,14 @@ export class GestionEmpleadoPageComponent implements OnInit {
   solicitudes = signal<SolicitudRrhh[]>([]);
   cargando = signal(false);
   error = signal<string | null>(null);
+
+  /** Gate de Teletrabajo (Ley N° 31572): habilita el botón "Reporte Teletrabajo". */
+  esTeletrabajador = signal(false);
+
+  // Hub Vacacional — pestaña dedicada (pedido RR.HH.: separar vacaciones del resto de
+  // papeletas + mostrar siempre Obtenidos/Gozados/Saldo).
+  saldoVacacional = signal<SaldoVacacional | null>(null);
+  cargandoSaldoVacacional = signal(false);
 
   filtroTexto = signal('');
   filtroEstado = signal('');
@@ -107,9 +121,42 @@ export class GestionEmpleadoPageComponent implements OnInit {
     ),
   ]);
 
+  /** Hub Vacacional — solo solicitudes de vacaciones (código '012'), sea cual sea el subtipo. */
+  solicitudesVacaciones = computed(() => {
+    const nombreVacaciones = this.buscarTipoPorCodigo('012')?.nombre;
+    if (!nombreVacaciones) return [];
+
+    return this.solicitudes()
+      .filter((item) => item.tipoSolicitud === nombreVacaciones)
+      .sort((a, b) => b.id - a.id);
+  });
+
   ngOnInit(): void {
     this.cargarSolicitudes();
     this.cargarTiposSolicitud();
+    this.cargarHabilitacionTeletrabajo();
+    this.cargarSaldoVacacional();
+  }
+
+  private cargarSaldoVacacional(): void {
+    this.cargandoSaldoVacacional.set(true);
+    this.service.obtenerMiSaldo().subscribe({
+      next: (resp) => {
+        this.saldoVacacional.set(resp?.data ?? null);
+        this.cargandoSaldoVacacional.set(false);
+      },
+      error: () => {
+        this.saldoVacacional.set(null);
+        this.cargandoSaldoVacacional.set(false);
+      },
+    });
+  }
+
+  private cargarHabilitacionTeletrabajo(): void {
+    this.service.obtenerMiTeletrabajo().subscribe({
+      next: (resp) => this.esTeletrabajador.set(resp.data === true),
+      error: () => this.esTeletrabajador.set(false),
+    });
   }
 
   cargarSolicitudes(): void {
@@ -192,6 +239,15 @@ export class GestionEmpleadoPageComponent implements OnInit {
   // FORMATO 1: códigos 001 al 007
   abrirPermisoComun(codigo: string): void {
     this.abrirDialogoPorCodigo(codigo, PermisoComunDialog, '900px');
+  }
+
+  // Papeleta de Teletrabajo (Ley N° 31572) — reporte diario de actividades.
+  // Gate Poka-Yoke: solo servidores con resolución activa en su legajo.
+  abrirTeletrabajo(): void {
+    if (!this.esTeletrabajador()) {
+      return;
+    }
+    this.abrirDialogoPorCodigo('TELETRABAJO', TeletrabajoPapeletaDialog, '760px');
   }
 
   // FORMATO 2: códigos 008 y 009

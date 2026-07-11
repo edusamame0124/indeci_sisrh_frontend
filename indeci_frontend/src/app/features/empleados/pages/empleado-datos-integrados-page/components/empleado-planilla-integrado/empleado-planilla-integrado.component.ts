@@ -20,6 +20,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
 import { MatIconModule } from '@angular/material/icon';
@@ -44,7 +45,7 @@ import type { TipoContrato } from '../../../../../catalogos/models/tipo-contrato
 import type { CondicionLaboral } from '../../../../../catalogos/models/condicion-laboral.model';
 import type { TipoPersonaMef } from '../../../../../planilla/models/tipo-persona-mef.model';
 import type { ModalidadCas } from '../../../../../catalogos/models/modalidad-cas.model';
-import type { ElegibilidadVinculoRow, EmpleadoPlanillaRow, EmpleadoRemuneracionHistRow } from '../../../../models/empleado-planilla.model';
+import type { DiasNoComputablesRow, ElegibilidadVinculoRow, EmpleadoPlanillaRow, EmpleadoRemuneracionHistRow, TiempoServicioRow } from '../../../../models/empleado-planilla.model';
 import type { IncrementosDsResponse } from '../../../../models/incrementos-ds.model';
 import { RemuneracionCambioDialogComponent } from '../../../empleado-planilla-form-page/components/remuneracion-cambio-dialog/remuneracion-cambio-dialog.component';
 
@@ -65,6 +66,7 @@ const AIRHSP_PATTERN = /^[A-Z0-9]{6}$/;
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
+    MatSlideToggleModule,
     MatButtonModule,
     MatProgressSpinnerModule,
     MatTableModule,
@@ -291,8 +293,23 @@ const AIRHSP_PATTERN = /^[A-Z0-9]{6}$/;
                 </mat-select>
               </mat-form-field>
               }
+
+              <!-- Gate de Teletrabajo (Ley N° 31572): habilita el reporte diario. -->
+              <div class="half toggle-teletrabajo">
+                <mat-slide-toggle
+                  color="primary"
+                  [checked]="form.controls.esTeletrabajador.value === 1"
+                  (change)="form.controls.esTeletrabajador.setValue($event.checked ? 1 : 0)"
+                >
+                  ¿Aplica a modalidad de Teletrabajo?
+                </mat-slide-toggle>
+                <p class="toggle-hint">
+                  Actívelo solo si el servidor cuenta con resolución/adenda de teletrabajo
+                  en su legajo (Ley N° 31572).
+                </p>
+              </div>
             </div>
-            
+
             <h4 class="section">Cálculo remunerativo</h4>
             <div class="grid">
               <mat-form-field appearance="outline" class="half">
@@ -339,6 +356,56 @@ const AIRHSP_PATTERN = /^[A-Z0-9]{6}$/;
                 <input matInput formControlName="fechaFin" type="date" placeholder="dd/mm/aaaa" />
               </mat-form-field>
             </div>
+
+            <!-- SPEC_VACACIONES F2 — tiempo de servicio acumulado (read-only, base D.Leg. 1405) -->
+            <div class="grid">
+              <mat-form-field appearance="outline" class="half tiempo-servicio">
+                <mat-label>Tiempo de servicio acumulado</mat-label>
+                <input
+                  matInput
+                  [value]="tiempoServicioLabel()"
+                  readonly
+                  tabindex="-1"
+                  aria-readonly="true"
+                />
+                @if (tiempoServicioLoading()) {
+                  <mat-progress-spinner matSuffix mode="indeterminate" diameter="18" aria-hidden="true" />
+                } @else {
+                  <mat-icon matSuffix fontIcon="schedule" aria-hidden="true" />
+                }
+                <mat-hint>{{ tiempoServicioHint() }}</mat-hint>
+              </mat-form-field>
+
+              <!-- SPEC_VACACIONES F9.1 — Poka-Yoke: jornada como opciones cerradas, no texto libre. -->
+              <mat-form-field appearance="outline" class="half">
+                <mat-label>Jornada (récord vacacional)</mat-label>
+                <mat-select formControlName="diasSemanaOperativo">
+                  <mat-option [value]="null">Heredar del Régimen Laboral (Automático)</mat-option>
+                  <mat-option [value]="6">Excepción: 6 días a la semana (Operativo COEN/DDI)</mat-option>
+                </mat-select>
+                <mat-hint>
+                  {{
+                    form.controls.diasSemanaOperativo.value === 6
+                      ? 'Operativo: 6 días/semana → récord de 260 días.'
+                      : 'Automático: hereda del régimen (por defecto 5 días → récord de 210).'
+                  }}
+                </mat-hint>
+              </mat-form-field>
+            </div>
+
+            <!-- SPEC_VACACIONES F9.1 — días no computables (LSG/faltas), solo informativo. -->
+            @if (diasNoComputables(); as dnc) {
+              @if (dnc.total > 0) {
+                <p class="dias-no-computables">
+                  <mat-icon fontIcon="info" aria-hidden="true" />
+                  Días no computables — LSG: {{ dnc.lsg }} · Faltas: {{ dnc.faltas }}
+                </p>
+              }
+            }
+            <p class="dias-no-computables__nota">
+              Antigüedad para CTS/LBS. El récord vacacional (neto de LSG/faltas) se controla en el
+              Padrón Vacacional.
+            </p>
 
             <!-- F1 — estado derivado + cese del vínculo -->
             @if (estadoVinculo()) {
@@ -500,6 +567,20 @@ const AIRHSP_PATTERN = /^[A-Z0-9]{6}$/;
   `,
   styles: [
     `
+      /* Gate de Teletrabajo (Ley N° 31572) */
+      .toggle-teletrabajo {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        justify-content: center;
+        padding: 4px 0;
+      }
+      .toggle-teletrabajo .toggle-hint {
+        margin: 0;
+        font-size: 12px;
+        color: var(--sisrh-text-muted, #64748b);
+        line-height: 1.35;
+      }
       /* F1/F2 — estado del vínculo, cese e historial remunerativo */
       .vinc-estado {
         margin: 4px 0 8px;
@@ -654,6 +735,40 @@ const AIRHSP_PATTERN = /^[A-Z0-9]{6}$/;
       .half {
         width: 100%;
       }
+      /* SPEC_VACACIONES F2 — campo derivado (read-only) con acento sutil institucional. */
+      .tiempo-servicio input {
+        font-weight: 600;
+        color: var(--sisrh-text, #334155);
+        font-variant-numeric: tabular-nums;
+      }
+      .tiempo-servicio mat-icon[matSuffix] {
+        color: var(--sisrh-info, #2563a6);
+      }
+      /* SPEC_VACACIONES F9.1 — días no computables (LSG/faltas), informativo. */
+      .dias-no-computables {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        margin: 0.25rem 0 0;
+        padding: 0.4rem 0.65rem;
+        background: #fef3c7;
+        border: 1px solid #fcd34d;
+        color: #92400e;
+        border-radius: 6px;
+        font-size: 0.82rem;
+        font-weight: 600;
+      }
+      .dias-no-computables mat-icon {
+        font-size: 1.1rem;
+        width: 1.1rem;
+        height: 1.1rem;
+      }
+      .dias-no-computables__nota {
+        margin: 0.25rem 0 0;
+        font-size: 0.72rem;
+        color: #64748b;
+        line-height: 1.4;
+      }
       .actions {
         margin-top: 1rem;
       }
@@ -729,6 +844,8 @@ export class EmpleadoPlanillaIntegradoComponent implements OnInit {
     // Ley 30057 (F3)
     grupoServidorCivil: this.fb.control<string | null>(null),
     esConfianza: this.fb.control<number>(0),
+    // Gate de Teletrabajo (Ley N° 31572, V012_28): habilitación por RR.HH.
+    esTeletrabajador: this.fb.control<number>(0),
     montoContratado: this.fb.control<number | null>(null, [
       Validators.required,
       Validators.min(0.01),
@@ -746,6 +863,8 @@ export class EmpleadoPlanillaIntegradoComponent implements OnInit {
       Validators.maxLength(6),
     ]),
     fechaInicioContrato: this.fb.control<string | null>(null),
+    // SPEC_VACACIONES F9.1 — override de jornada (null=hereda régimen; 6=operativo COEN/DDI).
+    diasSemanaOperativo: this.fb.control<number | null>(null),
     // Cese (F1): si hay fechaCese, motivo y documento son obligatorios.
     fechaFin: this.fb.control<string | null>(null),
     fechaCese: this.fb.control<string | null>(null),
@@ -755,6 +874,36 @@ export class EmpleadoPlanillaIntegradoComponent implements OnInit {
     documentoOrigenTipo: this.fb.control<string | null>(null),
     documentoOrigenNumero: this.fb.control<string | null>(null),
     documentoOrigenFecha: this.fb.control<string | null>(null),
+  });
+
+  // SPEC_VACACIONES F2 — tiempo de servicio acumulado (read-only, base D.Leg. 1405).
+  readonly tiempoServicio = signal<TiempoServicioRow | null>(null);
+  readonly tiempoServicioLoading = signal(false);
+  // SPEC_VACACIONES F9.1 — días no computables (LSG/faltas) informativos en Config Remunerativa.
+  readonly diasNoComputables = signal<DiasNoComputablesRow | null>(null);
+  readonly tiempoServicioSinVinculo = signal(false);
+
+  readonly tiempoServicioLabel = computed(() => {
+    if (this.tiempoServicioLoading()) return 'Calculando…';
+    if (this.tiempoServicioSinVinculo()) return 'Sin vínculo registrado';
+    const t = this.tiempoServicio();
+    if (!t) return '—';
+    const partes: string[] = [];
+    if (t.anios) partes.push(`${t.anios} ${t.anios === 1 ? 'año' : 'años'}`);
+    if (t.meses) partes.push(`${t.meses} ${t.meses === 1 ? 'mes' : 'meses'}`);
+    partes.push(`${t.dias} ${t.dias === 1 ? 'día' : 'días'}`);
+    return partes.join(', ');
+  });
+
+  readonly tiempoServicioHint = computed(() => {
+    if (this.tiempoServicioSinVinculo()) {
+      return 'El empleado aún no tiene un contrato registrado.';
+    }
+    const t = this.tiempoServicio();
+    if (!t) return 'Calculado del historial de contratos (D.Leg. 1405). No editable.';
+    const corte = t.fechaCorte ? ` al ${this.fmtDate(t.fechaCorte)}` : '';
+    const traslape = t.tieneTraslape ? ' · contratos traslapados fusionados' : '';
+    return `Acumulado de ${t.numVinculos} contrato(s)${corte} (base 30/360, D.Leg. 1405)${traslape}. No editable.`;
   });
 
   // F1 — estado derivado + LBS ; F2 — historial ; F4 — elegibilidad.
@@ -821,6 +970,32 @@ export class EmpleadoPlanillaIntegradoComponent implements OnInit {
   ngOnInit(): void {
     this.cargarCatalogos();
     this.loadList();
+    this.cargarTiempoServicio();
+  }
+
+  /** SPEC_VACACIONES F2 — consume el endpoint F1 (tiempo de servicio acumulado). */
+  private cargarTiempoServicio(): void {
+    this.tiempoServicioLoading.set(true);
+    this.tiempoServicioSinVinculo.set(false);
+    this.planillaApi.obtenerTiempoServicio(this.empleadoId()).subscribe({
+      next: (t) => {
+        this.tiempoServicio.set(t);
+        this.tiempoServicioLoading.set(false);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.tiempoServicioLoading.set(false);
+        this.tiempoServicio.set(null);
+        // 404 = empleado sin vínculo activo aún (no es un error de la pantalla).
+        this.tiempoServicioSinVinculo.set(err.status === 404);
+      },
+    });
+
+    // SPEC_VACACIONES F9.1 — días no computables (LSG/faltas), solo informativo aquí.
+    // El récord vacacional (efecto real) se controla en el Padrón Vacacional.
+    this.planillaApi.obtenerTiempoServicioDetalle(this.empleadoId()).subscribe({
+      next: (d) => this.diasNoComputables.set(d.diasNoComputables),
+      error: () => this.diasNoComputables.set(null),
+    });
   }
 
   // --- LIST METHODS ---
@@ -1084,7 +1259,7 @@ export class EmpleadoPlanillaIntegradoComponent implements OnInit {
     if (!this.canRegistrar()) return;
     this.isEdit.set(false);
     this.editId.set(null);
-    this.form.reset({ regimenLaboralId: null, tipoContratoId: null, condicionLaboralId: null, modalidadCasId: null, grupoServidorCivil: null, esConfianza: 0, montoContratado: null, sueldoBasico: null, numHijos: null, tipoPersonaMefId: null, registroPlazaAirhsp: '', fechaInicioContrato: null, fechaFin: null, fechaCese: null, motivoCese: null, documentoCese: null, documentoOrigenTipo: null, documentoOrigenNumero: null, documentoOrigenFecha: null });
+    this.form.reset({ regimenLaboralId: null, tipoContratoId: null, condicionLaboralId: null, modalidadCasId: null, grupoServidorCivil: null, esConfianza: 0, esTeletrabajador: 0, montoContratado: null, sueldoBasico: null, numHijos: null, tipoPersonaMefId: null, registroPlazaAirhsp: '', fechaInicioContrato: null, diasSemanaOperativo: null, fechaFin: null, fechaCese: null, motivoCese: null, documentoCese: null, documentoOrigenTipo: null, documentoOrigenNumero: null, documentoOrigenFecha: null });
     this.estadoVinculo.set(null);
     this.habilitaLbs.set(false);
     this.historial.set([]);
@@ -1109,12 +1284,14 @@ export class EmpleadoPlanillaIntegradoComponent implements OnInit {
       modalidadCasId: (row as any).modalidadCasId ?? null,
       grupoServidorCivil: (row as any).grupoServidorCivil ?? null,
       esConfianza: (row as any).esConfianza ?? 0,
+      esTeletrabajador: (row as any).esTeletrabajador ?? 0,
       montoContratado,
       sueldoBasico: row.sueldoBasico,
       numHijos: row.numHijos,
       tipoPersonaMefId: (row as any).tipoPersonaMefId ?? null,
       registroPlazaAirhsp: (row as any).registroPlazaAirhsp ?? '',
       fechaInicioContrato: (row as any).fechaInicioContrato ?? null,
+      diasSemanaOperativo: (row as any).diasSemanaOperativo ?? null,
       fechaFin: (row as any).fechaFin ?? null,
       fechaCese: (row as any).fechaCese ?? null,
       motivoCese: (row as any).motivoCese ?? null,
@@ -1204,9 +1381,11 @@ export class EmpleadoPlanillaIntegradoComponent implements OnInit {
       modalidadCasId: v.modalidadCasId ?? null,
       grupoServidorCivil: v.grupoServidorCivil ?? null,
       esConfianza: v.esConfianza ?? 0,
+      esTeletrabajador: v.esTeletrabajador ?? 0,
       tipoPersonaMefId: v.tipoPersonaMefId ?? null,
       registroPlazaAirhsp: v.registroPlazaAirhsp ?? '',
       fechaInicioContrato: v.fechaInicioContrato ?? null,
+      diasSemanaOperativo: v.diasSemanaOperativo ?? null,
       fechaFin: v.fechaFin ?? null,
       fechaCese: v.fechaCese ?? null,
       motivoCese: v.motivoCese?.trim() || null,
@@ -1238,6 +1417,7 @@ export class EmpleadoPlanillaIntegradoComponent implements OnInit {
     this.notif.exito(msg);
     this.viewState.set('list');
     this.loadList();
+    this.cargarTiempoServicio(); // F2 — refrescar antigüedad tras registrar/editar un contrato
   }
 
   private onSaveErr(err: HttpErrorResponse): void {

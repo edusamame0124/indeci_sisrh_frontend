@@ -1,0 +1,46 @@
+<h2 mat-dialog-title>
+  <mat-icon fontIcon="gavel" aria-hidden="true" />
+  Sanción por PAD
+</h2>
+
+<mat-dialog-content>
+  <p class="pad-dialog__context">Día {{ data.fecha }}</p>
+
+  <form [formGroup]="form" class="pad-dialog__form" novalidate>
+    <mat-form-field appearance="outline" class="pad-dialog__full">
+      <mat-label>Motivo / N.° de expediente PAD</mat-label>
+      <textarea
+        matInput
+        formControlName="motivo"
+        rows="4"
+        maxlength="500"
+        required
+        placeholder="Ej.: Expediente PAD N.° 045-2026 — Resolución de sanción disciplinaria"
+      ></textarea>
+      <mat-hint align="end">{{ form.controls.motivo.value?.length ?? 0 }}/500</mat-hint>
+      @if (form.controls.motivo.touched && form.controls.motivo.hasError('required')) {
+        <mat-error>El motivo es obligatorio.</mat-error>
+      }
+      @if (form.controls.motivo.touched && form.controls.motivo.hasError('minlength')) {
+        <mat-error>Describe el motivo con al menos 10 caracteres.</mat-error>
+      }
+    </mat-form-field>
+  </form>
+
+  <p class="pad-dialog__nota">
+    Este día se descontará como falta (D.Leg. 276 Art. 24) y restará del récord vacacional del empleado.
+  </p>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button type="button" (click)="cancelar()">Cancelar</button>
+  <button
+    mat-flat-button
+    color="warn"
+    type="button"
+    (click)="aplicar()"
+    [disabled]="form.invalid"
+  >
+    Aplicar sanción
+  </button>
+</mat-dialog-actions>
