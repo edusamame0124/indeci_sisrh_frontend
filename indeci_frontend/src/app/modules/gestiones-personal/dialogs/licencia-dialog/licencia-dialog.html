@@ -5,12 +5,28 @@
 
   <!-- PASO 1: formulario (todas las licencias). En sin goce, tras "Generar" pasa a firma. -->
   <div class="grid" *ngIf="paso() === 'form'">
-    <!-- TIPO DE LICENCIA -->
+    <!-- MODALIDAD DE GOCE (formulario único) -->
+    <label class="field field--full" *ngIf="esModoUnificado">
+      <span>Tipo de Licencia *</span>
+      <select [(ngModel)]="modalidadGoce" (ngModelChange)="onModalidadChange()">
+        <option [ngValue]="null">Seleccione…</option>
+        <option ngValue="CON_GOCE">Con goce de remuneraciones</option>
+        <option ngValue="SIN_GOCE">Sin goce de remuneraciones</option>
+      </select>
+    </label>
+
+    <!-- MOTIVO / TIPO DE LICENCIA -->
     <!-- Select cuando no hay tipo fijo, o cuando es flujo "sin goce" (subtipos legales). -->
-    <label class="field field--full" *ngIf="!tipoLicenciaNombre || esFlujoSinGoce()">
-      <span>Tipo de licencia{{ esFlujoSinGoce() ? ' (sin goce de haber)' : '' }}</span>
-      <select [(ngModel)]="tipoLicenciaId">
-        <option [ngValue]="null">Seleccione el subtipo</option>
+    <label
+      class="field field--full"
+      *ngIf="(esModoUnificado && modalidadGoce) || (!esModoUnificado && (!tipoLicenciaNombre || esFlujoSinGoce()))"
+    >
+      <span>
+        Motivo de la licencia *
+        <span class="chip-tope" *ngIf="textoTope()">{{ textoTope() }}</span>
+      </span>
+      <select [(ngModel)]="tipoLicenciaId" (ngModelChange)="onTipoLicenciaChange()">
+        <option [ngValue]="null">Seleccione el motivo</option>
         <option *ngFor="let tipo of tiposFiltrados()" [ngValue]="tipo.id">
           {{ tipo.nombre }}
         </option>
@@ -20,11 +36,18 @@
       </small>
     </label>
 
-    <!-- Label estático solo para un tipo fijo con goce. -->
-    <div class="field field--full" *ngIf="tipoLicenciaNombre && !esFlujoSinGoce()">
+    <!-- Label estático solo para un tipo fijo con goce (ruta legacy). -->
+    <div class="field field--full" *ngIf="!esModoUnificado && tipoLicenciaNombre && !esFlujoSinGoce()">
       <span>Tipo de licencia</span>
       <strong>{{ nombreTipoLicenciaSeleccionado() }}</strong>
     </div>
+
+    <!-- DETALLE "OTROS MOTIVOS" (sin goce) -->
+    <label class="field field--full" *ngIf="esMotivoOtros()">
+      <span>Detalle de otros motivos *</span>
+      <textarea rows="3" [(ngModel)]="motivo" placeholder="Describa el motivo de la licencia"></textarea>
+    </label>
+
     <!-- PERIODO DE LICENCIA -->
     <label class="field">
       <span>Fecha de inicio de la licencia</span>
@@ -33,7 +56,13 @@
 
     <label class="field">
       <span>Fecha de fin de la licencia</span>
-      <input type="date" [(ngModel)]="fechaFin" (change)="calcularDias()" />
+      <input
+        type="date"
+        [(ngModel)]="fechaFin"
+        (change)="calcularDias()"
+        [disabled]="esFechaFinAuto()"
+      />
+      <small *ngIf="esFechaFinAuto()" class="hint">Calculada automáticamente según el tope.</small>
     </label>
 
     <label class="field">
@@ -41,25 +70,10 @@
       <input type="number" [ngModel]="cantidadDias" disabled />
     </label>
 
-    <!-- MOTIVO -->
+    <!-- MOTIVO (ruta legacy código 007) -->
     <label class="field field--full" *ngIf="requiereMotivo()">
       <span>Motivo *</span>
       <textarea rows="3" [(ngModel)]="motivo"></textarea>
-    </label>
-
-    <!-- DOCUMENTOS PRESENTADOS (no aplican para licencia sin goce: el sustento es el archivo) -->
-    <label class="field field--full" *ngIf="!esFlujoSinGoce()">
-      <span>Documento presentado 1</span>
-      <input
-        type="text"
-        [(ngModel)]="documento1"
-        placeholder="Ejemplo: Solicitud, certificado, constancia, etc."
-      />
-    </label>
-
-    <label class="field field--full" *ngIf="!esFlujoSinGoce()">
-      <span>Documento presentado 2</span>
-      <input type="text" [(ngModel)]="documento2" placeholder="Opcional" />
     </label>
 
     <label class="field">
@@ -67,13 +81,10 @@
       <input type="number" min="1" [(ngModel)]="totalFolios" />
     </label>
 
-    <!-- ARCHIVO DE SUSTENTO — obligatorio para licencia sin goce -->
+    <!-- ARCHIVO DE SUSTENTO (opcional) -->
     <label class="field field--full" *ngIf="esFlujoSinGoce() || requiereSustento()">
-      <span>Archivo de sustento{{ esFlujoSinGoce() ? ' *' : '' }}</span>
+      <span>Archivo de sustento <small class="opcional">(opcional)</small></span>
       <input type="file" (change)="onArchivoSeleccionado($event)" />
-      <small *ngIf="esFlujoSinGoce()" class="hint">
-        Obligatorio: adjunte la Resolución / documento que autoriza la licencia sin goce.
-      </small>
     </label>
 
     <!-- OBSERVACIÓN -->

@@ -74,12 +74,16 @@ export interface TipoLicencia {
   id: number;
   nombre: string;
   activo?: number;
+  /** Código estable del subtipo (p. ej. LIC_CG_MAT, LIC_SIN_OTR). */
+  codigo?: string;
   /** SPEC_VACACIONES F9.1 — 1 = licencia sin goce de haber. */
   esSinGoce?: number;
   /** 1 = requiere N° de Resolución Directoral de sustento. */
   requiereResolucion?: number;
   /** Código Tabla 21 PLAME (SUNAT). */
   codPlameSunat?: string;
+  /** SPEC_VACACIONES F9.2 — tope de días permitido (null = sin tope). */
+  maxDias?: number | null;
 }
 
 export interface TipoVacacion {
@@ -190,6 +194,8 @@ export interface CrearSolicitudRrhhRequest {
 
   /** Papeleta de Teletrabajo (Ley N° 31572): actividades del día. */
   detallesTeletrabajo?: DetalleTeletrabajoRequest[] | null;
+  /** Papeleta de Teletrabajo: modalidad elegida (PARCIAL/COMPLETA). */
+  modalidadTeletrabajo?: string | null;
 }
 
 @Injectable({
@@ -202,6 +208,13 @@ export class SolicitudesRrhhService {
   listarMisSolicitudes(): Observable<ApiResponse<SolicitudRrhh[]>> {
     return this.http.get<ApiResponse<SolicitudRrhh[]>>(
       `${this.apiUrl}/rrhh/solicitudes/mis-solicitudes`,
+    );
+  }
+
+  /** Art. 35 — feriados del año (ISO yyyy-MM-dd) para el cómputo de días hábiles en la UI. */
+  obtenerFeriados(anio: number): Observable<ApiResponse<string[]>> {
+    return this.http.get<ApiResponse<string[]>>(
+      `${this.apiUrl}/rrhh/vacaciones/feriados?anio=${anio}`,
     );
   }
 
@@ -389,6 +402,16 @@ export class SolicitudesRrhhService {
     return this.http.put<ApiResponse<unknown>>(
       `${this.apiUrl}/rrhh/solicitudes/enviar/${idPapeleta}`,
       formData,
+    );
+  }
+
+  /**
+   * Elimina (soft-delete) una papeleta propia que aún está en BORRADOR.
+   * El backend valida propiedad y estado; una papeleta enviada no se puede eliminar.
+   */
+  eliminarBorrador(idPapeleta: number): Observable<ApiResponse<unknown>> {
+    return this.http.delete<ApiResponse<unknown>>(
+      `${this.apiUrl}/rrhh/solicitudes/eliminar/${idPapeleta}`,
     );
   }
 

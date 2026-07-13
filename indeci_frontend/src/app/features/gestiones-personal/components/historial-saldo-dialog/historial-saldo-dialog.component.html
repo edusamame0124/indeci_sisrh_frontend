@@ -1,0 +1,54 @@
+<h2 mat-dialog-title>Historial de Recálculos</h2>
+
+<mat-dialog-content>
+  <div class="empleado-info">
+    <strong>{{ data.nombreCompleto }}</strong> ({{ data.dni }})
+  </div>
+
+  <div *ngIf="cargando()" class="loading">
+    <mat-spinner diameter="28"></mat-spinner>
+    <span>Cargando historial...</span>
+  </div>
+
+  <div *ngIf="error()" class="alert">{{ error() }}</div>
+
+  <div class="table-wrap" *ngIf="!cargando() && !error()">
+    <table>
+      <thead>
+        <tr>
+          <th>Año</th>
+          <th class="text-right">Ganados</th>
+          <th class="text-right">Gozados</th>
+          <th class="text-right">Saldo</th>
+          <th>Origen</th>
+          <th>Estado</th>
+          <th>Observación</th>
+          <th>Fecha</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let f of filas()" [class.fila-anulada]="!esActivo(f)">
+          <td>{{ f.anio }}</td>
+          <td class="text-right">{{ f.diasGanados }}</td>
+          <td class="text-right">{{ f.diasGozados }}</td>
+          <td class="text-right">{{ f.diasSaldo }}</td>
+          <td>{{ f.origen || '—' }}</td>
+          <td>
+            <span class="badge" [class.badge--success]="esActivo(f)" [class.badge--danger]="!esActivo(f)">
+              {{ esActivo(f) ? 'Activo' : 'Anulado' }}
+            </span>
+          </td>
+          <td class="observacion">{{ f.observacion || '—' }}</td>
+          <td>{{ formatearFecha(f.createdAt) }}</td>
+        </tr>
+        <tr *ngIf="filas().length === 0">
+          <td colspan="8" class="empty">Sin registros de saldo para este empleado.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button mat-dialog-close>Cerrar</button>
+</mat-dialog-actions>

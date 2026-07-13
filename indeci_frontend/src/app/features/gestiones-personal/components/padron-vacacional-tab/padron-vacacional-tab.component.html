@@ -66,6 +66,9 @@
             <th class="text-right">Gozados</th>
             <th class="text-right">Saldo</th>
             <th>Récord</th>
+            <th title="F9.3 — D.S. 013-2019-PCM: períodos vacacionales completos sin gozar (distinto del récord de tiempo de servicio). Tope sin evaluación: 2.">
+              Períodos sin Gozar
+            </th>
             <th class="acciones">Acciones</th>
           </tr>
         </thead>
@@ -108,9 +111,26 @@
               </span>
             </td>
             <td>
-              <span [ngClass]="claseRecord(item.estadoRecord)">
-                {{ item.estadoRecord }}
+              <span
+                [ngClass]="claseRecord(item.estadoRecord)"
+                [title]="
+                  item.estadoRecord === 'EN_ACUMULACION'
+                    ? 'Aún no completa su primer año de SERVICIO (antigüedad) — no aplica todavía OK/Sin récord.'
+                    : ''
+                "
+              >
+                {{ labelRecord(item.estadoRecord) }}
               </span>
+            </td>
+            <td>
+              <span
+                *ngIf="!item.sinVinculo"
+                [ngClass]="claseAcumulacion(item)"
+                title="Períodos vacacionales completos sin gozar (F9.3, D.S. 013-2019-PCM)."
+              >
+                {{ labelPeriodosSinGozar(item.periodosAcumuladosSinGozar) }}
+              </span>
+              <span *ngIf="item.sinVinculo" class="text-muted">—</span>
             </td>
             <td class="acciones" style="white-space: nowrap;">
               <button mat-icon-button title="Ver detalle" (click)="abrirDetalle(item)">
@@ -119,10 +139,35 @@
               <button mat-icon-button color="primary" title="Registrar Goce Directo" (click)="abrirGoceDirecto(item)">
                 <mat-icon>edit_calendar</mat-icon>
               </button>
+              <button
+                *ngIf="!item.sinVinculo"
+                mat-icon-button
+                title="Provisionar Auto — recalcula el saldo con el récord real (D.Leg. 1405)"
+                (click)="provisionarAuto(item)"
+              >
+                <mat-icon>autorenew</mat-icon>
+              </button>
+              <button
+                *ngIf="!item.sinVinculo"
+                mat-icon-button
+                title="Historial de Recálculos — trazabilidad completa (activos y anulados)"
+                (click)="abrirHistorialSaldo(item)"
+              >
+                <mat-icon>history</mat-icon>
+              </button>
+              <button
+                *ngIf="item.requiereDecisionAcumulacion"
+                mat-icon-button
+                color="warn"
+                title="Requiere decisión de RR.HH. por acumulación de períodos (F9.3)"
+                (click)="abrirDecisionAcumulacion(item)"
+              >
+                <mat-icon>gavel</mat-icon>
+              </button>
             </td>
           </tr>
           <tr *ngIf="datos().length === 0">
-            <td colspan="12" class="empty">
+            <td colspan="13" class="empty">
               No se encontraron registros en el padrón vacacional.
             </td>
           </tr>

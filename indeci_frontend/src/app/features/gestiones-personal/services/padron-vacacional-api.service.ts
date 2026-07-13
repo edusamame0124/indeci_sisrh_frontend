@@ -3,7 +3,14 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { ApiResponse } from '../../../core/models/api-response.model';
-import { PadronVacacionalPageDto } from '../models/padron-vacacional.model';
+import {
+  AcumulacionDecisionDto,
+  AcumulacionDecisionPayload,
+  HistorialSaldoRow,
+  PadronVacacionalPageDto,
+  ProvisionarAutoPayload,
+  RecalculoManualResult
+} from '../models/padron-vacacional.model';
 
 @Injectable({
   providedIn: 'root'
@@ -32,5 +39,43 @@ export class PadronVacacionalApiService {
     const formData = new FormData();
     formData.append('file', file);
     return this.http.post<ApiResponse<any>>(`${environment.apiUrl}/rrhh/vacaciones/importar-baseline`, formData);
+  }
+
+  /** F9.3 — registra la decisión de RR.HH. sobre la acumulación de un empleado (auditoría). */
+  registrarDecisionAcumulacion(
+    empleadoId: number,
+    payload: AcumulacionDecisionPayload
+  ): Observable<ApiResponse<AcumulacionDecisionDto>> {
+    return this.http.post<ApiResponse<AcumulacionDecisionDto>>(
+      `${this.baseUrl}/${empleadoId}/acumulacion-decision`,
+      payload
+    );
+  }
+
+  /** F9.3 — historial de decisiones de acumulación registradas para un empleado. */
+  listarDecisionesAcumulacion(empleadoId: number): Observable<ApiResponse<AcumulacionDecisionDto[]>> {
+    return this.http.get<ApiResponse<AcumulacionDecisionDto[]>>(
+      `${this.baseUrl}/${empleadoId}/acumulacion-decision`
+    );
+  }
+
+  /**
+   * "Provisionar Auto": recalcula TODO el saldo vacacional del empleado con el récord real
+   * (récord por año de aniversario + LSG/faltas). Las filas mal calculadas se anulan
+   * (soft-delete) y se reemplazan por una fila nueva y limpia — nunca se editan in-place.
+   * El sustento es obligatorio (Poka-Yoke).
+   */
+  provisionarAuto(empleadoId: number, payload: ProvisionarAutoPayload): Observable<ApiResponse<RecalculoManualResult>> {
+    return this.http.post<ApiResponse<RecalculoManualResult>>(
+      `${this.baseUrl}/${empleadoId}/provisionar-auto`,
+      payload
+    );
+  }
+
+  /** Trazabilidad Visual — historial completo (activos + anulados) del saldo de un empleado. */
+  historialSaldo(empleadoId: number): Observable<ApiResponse<HistorialSaldoRow[]>> {
+    return this.http.get<ApiResponse<HistorialSaldoRow[]>>(
+      `${this.baseUrl}/${empleadoId}/historial-saldo`
+    );
   }
 }

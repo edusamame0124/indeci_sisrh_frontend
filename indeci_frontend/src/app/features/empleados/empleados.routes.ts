@@ -328,16 +328,6 @@ export const EMPLEADOS_ROUTES: Routes = [
         title: 'Préstamos — SISRH-INDECI',
       },
 
-      /* ——— Vacaciones (Spec 011 / B5) ——— */
-      {
-        path: 'vacaciones',
-        loadComponent: () =>
-          import('./pages/vacacion-mantenimiento-page/vacacion-mantenimiento-page.component').then(
-            (m) => m.VacacionMantenimientoPageComponent,
-          ),
-        title: 'Vacaciones — SISRH-INDECI',
-      },
-
       /* ——— Conceptos asignados (009 — hub + lista; CRUD T140) ——— */
       {
         path: 'conceptos',

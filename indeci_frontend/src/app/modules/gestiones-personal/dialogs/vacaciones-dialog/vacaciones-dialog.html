@@ -97,6 +97,34 @@
             <input type="number" [ngModel]="detalle.totalDias" disabled />
           </label>
         </div>
+
+        <!-- Art. 35 — media jornada: solo si la fracción es de un único día (Desde == Hasta). -->
+        <label class="art35-media" *ngIf="mostrarToggleMediaJornada(detalle)">
+          <input
+            type="checkbox"
+            [(ngModel)]="detalle.mediaJornada"
+            (ngModelChange)="onMediaJornadaChange(detalle)"
+          />
+          Solicitar solo media jornada (0.5 días)
+        </label>
+
+        <!-- Art. 35.a) — aviso: fracción &lt; 7 días consume la bolsa de días hábiles. -->
+        <div class="art35-aviso" *ngIf="avisoConsumeBolsa(detalle)">
+          ⚠️ Al ser menor a 7 días, este periodo consumirá su bolsa de días hábiles fraccionables
+          (Art. 35.b).
+        </div>
+
+        <!-- Art. 34 D.S. 013-2019-PCM — transparencia del +2 por fin de semana (viernes). -->
+        <div class="art34-banner" *ngIf="detalle.reglaViernesArt34">
+          💡 Por disposición del Art. 34, al iniciar o concluir su periodo en día Viernes, se
+          computan automáticamente el sábado y domingo inmediatos (+2 días).
+        </div>
+
+        <!-- Art. 34 — tope de 30 días calendario por período. -->
+        <div class="art34-error" *ngIf="(detalle.totalDias ?? 0) > 30">
+          ⚠ El periodo suma {{ detalle.totalDias }} días y supera el máximo legal de 30 días
+          calendario (Art. 34). Ajuste las fechas.
+        </div>
       </ng-template>
     </div>
 
@@ -125,11 +153,50 @@
       </div>
     </div>
 
+    <!-- Programación sin saldo suficiente (Opción 1 bloqueo + Opción 2 sugerencia de Adelanto). -->
+    <div class="field field--full" *ngIf="excedeProgramacion()">
+      <div class="programacion-sin-saldo">
+        <mat-icon>event_busy</mat-icon>
+        <div>
+          <strong>
+            No cuenta con saldo suficiente para programar {{ diasProgramacionSolicitados() }} día(s)
+            (disponible: {{ saldoDisponible() }} día(s)).
+          </strong>
+          <span class="programacion-sin-saldo__hint">
+            💡 Si aún no cumple su año de servicio, no use esta papeleta de
+            <strong>Programación</strong>: registre su solicitud como
+            <strong>Adelanto de Vacaciones</strong>, que se limita a su saldo proporcional
+            (meses efectivos × 2.5).
+          </span>
+        </div>
+      </div>
+    </div>
+
     <div class="field field--full" *ngIf="puedeAgregarReprogramacion()">
       <button mat-stroked-button type="button" (click)="agregarReprogramacion()">
         <mat-icon>add</mat-icon>
         Agregar segundo nuevo periodo
       </button>
+    </div>
+
+    <!-- Art. 35 — trackers vivos + alertas de bolsa de días hábiles fraccionables. -->
+    <div class="field field--full art35-panel" *ngIf="esFraccionamiento()">
+      <div class="art35-tracker">
+        <mat-icon>event_available</mat-icon>
+        Días hábiles fraccionados:
+        <strong [class.art35-over]="excedeBolsaHabiles()">
+          {{ diasHabilesFraccionados() }} / {{ poolDiasHabiles }}
+        </strong>
+      </div>
+      <div class="art35-error" *ngIf="excedeBolsaHabiles()">
+        ❌ Ha superado el límite legal de 7 días hábiles fraccionables por periodo vacacional (Art. 35.b).
+      </div>
+      <div class="art35-error" *ngIf="excedeSemana()">
+        ❌ No puede tomar más de 4 días hábiles fraccionados en una misma semana (Art. 35.c).
+      </div>
+      <small class="art35-nota">
+        Los días hábiles excluyen sábados y domingos; los feriados se validan oficialmente al guardar.
+      </small>
     </div>
 
     <div class="field field--full" *ngIf="puedeAgregarFraccion()">
@@ -177,7 +244,13 @@
     color="primary"
     type="button"
     (click)="guardar()"
-    [disabled]="guardando() || excedeAdelanto()"
+    [disabled]="
+      guardando() ||
+      excedeAdelanto() ||
+      excedeMaximoLegal() ||
+      excedeProgramacion() ||
+      excedeFraccionamiento()
+    "
   >
     <mat-icon>save</mat-icon>
     {{ guardando() ? 'Guardando...' : 'Guardar borrador' }}

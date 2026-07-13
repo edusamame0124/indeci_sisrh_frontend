@@ -1,0 +1,46 @@
+<h2 mat-dialog-title>Confirmar Provisión o Recálculo</h2>
+
+<mat-dialog-content>
+  <div class="empleado-info">
+    <strong>{{ data.nombreCompleto }}</strong> ({{ data.dni }})
+  </div>
+
+  <p class="explicacion">
+    Esta acción recalcula el saldo vacacional del empleado con el récord vigente. Si existen
+    registros históricos (por ejemplo, importados del Excel) que ya no correspondan al récord
+    actual, quedarán anulados de forma trazable y se generará un registro nuevo con el valor
+    correcto.
+  </p>
+
+  <form [formGroup]="form">
+    <div class="sugerencias">
+      <button
+        type="button"
+        *ngFor="let s of sugerencias"
+        mat-stroked-button
+        class="chip-sugerencia"
+        (click)="aplicarSugerencia(s)"
+      >
+        {{ s }}
+      </button>
+    </div>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Sustento</mat-label>
+      <textarea
+        matInput
+        formControlName="sustento"
+        rows="3"
+        placeholder="Detalle el motivo de la acción..."
+      ></textarea>
+      <mat-error>El sustento es obligatorio.</mat-error>
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button mat-dialog-close>Cancelar</button>
+  <button mat-flat-button color="primary" [disabled]="form.invalid" (click)="confirmar()">
+    Confirmar
+  </button>
+</mat-dialog-actions>

@@ -12,10 +12,36 @@ import {
   TipoLicencia,
   TipoSolicitudRrhh,
 } from '../../services/solicitudes-rrhh';
+
 interface LicenciaDialogData {
   tipoSolicitud: TipoSolicitudRrhh;
   tipoLicenciaNombre?: string;
 }
+
+/** Modalidad de goce elegida en el formulario único. */
+type ModalidadGoce = 'CON_GOCE' | 'SIN_GOCE';
+
+/**
+ * SPEC_VACACIONES F9.2 — subtipos con goce cuyo tope es FIJO (autocompleta fecha fin):
+ * descanso pre/post natal (98) y onomástico (1). El resto de topes son máximos (valida ≤).
+ * Se identifican por CODIGO estable (no por monto), la fuente del tope sigue en BD (MAX_DIAS).
+ */
+const CODIGOS_DIAS_FIJOS = ['LIC_CG_MAT', 'LIC_CG_ONO'];
+
+/** Subtipo sin goce "Otros motivos" — habilita el textarea de detalle. */
+const CODIGO_SIN_GOCE_OTROS = 'LIC_SIN_OTR';
+
+/**
+ * Filas "contenedor" legacy del catálogo que NO son motivos reales (eran las etiquetas
+ * del menú anterior). Se ocultan de los selects; la ruta legacy "A cuenta" sigue usándolas
+ * por nombre, así que no se desactivan en BD.
+ */
+const NOMBRES_CONTENEDOR_EXCLUIDOS = [
+  'A CUENTA DEL PERIODO VACACIONAL',
+  'CON GOCE DE REMUNERACIONES',
+  'SIN GOCE DE REMUNERACIONES',
+];
+
 @Component({
   selector: 'app-licencia-dialog',
   standalone: true,
@@ -40,6 +66,10 @@ export class LicenciaDialog implements OnInit {
 
   tituloDialog = 'Licencia';
 
+  // SPEC_VACACIONES F9.2 — formulario único: se elige la modalidad de goce en el propio form.
+  esModoUnificado = false;
+  modalidadGoce: ModalidadGoce | null = null;
+
   tipoLicenciaId: number | null = null;
 
   fechaInicio = '';
@@ -49,8 +79,6 @@ export class LicenciaDialog implements OnInit {
   motivo = '';
   observacion = '';
 
-  documento1 = '';
-  documento2 = '';
   totalFolios: number | null = null;
 
   archivoSustento: File | null = null;
@@ -69,7 +97,12 @@ export class LicenciaDialog implements OnInit {
       this.tipoSolicitud = data;
     }
 
-    this.tituloDialog = this.tipoSolicitud?.nombre ?? 'Licencia';
+    // Sin nombre preseleccionado → formulario único (elige modalidad con/sin goce).
+    this.esModoUnificado = !this.tipoLicenciaNombre;
+
+    this.tituloDialog = this.esModoUnificado
+      ? 'Nueva licencia'
+      : this.tipoSolicitud?.nombre ?? 'Licencia';
   }
 
   ngOnInit(): void {
@@ -93,22 +126,43 @@ export class LicenciaDialog implements OnInit {
       },
     });
   }
+
   normalizarTexto(valor: string | null | undefined): string {
     return String(valor ?? '')
       .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[̀-ͯ]/g, '')
       .toUpperCase()
       .trim();
   }
 
-  /** SPEC_VACACIONES F9.1 — el flujo es "sin goce" si el nombre inicial lo indica. */
+  /** El flujo es "sin goce" si el usuario eligió esa modalidad (o el nombre legacy lo indica). */
   esFlujoSinGoce(): boolean {
+    if (this.esModoUnificado) {
+      return this.modalidadGoce === 'SIN_GOCE';
+    }
     return this.normalizarTexto(this.tipoLicenciaNombre).includes('SIN GOCE');
   }
 
-  /** En flujo sin-goce, solo los subtipos legales es_sin_goce=1; si no, todos los activos. */
+  /** true si la fila es un "contenedor" legacy que no debe ofrecerse como motivo. */
+  private esContenedorGenerico(tipo: TipoLicencia): boolean {
+    return NOMBRES_CONTENEDOR_EXCLUIDOS.includes(this.normalizarTexto(tipo.nombre));
+  }
+
+  /** Subtipos ofrecidos según la modalidad elegida (con/sin goce). */
   tiposFiltrados(): TipoLicencia[] {
-    const todos = this.tiposLicencia();
+    const todos = this.tiposLicencia().filter((t) => !this.esContenedorGenerico(t));
+
+    if (this.esModoUnificado) {
+      if (this.modalidadGoce === 'SIN_GOCE') {
+        return todos.filter((t) => Number(t.esSinGoce ?? 0) === 1);
+      }
+      if (this.modalidadGoce === 'CON_GOCE') {
+        return todos.filter((t) => Number(t.esSinGoce ?? 0) === 0);
+      }
+      return [];
+    }
+
+    // Ruta legacy (p. ej. "A cuenta del periodo vacacional").
     return this.esFlujoSinGoce() ? todos.filter((t) => Number(t.esSinGoce ?? 0) === 1) : todos;
   }
 
@@ -117,12 +171,36 @@ export class LicenciaDialog implements OnInit {
     return Number(this.tipoLicenciaSeleccionado()?.requiereResolucion ?? 0) === 1;
   }
 
+  /** Reinicia la selección dependiente al cambiar la modalidad de goce. */
+  onModalidadChange(): void {
+    this.tipoLicenciaId = null;
+    this.motivo = '';
+    this.cantidadDias = null;
+    this.error.set(null);
+    this.tituloDialog =
+      this.modalidadGoce === 'SIN_GOCE'
+        ? 'Nueva licencia - Sin goce de haber'
+        : this.modalidadGoce === 'CON_GOCE'
+          ? 'Nueva licencia - Con goce de remuneraciones'
+          : 'Nueva licencia';
+  }
+
+  /** Al cambiar el motivo: autocompleta fechas de topes fijos y revalida. */
+  onTipoLicenciaChange(): void {
+    if (!this.esMotivoOtros()) {
+      this.motivo = '';
+    }
+    this.error.set(null);
+    this.aplicarTopeFijo();
+    this.calcularDias();
+  }
+
   seleccionarTipoLicenciaInicial(): void {
     if (!this.tipoLicenciaNombre) {
       return;
     }
 
-    // Flujo sin goce: NO se fuerza un tipo; el usuario elige el subtipo legal del dropdown.
+    // Flujo sin goce legacy: NO se fuerza un tipo; el usuario elige el subtipo del dropdown.
     if (this.esFlujoSinGoce()) {
       this.tituloDialog = `${this.tipoSolicitud.nombre} - Sin goce de haber`;
       return;
@@ -143,6 +221,7 @@ export class LicenciaDialog implements OnInit {
     this.tipoLicenciaId = Number(tipo.id);
     this.tituloDialog = `${this.tipoSolicitud.nombre} - ${tipo.nombre}`;
   }
+
   codigoTipoSolicitud(): string {
     return String(this.tipoSolicitud?.codigo ?? '').padStart(3, '0');
   }
@@ -152,6 +231,7 @@ export class LicenciaDialog implements OnInit {
 
     return codigosQueRequierenMotivo.includes(this.codigoTipoSolicitud());
   }
+
   tipoLicenciaSeleccionado(): TipoLicencia | null {
     return this.tiposLicencia().find((x) => Number(x.id) === Number(this.tipoLicenciaId)) ?? null;
   }
@@ -159,6 +239,64 @@ export class LicenciaDialog implements OnInit {
   nombreTipoLicenciaSeleccionado(): string {
     return this.tipoLicenciaSeleccionado()?.nombre ?? this.tipoLicenciaNombre ?? '-';
   }
+
+  // ============ SPEC_VACACIONES F9.2 — topes de días y motivo "otros" ============
+
+  /** Tope de días del motivo elegido (null = sin tope). */
+  topeDias(): number | null {
+    const tope = this.tipoLicenciaSeleccionado()?.maxDias;
+    return tope != null && tope > 0 ? Number(tope) : null;
+  }
+
+  /** El motivo elegido es "Otros motivos" (sin goce) → habilita el textarea de detalle. */
+  esMotivoOtros(): boolean {
+    if (!this.esFlujoSinGoce()) {
+      return false;
+    }
+    const sel = this.tipoLicenciaSeleccionado();
+    return (
+      sel?.codigo === CODIGO_SIN_GOCE_OTROS ||
+      this.normalizarTexto(sel?.nombre).includes('OTROS MOTIVOS')
+    );
+  }
+
+  /** El tope del motivo es FIJO (autocompleta fecha fin) en lugar de máximo. */
+  private esDiasFijos(): boolean {
+    const codigo = this.tipoLicenciaSeleccionado()?.codigo ?? '';
+    return CODIGOS_DIAS_FIJOS.includes(codigo);
+  }
+
+  /** La fecha fin se calcula sola (tope fijo) → el campo se muestra de solo lectura. */
+  esFechaFinAuto(): boolean {
+    return this.esDiasFijos() && this.topeDias() != null && !!this.fechaInicio;
+  }
+
+  /** Texto del chip informativo del tope (o null si no aplica). */
+  textoTope(): string | null {
+    const tope = this.topeDias();
+    if (tope == null) {
+      return null;
+    }
+    return this.esDiasFijos() ? `${tope} día(s)` : `Máx. ${tope} día(s)`;
+  }
+
+  private sumarDiasISO(fechaISO: string, dias: number): string {
+    const base = new Date(`${fechaISO}T00:00:00`);
+    base.setDate(base.getDate() + dias);
+    const y = base.getFullYear();
+    const m = String(base.getMonth() + 1).padStart(2, '0');
+    const d = String(base.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+
+  /** Autocompleta la fecha fin cuando el motivo tiene un tope FIJO. */
+  private aplicarTopeFijo(): void {
+    const tope = this.topeDias();
+    if (tope != null && this.esDiasFijos() && this.fechaInicio) {
+      this.fechaFin = this.sumarDiasISO(this.fechaInicio, tope - 1);
+    }
+  }
+
   requiereSustento(): boolean {
     return Number(this.tipoSolicitud?.requiereSustento ?? 0) === 1;
   }
@@ -168,6 +306,8 @@ export class LicenciaDialog implements OnInit {
   }
 
   calcularDias(): void {
+    this.aplicarTopeFijo();
+
     if (!this.fechaInicio || !this.fechaFin) {
       this.cantidadDias = null;
       return;
@@ -186,7 +326,23 @@ export class LicenciaDialog implements OnInit {
       return;
     }
 
+    const tope = this.topeDias();
+    if (tope != null && dias > tope) {
+      this.error.set(`La licencia excede el máximo permitido para este motivo (${tope} día(s)).`);
+      return;
+    }
+
     this.error.set(null);
+  }
+
+  /** Valida el tope de días; devuelve true si es válido. */
+  private validarTope(): boolean {
+    const tope = this.topeDias();
+    if (tope != null && this.cantidadDias != null && this.cantidadDias > tope) {
+      this.error.set(`La licencia excede el máximo permitido para este motivo (${tope} día(s)).`);
+      return false;
+    }
+    return true;
   }
 
   onArchivoSeleccionado(event: Event): void {
@@ -229,12 +385,15 @@ export class LicenciaDialog implements OnInit {
       this.error.set('La fecha fin no puede ser menor que la fecha inicio.');
       return;
     }
-    if (!this.totalFolios || this.totalFolios <= 0) {
-      this.error.set('Ingrese el total de folios.');
+    if (!this.validarTope()) {
       return;
     }
-    if (!this.archivoSustento) {
-      this.error.set('Debe adjuntar el archivo de sustento (obligatorio para licencia sin goce).');
+    if (this.esMotivoOtros() && !this.motivo.trim()) {
+      this.error.set('Ingrese el detalle de los otros motivos.');
+      return;
+    }
+    if (this.totalFolios !== null && this.totalFolios <= 0) {
+      this.error.set('El total de folios debe ser mayor a 0.');
       return;
     }
 
@@ -244,7 +403,7 @@ export class LicenciaDialog implements OnInit {
       fechaInicio: this.fechaInicio,
       fechaFin: this.fechaFin,
       cantidadDias: this.cantidadDias,
-      motivo: null,
+      motivo: this.esMotivoOtros() ? this.motivo.trim() : null,
       observacion: null,
       horaInicio: null,
       horaFin: null,
@@ -327,8 +486,13 @@ export class LicenciaDialog implements OnInit {
       return;
     }
 
+    if (this.esModoUnificado && !this.modalidadGoce) {
+      this.error.set('Seleccione la modalidad de goce.');
+      return;
+    }
+
     if (!this.tipoLicenciaId) {
-      this.error.set('Seleccione el tipo de licencia.');
+      this.error.set('Seleccione el motivo de la licencia.');
       return;
     }
 
@@ -344,28 +508,17 @@ export class LicenciaDialog implements OnInit {
       return;
     }
 
+    if (!this.validarTope()) {
+      return;
+    }
+
     if (this.requiereMotivo() && !this.motivo.trim()) {
       this.error.set('Ingrese el motivo de la licencia.');
       return;
     }
 
-    // Licencia SIN GOCE: no pide "documento presentado"; el sustento es el archivo (obligatorio).
-    if (!this.esFlujoSinGoce() && !this.documento1.trim()) {
-      this.error.set('Ingrese el documento presentado 1.');
-      return;
-    }
-
-    if (!this.totalFolios || this.totalFolios <= 0) {
-      this.error.set('Ingrese el total de folios.');
-      return;
-    }
-
-    if ((this.esFlujoSinGoce() || this.requiereSustento()) && !this.archivoSustento) {
-      this.error.set(
-        this.esFlujoSinGoce()
-          ? 'Debe adjuntar el archivo de sustento (obligatorio para licencia sin goce).'
-          : 'Debe adjuntar el documento de sustento.',
-      );
+    if (this.totalFolios !== null && this.totalFolios <= 0) {
+      this.error.set('El total de folios debe ser mayor a 0.');
       return;
     }
 
@@ -394,8 +547,8 @@ export class LicenciaDialog implements OnInit {
       cantidadHoras: null,
       lugarComision: null,
 
-      documento1: this.documento1.trim(),
-      documento2: this.documento2.trim() || null,
+      documento1: null,
+      documento2: null,
       totalFolios: this.totalFolios,
     };
 

@@ -61,6 +61,48 @@ textarea:focus {
   box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
 }
 
+// Control segmentado (pills) para la modalidad de teletrabajo.
+.segmented {
+  display: inline-flex;
+  gap: 3px;
+  padding: 3px;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  width: fit-content;
+}
+
+.segmented__opt {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: none;
+  background: transparent;
+  padding: 0.4rem 1rem;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #475569;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+
+  &:hover:not(.segmented__opt--active) {
+    background: #e2e8f0;
+  }
+
+  &--active {
+    background: #2563eb;
+    color: #ffffff;
+    box-shadow: 0 1px 3px rgba(37, 99, 235, 0.4);
+  }
+}
+
 .actividades {
   border: 1px solid #e2e8f0;
   border-radius: 12px;

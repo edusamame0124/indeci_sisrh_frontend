@@ -165,11 +165,16 @@ export class ConsultaDiariaAsistenciaPageComponent {
   badgeClass(tipo: string | null | undefined): string {
     switch (tipo) {
       case 'LABORAL':
+      case 'TELETRABAJO':
         return 'diaria__badge diaria__badge--ok';
       case 'TARDANZA':
         return 'diaria__badge diaria__badge--warn';
       case 'FALTA':
+      case 'SANCION_PAD':
         return 'diaria__badge diaria__badge--danger';
+      case 'PERMISO':
+      case 'LICENCIA':
+        return 'diaria__badge diaria__badge--info';
       default:
         return 'diaria__badge';
     }

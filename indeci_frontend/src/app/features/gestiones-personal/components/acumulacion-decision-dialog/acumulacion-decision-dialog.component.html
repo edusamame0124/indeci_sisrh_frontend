@@ -1,0 +1,55 @@
+<h2 mat-dialog-title>Decisión de RR.HH. — Acumulación de Vacaciones</h2>
+
+<mat-dialog-content>
+  <div class="empleado-info">
+    <strong>{{ data.nombreCompleto }}</strong> ({{ data.dni }})
+    <div class="periodos-alerta">
+      <mat-icon>warning_amber</mat-icon>
+      Tiene <strong>{{ data.periodosAcumuladosSinGozar }} períodos</strong> vacacionales sin gozar
+      (tope normativo: 2 — D.S. 013-2019-PCM). El exceso <u>no se pierde ni se bloquea automáticamente</u>;
+      requiere evaluación documentada.
+    </div>
+  </div>
+
+  <section class="historial" *ngIf="!cargandoHistorial() && historial().length > 0">
+    <h3>Decisiones anteriores</h3>
+    <ul>
+      <li *ngFor="let d of historial()">
+        <span class="historial__fecha">{{ formatearFecha(d.createdAt) }}</span>
+        — <span class="historial__usuario">{{ d.usuarioRegistro }}</span>
+        ({{ d.periodosPendientesAlMomento }} períodos): {{ d.motivoDecision }}
+        <span *ngIf="d.documentoSustento" class="text-muted"> — Doc: {{ d.documentoSustento }}</span>
+      </li>
+    </ul>
+  </section>
+
+  <div class="loading" *ngIf="cargandoHistorial()">
+    <mat-spinner diameter="24"></mat-spinner>
+    <span>Cargando historial...</span>
+  </div>
+
+  <form [formGroup]="form">
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Motivo de la decisión</mat-label>
+      <textarea
+        matInput
+        formControlName="motivoDecision"
+        rows="4"
+        placeholder="Sustente por qué se mantiene, se programa o se posterga la acumulación"
+      ></textarea>
+      <mat-error>El motivo de la decisión es obligatorio.</mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Documento de sustento (opcional)</mat-label>
+      <input matInput formControlName="documentoSustento" placeholder="Ej. Memorando N° 456-2026-OFIRH" />
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button mat-dialog-close>Cancelar</button>
+  <button mat-flat-button color="primary" [disabled]="form.invalid" (click)="guardar()">
+    Registrar decisión
+  </button>
+</mat-dialog-actions>

@@ -1,0 +1,68 @@
+.empleado-info {
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  background: #fff8e1;
+  border-radius: 4px;
+  color: #333;
+}
+
+.periodos-alerta {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  color: #ef6c00;
+  font-size: 0.9em;
+}
+
+.periodos-alerta mat-icon {
+  font-size: 20px;
+  height: 20px;
+  width: 20px;
+  flex-shrink: 0;
+}
+
+.historial {
+  margin-bottom: 1rem;
+}
+
+.historial h3 {
+  font-size: 0.9em;
+  color: #616161;
+  margin-bottom: 0.25rem;
+}
+
+.historial ul {
+  margin: 0;
+  padding-left: 1.25rem;
+  font-size: 0.85em;
+}
+
+.historial li {
+  margin-bottom: 0.25rem;
+}
+
+.historial__fecha {
+  color: #616161;
+}
+
+.historial__usuario {
+  font-weight: 600;
+}
+
+.text-muted {
+  color: #999;
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+  color: #666;
+}
+
+.full-width {
+  width: 100%;
+  margin-top: 0.5rem;
+}

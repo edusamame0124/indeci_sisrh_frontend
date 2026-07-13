@@ -1158,3 +1158,16 @@ mat-icon.material-symbols-outlined {
   color: var(--sisrh-primary) !important;
   border-color: var(--sisrh-primary) !important;
 }
+
+// Toast de error (rojo). Snackbar plano de texto — feedback de operaciones fallidas
+// (NotificacionService.error). Superficie roja con texto/acciones en blanco.
+.sisrh-snack-error.mat-mdc-snack-bar-container {
+  --mdc-snackbar-container-color: #b42318;
+  --mdc-snackbar-supporting-text-color: #ffffff;
+  --mat-snack-bar-button-color: #ffffff;
+
+  .mdc-snackbar__surface,
+  .mat-mdc-snackbar-surface {
+    background-color: #b42318 !important;
+  }
+}

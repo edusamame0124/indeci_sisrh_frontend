@@ -15,6 +15,23 @@
       <span>Fecha del reporte</span>
       <input type="date" [(ngModel)]="fechaReporte" [max]="hoy" />
     </label>
+
+    <div class="field">
+      <span>Modalidad de teletrabajo</span>
+      <div class="segmented" role="radiogroup" aria-label="Modalidad de teletrabajo">
+        <button
+          type="button"
+          *ngFor="let m of modalidades"
+          class="segmented__opt"
+          [class.segmented__opt--active]="modalidad === m"
+          [attr.aria-pressed]="modalidad === m"
+          (click)="modalidad = m"
+        >
+          <mat-icon>{{ m === 'PARCIAL' ? 'schedule' : 'home_work' }}</mat-icon>
+          <span>{{ m }}</span>
+        </button>
+      </div>
+    </div>
   </div>
 
   <section class="actividades">

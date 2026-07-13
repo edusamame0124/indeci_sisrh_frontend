@@ -42,6 +42,30 @@ textarea:focus {
   box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
 }
 
+.hint {
+  font-weight: 400;
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.opcional {
+  font-weight: 400;
+  font-size: 0.72rem;
+  color: #94a3b8;
+}
+
+.chip-tope {
+  display: inline-block;
+  margin-left: 0.4rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  background: #e0f2fe;
+  color: #075985;
+  font-size: 0.72rem;
+  font-weight: 700;
+  vertical-align: middle;
+}
+
 .loading {
   margin-bottom: 1rem;
   color: #475569;

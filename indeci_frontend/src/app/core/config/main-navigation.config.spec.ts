@@ -117,13 +117,12 @@ describe('filterVisibleNavItems (Spec 009 — 5 módulos + Inicio)', () => {
     expect(leaves.map((l) => l.label)).toEqual(['Bancos']);
   });
 
-  it('Módulo Vinculación expone 4 sub-items con etiquetas del flujo', () => {
+  it('Módulo Vinculación expone 3 sub-items con etiquetas del flujo', () => {
     const r = filterVisibleNavItems(MAIN_NAV_ITEMS, [], ['RRHH_ADMIN']);
     const emp = r.find((i) => i.label === 'Módulo Vinculación');
-    expect(emp?.children?.length).toBe(4);
+    expect(emp?.children?.length).toBe(3);
     expect(emp?.children?.map((c) => c.label)).toEqual([
       'Datos personales',
-      'Mantenimiento de Vacaciones',
       'Eventos del período',
       'Ficha 360',
     ]);

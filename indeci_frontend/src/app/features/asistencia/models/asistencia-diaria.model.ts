@@ -70,4 +70,6 @@ export const CONDICION_LABELS: Record<string, string> = {
   FERIADO: 'Feriado',
   OBSERVADO: 'Observado',
   SANCION_PAD: 'Sanción PAD',
+  TELETRABAJO: 'Teletrabajo',
+  PERMISO: 'Permiso c/goce',
 };

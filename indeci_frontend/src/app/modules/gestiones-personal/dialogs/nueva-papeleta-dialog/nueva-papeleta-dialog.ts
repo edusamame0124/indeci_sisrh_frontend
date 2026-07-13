@@ -66,22 +66,11 @@ export class NuevaPapeletaDialogComponent implements OnInit {
   }
 
   tipoSeleccionado(): TipoSolicitudRrhh | null {
-    const tipo = this.tipos().find((x) => Number(x.id) === Number(this.tipoSolicitudId)) ?? null;
-
-    console.log('ID seleccionado:', this.tipoSolicitudId);
-    console.log('Tipo completo:', tipo);
-    console.log('mostrarHoras:', tipo?.mostrarHoras);
-
-    return tipo;
+    return this.tipos().find((x) => Number(x.id) === Number(this.tipoSolicitudId)) ?? null;
   }
+
   mostrarHoras(): boolean {
-    const tipo = this.tipoSeleccionado();
-
-    const resultado = Number(tipo?.mostrarHoras) === 1;
-
-    console.log('Resultado mostrarHoras():', resultado);
-
-    return resultado;
+    return Number(this.tipoSeleccionado()?.mostrarHoras) === 1;
   }
 
   calcularDias(): void {

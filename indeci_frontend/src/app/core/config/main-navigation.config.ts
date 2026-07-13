@@ -86,7 +86,6 @@ export const MAIN_NAV_ITEMS: readonly MainNavItem[] = [
     requiredAnyRole: [...EMPLEADOS_ACCESS_ROLES],
     children: [
       { label: 'Datos personales', route: '/empleados/personas', icon: 'person' },
-      { label: 'Mantenimiento de Vacaciones', route: '/empleados/vacaciones', icon: 'flight_takeoff' },
       { label: 'Eventos del período', route: '/empleados/eventos', icon: 'event_note' },
       { label: 'Ficha 360', route: '/empleados/ficha', icon: 'manage_search' },
     ],

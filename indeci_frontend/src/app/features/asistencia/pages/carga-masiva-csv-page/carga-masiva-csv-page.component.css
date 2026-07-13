@@ -393,6 +393,16 @@
   font-size: 12px;
 }
 
+.masiva__aceptar-nota {
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 0.5px solid rgba(138, 90, 0, 0.25);
+}
+
+.masiva__aceptar-nota strong {
+  font-size: 12px;
+}
+
 .masiva__aceptar-motivo {
   width: 280px;
 }

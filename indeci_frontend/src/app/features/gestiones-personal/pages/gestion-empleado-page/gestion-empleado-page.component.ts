@@ -21,6 +21,8 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 
 import { EnviarPapeletaDialogComponent } from '../../../../modules/gestiones-personal/dialogs/enviar-papeleta-dialog/enviar-papeleta-dialog';
 import { TrazabilidadPapeletaDialogComponent } from '../../../../modules/gestiones-personal/dialogs/trazabilidad-papeleta-dialog/trazabilidad-papeleta-dialog';
+import { ConfirmDialogComponent } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
+import { NotificacionService } from '../../../../core/services/notificacion.service';
 
 import { PermisoComunDialog } from '../../../../modules/gestiones-personal/dialogs/permiso-comun-dialog/permiso-comun-dialog';
 import { LactanciaDialog } from '../../../../modules/gestiones-personal/dialogs/lactancia-dialog/lactancia-dialog';
@@ -63,6 +65,7 @@ import {
 export class GestionEmpleadoPageComponent implements OnInit {
   private readonly service = inject(SolicitudesRrhhService);
   private readonly dialog = inject(MatDialog);
+  private readonly notificacion = inject(NotificacionService);
 
   tiposSolicitud = signal<TipoSolicitudRrhh[]>([]);
   cargandoTiposSolicitud = signal(false);
@@ -128,6 +131,16 @@ export class GestionEmpleadoPageComponent implements OnInit {
 
     return this.solicitudes()
       .filter((item) => item.tipoSolicitud === nombreVacaciones)
+      .sort((a, b) => b.id - a.id);
+  });
+
+  /** Teletrabajo — solo papeletas de teletrabajo (código 'TELETRABAJO'), self-service. */
+  solicitudesTeletrabajo = computed(() => {
+    const nombreTeletrabajo = this.buscarTipoPorCodigo('TELETRABAJO')?.nombre;
+    if (!nombreTeletrabajo) return [];
+
+    return this.solicitudes()
+      .filter((item) => item.tipoSolicitud === nombreTeletrabajo)
       .sort((a, b) => b.id - a.id);
   });
 
@@ -244,9 +257,7 @@ export class GestionEmpleadoPageComponent implements OnInit {
   // Papeleta de Teletrabajo (Ley N° 31572) — reporte diario de actividades.
   // Gate Poka-Yoke: solo servidores con resolución activa en su legajo.
   abrirTeletrabajo(): void {
-    if (!this.esTeletrabajador()) {
-      return;
-    }
+    // El reporte de teletrabajo está SIEMPRE disponible (sin gate de resolución).
     this.abrirDialogoPorCodigo('TELETRABAJO', TeletrabajoPapeletaDialog, '760px');
   }
 
@@ -265,6 +276,11 @@ export class GestionEmpleadoPageComponent implements OnInit {
     this.abrirDialogoPorCodigo('011', LicenciaDialog, '900px', {
       tipoLicenciaNombre,
     });
+  }
+
+  // SPEC_VACACIONES F9.2 — formulario único: la modalidad con/sin goce se elige dentro del diálogo.
+  abrirLicenciaUnificada(): void {
+    this.abrirDialogoPorCodigo('011', LicenciaDialog, '900px');
   }
 
   abrirVacaciones(tipoVacacionCodigo: string, tipoVacacionNombre: string): void {
@@ -328,6 +344,50 @@ export class GestionEmpleadoPageComponent implements OnInit {
       width: '960px',
       maxWidth: '96vw',
       data: item,
+    });
+  }
+
+  /** Solo una papeleta en BORRADOR (aún no enviada al jefe) puede eliminarse. */
+  esBorrador(item: SolicitudRrhh): boolean {
+    return (item.estadoSolicitud ?? '').toLowerCase().includes('borrador');
+  }
+
+  /** Elimina una papeleta propia en BORRADOR previa confirmación. */
+  eliminarBorrador(item: SolicitudRrhh): void {
+    if (!this.esBorrador(item)) {
+      return;
+    }
+
+    const ref = this.dialog.open(ConfirmDialogComponent, {
+      width: '440px',
+      maxWidth: '95vw',
+      data: {
+        title: 'Eliminar papeleta',
+        message: `¿Desea eliminar la papeleta N° ${item.id} (${item.tipoSolicitud ?? 'reporte'})? Esta acción no se puede deshacer.`,
+        confirmLabel: 'Eliminar',
+        cancelLabel: 'Cancelar',
+        severity: 'danger',
+      },
+    });
+
+    ref.afterClosed().subscribe((confirmado: boolean) => {
+      if (!confirmado) {
+        return;
+      }
+
+      this.service.eliminarBorrador(item.id).subscribe({
+        next: () => {
+          this.notificacion.exito('Papeleta eliminada', 'Eliminada');
+          this.cargarSolicitudes();
+        },
+        error: (err) => {
+          console.error(err);
+          const mensaje =
+            err?.error?.mensaje ?? err?.error?.message ?? 'No se pudo eliminar la papeleta.';
+          // Toast rojo: el bloque error() vive en otro tab, así el fallo es visible aquí.
+          this.notificacion.error(mensaje);
+        },
+      });
     });
   }
 

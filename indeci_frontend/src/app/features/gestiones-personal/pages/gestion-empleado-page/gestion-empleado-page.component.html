@@ -35,27 +35,6 @@
             Nueva papeleta
           </button>
 
-          <span
-            class="btn-teletrabajo-wrap"
-            [matTooltip]="
-              esTeletrabajador()
-                ? 'Registre su reporte diario de teletrabajo'
-                : 'No cuenta con resolución de teletrabajo activa en su legajo'
-            "
-          >
-            <button
-              class="btn-teletrabajo"
-              mat-stroked-button
-              color="primary"
-              type="button"
-              [disabled]="!esTeletrabajador()"
-              (click)="abrirTeletrabajo()"
-            >
-              <mat-icon>home_work</mat-icon>
-              Reporte Teletrabajo
-            </button>
-          </span>
-
           <button class="btn-regresar" mat-stroked-button routerLink="/">
             <mat-icon>arrow_back</mat-icon>
             Regresar
@@ -152,12 +131,8 @@
               <span>A cuenta del periodo vacacional</span>
             </button>
 
-            <button mat-menu-item (click)="abrirLicencia('CON GOCE DE REMUNERACIONES')">
-              <span>Con goce de remuneraciones</span>
-            </button>
-
-            <button mat-menu-item (click)="abrirLicencia('SIN GOCE DE REMUNERACIONES')">
-              <span>Sin goce de remuneraciones</span>
+            <button mat-menu-item (click)="abrirLicenciaUnificada()">
+              <span>Con o sin goce de remuneraciones</span>
             </button>
           </mat-menu>
 
@@ -377,6 +352,80 @@
 
                   <tr *ngIf="solicitudesVacaciones().length === 0">
                     <td colspan="8" class="empty">No tiene solicitudes de vacaciones registradas.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </mat-tab>
+
+        <mat-tab label="Teletrabajo">
+          <div class="hub-vac">
+            <div class="hub-vac__actions">
+              <button
+                mat-flat-button
+                color="primary"
+                type="button"
+                matTooltip="Registre su reporte diario de teletrabajo"
+                (click)="abrirTeletrabajo()"
+              >
+                <mat-icon>home_work</mat-icon>
+                Nuevo reporte de teletrabajo
+              </button>
+            </div>
+
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Tipo</th>
+                    <th>Estado</th>
+                    <th>Fecha</th>
+                    <th>Observación</th>
+                    <th class="acciones">Acciones</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  <tr *ngFor="let item of solicitudesTeletrabajo()">
+                    <td>{{ item.id }}</td>
+                    <td>{{ item.tipoSolicitud || '-' }}</td>
+                    <td>
+                      <span [ngClass]="claseEstado(item.estadoSolicitud)">
+                        {{ item.estadoSolicitud || '-' }}
+                      </span>
+                    </td>
+                    <td>{{ item.fechaInicio | date: 'dd/MM/yyyy' }}</td>
+                    <td>{{ item.observacion || '-' }}</td>
+                    <td class="acciones">
+                      <button mat-icon-button title="Descargar papeleta" (click)="descargarFormato(item)">
+                        <mat-icon>picture_as_pdf</mat-icon>
+                      </button>
+
+                      <button mat-icon-button title="Enviar papeleta firmada" (click)="abrirEnvio(item)">
+                        <mat-icon>upload_file</mat-icon>
+                      </button>
+
+                      <button
+                        mat-icon-button
+                        color="warn"
+                        class="btn-eliminar"
+                        [disabled]="!esBorrador(item)"
+                        [matTooltip]="
+                          esBorrador(item)
+                            ? 'Eliminar papeleta'
+                            : 'Solo se puede eliminar mientras esté en borrador (no enviada)'
+                        "
+                        (click)="eliminarBorrador(item)"
+                      >
+                        <mat-icon>delete_outline</mat-icon>
+                      </button>
+                    </td>
+                  </tr>
+
+                  <tr *ngIf="solicitudesTeletrabajo().length === 0">
+                    <td colspan="6" class="empty">No tiene reportes de teletrabajo registrados.</td>
                   </tr>
                 </tbody>
               </table>

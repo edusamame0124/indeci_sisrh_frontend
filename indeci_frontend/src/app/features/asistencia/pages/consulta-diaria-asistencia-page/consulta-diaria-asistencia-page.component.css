@@ -105,6 +105,11 @@
   color: #b71c1c;
 }
 
+.diaria__badge--info {
+  background: #e3f2fd;
+  color: #0d47a1;
+}
+
 .diaria__papeleta {
   display: inline-block;
   padding: 2px 8px;

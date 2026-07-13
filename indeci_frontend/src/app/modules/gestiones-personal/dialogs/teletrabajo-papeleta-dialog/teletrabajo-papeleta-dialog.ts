@@ -42,6 +42,10 @@ export class TeletrabajoPapeletaDialog {
   readonly hoy = new Date().toISOString().slice(0, 10);
   fechaReporte = this.hoy;
 
+  /** Modalidad de teletrabajo (Ley N° 31572): PARCIAL (por defecto) o COMPLETA. */
+  readonly modalidades = ['PARCIAL', 'COMPLETA'] as const;
+  modalidad: 'PARCIAL' | 'COMPLETA' = 'PARCIAL';
+
   actividades: ActividadFila[] = [{ actividad: '', medioVerificacion: '' }];
 
   constructor(
@@ -100,6 +104,7 @@ export class TeletrabajoPapeletaDialog {
       fechaInicio: this.fechaReporte,
       fechaFin: this.fechaReporte,
       cantidadDias: 1,
+      modalidadTeletrabajo: this.modalidad,
       detallesTeletrabajo,
     };
 
