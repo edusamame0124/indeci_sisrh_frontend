@@ -32,6 +32,8 @@ import { ConfirmDialogComponent } from '../../../../shared/components/confirm-di
 import { EmptyStateComponent } from '../../../../shared/components/empty-state/empty-state.component';
 import { PersonaApiService } from '../../services/persona-api.service';
 import { ErrorMessageService } from '../../../../core/services/error-message.service';
+import { AuthService } from '../../../../core/services/auth.service';
+import { TI_SUPER_ROLES } from '../../../../core/config/sisrh-roles.config';
 import { readApiErrorMessage } from '../../../../core/models/error-response.model';
 import type { PersonaEmpleado, PersonaResumen } from '../../models/persona-empleado.model';
 import {
@@ -49,6 +51,10 @@ import {
   type EmpleadoSaludEpsDialogData,
 } from '../empleado-salud-eps-page/empleado-salud-eps-dialog.component';
 import { EmpleadoOtrosIngresosDialogComponent } from '../../components/empleado-otros-ingresos-dialog/empleado-otros-ingresos-dialog.component';
+import {
+  ImportVinculacionDialogComponent,
+  type ImportVinculacionDialogResult,
+} from '../../components/import-vinculacion-dialog/import-vinculacion-dialog.component';
 
 interface PersonaQuickAccess {
   readonly key: 'puesto' | 'cuentaBancaria' | 'pension' | 'planilla' | 'conceptos';
@@ -136,6 +142,18 @@ interface PersonaQuickAccess {
               <span class="toolbar__count" role="status" aria-live="polite">
                 {{ rangeLabel() }}
               </span>
+              @if (esSuperAdmin()) {
+                <button
+                  mat-stroked-button
+                  color="primary"
+                  type="button"
+                  class="toolbar__action"
+                  (click)="openImportar()"
+                >
+                  <mat-icon fontIcon="upload_file" aria-hidden="true" />
+                  Importar Datos del Empleado
+                </button>
+              }
               <button
                 mat-flat-button
                 color="primary"
@@ -484,6 +502,12 @@ export class PersonaListPageComponent {
   private readonly errors = inject(ErrorMessageService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly breakpoint = inject(BreakpointObserver);
+  private readonly auth = inject(AuthService);
+
+  /** El import masivo de vinculación es exclusivo de SUPER_ADMIN. */
+  readonly esSuperAdmin = computed(() =>
+    this.auth.roles().some((rol) => (TI_SUPER_ROLES as readonly string[]).includes(rol)),
+  );
 
 
 
@@ -595,6 +619,25 @@ export class PersonaListPageComponent {
     >(PersonaFormPageComponent, sisrhLargeDialogConfig({ data: { mode: 'create' } }));
     ref.afterClosed().subscribe((result) => {
       if (result?.saved) this.refreshList();
+    });
+  }
+
+  openImportar(): void {
+    const ref = this.dialogs.open<
+      ImportVinculacionDialogComponent,
+      undefined,
+      ImportVinculacionDialogResult | undefined
+    >(
+      ImportVinculacionDialogComponent,
+      // Más ancho que el default (680px): el paso "Revisar" muestra una tabla amplia.
+      sisrhLargeDialogConfig({ width: 'min(960px, 96vw)' }),
+    );
+    ref.afterClosed().subscribe((result) => {
+      // Tras importar hay altas/actualizaciones: refrescamos para reflejarlas en la lista.
+      // No se abre un toast: el paso "Confirmar" del modal ya mostró el resumen completo, y
+      // abrir un snackbar durante el teardown del overlay del diálogo dispara
+      // HierarchyRequestError en el CDK.
+      if (result?.importado) this.refreshList();
     });
   }
 

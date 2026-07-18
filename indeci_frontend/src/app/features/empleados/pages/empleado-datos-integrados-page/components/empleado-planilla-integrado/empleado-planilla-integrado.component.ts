@@ -354,6 +354,9 @@ const AIRHSP_PATTERN = /^[A-Z0-9]{6}$/;
               <mat-form-field appearance="outline" class="half">
                 <mat-label>Fecha de término</mat-label>
                 <input matInput formControlName="fechaFin" type="date" placeholder="dd/mm/aaaa" />
+                @if (!esPlazoDeterminado()) {
+                  <mat-hint>Solo aplica a contratos a Plazo Determinado</mat-hint>
+                }
               </mat-form-field>
             </div>
 
@@ -436,30 +439,45 @@ const AIRHSP_PATTERN = /^[A-Z0-9]{6}$/;
 
             <fieldset class="cese-block">
               <legend>Cese del vínculo</legend>
-              <p class="cese-hint">Registre el cese solo cuando exista. Con vínculo vigente, deje estos campos vacíos.</p>
-              <div class="grid">
-                <mat-form-field appearance="outline" class="half">
-                  <mat-label>Fecha efectiva de cese</mat-label>
-                  <input matInput formControlName="fechaCese" type="date" placeholder="dd/mm/aaaa" />
-                </mat-form-field>
-                <mat-form-field appearance="outline" class="half">
-                  <mat-label>Motivo de cese</mat-label>
-                  <input matInput formControlName="motivoCese" maxlength="120"
-                         placeholder="Vencimiento de contrato, renuncia, etc." />
-                </mat-form-field>
-              </div>
-              <div class="grid">
-                <mat-form-field appearance="outline" class="half">
-                  <mat-label>Documento de sustento del cese</mat-label>
-                  <input matInput formControlName="documentoCese" maxlength="200"
-                         placeholder="Resolución / carta / memorando" />
-                </mat-form-field>
-              </div>
-              @if (habilitaLbs()) {
-                <button type="button" mat-stroked-button color="warn" (click)="onGenerarLbs()">
-                  <mat-icon fontIcon="request_quote" aria-hidden="true" />
-                  Generar liquidación de beneficios sociales
-                </button>
+              @if (!modoCese()) {
+                <p class="cese-hint">
+                  El cese es un acto formal que da de baja al empleado y detona la liquidación
+                  (LBS). Actívelo solo cuando el trabajador deje efectivamente de laborar.
+                </p>
+                @if (isEdit()) {
+                  <button type="button" mat-stroked-button color="warn" (click)="activarCese()">
+                    <mat-icon fontIcon="logout" aria-hidden="true" />
+                    Cesar / Dar de baja
+                  </button>
+                } @else {
+                  <p class="cese-hint">El cese se registra al editar un contrato ya existente.</p>
+                }
+              } @else {
+                <p class="cese-hint">Registre la fecha efectiva, el motivo y el documento de sustento.</p>
+                <div class="grid">
+                  <mat-form-field appearance="outline" class="half">
+                    <mat-label>Fecha efectiva de cese</mat-label>
+                    <input matInput formControlName="fechaCese" type="date" placeholder="dd/mm/aaaa" />
+                  </mat-form-field>
+                  <mat-form-field appearance="outline" class="half">
+                    <mat-label>Motivo de cese</mat-label>
+                    <input matInput formControlName="motivoCese" maxlength="120"
+                           placeholder="Vencimiento de contrato, renuncia, etc." />
+                  </mat-form-field>
+                </div>
+                <div class="grid">
+                  <mat-form-field appearance="outline" class="half">
+                    <mat-label>Documento de sustento del cese</mat-label>
+                    <input matInput formControlName="documentoCese" maxlength="200"
+                           placeholder="Resolución / carta / memorando" />
+                  </mat-form-field>
+                </div>
+                @if (habilitaLbs()) {
+                  <button type="button" mat-stroked-button color="warn" (click)="onGenerarLbs()">
+                    <mat-icon fontIcon="request_quote" aria-hidden="true" />
+                    Generar liquidación de beneficios sociales
+                  </button>
+                }
               }
             </fieldset>
 
@@ -820,10 +838,20 @@ export class EmpleadoPlanillaIntegradoComponent implements OnInit {
     return list.slice(start, start + this.pageSize());
   });
   /**
-   * Vínculos secuenciales: se puede registrar uno nuevo salvo que exista un contrato
-   * vigente (activo sin cese). Los cesados quedan en el historial y no bloquean.
+   * Vínculos secuenciales: registrar un contrato nuevo siempre está disponible. Si ya hay
+   * uno vigente, el backend lo cierra automáticamente (un solo vínculo vigente, SERVIR/MEF);
+   * el usuario lo confirma en {@link submit} antes del POST. Los cesados quedan en historial.
    */
-  readonly canRegistrar = computed(() => !this.rows().some((r) => r.fechaCese == null));
+  readonly canRegistrar = computed(() => this.empleadoId() != null);
+  /** true si hay un contrato vigente (sin cese) que se cerraría al registrar uno nuevo. */
+  readonly hayVigenteSinCese = computed(() => this.rows().some((r) => r.fechaCese == null));
+
+  /** Código del tipo de contrato seleccionado (para gobernar la Fecha de término). */
+  readonly tipoContratoCodigo = signal<string>('');
+  /** La Fecha de término solo aplica a Plazo Determinado (regla de dominio RR.HH.). */
+  readonly esPlazoDeterminado = computed(() => this.tipoContratoCodigo() === 'PLAZO_DETERMINADO');
+  /** El cese es un acto formal: los campos de cese solo se habilitan al "Cesar / Dar de baja". */
+  readonly modoCese = signal(false);
 
   // FORM STATE
   readonly formLoading = signal(false);
@@ -964,7 +992,29 @@ export class EmpleadoPlanillaIntegradoComponent implements OnInit {
       .pipe(takeUntilDestroyed())
       .subscribe((id) => {
         this.evaluarModalidadCas(this.form.controls.regimenLaboralId.value, id);
+        this.aplicarReglaFechaTermino(id);
       });
+  }
+
+  /**
+   * La Fecha de término (fechaFin) solo aplica a Plazo Determinado. En cualquier otro tipo se
+   * limpia y se deshabilita el campo (el backend también la fuerza a null).
+   */
+  private aplicarReglaFechaTermino(tipoContratoId: number | null): void {
+    const codigo = this.tiposContrato().find((t) => t.id === tipoContratoId)?.codigo ?? '';
+    this.tipoContratoCodigo.set(codigo);
+    const fechaFin = this.form.controls.fechaFin;
+    if (codigo === 'PLAZO_DETERMINADO') {
+      fechaFin.enable({ emitEvent: false });
+    } else {
+      fechaFin.setValue(null, { emitEvent: false });
+      fechaFin.disable({ emitEvent: false });
+    }
+  }
+
+  /** Acción explícita "Cesar / Dar de baja": habilita los campos de cese. */
+  activarCese(): void {
+    this.modoCese.set(true);
   }
 
   ngOnInit(): void {
@@ -1259,6 +1309,8 @@ export class EmpleadoPlanillaIntegradoComponent implements OnInit {
     if (!this.canRegistrar()) return;
     this.isEdit.set(false);
     this.editId.set(null);
+    this.modoCese.set(false); // un contrato nuevo nunca nace cesado
+    this.tipoContratoCodigo.set('');
     this.form.reset({ regimenLaboralId: null, tipoContratoId: null, condicionLaboralId: null, modalidadCasId: null, grupoServidorCivil: null, esConfianza: 0, esTeletrabajador: 0, montoContratado: null, sueldoBasico: null, numHijos: null, tipoPersonaMefId: null, registroPlazaAirhsp: '', fechaInicioContrato: null, diasSemanaOperativo: null, fechaFin: null, fechaCese: null, motivoCese: null, documentoCese: null, documentoOrigenTipo: null, documentoOrigenNumero: null, documentoOrigenFecha: null });
     this.estadoVinculo.set(null);
     this.habilitaLbs.set(false);
@@ -1271,6 +1323,9 @@ export class EmpleadoPlanillaIntegradoComponent implements OnInit {
   prepararEdicion(row: EmpleadoPlanillaRow): void {
     this.isEdit.set(true);
     this.editId.set(row.id);
+    // Si el contrato ya está cesado, se muestran sus datos de cese; si está vigente, los
+    // campos de cese quedan ocultos hasta que el usuario pulse "Cesar / Dar de baja".
+    this.modoCese.set((row as { fechaCese?: string | null }).fechaCese != null);
     this.viewState.set('form');
     this.formLoading.set(true);
     
@@ -1406,8 +1461,15 @@ export class EmpleadoPlanillaIntegradoComponent implements OnInit {
       return;
     }
     
+    // Un solo vínculo vigente (SERVIR/MEF): si ya hay un contrato vigente, registrar uno nuevo
+    // cerrará el anterior. Se confirma antes del POST (el backend hace el cierre automático).
+    if (this.hayVigenteSinCese() &&
+        !confirm('Esto cerrará el contrato anterior vigente del empleado. ¿Continuar?')) {
+      this.saving.set(false);
+      return;
+    }
     this.planillaApi.guardar(body).subscribe({
-      next: () => this.onSaved('Planilla registrada.'),
+      next: () => this.onSaved('Planilla registrada. El contrato anterior vigente fue cerrado.'),
       error: (err: HttpErrorResponse) => this.onSaveErr(err),
     });
   }

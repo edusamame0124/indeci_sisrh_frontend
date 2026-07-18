@@ -1,0 +1,264 @@
+<h2 mat-dialog-title class="iv-title">
+  <mat-icon fontIcon="upload_file" aria-hidden="true" />
+  Importar Datos del Empleado
+</h2>
+
+<mat-dialog-content class="iv-content">
+  @if (procesando()) {
+    <mat-progress-bar mode="indeterminate" aria-label="Procesando archivo" />
+  }
+
+  @if (errorMensaje(); as msg) {
+    <div class="iv-alert iv-alert--error" role="alert">
+      <mat-icon fontIcon="error" aria-hidden="true" />
+      <span>{{ msg }}</span>
+    </div>
+  }
+
+  <mat-stepper linear #stepper>
+    <!-- ─────────────────────────── Paso 1: Cargar ─────────────────────────── -->
+    <mat-step [completed]="archivo() !== null" [editable]="!procesando()">
+      <ng-template matStepLabel>Cargar</ng-template>
+
+      <section class="iv-step">
+        <p class="iv-help">
+          Adjunte la plantilla oficial de vinculación en formato Excel (.xlsx). El sistema
+          validará cada fila antes de guardar; no se registra nada hasta que usted confirme.
+        </p>
+
+        @if (!archivo()) {
+          <label class="iv-drop" for="iv-file">
+            <mat-icon fontIcon="cloud_upload" aria-hidden="true" />
+            <span class="iv-drop__main">Seleccione el archivo .xlsx</span>
+            <span class="iv-drop__sub">Plantilla oficial del Registro Integrado de Personal</span>
+            <input
+              id="iv-file"
+              type="file"
+              accept=".xlsx"
+              class="iv-drop__input"
+              (change)="onArchivoSeleccionado($event)"
+            />
+          </label>
+        } @else {
+          <div class="iv-file">
+            <mat-icon fontIcon="description" aria-hidden="true" />
+            <span class="iv-file__name">{{ archivo()!.name }}</span>
+            <button
+              mat-icon-button
+              type="button"
+              aria-label="Quitar archivo"
+              matTooltip="Quitar archivo"
+              (click)="quitarArchivo()"
+            >
+              <mat-icon fontIcon="close" aria-hidden="true" />
+            </button>
+          </div>
+        }
+      </section>
+
+      <div class="iv-actions">
+        <button mat-button type="button" (click)="cerrar()">Cancelar</button>
+        <button
+          mat-flat-button
+          color="primary"
+          type="button"
+          [disabled]="!archivo() || procesando()"
+          (click)="previsualizar()"
+        >
+          Previsualizar
+          <mat-icon fontIcon="arrow_forward" iconPositionEnd aria-hidden="true" />
+        </button>
+      </div>
+    </mat-step>
+
+    <!-- ─────────────────────────── Paso 2: Revisar ────────────────────────── -->
+    <mat-step [completed]="commit() !== null" [editable]="!procesando()">
+      <ng-template matStepLabel>Revisar</ng-template>
+
+      @if (preview(); as p) {
+        <section class="iv-step">
+          <div class="iv-summary">
+            <div class="iv-chip iv-chip--ok">
+              <strong>{{ p.importables }}</strong> listas para importar
+            </div>
+            <div class="iv-chip iv-chip--warn">
+              <strong>{{ p.conAdvertencia }}</strong> con advertencia
+            </div>
+            <div class="iv-chip iv-chip--error">
+              <strong>{{ p.conError }}</strong> con error (se omiten)
+            </div>
+            <span class="iv-summary__total">{{ p.total }} filas leídas</span>
+          </div>
+
+          <mat-button-toggle-group
+            class="iv-filter"
+            [value]="filtro()"
+            (change)="filtrar($event.value)"
+            aria-label="Filtrar filas por estado"
+          >
+            <mat-button-toggle value="TODOS">Todas</mat-button-toggle>
+            <mat-button-toggle value="OK">Listas</mat-button-toggle>
+            <mat-button-toggle value="ADVERTENCIA">Advertencia</mat-button-toggle>
+            <mat-button-toggle value="ERROR">Con error</mat-button-toggle>
+          </mat-button-toggle-group>
+
+          <div class="iv-table-wrap">
+            <table mat-table [dataSource]="filasFiltradas()" class="iv-table">
+              <ng-container matColumnDef="fila">
+                <th mat-header-cell *matHeaderCellDef scope="col">Fila</th>
+                <td mat-cell *matCellDef="let f" class="iv-num">{{ f.numeroFila }}</td>
+              </ng-container>
+              <ng-container matColumnDef="dni">
+                <th mat-header-cell *matHeaderCellDef scope="col">DNI</th>
+                <td mat-cell *matCellDef="let f" class="iv-num">{{ f.dni || '—' }}</td>
+              </ng-container>
+              <ng-container matColumnDef="nombre">
+                <th mat-header-cell *matHeaderCellDef scope="col">Apellidos y nombres</th>
+                <td mat-cell *matCellDef="let f">{{ f.nombre || '—' }}</td>
+              </ng-container>
+              <ng-container matColumnDef="estado">
+                <th mat-header-cell *matHeaderCellDef scope="col">Estado</th>
+                <td mat-cell *matCellDef="let f">
+                  <span
+                    class="iv-badge"
+                    [class.iv-badge--ok]="f.estado === 'OK'"
+                    [class.iv-badge--warn]="f.estado === 'ADVERTENCIA'"
+                    [class.iv-badge--error]="f.estado === 'ERROR'"
+                  >
+                    {{ f.estado === 'OK' ? 'Lista' : (f.estado === 'ADVERTENCIA' ? 'Advertencia' : 'Con error') }}
+                  </span>
+                </td>
+              </ng-container>
+              <ng-container matColumnDef="detalle">
+                <th mat-header-cell *matHeaderCellDef scope="col">Detalle</th>
+                <td mat-cell *matCellDef="let f">
+                  @if (f.issues.length === 0) {
+                    <span class="iv-muted">Sin observaciones</span>
+                  } @else {
+                    <ul class="iv-issues">
+                      @for (issue of f.issues; track issue.celda + issue.mensaje) {
+                        <li
+                          class="iv-issue"
+                          [class.iv-issue--error]="issue.severidad === 'ERROR'"
+                          [class.iv-issue--warn]="issue.severidad === 'ADVERTENCIA'"
+                        >
+                          <span class="iv-issue__celda">{{ issue.celda }}</span>
+                          {{ issue.mensaje }}
+                        </li>
+                      }
+                    </ul>
+                  }
+                </td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+              <tr mat-row *matRowDef="let row; columns: columnas"></tr>
+            </table>
+          </div>
+
+          @if (!puedeImportar()) {
+            <div class="iv-alert iv-alert--warn" role="alert">
+              <mat-icon fontIcon="warning" aria-hidden="true" />
+              <span>Ninguna fila está lista para importar. Corrija los errores en el Excel y vuelva a cargarlo.</span>
+            </div>
+          }
+        </section>
+
+        <div class="iv-actions">
+          <button mat-button type="button" matStepperPrevious [disabled]="procesando()">
+            <mat-icon fontIcon="arrow_back" aria-hidden="true" />
+            Atrás
+          </button>
+          <button
+            mat-flat-button
+            color="primary"
+            type="button"
+            [disabled]="!puedeImportar() || procesando()"
+            (click)="importar()"
+          >
+            Importar {{ p.importables }} filas
+            <mat-icon fontIcon="save" iconPositionEnd aria-hidden="true" />
+          </button>
+        </div>
+      }
+    </mat-step>
+
+    <!-- ────────────────────────── Paso 3: Confirmar ───────────────────────── -->
+    <mat-step [editable]="false">
+      <ng-template matStepLabel>Confirmar</ng-template>
+
+      @if (commit(); as c) {
+        <section class="iv-step iv-done">
+          <mat-icon class="iv-done__icon" fontIcon="check_circle" aria-hidden="true" />
+          <h3 class="iv-done__title">Importación completada</h3>
+          <p class="iv-done__text">
+            Los datos ya están disponibles en <strong>Datos del empleado</strong> y en
+            <strong>Editar persona</strong> de cada trabajador importado.
+          </p>
+
+          <dl class="iv-result">
+            <div class="iv-result__item iv-result__item--ok">
+              <dt>Creados</dt>
+              <dd>{{ c.creados }}</dd>
+            </div>
+            <div class="iv-result__item iv-result__item--info">
+              <dt>Actualizados</dt>
+              <dd>{{ c.actualizados }}</dd>
+            </div>
+            <div class="iv-result__item iv-result__item--muted">
+              <dt>Omitidos</dt>
+              <dd>{{ c.omitidos }}</dd>
+            </div>
+          </dl>
+
+          @if (c.omitidos > 0) {
+            <p class="iv-muted">
+              {{ c.omitidos }} fila(s) se omitieron por errores. Corríjalas en el Excel y vuelva a cargarlas.
+            </p>
+
+            <div class="iv-table-wrap iv-errores">
+              <table mat-table [dataSource]="c.errores" class="iv-table">
+                <ng-container matColumnDef="fila">
+                  <th mat-header-cell *matHeaderCellDef scope="col">Fila</th>
+                  <td mat-cell *matCellDef="let f" class="iv-num">{{ f.numeroFila }}</td>
+                </ng-container>
+                <ng-container matColumnDef="dni">
+                  <th mat-header-cell *matHeaderCellDef scope="col">DNI</th>
+                  <td mat-cell *matCellDef="let f" class="iv-num">{{ f.dni || '—' }}</td>
+                </ng-container>
+                <ng-container matColumnDef="nombre">
+                  <th mat-header-cell *matHeaderCellDef scope="col">Nombre</th>
+                  <td mat-cell *matCellDef="let f">{{ f.nombre || '—' }}</td>
+                </ng-container>
+                <ng-container matColumnDef="motivo">
+                  <th mat-header-cell *matHeaderCellDef scope="col">Motivo</th>
+                  <td mat-cell *matCellDef="let f">
+                    <ul class="iv-issues">
+                      @for (issue of f.issues; track issue.celda + issue.mensaje) {
+                        <li class="iv-issue iv-issue--error">
+                          <span class="iv-issue__celda">{{ issue.celda }}</span>
+                          {{ issue.mensaje }}
+                        </li>
+                      }
+                    </ul>
+                  </td>
+                </ng-container>
+
+                <tr mat-header-row *matHeaderRowDef="columnasError"></tr>
+                <tr mat-row *matRowDef="let row; columns: columnasError"></tr>
+              </table>
+            </div>
+          }
+        </section>
+
+        <div class="iv-actions">
+          <button mat-button type="button" (click)="nuevaCarga()">
+            <mat-icon fontIcon="refresh" aria-hidden="true" />
+            Nueva carga
+          </button>
+          <button mat-flat-button color="primary" type="button" (click)="cerrar()">Finalizar</button>
+        </div>
+      }
+    </mat-step>
+  </mat-stepper>
+</mat-dialog-content>
