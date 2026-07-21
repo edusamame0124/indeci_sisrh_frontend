@@ -50,6 +50,7 @@ describe('ImportVinculacionApiService', () => {
       total: 3,
       creados: 2,
       actualizados: 0,
+      anulados: 0,
       omitidos: 1,
       errores: [],
     };

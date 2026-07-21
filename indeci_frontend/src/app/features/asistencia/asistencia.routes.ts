@@ -22,6 +22,16 @@ export const ASISTENCIA_ROUTES: Routes = [
         title: 'Carga de asistencia — SISRH-INDECI',
       },
 
+      /* ——— Detalle de una importación (historial → clic en el lote) ——— */
+      {
+        path: 'importaciones/:id',
+        loadComponent: () =>
+          import('./pages/detalle-importacion-page/detalle-importacion-page.component').then(
+            (m) => m.DetalleImportacionPageComponent,
+          ),
+        title: 'Detalle de importación — SISRH-INDECI',
+      },
+
       /* ——— Subsidios por Enfermedad/Incapacidad Temporal y Maternidad (subrama de Carga) ——— */
       {
         path: 'subsidios',

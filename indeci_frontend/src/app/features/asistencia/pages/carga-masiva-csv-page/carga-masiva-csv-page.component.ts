@@ -1,21 +1,27 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   OnDestroy,
   OnInit,
   ViewChild,
   computed,
+  effect,
   inject,
   signal,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { finalize, switchMap, takeWhile, timer } from 'rxjs';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatPaginatorModule, type PageEvent } from '@angular/material/paginator';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
@@ -29,14 +35,22 @@ import { isErrorResponse } from '../../../../core/models/error-response.model';
 import { AsistenciaImportApiService } from '../../services/asistencia-import-api.service';
 import { AsistenciaTabService } from '../../services/asistencia-tab.service';
 import { MapeoMarcadorPanelComponent } from './components/mapeo-marcador-panel/mapeo-marcador-panel.component';
+import {
+  CalculoProgresoCircularComponent,
+  type EstadoProgresoCircular,
+} from '../../components/calculo-progreso-circular/calculo-progreso-circular.component';
 import type { PeriodoPlanillaRow } from '../../../planilla/models/periodo-planilla.model';
 import type {
   AsistenciaImportFilaDetalle,
+  AsistenciaImportJob,
   AsistenciaImportPreview,
   AsistenciaImportResumen,
   AsistenciaValidacionBatch,
   EstrategiaConflicto,
 } from '../../models/asistencia-import.model';
+
+/** Máquina de estados de la UI de validación (Opción B). */
+type EstadoValidacion = 'IDLE' | 'PROCESANDO' | 'COMPLETADO' | 'ERROR';
 
 type EstadoFila = AsistenciaImportFilaDetalle['estado'];
 type FiltroEstado = 'TODOS' | EstadoFila;
@@ -48,10 +62,12 @@ type FiltroEstado = 'TODOS' | EstadoFila;
     FormsModule,
     MatButtonModule,
     MatCardModule,
+    MatCheckboxModule,
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
     MatPaginatorModule,
+    MatProgressBarModule,
     MatProgressSpinnerModule,
     MatSelectModule,
     MatSlideToggleModule,
@@ -59,6 +75,7 @@ type FiltroEstado = 'TODOS' | EstadoFila;
     MatTableModule,
     MatTooltipModule,
     MapeoMarcadorPanelComponent,
+    CalculoProgresoCircularComponent,
   ],
   templateUrl: './carga-masiva-csv-page.component.html',
   styleUrl: './carga-masiva-csv-page.component.css',
@@ -70,8 +87,34 @@ export class CargaMasivaCsvPageComponent implements OnInit, OnDestroy {
   private readonly tabs = inject(AsistenciaTabService);
   private readonly snack = inject(MatSnackBar);
   private readonly errors = inject(ErrorMessageService);
+  private readonly destroyRef = inject(DestroyRef);
 
   @ViewChild('stepper') private stepper?: MatStepper;
+
+  // ===== Opción B — validación asíncrona con progreso real =====
+  /** Intervalo de polling (ms). */
+  private static readonly POLL_MS = 700;
+  readonly estadoValidacion = signal<EstadoValidacion>('IDLE');
+  readonly progresoValidacion = signal(0);
+  readonly faseValidacion = signal('');
+  readonly errorValidacion = signal<string | null>(null);
+
+  // ===== Opción B — confirmación asíncrona con progreso real (mismo patrón que validar) =====
+  readonly estadoConfirmacion = signal<EstadoValidacion>('IDLE');
+  readonly progresoConfirmacion = signal(0);
+  readonly faseConfirmacion = signal('');
+  readonly errorConfirmacion = signal<string | null>(null);
+
+  // ===== Opción B — "Ejecutar cálculo" asíncrono con indicador CIRCULAR =====
+  readonly estadoCalculo = signal<EstadoProgresoCircular | 'IDLE'>('IDLE');
+  readonly progresoCalculo = signal(0);
+  readonly faseCalculo = signal('');
+  readonly errorCalculo = signal<string | null>(null);
+  /** Estado del círculo para el input (IDLE se mapea a PROCESANDO; solo se muestra si !== IDLE). */
+  readonly estadoCalculoView = computed<EstadoProgresoCircular>(() => {
+    const e = this.estadoCalculo();
+    return e === 'IDLE' ? 'PROCESANDO' : e;
+  });
 
   /** Resumen por empleado (paso "Resumen"). */
   readonly columnasResumen = ['empleado', 'dias', 'tardanza', 'descuento', 'estado', 'conflicto'] as const;
@@ -171,7 +214,17 @@ export class CargaMasivaCsvPageComponent implements OnInit, OnDestroy {
     return (p.filasError + p.filasObservadas + p.filasAdvertencia) > 0;
   });
 
-  readonly tieneErroresBloqueantes = computed(() => (this.preview()?.filasError ?? 0) > 0);
+  /** Hay filas con error en la vista previa. Ya NO bloquea: se omiten al confirmar. */
+  readonly hayFilasError = computed(() => (this.preview()?.filasError ?? 0) > 0);
+  /** Reconocimiento explícito de que las filas con error se omitirán (checkbox). */
+  readonly aceptaOmitirErrores = signal(false);
+  /** Confirmar habilitado: hay preview, no está confirmando y —si hay errores— se reconoció omitirlos. */
+  readonly puedeConfirmar = computed(
+    () =>
+      this.preview() != null &&
+      !this.confirmando() &&
+      (!this.hayFilasError() || this.aceptaOmitirErrores()),
+  );
   readonly tieneConflictos = computed(
     () => this.preview()?.empleados.some((e) => e.conflictoExistente) ?? false,
   );
@@ -180,6 +233,17 @@ export class CargaMasivaCsvPageComponent implements OnInit, OnDestroy {
   );
 
   private debounce: ReturnType<typeof setTimeout> | null = null;
+
+  constructor() {
+    // B — Si el período ya tiene asistencia (conflicto), el flujo natural es CORREGIR y
+    // actualizar: se propone "Reemplazar empleados del archivo" por defecto (en vez de
+    // OMITIR_EXISTENTES, que ignoraría a los ya cargados). El usuario puede cambiarla.
+    effect(() => {
+      if (this.tieneConflictos() && this.estrategia() === 'OMITIR_EXISTENTES') {
+        this.estrategia.set('REEMPLAZAR_EMPLEADOS_ARCHIVO');
+      }
+    });
+  }
 
   ngOnInit(): void {
     this.cargarPeriodos();
@@ -202,6 +266,11 @@ export class CargaMasivaCsvPageComponent implements OnInit, OnDestroy {
     this.limpiarPreview();
   }
 
+  /**
+   * Opción B — Validación ASÍNCRONA con progreso real. Dispara el job en el backend y hace
+   * polling declarativo (RxJS) del progreso hasta COMPLETADO/ERROR. La suscripción se limpia
+   * sola si el usuario abandona la pantalla (takeUntilDestroyed).
+   */
   generarPreview(): void {
     const periodo = this.periodoSeleccionado();
     const archivo = this.archivo();
@@ -210,23 +279,72 @@ export class CargaMasivaCsvPageComponent implements OnInit, OnDestroy {
       return;
     }
 
+    this.iniciarValidacion();
+
+    this.importApi
+      .previewAsync(periodo, archivo)
+      .pipe(
+        // 1) recibe el jobId → 2) hace polling cada POLL_MS consultando el estado del job.
+        switchMap(({ jobId }) =>
+          timer(0, CargaMasivaCsvPageComponent.POLL_MS).pipe(
+            switchMap(() => this.importApi.jobEstado(jobId)),
+            // emite hasta (e incluyendo) el estado terminal COMPLETADO/ERROR y completa.
+            takeWhile((job) => job.estado === 'EN_COLA' || job.estado === 'PROCESANDO', true),
+          ),
+        ),
+        takeUntilDestroyed(this.destroyRef), // sin fugas: se corta si el componente se destruye
+        finalize(() => this.procesandoPreview.set(false)),
+      )
+      .subscribe({
+        next: (job) => this.onJobUpdate(job),
+        error: (err: HttpErrorResponse) => this.onValidacionError(err),
+      });
+  }
+
+  /** Reinicia la máquina de estados de la barra al iniciar una validación. */
+  private iniciarValidacion(): void {
+    this.preview.set(null);
+    this.estadoValidacion.set('PROCESANDO');
+    this.progresoValidacion.set(0);
+    this.faseValidacion.set('Iniciando validación…');
+    this.errorValidacion.set(null);
     this.procesandoPreview.set(true);
-    this.importApi.preview(periodo, archivo).subscribe({
-      next: (preview) => {
-        this.preview.set(preview);
-        this.resetFiltros();
-        this.procesandoPreview.set(false);
-        this.snack.open(preview.mensaje ?? 'Vista previa generada.', 'Cerrar', { duration: 5000 });
-        if (preview.importacionId != null) {
-          this.cargarResumen(preview.importacionId);
-          this.cargarDetalle();
-        }
-      },
-      error: (err: HttpErrorResponse) => {
-        this.procesandoPreview.set(false);
-        this.onHttpSnack(err);
-      },
-    });
+  }
+
+  /** Aplica cada emisión del polling a la UI (barra + estado). */
+  private onJobUpdate(job: AsistenciaImportJob): void {
+    this.progresoValidacion.set(job.porcentaje);
+    this.faseValidacion.set(job.fase);
+
+    if (job.estado === 'COMPLETADO' && job.resultado) {
+      this.progresoValidacion.set(100);
+      this.estadoValidacion.set('COMPLETADO'); // el 100% PERSISTE (no desaparece)
+      this.aplicarPreview(job.resultado as AsistenciaImportPreview);
+    } else if (job.estado === 'ERROR') {
+      this.estadoValidacion.set('ERROR');
+      this.errorValidacion.set(job.error ?? 'La validación falló.');
+    }
+  }
+
+  /** Carga en memoria el preview validado y prepara los pasos siguientes. */
+  private aplicarPreview(preview: AsistenciaImportPreview): void {
+    this.preview.set(preview);
+    this.aceptaOmitirErrores.set(false);
+    this.resetFiltros();
+    if (preview.importacionId != null) {
+      this.cargarResumen(preview.importacionId);
+      this.cargarDetalle();
+    }
+  }
+
+  /** Falla del job o de red HTTP → estado de error visible en la barra. */
+  private onValidacionError(err: HttpErrorResponse): void {
+    this.procesandoPreview.set(false);
+    this.estadoValidacion.set('ERROR');
+    const body = err?.error;
+    this.errorValidacion.set(
+      isErrorResponse(body) ? this.errors.translate(body.mensaje) : this.errors.translate(null),
+    );
   }
 
   /**
@@ -237,26 +355,75 @@ export class CargaMasivaCsvPageComponent implements OnInit, OnDestroy {
     this.generarPreview();
   }
 
+  /**
+   * Opción B — Confirmación ASÍNCRONA con progreso real. Mismo patrón reactivo que la validación:
+   * dispara el job y hace polling declarativo hasta COMPLETADO/ERROR. Safe-submit: {@code confirmando}
+   * deshabilita el botón al instante; en ERROR se rehabilita para reintentar (finalize).
+   */
   confirmar(): void {
     const preview = this.preview();
-    if (preview?.importacionId == null || this.tieneErroresBloqueantes()) {
+    if (preview?.importacionId == null || !this.puedeConfirmar()) {
       return;
     }
-    this.confirmando.set(true);
     const motivo = this.motivoRectificacion().trim() || undefined;
-    this.importApi.confirmar(preview.importacionId, this.estrategia(), motivo).subscribe({
-      next: (resultado) => {
-        this.confirmando.set(false);
-        this.empleadosProcesados.set(resultado.empleadosDetectados ?? 0);
-        this.preview.set({ ...preview, mensaje: resultado.mensaje, estadoImportacion: resultado.estadoImportacion });
-        this.snack.open(resultado.mensaje ?? 'Importación confirmada.', 'Cerrar', { duration: 6000 });
-        this.cargarResumen(preview.importacionId!);
-      },
-      error: (err: HttpErrorResponse) => {
-        this.confirmando.set(false);
-        this.onHttpSnack(err);
-      },
-    });
+    this.iniciarConfirmacion();
+
+    this.importApi
+      .confirmarAsync(preview.importacionId, this.estrategia(), motivo)
+      .pipe(
+        switchMap(({ jobId }) =>
+          timer(0, CargaMasivaCsvPageComponent.POLL_MS).pipe(
+            switchMap(() => this.importApi.jobEstado(jobId)),
+            takeWhile((job) => job.estado === 'EN_COLA' || job.estado === 'PROCESANDO', true),
+          ),
+        ),
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => this.confirmando.set(false)), // rehabilita el botón (éxito o error)
+      )
+      .subscribe({
+        next: (job) => this.onConfirmJobUpdate(job, preview),
+        error: (err: HttpErrorResponse) => this.onConfirmError(err),
+      });
+  }
+
+  private iniciarConfirmacion(): void {
+    this.estadoConfirmacion.set('PROCESANDO');
+    this.progresoConfirmacion.set(0);
+    this.faseConfirmacion.set('Iniciando confirmación…');
+    this.errorConfirmacion.set(null);
+    this.confirmando.set(true); // safe-submit: deshabilita el botón de inmediato
+  }
+
+  private onConfirmJobUpdate(job: AsistenciaImportJob, preview: AsistenciaImportPreview): void {
+    this.progresoConfirmacion.set(job.porcentaje);
+    this.faseConfirmacion.set(job.fase);
+
+    if (job.estado === 'COMPLETADO' && job.resultado) {
+      const resultado = job.resultado as AsistenciaImportPreview;
+      this.progresoConfirmacion.set(100);
+      this.estadoConfirmacion.set('COMPLETADO'); // barra verde persistente
+      this.empleadosProcesados.set(resultado.empleadosDetectados ?? 0);
+      this.preview.set({
+        ...preview,
+        mensaje: resultado.mensaje,
+        estadoImportacion: resultado.estadoImportacion,
+      });
+      if (preview.importacionId != null) {
+        this.cargarResumen(preview.importacionId);
+      }
+    } else if (job.estado === 'ERROR') {
+      this.estadoConfirmacion.set('ERROR');
+      this.errorConfirmacion.set(job.error ?? 'La confirmación falló.');
+    }
+  }
+
+  private onConfirmError(err: HttpErrorResponse): void {
+    this.confirmando.set(false); // rehabilita el botón para reintentar
+    this.estadoConfirmacion.set('ERROR');
+    const body = err?.error;
+    this.errorConfirmacion.set(
+      isErrorResponse(body) ? this.errors.translate(body.mensaje) : this.errors.translate(null),
+    );
   }
 
   /**
@@ -269,21 +436,53 @@ export class CargaMasivaCsvPageComponent implements OnInit, OnDestroy {
       return;
     }
     this.validandoCabeceras.set(true);
-    this.importApi.validarCabeceras(id).subscribe({
-      next: (resultado) => {
-        this.validandoCabeceras.set(false);
-        this.validacionResultado.set(resultado);
-        this.snack.open(
-          `Asistencia validada: ${resultado.validadas} cabecera(s) habilitadas para planilla.`,
-          'Cerrar',
-          { duration: 6000 },
-        );
-      },
-      error: (err: HttpErrorResponse) => {
-        this.validandoCabeceras.set(false);
-        this.onHttpSnack(err);
-      },
-    });
+    this.estadoCalculo.set('PROCESANDO');
+    this.progresoCalculo.set(0);
+    this.faseCalculo.set('Iniciando cálculo…');
+    this.errorCalculo.set(null);
+
+    this.importApi
+      .validarCabecerasAsync(id)
+      .pipe(
+        switchMap(({ jobId }) =>
+          timer(0, CargaMasivaCsvPageComponent.POLL_MS).pipe(
+            switchMap(() => this.importApi.jobEstado(jobId)),
+            takeWhile((job) => job.estado === 'EN_COLA' || job.estado === 'PROCESANDO', true),
+          ),
+        ),
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => this.validandoCabeceras.set(false)),
+      )
+      .subscribe({
+        next: (job) => {
+          this.progresoCalculo.set(job.porcentaje);
+          this.faseCalculo.set(job.fase);
+          if (job.estado === 'COMPLETADO') {
+            this.progresoCalculo.set(100);
+            this.estadoCalculo.set('COMPLETADO'); // círculo verde persistente
+            const resultado = job.resultado as AsistenciaValidacionBatch | null;
+            if (resultado) {
+              this.validacionResultado.set(resultado);
+              this.snack.open(
+                `Asistencia validada: ${resultado.validadas} cabecera(s) habilitadas para planilla.`,
+                'Cerrar',
+                { duration: 6000 },
+              );
+            }
+          } else if (job.estado === 'ERROR') {
+            this.estadoCalculo.set('ERROR');
+            this.errorCalculo.set(job.error ?? 'El cálculo falló.');
+          }
+        },
+        error: (err: HttpErrorResponse) => {
+          this.validandoCabeceras.set(false);
+          this.estadoCalculo.set('ERROR');
+          const body = err?.error;
+          this.errorCalculo.set(
+            isErrorResponse(body) ? this.errors.translate(body.mensaje) : this.errors.translate(null),
+          );
+        },
+      });
   }
 
   /** P3 — acepta todas las filas observadas con el motivo indicado. */
@@ -561,6 +760,16 @@ export class CargaMasivaCsvPageComponent implements OnInit, OnDestroy {
     this.empleadosProcesados.set(null);
     this.motivoRectificacion.set('');
     this.motivoAnulacion.set('');
+    this.aceptaOmitirErrores.set(false);
+    // Reinicia las barras de validación y confirmación (nuevo archivo/período).
+    this.estadoValidacion.set('IDLE');
+    this.progresoValidacion.set(0);
+    this.faseValidacion.set('');
+    this.errorValidacion.set(null);
+    this.estadoConfirmacion.set('IDLE');
+    this.progresoConfirmacion.set(0);
+    this.faseConfirmacion.set('');
+    this.errorConfirmacion.set(null);
     this.resetFiltros();
   }
 

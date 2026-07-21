@@ -2,11 +2,13 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  computed,
   effect,
   inject,
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { MatButtonModule } from '@angular/material/button';
@@ -27,7 +29,7 @@ import { isErrorResponse } from '../../../../core/models/error-response.model';
 import { AsistenciaApiService } from '../../services/asistencia-api.service';
 import { AsistenciaTabService } from '../../services/asistencia-tab.service';
 import type { AsistenciaDiariaRow } from '../../models/asistencia-diaria.model';
-import { CONDICION_LABELS } from '../../models/asistencia-diaria.model';
+import { badgeClass, condicionLabel, fmtMin } from '../../utils/asistencia-diaria-display.utils';
 import {
   AsistenciaDiariaEditDialogComponent,
 } from './components/asistencia-diaria-edit-dialog/asistencia-diaria-edit-dialog.component';
@@ -51,6 +53,12 @@ function toIsoDate(date: Date | null): string | null {
 
 function hoyIso(): string {
   return toIsoDate(new Date()) ?? '';
+}
+
+/** Primer día del mes actual (ISO) — valor por defecto de "Fecha de inicio". */
+function primerDiaMesIso(): string {
+  const now = new Date();
+  return toIsoDate(new Date(now.getFullYear(), now.getMonth(), 1)) ?? '';
 }
 
 @Component({
@@ -78,6 +86,7 @@ function hoyIso(): string {
 export class ConsultaDiariaAsistenciaPageComponent {
   private readonly api = inject(AsistenciaApiService);
   private readonly tabs = inject(AsistenciaTabService);
+  private readonly router = inject(Router);
   private readonly dialog = inject(MatDialog);
   private readonly snack = inject(MatSnackBar);
   private readonly errors = inject(ErrorMessageService);
@@ -87,6 +96,7 @@ export class ConsultaDiariaAsistenciaPageComponent {
     'indice',
     'dni',
     'nombre',
+    'lote',
     'fecha',
     'horaIngreso',
     'horaSalida',
@@ -98,11 +108,20 @@ export class ConsultaDiariaAsistenciaPageComponent {
     'ver',
   ] as const;
 
-  readonly fechaModel = signal<Date | null>(parseIsoDate(hoyIso()));
+  // Rango por defecto: mes actual (día 1 → hoy).
+  readonly fechaInicioModel = signal<Date | null>(parseIsoDate(primerDiaMesIso()));
+  readonly fechaFinModel = signal<Date | null>(parseIsoDate(hoyIso()));
   readonly filtroDni = signal('');
   readonly filtroNombre = signal('');
   readonly consultaEjecutada = signal(false);
   readonly consultaHora = signal<string | null>(null);
+
+  /** El rango es válido cuando ambas fechas existen y fin ≥ inicio. */
+  readonly rangoValido = computed(() => {
+    const ini = this.fechaInicioModel();
+    const fin = this.fechaFinModel();
+    return !!ini && !!fin && fin.getTime() >= ini.getTime();
+  });
 
   readonly rows = signal<readonly AsistenciaDiariaRow[]>([]);
   readonly total = signal(0);
@@ -116,7 +135,9 @@ export class ConsultaDiariaAsistenciaPageComponent {
       const fecha = this.tabs.preselectFecha();
       const dni = this.tabs.preselectDni();
       if (fecha) {
-        this.fechaModel.set(parseIsoDate(fecha));
+        // Preselección desde otra pestaña ("ver asistencia de este día"): rango de un solo día.
+        this.fechaInicioModel.set(parseIsoDate(fecha));
+        this.fechaFinModel.set(parseIsoDate(fecha));
         this.tabs.preselectFecha.set(null);
       }
       if (dni) {
@@ -129,17 +150,21 @@ export class ConsultaDiariaAsistenciaPageComponent {
     });
   }
 
-  tituloFecha(): string {
-    const iso = toIsoDate(this.fechaModel());
-    if (!iso) return '—';
-    const [y, m, d] = iso.split('-');
-    return `${d}/${m}/${y}`;
+  tituloRango(): string {
+    const ini = toIsoDate(this.fechaInicioModel());
+    const fin = toIsoDate(this.fechaFinModel());
+    if (!ini || !fin) return '—';
+    const fmt = (iso: string): string => {
+      const [y, m, d] = iso.split('-');
+      return `${d}/${m}/${y}`;
+    };
+    return ini === fin ? fmt(ini) : `${fmt(ini)} a ${fmt(fin)}`;
   }
 
-  condicionLabel(tipo: string | null | undefined): string {
-    if (!tipo) return '—';
-    return CONDICION_LABELS[tipo] ?? tipo;
-  }
+  // Helpers de presentación compartidos (DRY con el detalle de importación).
+  readonly condicionLabel = condicionLabel;
+  readonly badgeClass = badgeClass;
+  readonly fmtMin = fmtMin;
 
   /** Tooltip de la papeleta aprobada: tipo · motivo · horario. */
   papeletaTooltip(row: AsistenciaDiariaRow): string {
@@ -162,59 +187,37 @@ export class ConsultaDiariaAsistenciaPageComponent {
     return horas != null ? `${horas} h` : '';
   }
 
-  badgeClass(tipo: string | null | undefined): string {
-    switch (tipo) {
-      case 'LABORAL':
-      case 'TELETRABAJO':
-        return 'diaria__badge diaria__badge--ok';
-      case 'TARDANZA':
-        return 'diaria__badge diaria__badge--warn';
-      case 'FALTA':
-      case 'SANCION_PAD':
-        return 'diaria__badge diaria__badge--danger';
-      case 'PERMISO':
-      case 'LICENCIA':
-        return 'diaria__badge diaria__badge--info';
-      default:
-        return 'diaria__badge';
-    }
-  }
-
-  fmtMin(value: number | null | undefined): string {
-    if (value == null || value <= 0) return '—';
-    const h = Math.floor(value / 60);
-    const m = value % 60;
-    if (h === 0) return `${m}m`;
-    return m === 0 ? `${h}h` : `${h}h ${m}m`;
-  }
-
   indiceFila(i: number): number {
     return this.pageIndex() * this.pageSize() + i + 1;
   }
 
   buscar(): void {
-    const fecha = toIsoDate(this.fechaModel());
-    if (!fecha) {
-      this.loadError.set('Seleccione una fecha para consultar.');
+    if (!this.rangoValido()) {
+      this.loadError.set(
+        'Seleccione un rango válido: la fecha fin debe ser posterior o igual a la de inicio.',
+      );
       return;
     }
     this.consultaEjecutada.set(true);
     this.pageIndex.set(0);
-    this.load(fecha);
+    this.load();
   }
 
   onPage(ev: PageEvent): void {
     this.pageIndex.set(ev.pageIndex);
     this.pageSize.set(ev.pageSize);
-    const fecha = toIsoDate(this.fechaModel());
-    if (fecha) this.load(fecha);
+    if (this.rangoValido()) this.load();
   }
 
-  private load(fecha: string): void {
+  private load(): void {
+    const fechaInicio = toIsoDate(this.fechaInicioModel());
+    const fechaFin = toIsoDate(this.fechaFinModel());
+    if (!fechaInicio || !fechaFin) return;
     this.loading.set(true);
     this.loadError.set(null);
     this.api.listarDiaria({
-      fecha,
+      fechaInicio,
+      fechaFin,
       dni: this.filtroDni().trim() || undefined,
       q: this.filtroNombre().trim() || undefined,
       page: this.pageIndex(),
@@ -256,8 +259,7 @@ export class ConsultaDiariaAsistenciaPageComponent {
     ref.afterClosed().subscribe((updated: AsistenciaDiariaRow | undefined) => {
       if (!updated) return;
       this.snack.open('Asistencia actualizada correctamente.', 'Cerrar', { duration: 4000 });
-      const fecha = toIsoDate(this.fechaModel());
-      if (fecha) this.load(fecha);
+      if (this.rangoValido()) this.load();
     });
   }
 
@@ -267,5 +269,13 @@ export class ConsultaDiariaAsistenciaPageComponent {
       maxWidth: '95vw',
       data: { row },
     });
+  }
+
+  /** Abre el detalle del lote que originó esta cabecera (asistencia importada). */
+  verLote(row: AsistenciaDiariaRow): void {
+    if (row.importacionId == null) {
+      return;
+    }
+    this.router.navigate(['/asistencia/importaciones', row.importacionId]);
   }
 }

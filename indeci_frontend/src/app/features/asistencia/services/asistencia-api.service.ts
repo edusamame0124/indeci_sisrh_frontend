@@ -49,13 +49,16 @@ export class AsistenciaApiService {
     });
   }
 
-  /** Consulta diaria paginada por fecha y filtros opcionales. */
+  /** Consulta de asistencia por rango [fechaInicio, fechaFin] y filtros opcionales. */
   listarDiaria(params: AsistenciaDiariaFiltro): Observable<AsistenciaDiariaPage> {
     const httpParams: Record<string, string> = {
-      fecha: params.fecha,
+      fechaInicio: params.fechaInicio,
       page: String(params.page ?? 0),
       size: String(params.size ?? 10),
     };
+    if (params.fechaFin?.trim()) {
+      httpParams['fechaFin'] = params.fechaFin.trim();
+    }
     if (params.dni?.trim()) {
       httpParams['dni'] = params.dni.trim();
     }
@@ -64,6 +67,35 @@ export class AsistenciaApiService {
     }
     return this.http
       .get<ApiResponse<AsistenciaDiariaPage>>(`${this.baseUrl}/diaria`, { params: httpParams })
+      .pipe(map(extractApiData));
+  }
+
+  /**
+   * Detalle diario de una importación (lote) — módulo de detalle del historial.
+   * Mismo formato que la consulta diaria, pero abarca todo el período del lote (solo lectura).
+   */
+  listarPorImportacion(
+    importacionId: number,
+    params: { dni?: string; q?: string; tipoDia?: string; page?: number; size?: number } = {},
+  ): Observable<AsistenciaDiariaPage> {
+    const httpParams: Record<string, string> = {
+      page: String(params.page ?? 0),
+      size: String(params.size ?? 25),
+    };
+    if (params.dni?.trim()) {
+      httpParams['dni'] = params.dni.trim();
+    }
+    if (params.q?.trim()) {
+      httpParams['q'] = params.q.trim();
+    }
+    if (params.tipoDia?.trim()) {
+      httpParams['tipoDia'] = params.tipoDia.trim();
+    }
+    return this.http
+      .get<ApiResponse<AsistenciaDiariaPage>>(
+        `${this.baseUrl}/importacion/${importacionId}/diaria`,
+        { params: httpParams },
+      )
       .pipe(map(extractApiData));
   }
 

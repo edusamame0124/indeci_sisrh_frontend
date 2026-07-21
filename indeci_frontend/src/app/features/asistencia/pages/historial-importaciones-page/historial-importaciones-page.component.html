@@ -54,10 +54,25 @@
         <ng-container matColumnDef="validacion">
           <th mat-header-cell *matHeaderCellDef scope="col">Validación</th>
           <td mat-cell *matCellDef="let row">
-            @if (row.estadoValidacion === 'REQUIERE_CALCULO') {
-              <span class="historial__badge historial__badge--warn">Requiere cálculo</span>
-            } @else if (row.estadoValidacion === 'VALIDADO') {
-              <span class="historial__badge historial__badge--ok">Validado</span>
+            @if (esValidado(row)) {
+              <span
+                class="historial__badge historial__badge--ok"
+                matTooltip="Todas las cabeceras quedaron validadas y disponibles para la planilla"
+              >Validado ({{ row.cabecerasValidadas }}/{{ row.cabecerasTotal }})</span>
+            } @else if (esParcial(row)) {
+              <span
+                class="historial__badge historial__badge--warn"
+                matTooltip="Se ejecutó el cálculo: {{ row.cabecerasValidadas }} validadas. Quedan
+                  {{ row.cabecerasObservadas }} observadas por errores/omisiones para corregir."
+              >Parcial ({{ row.cabecerasValidadas }}/{{ row.cabecerasTotal }})</span>
+              <button type="button" class="historial__link" (click)="verObservadas(row)">
+                Ver {{ row.cabecerasObservadas }} observada{{ row.cabecerasObservadas === 1 ? '' : 's' }}
+              </button>
+            } @else if (requiereCalculo(row)) {
+              <span
+                class="historial__badge"
+                matTooltip="Aún no se ejecutó el cálculo: {{ row.cabecerasPendientes }} cabecera(s) por validar"
+              >Requiere cálculo</span>
             } @else {
               <span class="historial__muted">—</span>
             }
@@ -80,29 +95,51 @@
         <ng-container matColumnDef="acciones">
           <th mat-header-cell *matHeaderCellDef scope="col">Acciones</th>
           <td mat-cell *matCellDef="let row">
-            @if (requiereCalculo(row)) {
+            <button
+              mat-stroked-button
+              type="button"
+              class="historial__ver"
+              (click)="$event.stopPropagation(); verDetalle(row)"
+              aria-label="Ver detalle de la importación"
+            >
+              <mat-icon fontIcon="visibility" aria-hidden="true" />
+              Ver detalle
+            </button>
+            @if (validandoImportacionId() === row.id) {
+              <!-- Opción B — indicador CIRCULAR de progreso del cálculo (mat-spinner + % al centro). -->
+              <app-calculo-progreso-circular
+                [porcentaje]="calcProgreso()"
+                [fase]="calcFase()"
+                [estado]="calcEstado()"
+                [error]="calcError()"
+                [diametro]="52"
+              />
+            } @else if (requiereCalculo(row)) {
               <button
                 mat-stroked-button
                 color="primary"
                 type="button"
                 class="historial__validate"
-                [disabled]="validandoImportacionId() === row.id"
-                (click)="validarCabeceras(row)"
+                (click)="$event.stopPropagation(); validarCabeceras(row)"
               >
-                @if (validandoImportacionId() === row.id) {
-                  <mat-progress-spinner mode="indeterminate" diameter="18" aria-label="Ejecutando cálculo" />
-                } @else {
-                  <mat-icon fontIcon="calculate" aria-hidden="true" />
-                }
+                <mat-icon fontIcon="calculate" aria-hidden="true" />
                 Ejecutar Cálculo
               </button>
-            } @else {
-              <span class="historial__muted">—</span>
             }
           </td>
         </ng-container>
         <tr mat-header-row *matHeaderRowDef="columnas"></tr>
-        <tr mat-row *matRowDef="let row; columns: columnas"></tr>
+        <tr
+          mat-row
+          *matRowDef="let row; columns: columnas"
+          class="historial__row historial__row--click"
+          role="button"
+          tabindex="0"
+          [attr.aria-label]="'Ver detalle de la importación ' + row.nombreArchivo"
+          (click)="verDetalle(row)"
+          (keydown.enter)="verDetalle(row)"
+          (keydown.space)="$event.preventDefault(); verDetalle(row)"
+        ></tr>
       </table>
     </div>
   }

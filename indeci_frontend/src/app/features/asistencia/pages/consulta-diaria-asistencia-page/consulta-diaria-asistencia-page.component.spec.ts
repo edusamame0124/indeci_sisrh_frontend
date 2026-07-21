@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
+import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -16,6 +17,7 @@ describe('ConsultaDiariaAsistenciaPageComponent', () => {
           {
             detalleId: 1,
             cabeceraId: 2,
+            importacionId: 10,
             empleadoId: 3,
             dni: '12345678',
             nombreCompleto: 'SERVIDOR PUBLICO',
@@ -62,6 +64,7 @@ describe('ConsultaDiariaAsistenciaPageComponent', () => {
     await TestBed.configureTestingModule({
       imports: [ConsultaDiariaAsistenciaPageComponent, NoopAnimationsModule],
       providers: [
+        provideRouter([]),
         { provide: AsistenciaApiService, useValue: api },
         {
           provide: MatDialog,
@@ -73,17 +76,22 @@ describe('ConsultaDiariaAsistenciaPageComponent', () => {
     }).compileComponents();
   });
 
-  it('buscar carga registros del día', () => {
+  it('buscar carga registros del rango', () => {
     const fixture = TestBed.createComponent(ConsultaDiariaAsistenciaPageComponent);
     fixture.detectChanges();
     const component = fixture.componentInstance;
 
-    component.fechaModel.set(new Date(2026, 5, 18));
+    component.fechaInicioModel.set(new Date(2026, 5, 1));
+    component.fechaFinModel.set(new Date(2026, 5, 18));
     component.filtroDni.set('12345678');
     component.buscar();
 
     expect(api.listarDiaria).toHaveBeenCalledWith(
-      expect.objectContaining({ fecha: '2026-06-18', dni: '12345678' }),
+      expect.objectContaining({
+        fechaInicio: '2026-06-01',
+        fechaFin: '2026-06-18',
+        dni: '12345678',
+      }),
     );
     expect(component.rows()).toHaveLength(1);
     expect(component.total()).toBe(1);

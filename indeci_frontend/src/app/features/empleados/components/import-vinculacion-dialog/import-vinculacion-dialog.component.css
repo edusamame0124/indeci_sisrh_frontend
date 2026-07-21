@@ -278,6 +278,9 @@
 .iv-result__item--info dd {
   color: var(--sisrh-info, #2563a6);
 }
+.iv-result__item--warn dd {
+  color: var(--sisrh-warning, #b45309);
+}
 .iv-result__item--muted dd {
   color: var(--sisrh-text-soft, #94a3b8);
 }

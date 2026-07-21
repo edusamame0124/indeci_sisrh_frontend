@@ -57,6 +57,22 @@ export interface AsistenciaImportPreview {
   readonly errores: readonly AsistenciaImportFilaError[];
 }
 
+/** Opción B — estado de un job asíncrono de validación (espejo de AsistenciaImportJobDto). */
+export interface AsistenciaImportJob {
+  readonly jobId: string;
+  readonly estado: 'EN_COLA' | 'PROCESANDO' | 'COMPLETADO' | 'ERROR';
+  readonly porcentaje: number;
+  readonly fase: string;
+  /**
+   * Solo presente cuando estado = COMPLETADO. Genérico: es un `AsistenciaImportPreview`
+   * (validar/confirmar) o un `AsistenciaValidacionBatch` (ejecutar cálculo). El cliente castea
+   * según la operación que inició.
+   */
+  readonly resultado: AsistenciaImportPreview | AsistenciaValidacionBatch | null;
+  /** Solo presente cuando estado = ERROR. */
+  readonly error: string | null;
+}
+
 export interface AsistenciaImportHistorial {
   readonly id: number;
   readonly periodo: string;
@@ -68,8 +84,13 @@ export interface AsistenciaImportHistorial {
   readonly filasValidas: number;
   readonly filasError: number;
   readonly empleadosProcesados: number;
-  /** REQUIERE_CALCULO | VALIDADO | null (no aplica). Solo lectura en el historial. */
-  readonly estadoValidacion: 'REQUIERE_CALCULO' | 'VALIDADO' | null;
+  /** REQUIERE_CALCULO | PARCIAL | VALIDADO | null (no aplica). Solo lectura en el historial. */
+  readonly estadoValidacion: 'REQUIERE_CALCULO' | 'PARCIAL' | 'VALIDADO' | null;
+  /** Desglose de validación (badge tri-estado + avance). */
+  readonly cabecerasTotal: number;
+  readonly cabecerasValidadas: number;
+  readonly cabecerasObservadas: number;
+  readonly cabecerasPendientes: number;
 }
 
 export interface AsistenciaValidacionBatch {

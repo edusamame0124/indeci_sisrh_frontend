@@ -1,25 +1,43 @@
 <section class="diaria" aria-labelledby="titulo-consulta-diaria">
   <header class="diaria__header">
     <h2 id="titulo-consulta-diaria" class="diaria__title">
-      Lista de asistencia del día
+      Lista de asistencia por rango
       @if (consultaEjecutada()) {
-        — {{ tituloFecha() }}
+        — {{ tituloRango() }}
         @if (consultaHora(); as hora) {
-          <span class="diaria__hora">a las {{ hora }}</span>
+          <span class="diaria__hora">consultado a las {{ hora }}</span>
         }
       }
     </h2>
     <p class="diaria__subtitle">
-      Consulte la asistencia registrada por fecha y filtre por DNI o nombre del empleado.
+      Consulte la asistencia registrada entre dos fechas y filtre por DNI o nombre del empleado.
     </p>
   </header>
 
   <div class="diaria__filters">
     <mat-form-field appearance="outline" class="diaria__field">
-      <mat-label>Fecha</mat-label>
-      <input matInput [matDatepicker]="dpFecha" [ngModel]="fechaModel()" (ngModelChange)="fechaModel.set($event)" />
-      <mat-datepicker-toggle matSuffix [for]="dpFecha" />
-      <mat-datepicker #dpFecha />
+      <mat-label>Fecha de inicio</mat-label>
+      <input
+        matInput
+        [matDatepicker]="dpInicio"
+        [ngModel]="fechaInicioModel()"
+        (ngModelChange)="fechaInicioModel.set($event)"
+      />
+      <mat-datepicker-toggle matSuffix [for]="dpInicio" />
+      <mat-datepicker #dpInicio />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="diaria__field">
+      <mat-label>Fecha fin</mat-label>
+      <input
+        matInput
+        [matDatepicker]="dpFin"
+        [min]="fechaInicioModel()"
+        [ngModel]="fechaFinModel()"
+        (ngModelChange)="fechaFinModel.set($event)"
+      />
+      <mat-datepicker-toggle matSuffix [for]="dpFin" />
+      <mat-datepicker #dpFin />
     </mat-form-field>
 
     <mat-form-field appearance="outline" class="diaria__field diaria__field--dni">
@@ -44,10 +62,19 @@
       />
     </mat-form-field>
 
-    <button mat-flat-button color="primary" type="button" (click)="buscar()" [disabled]="loading()">
+    <button
+      mat-flat-button
+      color="primary"
+      type="button"
+      (click)="buscar()"
+      [disabled]="loading() || !rangoValido()"
+    >
       <mat-icon fontIcon="search" aria-hidden="true" />
       Buscar
     </button>
+    @if (!rangoValido()) {
+      <span class="diaria__hint">La fecha fin debe ser posterior o igual a la de inicio.</span>
+    }
   </div>
 
   @if (loading()) {
@@ -66,15 +93,15 @@
   } @else if (consultaEjecutada() && rows().length === 0) {
     <app-empty-state
       icon="event_busy"
-      title="Sin registros para la fecha"
-      description="No hay asistencia registrada con los filtros indicados. Verifique la fecha o ajuste el DNI."
+      title="Sin registros para el rango"
+      description="No hay asistencia registrada con los filtros indicados. Ajuste el rango de fechas, el DNI o el nombre."
     />
   } @else if (consultaEjecutada()) {
     <p class="diaria__count" role="status" aria-live="polite">
       {{ total() }} registro{{ total() === 1 ? '' : 's' }}
     </p>
 
-    <div class="diaria__table-wrap" role="region" aria-label="Tabla de asistencia del día" tabindex="0">
+    <div class="diaria__table-wrap" role="region" aria-label="Tabla de asistencia del rango" tabindex="0">
       <table mat-table [dataSource]="rows()" class="diaria__table">
         <ng-container matColumnDef="indice">
           <th mat-header-cell *matHeaderCellDef scope="col">#</th>
@@ -89,6 +116,26 @@
         <ng-container matColumnDef="nombre">
           <th mat-header-cell *matHeaderCellDef scope="col">Nombre</th>
           <td mat-cell *matCellDef="let row">{{ row.nombreCompleto || '—' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="lote">
+          <th mat-header-cell *matHeaderCellDef scope="col">Lote origen</th>
+          <td mat-cell *matCellDef="let row">
+            @if (row.importacionId != null) {
+              <button
+                type="button"
+                class="diaria__lote"
+                (click)="verLote(row)"
+                [matTooltip]="'Ver detalle de la importación #' + row.importacionId"
+                matTooltipPosition="above"
+              >
+                <mat-icon fontIcon="upload_file" aria-hidden="true" />
+                #{{ row.importacionId }}
+              </button>
+            } @else {
+              <span class="diaria__lote-manual">Manual</span>
+            }
+          </td>
         </ng-container>
 
         <ng-container matColumnDef="fecha">
@@ -191,8 +238,8 @@
   } @else {
     <app-empty-state
       icon="calendar_today"
-      title="Seleccione una fecha"
-      description="Elija la fecha y pulse Buscar para ver la asistencia del día."
+      title="Seleccione un rango"
+      description="Elija la fecha de inicio y fin, y pulse Buscar para ver la asistencia."
     />
   }
 </section>

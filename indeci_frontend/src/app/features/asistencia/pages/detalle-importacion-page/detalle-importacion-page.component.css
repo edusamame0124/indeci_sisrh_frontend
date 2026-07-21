@@ -1,0 +1,152 @@
+.detimp {
+  display: block;
+  padding: 8px 4px 24px;
+}
+
+.detimp__header {
+  margin-bottom: 16px;
+}
+.detimp__back {
+  margin-bottom: 12px;
+}
+.detimp__title {
+  margin: 0 0 8px;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary, #0a1e35);
+}
+
+.detimp__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  margin: 0 0 8px;
+}
+.detimp__meta dt {
+  font-size: 0.75rem;
+  color: var(--text-secondary, #64748b);
+}
+.detimp__meta dd {
+  margin: 2px 0 0;
+  font-weight: 600;
+  color: var(--text-primary, #0a1e35);
+}
+.detimp__nota {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--text-secondary, #64748b);
+}
+
+.detimp__filters {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.detimp__field {
+  width: 220px;
+}
+.detimp__field--dni {
+  width: 140px;
+}
+
+.detimp__loading {
+  display: flex;
+  justify-content: center;
+  padding: 40px 0;
+}
+
+.detimp__count {
+  margin: 0 0 8px;
+  font-size: 0.8125rem;
+  color: var(--text-secondary, #64748b);
+}
+
+.detimp__table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--sisrh-border-soft, #e7ecf2);
+  border-radius: 10px;
+}
+.detimp__table {
+  width: 100%;
+  min-width: 900px;
+}
+.detimp__num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Filtro rápido "Ver omisiones pendientes" */
+.detimp__omis-toggle {
+  --mdc-outlined-button-label-text-color: #b45309;
+  border-color: #f59e0b;
+  color: #b45309;
+}
+.detimp__omis-toggle mat-icon {
+  margin-right: 6px;
+}
+.detimp__omis-toggle--on {
+  background: #fff7ed;
+  border-color: #b45309;
+}
+/* Chip del filtro por tipo (p. ej. "observadas" desde el deep-link) */
+.detimp__filtro-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--surface-hover, #f5f8fc);
+  border: 1px solid var(--sisrh-border-soft, #e7ecf2);
+  font-size: 12px;
+  color: var(--text-secondary, #64748b);
+}
+.detimp__filtro-clear {
+  border: 0;
+  background: none;
+  cursor: pointer;
+  color: var(--text-secondary, #64748b);
+  font-size: 13px;
+  line-height: 1;
+  padding: 0;
+}
+.detimp__filtro-clear:hover {
+  color: var(--indeci-red, #c8102e);
+}
+
+/* Ícono de marca faltante en la celda de ingreso/salida */
+.detimp__omis-icon {
+  color: #b45309;
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  vertical-align: middle;
+}
+
+/* ---- Badges de condición (compartidos con la consulta diaria) ---- */
+.diaria__badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  background: var(--surface-hover, #f8fafd);
+  color: var(--text-primary, #0a1e35);
+}
+.diaria__badge--ok {
+  background: #e8f5e9;
+  color: #1b5e20;
+}
+.diaria__badge--warn {
+  background: #fff8e1;
+  color: #e65100;
+}
+.diaria__badge--danger {
+  background: #ffebee;
+  color: #b71c1c;
+}
+.diaria__badge--info {
+  background: #e3f2fd;
+  color: #0d47a1;
+}

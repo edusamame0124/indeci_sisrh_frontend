@@ -205,11 +205,24 @@
               <dt>Actualizados</dt>
               <dd>{{ c.actualizados }}</dd>
             </div>
+            <div class="iv-result__item iv-result__item--warn">
+              <dt matTooltip="Vínculos activos que el Excel ya no declara. El Excel es la fuente de verdad.">
+                Anulados
+              </dt>
+              <dd>{{ c.anulados }}</dd>
+            </div>
             <div class="iv-result__item iv-result__item--muted">
               <dt>Omitidos</dt>
               <dd>{{ c.omitidos }}</dd>
             </div>
           </dl>
+
+          @if (c.anulados > 0) {
+            <p class="iv-muted">
+              {{ c.anulados }} vínculo(s) pre-existente(s) se anularon por no figurar en el Excel
+              (fuente de verdad). No se borraron: quedan como ANULADO y son reversibles.
+            </p>
+          }
 
           @if (c.omitidos > 0) {
             <p class="iv-muted">

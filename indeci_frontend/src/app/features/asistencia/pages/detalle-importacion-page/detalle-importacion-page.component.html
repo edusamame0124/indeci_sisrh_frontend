@@ -1,0 +1,216 @@
+<section class="detimp" aria-labelledby="titulo-detalle-importacion">
+  <header class="detimp__header">
+    <button mat-stroked-button type="button" (click)="volver()" class="detimp__back">
+      <mat-icon fontIcon="arrow_back" aria-hidden="true" />
+      Volver al historial
+    </button>
+
+    <h2 id="titulo-detalle-importacion" class="detimp__title">
+      Detalle de importación de asistencia
+    </h2>
+
+    @if (resumen(); as r) {
+      <dl class="detimp__meta">
+        <div><dt>Archivo</dt><dd>{{ r.nombreArchivo }}</dd></div>
+        <div><dt>Período</dt><dd>{{ r.periodo }}</dd></div>
+        <div><dt>Estado</dt><dd>{{ r.estado }}</dd></div>
+        <div><dt>Empleados</dt><dd>{{ r.empleadosDetectados }}</dd></div>
+        <div><dt>Usuario</dt><dd>{{ r.usuario }}</dd></div>
+      </dl>
+    }
+    <p class="detimp__nota">
+      Vista de solo lectura de la asistencia consolidada del lote (M04 · SPEC §12.2 PANTALLA-02).
+    </p>
+  </header>
+
+  <div class="detimp__filters">
+    <mat-form-field appearance="outline" class="detimp__field detimp__field--dni">
+      <mat-label>DNI</mat-label>
+      <input
+        matInput
+        maxlength="8"
+        inputmode="numeric"
+        [ngModel]="filtroDni()"
+        (ngModelChange)="filtroDni.set($event)"
+        aria-label="Filtrar por DNI"
+      />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="detimp__field detimp__field--nombre">
+      <mat-label>Buscar por nombre</mat-label>
+      <input
+        matInput
+        [ngModel]="filtroNombre()"
+        (ngModelChange)="filtroNombre.set($event)"
+        aria-label="Buscar por nombre"
+      />
+    </mat-form-field>
+
+    <button mat-flat-button color="primary" type="button" (click)="buscar()" [disabled]="loading()">
+      <mat-icon fontIcon="search" aria-hidden="true" />
+      Buscar
+    </button>
+
+    <button
+      mat-stroked-button
+      type="button"
+      class="detimp__omis-toggle"
+      [class.detimp__omis-toggle--on]="soloOmisiones()"
+      (click)="toggleOmisiones()"
+      [disabled]="loading()"
+      matTooltip="Muestra solo los días con omisión de marcación (entrada o salida faltante) a la espera de papeleta 004"
+    >
+      <mat-icon fontIcon="warning" aria-hidden="true" />
+      {{ soloOmisiones() ? 'Viendo omisiones pendientes' : 'Ver omisiones pendientes' }}
+    </button>
+
+    @if (filtroTipoDia() && !soloOmisiones()) {
+      <span class="detimp__filtro-chip">
+        Filtrando: {{ condicionLabel(filtroTipoDia()) }}
+        <button type="button" class="detimp__filtro-clear" (click)="limpiarFiltroTipo()"
+          aria-label="Quitar filtro">✕</button>
+      </span>
+    }
+  </div>
+
+  @if (loading()) {
+    <div class="detimp__loading" aria-busy="true">
+      <mat-progress-spinner mode="indeterminate" diameter="40" aria-label="Cargando asistencia" />
+    </div>
+  } @else if (loadError()) {
+    <app-empty-state
+      variant="error"
+      icon="error_outline"
+      title="No se pudo cargar el detalle"
+      [description]="loadError()!"
+    >
+      <button mat-stroked-button type="button" (click)="buscar()">Reintentar</button>
+    </app-empty-state>
+  } @else if (rows().length === 0) {
+    <app-empty-state
+      icon="event_busy"
+      title="Sin asistencia consolidada"
+      description="Este lote no tiene asistencia consolidada (¿aún está en vista previa / sin confirmar?), o los filtros no arrojan resultados."
+    />
+  } @else {
+    <p class="detimp__count" role="status" aria-live="polite">
+      {{ total() }} registro{{ total() === 1 ? '' : 's' }}
+    </p>
+
+    <div class="detimp__table-wrap" role="region" aria-label="Tabla de asistencia importada" tabindex="0">
+      <table mat-table [dataSource]="rows()" class="detimp__table">
+        <ng-container matColumnDef="indice">
+          <th mat-header-cell *matHeaderCellDef scope="col">#</th>
+          <td mat-cell *matCellDef="let row; let i = index">{{ indiceFila(i) }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="dni">
+          <th mat-header-cell *matHeaderCellDef scope="col">DNI</th>
+          <td mat-cell *matCellDef="let row">{{ row.dni || '—' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="nombre">
+          <th mat-header-cell *matHeaderCellDef scope="col">Nombre</th>
+          <td mat-cell *matCellDef="let row">{{ row.nombreCompleto || '—' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="fecha">
+          <th mat-header-cell *matHeaderCellDef scope="col">Fecha</th>
+          <td mat-cell *matCellDef="let row">{{ row.fecha }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="horaIngreso">
+          <th mat-header-cell *matHeaderCellDef scope="col">Hora ingreso</th>
+          <td mat-cell *matCellDef="let row">
+            @if (row.marcaEntrada) {
+              {{ row.marcaEntrada }}
+            } @else if (row.tipoDia === 'OMISION_MARCACION') {
+              <mat-icon class="detimp__omis-icon" fontIcon="warning"
+                matTooltip="Marca de entrada faltante (omisión)" aria-label="Entrada faltante" />
+            } @else {
+              —
+            }
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="horaSalida">
+          <th mat-header-cell *matHeaderCellDef scope="col">Hora salida</th>
+          <td mat-cell *matCellDef="let row">
+            @if (row.marcaSalida) {
+              {{ row.marcaSalida }}
+            } @else if (row.tipoDia === 'OMISION_MARCACION') {
+              <mat-icon class="detimp__omis-icon" fontIcon="warning"
+                matTooltip="Marca de salida faltante (omisión)" aria-label="Salida faltante" />
+            } @else {
+              —
+            }
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="condicion">
+          <th mat-header-cell *matHeaderCellDef scope="col">Condición</th>
+          <td mat-cell *matCellDef="let row">
+            <span
+              [class]="badgeClass(row.tipoDia)"
+              [matTooltip]="row.tipoDia === 'OMISION_MARCACION'
+                ? 'Omisión de marcación. A la espera de papeleta de justificación (004)'
+                : ''"
+              matTooltipPosition="above"
+            >{{ condicionLabel(row.tipoDia) }}</span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="papeleta">
+          <th mat-header-cell *matHeaderCellDef scope="col">Permiso / Papeleta / Teletrabajo</th>
+          <td mat-cell *matCellDef="let row">
+            @if (row.tipoDia === 'TELETRABAJO') {
+              <span class="diaria__badge diaria__badge--ok">Teletrabajo</span>
+            } @else if (row.tipoDia === 'PERMISO' || row.tipoDia === 'LICENCIA') {
+              <span class="diaria__badge diaria__badge--info">{{ condicionLabel(row.tipoDia) }}</span>
+            } @else {
+              —
+            }
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="tReal">
+          <th mat-header-cell *matHeaderCellDef scope="col">T.Real</th>
+          <td mat-cell *matCellDef="let row" class="detimp__num">{{ fmtMin(row.horasTrabajadasMin) }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="tEcono">
+          <th mat-header-cell *matHeaderCellDef scope="col">T.Econo</th>
+          <td mat-cell *matCellDef="let row" class="detimp__num">{{ fmtMin(row.minutosSalidaAnticipada) }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="ver">
+          <th mat-header-cell *matHeaderCellDef scope="col">Ver</th>
+          <td mat-cell *matCellDef="let row">
+            <button
+              mat-stroked-button
+              type="button"
+              (click)="ver(row)"
+              aria-label="Ver asistencia del período de {{ row.nombreCompleto || row.dni }}"
+            >
+              <mat-icon fontIcon="visibility" aria-hidden="true" />
+              Ver
+            </button>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="cols"></tr>
+        <tr mat-row *matRowDef="let row; columns: cols"></tr>
+      </table>
+    </div>
+
+    <mat-paginator
+      [length]="total()"
+      [pageIndex]="pageIndex()"
+      [pageSize]="pageSize()"
+      [pageSizeOptions]="[25, 50, 100]"
+      (page)="onPage($event)"
+      showFirstLastButtons
+      aria-label="Paginador del detalle de importación"
+    />
+  }
+</section>

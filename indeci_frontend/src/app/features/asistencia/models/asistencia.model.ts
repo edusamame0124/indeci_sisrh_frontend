@@ -14,15 +14,23 @@ export const TIPOS_DIA = [
   'FERIADO',
   'OBSERVADO',
   'SANCION_PAD',
+  // Regla SERVIR/INDECI "Omisión de marcación": entrada XOR salida.
+  'OMISION_MARCACION',
+  // Omisión cubierta por papeleta 004 aprobada (tiempo completo).
+  'ASISTENCIA_JUSTIFICADA',
 ] as const;
 export type TipoDia = (typeof TIPOS_DIA)[number];
 
 /**
  * Tipos seleccionables por click directo en la celda del calendario (ciclo).
- * SANCION_PAD queda fuera: exige motivo obligatorio, por lo que solo se asigna
- * vía el modal dedicado (evita marcarlo por accidente en el ciclo).
+ * Se excluyen los derivados por el sistema (SANCION_PAD exige motivo; OMISION_MARCACION
+ * y ASISTENCIA_JUSTIFICADA los deriva la carga/cruce de papeletas, no se marcan a mano).
  */
-export const TIPOS_DIA_CICLABLES = TIPOS_DIA.filter((t) => t !== 'SANCION_PAD');
+// Tipo anotado como TipoDia[] a propósito: TS 5.5+ infiere un predicado que estrecharía el
+// element type y rompería usos como TIPOS_DIA_CICLABLES.indexOf(tipoDiaCompleto).
+export const TIPOS_DIA_CICLABLES: readonly TipoDia[] = TIPOS_DIA.filter(
+  (t) => t !== 'SANCION_PAD' && t !== 'OMISION_MARCACION' && t !== 'ASISTENCIA_JUSTIFICADA',
+);
 
 export const ESTADOS_ASISTENCIA = [
   'BORRADOR',

@@ -61,10 +61,38 @@
           Validar archivo
         </button>
 
-        @if (procesandoPreview()) {
-          <div class="masiva__loading" role="status">
-            <mat-progress-spinner mode="indeterminate" diameter="40" aria-label="Validando archivo" />
-            <span>Leyendo y validando el archivo…</span>
+        @if (estadoValidacion() !== 'IDLE') {
+          <div
+            class="masiva__progreso"
+            [class.masiva__progreso--ok]="estadoValidacion() === 'COMPLETADO'"
+            [class.masiva__progreso--error]="estadoValidacion() === 'ERROR'"
+            role="status"
+            aria-live="polite"
+          >
+            <div class="masiva__progreso-head">
+              <span class="masiva__progreso-fase">
+                @if (estadoValidacion() === 'COMPLETADO') {
+                  <mat-icon fontIcon="check_circle" aria-hidden="true" />
+                  Validación completada
+                } @else if (estadoValidacion() === 'ERROR') {
+                  <mat-icon fontIcon="error" aria-hidden="true" />
+                  Error en la validación
+                } @else {
+                  {{ faseValidacion() }}
+                }
+              </span>
+              <span class="masiva__progreso-pct">{{ progresoValidacion() }}%</span>
+            </div>
+
+            <mat-progress-bar
+              mode="determinate"
+              [value]="progresoValidacion()"
+              [attr.aria-label]="'Progreso de validación ' + progresoValidacion() + ' por ciento'"
+            />
+
+            @if (estadoValidacion() === 'ERROR' && errorValidacion(); as msg) {
+              <p class="masiva__progreso-msg">{{ msg }}</p>
+            }
           </div>
         }
 
@@ -364,7 +392,9 @@
           <p>{{ data.empleadosDetectados }} empleados detectados a partir de {{ data.filasValidas + data.filasObservadas }} filas importables.</p>
           @if (data.filasError > 0) {
             <p class="masiva__summary-warning">
-              Existen {{ data.filasError }} filas con error que impiden confirmar la importación.
+              {{ data.filasError }} filas con error se omitirán al confirmar. Los días con error
+              quedarán como <strong>OBSERVADO</strong> (no se calculan en planilla) hasta que
+              corrijas el archivo y lo vuelvas a subir.
             </p>
           }
         </section>
@@ -415,6 +445,42 @@
     <mat-step>
       <ng-template matStepLabel>Confirmar</ng-template>
       <div class="masiva__step">
+        <!-- Barra de progreso de la confirmación (Opción B). Persiste en 100% junto al resumen. -->
+        @if (estadoConfirmacion() !== 'IDLE') {
+          <div
+            class="masiva__progreso"
+            [class.masiva__progreso--ok]="estadoConfirmacion() === 'COMPLETADO'"
+            [class.masiva__progreso--error]="estadoConfirmacion() === 'ERROR'"
+            role="status"
+            aria-live="polite"
+          >
+            <div class="masiva__progreso-head">
+              <span class="masiva__progreso-fase">
+                @if (estadoConfirmacion() === 'COMPLETADO') {
+                  <mat-icon fontIcon="check_circle" aria-hidden="true" />
+                  Importación confirmada con éxito
+                } @else if (estadoConfirmacion() === 'ERROR') {
+                  <mat-icon fontIcon="error" aria-hidden="true" />
+                  Error en la confirmación
+                } @else {
+                  {{ faseConfirmacion() }}
+                }
+              </span>
+              <span class="masiva__progreso-pct">{{ progresoConfirmacion() }}%</span>
+            </div>
+
+            <mat-progress-bar
+              mode="determinate"
+              [value]="progresoConfirmacion()"
+              [attr.aria-label]="'Progreso de confirmación ' + progresoConfirmacion() + ' por ciento'"
+            />
+
+            @if (estadoConfirmacion() === 'ERROR' && errorConfirmacion(); as msg) {
+              <p class="masiva__progreso-msg">{{ msg }}</p>
+            }
+          </div>
+        }
+
         @if (!confirmado()) {
           @if (tieneConflictos()) {
             <mat-form-field appearance="outline" class="masiva__field">
@@ -448,16 +514,25 @@
               Revise el resumen antes de confirmar.
             </p>
           }
-          @if (tieneErroresBloqueantes()) {
+          @if (hayFilasError()) {
             <p class="masiva__alert" role="alert">
-              No se puede confirmar porque existen filas con errores. Corrija el archivo y vuelva a validar.
+              Existen {{ preview()?.filasError }} filas con error: se <strong>omitirán</strong> y esos
+              días quedarán como OBSERVADO (no se calculan). Corrige el archivo y vuelve a subirlo para
+              completarlas; la asistencia existente se actualizará.
             </p>
+            <mat-checkbox
+              [checked]="aceptaOmitirErrores()"
+              (change)="aceptaOmitirErrores.set($event.checked)"
+              class="masiva__ack"
+            >
+              Entiendo que las filas con error se omitirán y podré corregirlas re-subiendo el archivo.
+            </mat-checkbox>
           }
           <button
             mat-flat-button
             color="primary"
             type="button"
-            [disabled]="confirmando() || preview() == null || tieneErroresBloqueantes()"
+            [disabled]="!puedeConfirmar()"
             (click)="confirmar()"
           >
             <mat-icon fontIcon="check_circle" aria-hidden="true" />
@@ -517,17 +592,33 @@
                   <h3>Importación confirmada</h3>
                   <p>{{ plural(empleadosProcesados(), 'empleado cargado', 'empleados cargados') }} · {{ preview()?.mensaje }}</p>
                   <div class="masiva__siguiente-inline">
-                    <span>Siguiente paso: ejecute el cálculo para que la planilla use esta asistencia.</span>
-                    <button
-                      mat-flat-button
-                      color="primary"
-                      type="button"
-                      [disabled]="validandoCabeceras()"
-                      (click)="validarCabeceras()"
-                    >
-                      <mat-icon fontIcon="calculate" aria-hidden="true" />
-                      Ejecutar Cálculo
-                    </button>
+                    @if (estadoCalculo() === 'IDLE') {
+                      <span>Siguiente paso: ejecute el cálculo para que la planilla use esta asistencia.</span>
+                      <button
+                        mat-flat-button
+                        color="primary"
+                        type="button"
+                        (click)="validarCabeceras()"
+                      >
+                        <mat-icon fontIcon="calculate" aria-hidden="true" />
+                        Ejecutar Cálculo
+                      </button>
+                    } @else {
+                      <!-- Opción B — indicador CIRCULAR del cálculo (persiste al 100% en verde). -->
+                      <app-calculo-progreso-circular
+                        [porcentaje]="progresoCalculo()"
+                        [fase]="faseCalculo()"
+                        [estado]="estadoCalculoView()"
+                        [error]="errorCalculo()"
+                        [diametro]="64"
+                      />
+                      @if (estadoCalculo() === 'ERROR') {
+                        <button mat-stroked-button color="primary" type="button" (click)="validarCabeceras()">
+                          <mat-icon fontIcon="refresh" aria-hidden="true" />
+                          Reintentar
+                        </button>
+                      }
+                    }
                   </div>
                 }
               </div>

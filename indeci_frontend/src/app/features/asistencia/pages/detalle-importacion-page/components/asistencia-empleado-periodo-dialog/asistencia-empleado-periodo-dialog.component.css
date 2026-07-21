@@ -1,0 +1,119 @@
+.epd__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.125rem;
+}
+
+.epd__content {
+  min-width: min(680px, 90vw);
+  max-height: 70vh;
+}
+
+.epd__empleado {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin: 0 0 12px;
+}
+.epd__dni {
+  font-size: 0.8125rem;
+  color: var(--text-secondary, #64748b);
+}
+
+.epd__state {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 24px 4px;
+  color: var(--text-secondary, #64748b);
+}
+.epd__state--error {
+  color: #b71c1c;
+}
+
+/* ---- KPIs de resumen ---- */
+.epd__resumen {
+  display: flex;
+  gap: 12px;
+  margin: 0 0 16px;
+  flex-wrap: wrap;
+}
+.epd__kpi {
+  min-width: 96px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--sisrh-border-soft, #e7ecf2);
+}
+.epd__kpi dt {
+  font-size: 0.75rem;
+  color: var(--text-secondary, #64748b);
+}
+.epd__kpi dd {
+  margin: 2px 0 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.epd__kpi--danger dd {
+  color: #b71c1c;
+}
+.epd__kpi--warn dd {
+  color: #e65100;
+}
+.epd__estado {
+  font-size: 0.875rem !important;
+  font-weight: 600 !important;
+}
+
+/* ---- Tabla ---- */
+.epd__table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--sisrh-border-soft, #e7ecf2);
+  border-radius: 10px;
+}
+.epd__table {
+  width: 100%;
+}
+.epd__obs {
+  color: var(--text-secondary, #64748b);
+  font-size: 0.8125rem;
+}
+.epd__row--falta {
+  background: #fff5f5;
+}
+.epd__row--tardanza {
+  background: #fffdf3;
+}
+.epd__empty {
+  padding: 16px;
+  text-align: center;
+  color: var(--text-secondary, #64748b);
+}
+
+/* ---- Badges de condición (compartidos con la consulta diaria) ---- */
+.diaria__badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  background: var(--surface-hover, #f8fafd);
+  color: var(--text-primary, #0a1e35);
+}
+.diaria__badge--ok {
+  background: #e8f5e9;
+  color: #1b5e20;
+}
+.diaria__badge--warn {
+  background: #fff8e1;
+  color: #e65100;
+}
+.diaria__badge--danger {
+  background: #ffebee;
+  color: #b71c1c;
+}
+.diaria__badge--info {
+  background: #e3f2fd;
+  color: #0d47a1;
+}

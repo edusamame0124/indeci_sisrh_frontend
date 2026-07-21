@@ -141,6 +141,8 @@ export interface EmpleadoPlanillaRow {
   readonly estadoVinculo: string | null;
   /** true si el cese formal está completo (habilita generar LBS). */
   readonly habilitaLbs: boolean | null;
+  /** Aviso normativo del vínculo (Excel import "PLAZO MAXIMO", p. ej. "DURACION DE 5 AÑOS MAXIMO"). */
+  readonly plazoMaximo: string | null;
 }
 
 /**

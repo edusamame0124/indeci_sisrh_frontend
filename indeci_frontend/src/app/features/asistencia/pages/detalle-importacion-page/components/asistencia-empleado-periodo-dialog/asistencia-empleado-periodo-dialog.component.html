@@ -1,0 +1,89 @@
+<h2 mat-dialog-title class="epd__title">
+  <mat-icon aria-hidden="true">event_available</mat-icon>
+  Asistencia del período — {{ data.periodo }}
+</h2>
+
+<mat-dialog-content class="epd__content">
+  <p class="epd__empleado">
+    <strong>{{ data.nombre || '—' }}</strong>
+    <span class="epd__dni">DNI {{ data.dni || '—' }}</span>
+  </p>
+
+  @if (loading()) {
+    <div class="epd__state">
+      <mat-progress-spinner mode="indeterminate" diameter="36" />
+      <span>Cargando asistencia…</span>
+    </div>
+  } @else if (loadError()) {
+    <div class="epd__state epd__state--error">
+      <mat-icon aria-hidden="true">error_outline</mat-icon>
+      <span>{{ loadError() }}</span>
+    </div>
+  } @else if (asistencia(); as a) {
+    <dl class="epd__resumen">
+      <div class="epd__kpi">
+        <dt>Días laborados</dt>
+        <dd>{{ a.diasLaborados }}</dd>
+      </div>
+      <div class="epd__kpi epd__kpi--danger">
+        <dt>Faltas</dt>
+        <dd>{{ a.diasFalta }}</dd>
+      </div>
+      <div class="epd__kpi epd__kpi--warn">
+        <dt>Tardanza (min)</dt>
+        <dd>{{ a.totalMinTardanza }}</dd>
+      </div>
+      <div class="epd__kpi">
+        <dt>Estado</dt>
+        <dd class="epd__estado">{{ a.estado }}</dd>
+      </div>
+    </dl>
+
+    <div class="epd__table-wrap">
+      <table mat-table [dataSource]="a.dias" class="epd__table">
+        <ng-container matColumnDef="fecha">
+          <th mat-header-cell *matHeaderCellDef scope="col">Fecha</th>
+          <td mat-cell *matCellDef="let d">{{ fmtFecha(d.dia) }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="condicion">
+          <th mat-header-cell *matHeaderCellDef scope="col">Condición</th>
+          <td mat-cell *matCellDef="let d">
+            <span [class]="badgeClass(d.tipoDia)">{{ condicionLabel(d.tipoDia) }}</span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="entrada">
+          <th mat-header-cell *matHeaderCellDef scope="col">Ingreso</th>
+          <td mat-cell *matCellDef="let d">{{ d.marcaEntrada || '—' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="salida">
+          <th mat-header-cell *matHeaderCellDef scope="col">Salida</th>
+          <td mat-cell *matCellDef="let d">{{ d.marcaSalida || '—' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="tardanza">
+          <th mat-header-cell *matHeaderCellDef scope="col">Tardanza</th>
+          <td mat-cell *matCellDef="let d">{{ fmtMin(d.minutosTardanza) }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="observacion">
+          <th mat-header-cell *matHeaderCellDef scope="col">Observación</th>
+          <td mat-cell *matCellDef="let d" class="epd__obs">{{ d.observacion || '—' }}</td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="cols; sticky: true"></tr>
+        <tr mat-row *matRowDef="let d; columns: cols" [class]="filaClass(d)"></tr>
+      </table>
+
+      @if (a.dias.length === 0) {
+        <p class="epd__empty">No hay días registrados para este empleado en el período.</p>
+      }
+    </div>
+  }
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-flat-button color="primary" (click)="cerrar()">Cerrar</button>
+</mat-dialog-actions>

@@ -73,6 +73,22 @@
   font-size: 12px;
 }
 
+/* Enlace "Ver N observadas" (badge Parcial) */
+.historial__link {
+  display: inline-block;
+  margin-top: 4px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--status-info, #185FA5);
+  font-size: 12px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.historial__link:hover {
+  color: var(--indeci-red, #C8102E);
+}
+
 .historial__validate {
   border-color: var(--status-active, #0F6E56);
   color: var(--status-active, #0F6E56);
@@ -81,4 +97,24 @@
 .historial__validate mat-icon,
 .historial__validate mat-progress-spinner {
   margin-right: 6px;
+}
+
+.historial__ver {
+  margin-right: 8px;
+}
+.historial__ver mat-icon {
+  margin-right: 6px;
+}
+
+/* Fila navegable: la fila entera lleva al detalle del lote. */
+.historial__row--click {
+  cursor: pointer;
+  transition: background-color 0.12s ease;
+}
+.historial__row--click:hover {
+  background: var(--surface-hover, #f5f8fc);
+}
+.historial__row--click:focus-visible {
+  outline: 2px solid var(--status-info, #185FA5);
+  outline-offset: -2px;
 }

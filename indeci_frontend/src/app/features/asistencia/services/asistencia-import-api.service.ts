@@ -7,6 +7,7 @@ import type {
   AsistenciaImportDetalleFiltro,
   AsistenciaImportFilaDetalle,
   AsistenciaImportHistorial,
+  AsistenciaImportJob,
   AsistenciaImportPreview,
   AsistenciaImportResumen,
   AsistenciaValidacionBatch,
@@ -28,6 +29,38 @@ export class AsistenciaImportApiService {
     form.append('archivo', archivo);
     return this.http
       .post<ApiResponse<AsistenciaImportPreview>>(`${this.baseUrl}/preview`, form)
+      .pipe(map(extractApiData));
+  }
+
+  /** Opción B — inicia la validación asíncrona; responde el jobId de inmediato. */
+  previewAsync(periodo: string, archivo: File): Observable<{ jobId: string }> {
+    const form = new FormData();
+    form.append('periodo', periodo);
+    form.append('archivo', archivo);
+    return this.http
+      .post<ApiResponse<{ jobId: string }>>(`${this.baseUrl}/preview/async`, form)
+      .pipe(map(extractApiData));
+  }
+
+  /** Opción B — inicia la CONFIRMACIÓN asíncrona; responde el jobId de inmediato. */
+  confirmarAsync(
+    importacionId: number,
+    estrategiaConflicto: EstrategiaConflicto,
+    motivoRectificacion?: string,
+  ): Observable<{ jobId: string }> {
+    return this.http
+      .post<ApiResponse<{ jobId: string }>>(`${this.baseUrl}/${importacionId}/confirm/async`, {
+        importacionId,
+        estrategiaConflicto,
+        motivoRectificacion: motivoRectificacion ?? null,
+      })
+      .pipe(map(extractApiData));
+  }
+
+  /** Opción B — estado/progreso de un job de import (validar o confirmar). Polling genérico. */
+  jobEstado(jobId: string): Observable<AsistenciaImportJob> {
+    return this.http
+      .get<ApiResponse<AsistenciaImportJob>>(`${this.baseUrl}/job/${jobId}`)
       .pipe(map(extractApiData));
   }
 
@@ -123,6 +156,16 @@ export class AsistenciaImportApiService {
     return this.http
       .post<ApiResponse<AsistenciaValidacionBatch>>(
         `${this.baseUrl}/${importacionId}/validar-cabeceras`,
+        {},
+      )
+      .pipe(map(extractApiData));
+  }
+
+  /** Opción B — "Ejecutar cálculo" asíncrono; responde el jobId de inmediato. */
+  validarCabecerasAsync(importacionId: number): Observable<{ jobId: string }> {
+    return this.http
+      .post<ApiResponse<{ jobId: string }>>(
+        `${this.baseUrl}/${importacionId}/validar-cabeceras/async`,
         {},
       )
       .pipe(map(extractApiData));

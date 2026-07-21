@@ -3,7 +3,7 @@ import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/materia
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import type { AsistenciaDiariaRow } from '../../../../models/asistencia-diaria.model';
-import { CONDICION_LABELS } from '../../../../models/asistencia-diaria.model';
+import { condicionLabel, fmtMin } from '../../../../utils/asistencia-diaria-display.utils';
 
 export interface AsistenciaDiariaVerDialogData {
   readonly row: AsistenciaDiariaRow;
@@ -21,18 +21,9 @@ export class AsistenciaDiariaVerDialogComponent {
   private readonly dialogRef = inject(MatDialogRef<AsistenciaDiariaVerDialogComponent>);
   readonly data = inject<AsistenciaDiariaVerDialogData>(MAT_DIALOG_DATA);
 
-  condicionLabel(tipo: string | null | undefined): string {
-    if (!tipo) return '—';
-    return CONDICION_LABELS[tipo] ?? tipo;
-  }
-
-  fmtMin(value: number | null | undefined): string {
-    if (value == null || value <= 0) return '—';
-    const h = Math.floor(value / 60);
-    const m = value % 60;
-    if (h === 0) return `${m}m`;
-    return m === 0 ? `${h}h` : `${h}h ${m}m`;
-  }
+  // Helpers de presentación compartidos (DRY).
+  readonly condicionLabel = condicionLabel;
+  readonly fmtMin = fmtMin;
 
   cerrar(): void {
     this.dialogRef.close();

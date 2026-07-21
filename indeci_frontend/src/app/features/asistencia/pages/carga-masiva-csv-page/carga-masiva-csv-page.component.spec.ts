@@ -1,4 +1,4 @@
-import { TestBed } from '@angular/core/testing';
+import { TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { of } from 'rxjs';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -148,7 +148,21 @@ describe('CargaMasivaCsvPageComponent', () => {
   };
   const importApi = {
     preview: vi.fn(() => of(preview)),
+    // Opción B — validación asíncrona: previewAsync devuelve el jobId; jobEstado el progreso.
+    previewAsync: vi.fn(() => of({ jobId: 'job-1' })),
+    jobEstado: vi.fn(() =>
+      of({
+        jobId: 'job-1',
+        estado: 'COMPLETADO' as const,
+        porcentaje: 100,
+        fase: 'Validación completada',
+        resultado: preview,
+        error: null,
+      }),
+    ),
     confirmar: vi.fn(() => of({ ...preview, estadoImportacion: 'CONFIRMADA' as const })),
+    // Opción B — confirmación asíncrona (mismo job/polling que validar).
+    confirmarAsync: vi.fn(() => of({ jobId: 'job-confirm' })),
     detalles: vi.fn(() => of(detallePage)),
     resumen: vi.fn(() => of(resumenMock)),
   };
@@ -203,28 +217,36 @@ describe('CargaMasivaCsvPageComponent', () => {
       .toContain('Esta accion reemplazara la asistencia del periodo');
   });
 
-  it('genera preview desde backend y confirma usando la estrategia seleccionada', () => {
+  it('valida en modo asíncrono (job) y confirma usando la estrategia seleccionada', fakeAsync(() => {
     const fixture = TestBed.createComponent(CargaMasivaCsvPageComponent);
     fixture.detectChanges();
     const component = fixture.componentInstance;
 
     component.archivo.set(new File(['csv'], 'marcador.csv', { type: 'text/csv' }));
     component.generarPreview();
+    tick(1); // drena el primer poll de validación (job COMPLETADO)
+
+    expect(importApi.previewAsync).toHaveBeenCalledWith('2026-06', component.archivo());
+    expect(component.estadoValidacion()).toBe('COMPLETADO');
+    expect(component.progresoValidacion()).toBe(100);
+
     component.estrategia.set('REEMPLAZAR_PERIODO_COMPLETO');
     component.confirmar();
+    tick(1); // drena el primer poll de confirmación (job COMPLETADO)
 
-    expect(importApi.preview).toHaveBeenCalledWith('2026-06', component.archivo());
-    expect(importApi.confirmar).toHaveBeenCalledWith(91, 'REEMPLAZAR_PERIODO_COMPLETO', undefined);
-    expect(component.preview()?.estadoImportacion).toBe('CONFIRMADA');
-  });
+    expect(importApi.confirmarAsync).toHaveBeenCalledWith(91, 'REEMPLAZAR_PERIODO_COMPLETO', undefined);
+    expect(component.estadoConfirmacion()).toBe('COMPLETADO');
+    expect(component.progresoConfirmacion()).toBe(100);
+  }));
 
-  it('carga resumen y detalle server-side al validar, y recarga al cambiar filtros', () => {
+  it('carga resumen y detalle server-side al validar, y recarga al cambiar filtros', fakeAsync(() => {
     const fixture = TestBed.createComponent(CargaMasivaCsvPageComponent);
     fixture.detectChanges();
     const component = fixture.componentInstance;
 
     component.archivo.set(new File(['csv'], 'marcador.csv', { type: 'text/csv' }));
     component.generarPreview();
+    tick(1);
 
     expect(importApi.resumen).toHaveBeenCalledWith(91);
     expect(importApi.detalles).toHaveBeenCalledWith(91, expect.any(Object), 0, 25);
@@ -241,15 +263,16 @@ describe('CargaMasivaCsvPageComponent', () => {
       0,
       25,
     );
-  });
+  }));
 
-  it('al filtrar solo errores/observados envia el flag al backend', () => {
+  it('al filtrar solo errores/observados envia el flag al backend', fakeAsync(() => {
     const fixture = TestBed.createComponent(CargaMasivaCsvPageComponent);
     fixture.detectChanges();
     const component = fixture.componentInstance;
 
     component.archivo.set(new File(['csv'], 'marcador.csv', { type: 'text/csv' }));
     component.generarPreview();
+    tick(1);
 
     importApi.detalles.mockClear();
     component.onSoloErroresChange(true);
@@ -260,9 +283,9 @@ describe('CargaMasivaCsvPageComponent', () => {
       0,
       25,
     );
-  });
+  }));
 
-  it('verRegistroDiario navega a consulta diaria con DNI único', () => {
+  it('verRegistroDiario navega a consulta diaria con DNI único', fakeAsync(() => {
     const tabs = TestBed.inject(AsistenciaTabService);
     const fixture = TestBed.createComponent(CargaMasivaCsvPageComponent);
     fixture.detectChanges();
@@ -270,12 +293,13 @@ describe('CargaMasivaCsvPageComponent', () => {
 
     component.archivo.set(new File(['csv'], 'marcador.csv', { type: 'text/csv' }));
     component.generarPreview();
+    tick(1);
     component.verRegistroDiario();
 
     expect(tabs.selectedTab()).toBe(2);
     expect(tabs.preselectDni()).toBe('12345678');
     expect(tabs.preselectFecha()).toMatch(/^2026-06-/);
-  });
+  }));
 });
 
 function periodo(periodoValue: string, estado: PeriodoPlanillaRow['estado']): PeriodoPlanillaRow {

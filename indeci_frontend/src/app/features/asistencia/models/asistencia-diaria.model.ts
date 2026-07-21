@@ -5,6 +5,8 @@ import type { TipoDia } from './asistencia.model';
 export interface AsistenciaDiariaRow {
   readonly detalleId: number;
   readonly cabeceraId: number;
+  /** Lote que originó la cabecera activa. Null si la asistencia se cargó manualmente. */
+  readonly importacionId: number | null;
   readonly empleadoId: number;
   readonly dni: string | null;
   readonly nombreCompleto: string | null;
@@ -40,7 +42,9 @@ export interface AsistenciaDiariaRow {
 }
 
 export interface AsistenciaDiariaFiltro {
-  readonly fecha: string;
+  readonly fechaInicio: string;
+  /** Opcional: si se omite, se consulta un solo día (= fechaInicio). */
+  readonly fechaFin?: string;
   readonly dni?: string;
   readonly q?: string;
   readonly page?: number;
@@ -72,4 +76,6 @@ export const CONDICION_LABELS: Record<string, string> = {
   SANCION_PAD: 'Sanción PAD',
   TELETRABAJO: 'Teletrabajo',
   PERMISO: 'Permiso c/goce',
+  OMISION_MARCACION: 'Omisión de marca',
+  ASISTENCIA_JUSTIFICADA: 'Justificada',
 };

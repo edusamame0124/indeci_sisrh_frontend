@@ -45,6 +45,8 @@ export interface ImportCommit {
   readonly total: number;
   readonly creados: number;
   readonly actualizados: number;
+  /** Vínculos activos que el Excel ya no declara y se anularon (Excel = fuente de verdad). */
+  readonly anulados: number;
   readonly omitidos: number;
   readonly errores: readonly ImportFilaPreview[];
 }

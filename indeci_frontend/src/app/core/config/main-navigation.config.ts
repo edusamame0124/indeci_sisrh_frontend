@@ -142,7 +142,7 @@ export const MAIN_NAV_ITEMS: readonly MainNavItem[] = [
       { label: 'Configuración Anual', route: '/planilla/configuracion-cas', icon: 'settings', sectionHeader: 'Configuración' },
       { label: 'Conceptos de Planilla', route: '/planilla/conceptos', icon: 'receipt_long' },
       { label: 'Periodos', route: '/planilla/periodos', icon: 'event', sectionHeader: 'OPERACIÓN MENSUAL' },
-      { label: 'Carga de asistencia', route: '/asistencia/carga', icon: 'event_available' },
+      { label: 'Gestión de Asistencia', route: '/asistencia/carga', icon: 'event_available' },
       {
         label: 'Subsidios (Enfermedad/Maternidad)',
         route: '/asistencia/subsidios',

@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
+import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ErrorMessageService } from '../../../../core/services/error-message.service';
@@ -24,6 +25,10 @@ describe('HistorialImportacionesPageComponent', () => {
     filasError: 1,
     empleadosProcesados: 3,
     estadoValidacion: 'REQUIERE_CALCULO',
+    cabecerasTotal: 3,
+    cabecerasValidadas: 0,
+    cabecerasObservadas: 0,
+    cabecerasPendientes: 3,
   };
 
   const page: SpringPage<AsistenciaImportHistorial> = {
@@ -66,6 +71,7 @@ describe('HistorialImportacionesPageComponent', () => {
     await TestBed.configureTestingModule({
       imports: [HistorialImportacionesPageComponent, NoopAnimationsModule],
       providers: [
+        provideRouter([]),
         { provide: AsistenciaImportApiService, useValue: importApi },
         { provide: MovimientoPlanillaApiService, useValue: movimientoApi },
         { provide: MatSnackBar, useValue: snack },

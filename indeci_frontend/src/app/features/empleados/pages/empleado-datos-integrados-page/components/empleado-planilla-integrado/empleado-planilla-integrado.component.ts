@@ -262,6 +262,12 @@ const AIRHSP_PATTERN = /^[A-Z0-9]{6}$/;
                   }
                 </mat-select>
               </mat-form-field>
+              @if (plazoMaximoEdicion(); as aviso) {
+                <div class="full plazo-maximo-aviso" role="note">
+                  <mat-icon aria-hidden="true">schedule</mat-icon>
+                  <span>{{ aviso }}</span>
+                </div>
+              }
                 @if (!form.controls.modalidadCasId.disabled) {
                 <mat-form-field appearance="outline" class="half">
                   <mat-label>Modalidad o causal CAS</mat-label>
@@ -354,9 +360,6 @@ const AIRHSP_PATTERN = /^[A-Z0-9]{6}$/;
               <mat-form-field appearance="outline" class="half">
                 <mat-label>Fecha de término</mat-label>
                 <input matInput formControlName="fechaFin" type="date" placeholder="dd/mm/aaaa" />
-                @if (!esPlazoDeterminado()) {
-                  <mat-hint>Solo aplica a contratos a Plazo Determinado</mat-hint>
-                }
               </mat-form-field>
             </div>
 
@@ -585,6 +588,27 @@ const AIRHSP_PATTERN = /^[A-Z0-9]{6}$/;
   `,
   styles: [
     `
+      /* Aviso normativo "PLAZO MAXIMO" del vínculo (Excel import) */
+      .plazo-maximo-aviso {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: -4px 0 8px;
+        padding: 8px 12px;
+        border: 1px solid var(--status-warn, #b45309);
+        border-left-width: 4px;
+        border-radius: 8px;
+        background: var(--status-warn-bg, #fff7ed);
+        color: var(--status-warn, #92400e);
+        font-size: 13px;
+        font-weight: 600;
+      }
+      .plazo-maximo-aviso mat-icon {
+        font-size: 18px;
+        width: 18px;
+        height: 18px;
+      }
+
       /* Gate de Teletrabajo (Ley N° 31572) */
       .toggle-teletrabajo {
         display: flex;
@@ -846,10 +870,6 @@ export class EmpleadoPlanillaIntegradoComponent implements OnInit {
   /** true si hay un contrato vigente (sin cese) que se cerraría al registrar uno nuevo. */
   readonly hayVigenteSinCese = computed(() => this.rows().some((r) => r.fechaCese == null));
 
-  /** Código del tipo de contrato seleccionado (para gobernar la Fecha de término). */
-  readonly tipoContratoCodigo = signal<string>('');
-  /** La Fecha de término solo aplica a Plazo Determinado (regla de dominio RR.HH.). */
-  readonly esPlazoDeterminado = computed(() => this.tipoContratoCodigo() === 'PLAZO_DETERMINADO');
   /** El cese es un acto formal: los campos de cese solo se habilitan al "Cesar / Dar de baja". */
   readonly modoCese = signal(false);
 
@@ -937,6 +957,8 @@ export class EmpleadoPlanillaIntegradoComponent implements OnInit {
   // F1 — estado derivado + LBS ; F2 — historial ; F4 — elegibilidad.
   readonly estadoVinculo = signal<string | null>(null);
   readonly habilitaLbs = signal<boolean>(false);
+  /** Aviso normativo "PLAZO MAXIMO" del vínculo en edición (del Excel de import). */
+  readonly plazoMaximoEdicion = signal<string | null>(null);
   readonly elegibilidad = signal<ElegibilidadVinculoRow | null>(null);
   readonly historial = signal<readonly EmpleadoRemuneracionHistRow[]>([]);
   readonly historialCols = ['vigencia', 'remuneracion', 'tipo', 'fuente', 'estado', 'acciones'] as const;
@@ -992,24 +1014,7 @@ export class EmpleadoPlanillaIntegradoComponent implements OnInit {
       .pipe(takeUntilDestroyed())
       .subscribe((id) => {
         this.evaluarModalidadCas(this.form.controls.regimenLaboralId.value, id);
-        this.aplicarReglaFechaTermino(id);
       });
-  }
-
-  /**
-   * La Fecha de término (fechaFin) solo aplica a Plazo Determinado. En cualquier otro tipo se
-   * limpia y se deshabilita el campo (el backend también la fuerza a null).
-   */
-  private aplicarReglaFechaTermino(tipoContratoId: number | null): void {
-    const codigo = this.tiposContrato().find((t) => t.id === tipoContratoId)?.codigo ?? '';
-    this.tipoContratoCodigo.set(codigo);
-    const fechaFin = this.form.controls.fechaFin;
-    if (codigo === 'PLAZO_DETERMINADO') {
-      fechaFin.enable({ emitEvent: false });
-    } else {
-      fechaFin.setValue(null, { emitEvent: false });
-      fechaFin.disable({ emitEvent: false });
-    }
   }
 
   /** Acción explícita "Cesar / Dar de baja": habilita los campos de cese. */
@@ -1310,10 +1315,10 @@ export class EmpleadoPlanillaIntegradoComponent implements OnInit {
     this.isEdit.set(false);
     this.editId.set(null);
     this.modoCese.set(false); // un contrato nuevo nunca nace cesado
-    this.tipoContratoCodigo.set('');
     this.form.reset({ regimenLaboralId: null, tipoContratoId: null, condicionLaboralId: null, modalidadCasId: null, grupoServidorCivil: null, esConfianza: 0, esTeletrabajador: 0, montoContratado: null, sueldoBasico: null, numHijos: null, tipoPersonaMefId: null, registroPlazaAirhsp: '', fechaInicioContrato: null, diasSemanaOperativo: null, fechaFin: null, fechaCese: null, motivoCese: null, documentoCese: null, documentoOrigenTipo: null, documentoOrigenNumero: null, documentoOrigenFecha: null });
     this.estadoVinculo.set(null);
     this.habilitaLbs.set(false);
+    this.plazoMaximoEdicion.set(null);
     this.historial.set([]);
     this.elegibilidad.set(null);
     this.regimenCodigoSignal.set('');
@@ -1360,6 +1365,7 @@ export class EmpleadoPlanillaIntegradoComponent implements OnInit {
     );
     this.estadoVinculo.set((row as any).estadoVinculo ?? null);
     this.habilitaLbs.set(Boolean((row as any).habilitaLbs));
+    this.plazoMaximoEdicion.set((row as any).plazoMaximo ?? null);
     this.cargarHistorial(row.id);
     this.cargarElegibilidad(row.id);
     this.recalcularIncrementos();
