@@ -1,0 +1,296 @@
+<section class="perfil-page">
+  <header class="perfil-header">
+    <div>
+      <p class="perfil-eyebrow">Portal del Empleado</p>
+      <h1>Mi perfil</h1>
+      <p class="perfil-subtitle">
+        Consulta tu información personal y actualiza tus datos de contacto.
+      </p>
+    </div>
+
+    @if (perfil() && !modoEdicion()) {
+      <button mat-flat-button color="primary" type="button" (click)="activarEdicion()">
+        <mat-icon>edit</mat-icon>
+        Editar perfil
+      </button>
+    }
+  </header>
+
+  @if (cargando()) {
+    <div class="estado-carga">
+      <mat-spinner diameter="42"></mat-spinner>
+      <p>Cargando información del perfil...</p>
+    </div>
+  } @else if (error()) {
+    <mat-card class="mensaje-error">
+      <mat-card-content>
+        <mat-icon>error_outline</mat-icon>
+
+        <div>
+          <strong>No se pudo cargar el perfil</strong>
+          <p>{{ error() }}</p>
+        </div>
+
+        <button mat-stroked-button type="button" (click)="cargarPerfil()">Reintentar</button>
+      </mat-card-content>
+    </mat-card>
+  } @else if (perfil(); as persona) {
+    <div class="perfil-grid">
+      <!-- Resumen del empleado -->
+      <mat-card class="perfil-resumen-card">
+        <mat-card-content>
+          <div class="foto-contenedor">
+            @if (fotoUrl()) {
+              <img
+                class="foto-perfil"
+                [src]="fotoUrl()"
+                [alt]="'Fotografía de ' + persona.nombreCompleto"
+              />
+            } @else {
+              <div class="foto-placeholder">
+                <mat-icon>person</mat-icon>
+              </div>
+            }
+
+            @if (subiendoFoto()) {
+              <div class="foto-cargando">
+                <mat-spinner diameter="34"></mat-spinner>
+              </div>
+            }
+          </div>
+
+          <input
+            #inputFoto
+            type="file"
+            accept=".jpg,.jpeg,.png,image/jpeg,image/png"
+            class="input-foto-oculto"
+            (change)="seleccionarFoto($event)"
+          />
+
+          <button
+            mat-stroked-button
+            type="button"
+            class="boton-cambiar-foto"
+            [disabled]="subiendoFoto()"
+            (click)="inputFoto.click()"
+          >
+            <mat-icon>photo_camera</mat-icon>
+
+            @if (subiendoFoto()) {
+              Subiendo foto...
+            } @else {
+              Cambiar foto
+            }
+          </button>
+
+          <p class="foto-restricciones">Formatos permitidos: JPG o PNG. Tamaño máximo: 2 MB.</p>
+
+          @if (errorFoto()) {
+            <p class="foto-error">
+              <mat-icon>error_outline</mat-icon>
+              {{ errorFoto() }}
+            </p>
+          }
+
+          <h2>{{ persona.nombreCompleto }}</h2>
+
+          <p class="codigo-empleado">
+            {{ persona.codigoInterno || 'Sin código interno' }}
+          </p>
+
+          <div class="resumen-lista">
+            <div class="resumen-item">
+              <span>DNI</span>
+              <strong>{{ persona.dni || 'No registrado' }}</strong>
+            </div>
+
+            <div class="resumen-item">
+              <span>Estado</span>
+              <strong>{{ persona.estado || 'No registrado' }}</strong>
+            </div>
+
+            <div class="resumen-item">
+              <span>Tipo de personal</span>
+              <strong>
+                {{ persona.tipoPersonal || 'No registrado' }}
+              </strong>
+            </div>
+
+            <div class="resumen-item">
+              <span>Régimen laboral</span>
+              <strong>
+                {{ persona.regimenLaboral || 'No registrado' }}
+              </strong>
+            </div>
+          </div>
+
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Datos del perfil -->
+      <mat-card class="perfil-form-card">
+        <mat-card-header>
+          <mat-card-title>Información del empleado</mat-card-title>
+          <mat-card-subtitle>
+            Los datos laborales y de identificación son de solo lectura.
+          </mat-card-subtitle>
+        </mat-card-header>
+
+        <mat-card-content>
+          <section class="seccion-formulario">
+            <h3>Datos personales</h3>
+
+            <div class="campos-grid">
+              <mat-form-field appearance="outline">
+                <mat-label>Nombres y apellidos</mat-label>
+                <input matInput [value]="persona.nombreCompleto" readonly />
+                <mat-icon matSuffix>badge</mat-icon>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>DNI</mat-label>
+                <input matInput [value]="persona.dni || ''" readonly />
+                <mat-icon matSuffix>credit_card</mat-icon>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Fecha de nacimiento</mat-label>
+                <input
+                  matInput
+                  [value]="
+                    persona.fechaNacimiento ? (persona.fechaNacimiento | date: 'dd/MM/yyyy') : ''
+                  "
+                  readonly
+                />
+                <mat-icon matSuffix>calendar_month</mat-icon>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Correo institucional</mat-label>
+                <input matInput [value]="persona.correoInstitucional || ''" readonly />
+                <mat-icon matSuffix>business_center</mat-icon>
+              </mat-form-field>
+            </div>
+          </section>
+
+          <form [formGroup]="formulario" (ngSubmit)="guardarCambios()">
+            <section class="seccion-formulario">
+              <h3>Datos de contacto</h3>
+
+              <div class="campos-grid">
+                <mat-form-field appearance="outline">
+                  <mat-label>Teléfono o celular</mat-label>
+                  <input
+                    matInput
+                    formControlName="telefono"
+                    maxlength="15"
+                    inputmode="numeric"
+                    autocomplete="tel"
+                  />
+                  <mat-icon matSuffix>phone</mat-icon>
+
+                  @if (formulario.controls.telefono.hasError('pattern')) {
+                    <mat-error> Ingresa entre 7 y 15 números. </mat-error>
+                  }
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Correo personal</mat-label>
+                  <input
+                    matInput
+                    type="email"
+                    formControlName="correoPersonal"
+                    maxlength="150"
+                    autocomplete="email"
+                  />
+                  <mat-icon matSuffix>mail</mat-icon>
+
+                  @if (formulario.controls.correoPersonal.hasError('email')) {
+                    <mat-error> Ingresa un correo válido. </mat-error>
+                  }
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="campo-completo">
+                  <mat-label>Dirección</mat-label>
+                  <textarea
+                    matInput
+                    formControlName="direccion"
+                    rows="3"
+                    maxlength="300"
+                    autocomplete="street-address"
+                  ></textarea>
+                  <mat-icon matSuffix>home</mat-icon>
+                  <mat-hint align="end">
+                    {{ formulario.controls.direccion.value.length }}/300
+                  </mat-hint>
+                </mat-form-field>
+              </div>
+            </section>
+
+            <section class="seccion-formulario">
+              <h3>Contacto de emergencia</h3>
+
+              <div class="campos-grid">
+                <mat-form-field appearance="outline">
+                  <mat-label>Nombre completo</mat-label>
+                  <input matInput formControlName="contactoEmergenciaNombre" maxlength="150" />
+                  <mat-icon matSuffix>person</mat-icon>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Parentesco</mat-label>
+                  <input matInput formControlName="contactoEmergenciaParentesco" maxlength="50" />
+                  <mat-icon matSuffix>family_restroom</mat-icon>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Teléfono de emergencia</mat-label>
+                  <input
+                    matInput
+                    formControlName="contactoEmergenciaTelefono"
+                    maxlength="15"
+                    inputmode="numeric"
+                    autocomplete="tel"
+                  />
+                  <mat-icon matSuffix>phone_in_talk</mat-icon>
+
+                  @if (formulario.controls.contactoEmergenciaTelefono.hasError('pattern')) {
+                    <mat-error> Ingresa entre 7 y 15 números. </mat-error>
+                  }
+                </mat-form-field>
+              </div>
+            </section>
+
+            @if (modoEdicion()) {
+              <div class="acciones-formulario">
+                <button
+                  mat-stroked-button
+                  type="button"
+                  [disabled]="guardando()"
+                  (click)="cancelarEdicion()"
+                >
+                  Cancelar
+                </button>
+
+                <button
+                  mat-flat-button
+                  color="primary"
+                  type="submit"
+                  [disabled]="formulario.invalid || guardando()"
+                >
+                  @if (guardando()) {
+                    <mat-spinner diameter="20"></mat-spinner>
+                    Guardando...
+                  } @else {
+                    <mat-icon>save</mat-icon>
+                    Guardar cambios
+                  }
+                </button>
+              </div>
+            }
+          </form>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  }
+</section>

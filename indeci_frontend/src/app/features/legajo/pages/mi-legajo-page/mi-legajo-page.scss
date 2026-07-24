@@ -1,0 +1,277 @@
+.mi-legajo-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 24px;
+}
+
+.top-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.solo-lectura {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 20px;
+  background: #eef4fb;
+  color: #24558a;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.loading {
+  min-height: 220px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.error {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border-radius: 8px;
+  background: #fdecec;
+  color: #a61b1b;
+}
+
+.datos-card,
+.acordeon-card {
+  border-radius: 12px;
+}
+
+.datos-card {
+  padding: 24px;
+}
+
+.datos-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 220px;
+  gap: 28px;
+  align-items: start;
+}
+
+.datos-info {
+  min-width: 0;
+}
+
+.titulo-legajo {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 24px;
+
+  h1 {
+    margin: 0;
+    font-size: 26px;
+    font-weight: 700;
+  }
+
+  p {
+    margin: 6px 0 0;
+    color: #666;
+  }
+}
+
+.titulo-icono {
+  width: 44px;
+  height: 44px;
+  font-size: 44px;
+  color: #24558a;
+}
+
+.datos-section {
+  margin-top: 24px;
+
+  h3 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #e2e2e2;
+    font-size: 17px;
+    font-weight: 600;
+  }
+}
+
+.datos-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+
+  > div {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    min-width: 0;
+    padding: 12px;
+    border: 1px solid #e5e5e5;
+    border-radius: 8px;
+    background: #fafafa;
+  }
+
+  span {
+    color: #6b6b6b;
+    font-size: 13px;
+  }
+
+  strong {
+    color: #222;
+    font-size: 14px;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+  }
+}
+
+.foto-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 18px;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  background: #fafafa;
+  text-align: center;
+
+  span {
+    color: #666;
+    font-size: 13px;
+  }
+}
+
+.foto-placeholder {
+  width: 150px;
+  height: 180px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 1px solid #d7d7d7;
+  border-radius: 8px;
+  background: #eeeeee;
+
+  mat-icon {
+    width: 82px;
+    height: 82px;
+    font-size: 82px;
+    color: #9b9b9b;
+  }
+}
+
+.acordeon-card {
+  padding: 12px;
+}
+
+.table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  padding-top: 12px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 720px;
+}
+
+th,
+td {
+  padding: 12px 14px;
+  border-bottom: 1px solid #e5e5e5;
+  text-align: left;
+  vertical-align: middle;
+}
+
+th {
+  background: #f5f6f8;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+td {
+  font-size: 14px;
+}
+
+tbody tr:hover {
+  background: #fafafa;
+}
+
+.empty {
+  padding: 24px;
+  color: #777;
+  text-align: center;
+}
+
+mat-expansion-panel {
+  margin-bottom: 10px;
+}
+
+mat-panel-title {
+  font-weight: 600;
+}
+
+mat-panel-description {
+  justify-content: flex-end;
+}
+
+@media (max-width: 1100px) {
+  .datos-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 800px) {
+  .mi-legajo-page {
+    padding: 16px;
+  }
+
+  .datos-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .foto-panel {
+    order: -1;
+  }
+
+  .datos-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .titulo-legajo {
+    h1 {
+      font-size: 22px;
+    }
+  }
+}
+
+@media (max-width: 520px) {
+  .top-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .solo-lectura {
+    justify-content: center;
+  }
+
+  .datos-card {
+    padding: 16px;
+  }
+
+  .titulo-icono {
+    display: none;
+  }
+}

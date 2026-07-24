@@ -53,8 +53,25 @@ export interface PersonaEmpleado {
   readonly gradoAcademico?: string | null;
   /** Código del régimen laboral vigente (CAS, 728, 276, SERVIR). FASE1. */
   readonly regimenLaboral?: string | null;
-}
 
+  readonly contactoEmergenciaNombre?: string | null;
+  readonly contactoEmergenciaParentesco?: string | null;
+  readonly contactoEmergenciaTelefono?: string | null;
+
+  readonly correoInstitucional?: string | null;
+  readonly fotoPerfil?: string | null;
+
+  readonly tipoPersonalId?: number | null;
+  readonly tipoPersonal?: string | null;
+}
+export interface MiPerfilUpdateInput {
+  telefono: string | null;
+  correoPersonal: string | null;
+  direccion: string | null;
+  contactoEmergenciaNombre: string | null;
+  contactoEmergenciaParentesco: string | null;
+  contactoEmergenciaTelefono: string | null;
+}
 /** Body POST/PUT alineado a `PersonaEmpleadoDto` (camelCase). */
 export interface PersonaEmpleadoInput {
   nombreCompleto: string;

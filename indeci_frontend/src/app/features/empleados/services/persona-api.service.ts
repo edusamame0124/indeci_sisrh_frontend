@@ -3,7 +3,13 @@ import { inject, Injectable } from '@angular/core';
 import { map, type Observable } from 'rxjs';
 import type { ApiResponse } from '../../../core/models/api-response.model';
 import { extractApiData } from '../../../core/http/map-api-response';
-import type { PersonaEmpleado, PersonaEmpleadoInput, PersonaPage, PersonaResumen } from '../models/persona-empleado.model';
+import type {
+  MiPerfilUpdateInput,
+  PersonaEmpleado,
+  PersonaEmpleadoInput,
+  PersonaPage,
+  PersonaResumen,
+} from '../models/persona-empleado.model';
 
 @Injectable({ providedIn: 'root' })
 export class PersonaApiService {
@@ -18,9 +24,7 @@ export class PersonaApiService {
 
   /** Listado paginado con búsqueda server-side — usado por la pantalla principal. */
   listarPaginado(page: number, size: number, q: string): Observable<PersonaPage> {
-    let params = new HttpParams()
-      .set('page', String(page))
-      .set('size', String(size));
+    let params = new HttpParams().set('page', String(page)).set('size', String(size));
     if (q.trim()) params = params.set('q', q.trim());
     return this.http
       .get<ApiResponse<PersonaPage>>('/api/rrhh/persona/page', { params })
@@ -34,9 +38,7 @@ export class PersonaApiService {
   }
 
   guardar(body: PersonaEmpleadoInput): Observable<null> {
-    return this.http
-      .post<ApiResponse<null>>('/api/rrhh/persona', body)
-      .pipe(map(extractApiData));
+    return this.http.post<ApiResponse<null>>('/api/rrhh/persona', body).pipe(map(extractApiData));
   }
 
   actualizar(id: number, body: PersonaEmpleadoInput): Observable<null> {
@@ -46,8 +48,34 @@ export class PersonaApiService {
   }
 
   eliminar(id: number): Observable<null> {
+    return this.http.delete<ApiResponse<null>>(`/api/rrhh/persona/${id}`).pipe(map(extractApiData));
+  }
+  obtenerMiPerfil(): Observable<PersonaEmpleado> {
     return this.http
-      .delete<ApiResponse<null>>(`/api/rrhh/persona/${id}`)
+      .get<ApiResponse<PersonaEmpleado>>('/api/rrhh/persona/me')
       .pipe(map(extractApiData));
   }
+
+  actualizarMiPerfil(body: MiPerfilUpdateInput): Observable<PersonaEmpleado> {
+    return this.http
+      .put<ApiResponse<PersonaEmpleado>>('/api/rrhh/persona/me', body)
+      .pipe(map(extractApiData));
+  }
+  obtenerFotoMiPerfil(): Observable<Blob> {
+  return this.http.get('/api/rrhh/persona/me/foto', {
+    responseType: 'blob',
+  });
+}
+
+actualizarFotoMiPerfil(file: File): Observable<null> {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  return this.http
+    .post<ApiResponse<null>>(
+      '/api/rrhh/persona/me/foto',
+      formData,
+    )
+    .pipe(map(extractApiData));
+}
 }

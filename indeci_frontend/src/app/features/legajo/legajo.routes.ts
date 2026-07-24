@@ -3,6 +3,15 @@ import { empleadosAccessGuard } from '../../core/guards/empleados-access.guard';
 
 export const LEGAJO_ROUTES: Routes = [
   {
+    path: 'mi-legajo',
+    canActivate: [empleadosAccessGuard],
+    loadComponent: () =>
+      import('./pages/mi-legajo-page/mi-legajo-page').then(
+        (m) => m.MiLegajoPage,
+      ),
+    title: 'Mi legajo — SISRH-INDECI',
+  },
+  {
     path: '',
     canActivate: [empleadosAccessGuard],
     loadComponent: () =>

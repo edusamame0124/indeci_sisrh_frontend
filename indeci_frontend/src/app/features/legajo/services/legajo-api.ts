@@ -36,9 +36,15 @@ export class LegajoApiService {
   private readonly baseUrl = `${environment.apiUrl}/rrhh`;
 
   private readonly apiUrl = environment.apiUrl;
+
   obtenerResumen(personaId: number): Observable<LegajoResumen> {
     return this.http
       .get<ApiResponse<LegajoResumen>>(`${this.baseUrl}/legajo/resumen/${personaId}`)
+      .pipe(map((resp) => this.unwrap(resp)));
+  }
+  obtenerMiLegajo(): Observable<LegajoResumen> {
+    return this.http
+      .get<ApiResponse<LegajoResumen>>(`${this.baseUrl}/legajo/resumen/me`)
       .pipe(map((resp) => this.unwrap(resp)));
   }
 

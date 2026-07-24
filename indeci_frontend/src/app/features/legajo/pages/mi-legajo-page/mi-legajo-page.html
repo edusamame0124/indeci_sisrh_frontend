@@ -1,0 +1,742 @@
+<div class="mi-legajo-page">
+  <div class="top-actions">
+    <button mat-stroked-button type="button" (click)="volver()">
+      <mat-icon>arrow_back</mat-icon>
+      Volver
+    </button>
+
+    <div class="solo-lectura">
+      <mat-icon>visibility</mat-icon>
+      <span>Vista de solo lectura</span>
+    </div>
+  </div>
+
+  @if (cargando()) {
+    <div class="loading">
+      <mat-spinner diameter="42"></mat-spinner>
+      <span>Cargando su legajo...</span>
+    </div>
+  }
+
+  @if (error()) {
+    <div class="error">
+      <mat-icon>error_outline</mat-icon>
+      <span>{{ error() }}</span>
+    </div>
+  }
+
+  @if (legajo(); as datos) {
+    <mat-card class="datos-card">
+      <div class="datos-layout">
+        <div class="datos-info">
+          <div class="titulo-legajo">
+            <div>
+              <h1>
+                {{ datos.persona?.nombres || '' }}
+                {{ datos.persona?.['apellidoPaterno'] || '' }}
+                {{ datos.persona?.['apellidoMaterno'] || '' }}
+              </h1>
+
+              <p>Información registrada en su legajo personal.</p>
+            </div>
+
+            <mat-icon class="titulo-icono"> badge </mat-icon>
+          </div>
+
+          <div class="datos-section">
+            <h3>
+              <mat-icon>person</mat-icon>
+              Datos personales
+            </h3>
+
+            <div class="datos-grid">
+              <div>
+                <span>DNI</span>
+                <strong>{{ datos.persona?.dni || '-' }}</strong>
+              </div>
+
+              <div>
+                <span>Tipo de documento</span>
+                <strong>
+                  {{ datos.persona?.tipoDocumento || '-' }}
+                </strong>
+              </div>
+
+              <div>
+                <span>Fecha de nacimiento</span>
+                <strong>
+                  {{
+                    datos.persona?.fechaNacimiento
+                      ? (datos.persona?.fechaNacimiento | slice: 0 : 10)
+                      : '-'
+                  }}
+                </strong>
+              </div>
+
+              <div>
+                <span>Sexo</span>
+                <strong>{{ datos.persona?.sexo || '-' }}</strong>
+              </div>
+
+              <div>
+                <span>Estado civil</span>
+                <strong>
+                  {{ datos.persona?.estadoCivil || '-' }}
+                </strong>
+              </div>
+
+              <div>
+                <span>Nacionalidad</span>
+                <strong>
+                  {{ datos.persona?.nacionalidad || '-' }}
+                </strong>
+              </div>
+
+              <div>
+                <span>RUC</span>
+                <strong>{{ datos.persona?.ruc || '-' }}</strong>
+              </div>
+
+              <div>
+                <span>Correo personal</span>
+                <strong>{{ datos.persona?.email || '-' }}</strong>
+              </div>
+
+              <div>
+                <span>Correo institucional</span>
+                <strong>
+                  {{ datos.persona?.correoInstitucional || '-' }}
+                </strong>
+              </div>
+
+              <div>
+                <span>Teléfono</span>
+                <strong>{{ datos.persona?.telefono || '-' }}</strong>
+              </div>
+
+              <div>
+                <span>Teléfono fijo</span>
+                <strong>
+                  {{ datos.persona?.telefonoFijo || '-' }}
+                </strong>
+              </div>
+
+              <div>
+                <span>Dirección</span>
+                <strong>{{ datos.persona?.direccion || '-' }}</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="datos-section">
+            <h3>
+              <mat-icon>work</mat-icon>
+              Datos laborales
+            </h3>
+
+            <div class="datos-grid">
+              <div>
+                <span>Estado del trabajador</span>
+                <strong>{{ datos.empleado?.estado || '-' }}</strong>
+              </div>
+
+              <div>
+                <span>Código interno</span>
+                <strong>
+                  {{ datos.empleado?.codigoInterno || '-' }}
+                </strong>
+              </div>
+
+              <div>
+                <span>Código SISPER</span>
+                <strong>
+                  {{ datos.empleado?.codigoSisper || '-' }}
+                </strong>
+              </div>
+
+              <div>
+                <span>Tipo de personal</span>
+                <strong>
+                  {{ datos.empleado?.tipoPersonal || '-' }}
+                </strong>
+              </div>
+
+              <div>
+                <span>Régimen laboral</span>
+                <strong>
+                  {{ datos.empleado?.regimenLaboral || '-' }}
+                </strong>
+              </div>
+
+              <div>
+                <span>Profesión</span>
+                <strong>
+                  {{ datos.empleado?.profesion || '-' }}
+                </strong>
+              </div>
+
+              <div>
+                <span>Grado académico</span>
+                <strong>
+                  {{ datos.empleado?.gradoAcademico || '-' }}
+                </strong>
+              </div>
+
+              <div>
+                <span>Registro AIRHSP</span>
+                <strong>
+                  {{ datos.empleado?.registroAirhsp || '-' }}
+                </strong>
+              </div>
+
+              <div>
+                <span>Código CONADIS</span>
+                <strong>
+                  {{ datos.empleado?.conadisCodigo || '-' }}
+                </strong>
+              </div>
+
+              <div>
+                <span>Tiene EPS</span>
+                <strong>
+                  {{
+                    datos.empleado?.hasEps === 1 ? 'Sí' : datos.empleado?.hasEps === 0 ? 'No' : '-'
+                  }}
+                </strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="datos-section">
+            <h3>
+              <mat-icon>contact_emergency</mat-icon>
+              Contacto de emergencia
+            </h3>
+
+            <div class="datos-grid">
+              <div>
+                <span>Nombre</span>
+                <strong>
+                  {{ datos.persona?.contactoEmergenciaNombre || '-' }}
+                </strong>
+              </div>
+
+              <div>
+                <span>Parentesco</span>
+                <strong>
+                  {{ datos.persona?.contactoEmergenciaParentesco || '-' }}
+                </strong>
+              </div>
+
+              <div>
+                <span>Teléfono</span>
+                <strong>
+                  {{ datos.persona?.contactoEmergenciaTelefono || '-' }}
+                </strong>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="foto-panel">
+          <div class="foto-placeholder">
+            <mat-icon>person</mat-icon>
+          </div>
+
+          <span>Fotografía del trabajador</span>
+        </div>
+      </div>
+    </mat-card>
+
+    <mat-card class="acordeon-card">
+      <mat-accordion multi>
+        <!-- FORMACIÓN ACADÉMICA -->
+        <mat-expansion-panel>
+          <mat-expansion-panel-header>
+            <mat-panel-title>Formación académica</mat-panel-title>
+            <mat-panel-description>
+              {{ datos.formacionAcademica?.length || 0 }} registro(s)
+            </mat-panel-description>
+          </mat-expansion-panel-header>
+
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Institución</th>
+                  <th>Carrera</th>
+                  <th>Inicio</th>
+                  <th>Fin</th>
+                  <th>Nro. título</th>
+                  <th>Sustento</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                @for (item of datos.formacionAcademica; track item.id) {
+                  <tr>
+                    <td>{{ item.institucion || '-' }}</td>
+                    <td>{{ item.carrera || '-' }}</td>
+                    <td>{{ item.fechaInicio || '-' }}</td>
+                    <td>{{ item.fechaFin || '-' }}</td>
+                    <td>{{ item.nroTitulo || '-' }}</td>
+                    <td>
+                      @if (obtenerDocumentoId(item); as documentoId) {
+                        <button
+                          mat-icon-button
+                          type="button"
+                          matTooltip="Ver sustento"
+                          (click)="descargarDocumento(documentoId)"
+                        >
+                          <mat-icon>visibility</mat-icon>
+                        </button>
+                      } @else {
+                        -
+                      }
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="6" class="empty">No hay formación académica registrada.</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </mat-expansion-panel>
+
+        <!-- CAPACITACIONES -->
+        <mat-expansion-panel>
+          <mat-expansion-panel-header>
+            <mat-panel-title>Capacitaciones</mat-panel-title>
+            <mat-panel-description>
+              {{ datos.capacitaciones?.length || 0 }} registro(s)
+            </mat-panel-description>
+          </mat-expansion-panel-header>
+
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Curso</th>
+                  <th>Institución</th>
+                  <th>Horas</th>
+                  <th>Inicio</th>
+                  <th>Fin</th>
+                  <th>Certificado</th>
+                  <th>Sustento</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                @for (item of datos.capacitaciones; track item.id) {
+                  <tr>
+                    <td>{{ item.nombreCurso || '-' }}</td>
+                    <td>{{ item.institucion || '-' }}</td>
+                    <td>{{ item.horas ?? '-' }}</td>
+                    <td>{{ item.fechaInicio || '-' }}</td>
+                    <td>{{ item.fechaFin || '-' }}</td>
+                    <td>
+                      {{ item.certificado === 1 ? 'Sí' : 'No' }}
+                    </td>
+                    <td>
+                      @if (obtenerDocumentoId(item); as documentoId) {
+                        <button
+                          mat-icon-button
+                          type="button"
+                          matTooltip="Ver sustento"
+                          (click)="descargarDocumento(documentoId)"
+                        >
+                          <mat-icon>visibility</mat-icon>
+                        </button>
+                      } @else {
+                        -
+                      }
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="7" class="empty">No hay capacitaciones registradas.</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </mat-expansion-panel>
+
+        <!-- IDIOMAS -->
+        <mat-expansion-panel>
+          <mat-expansion-panel-header>
+            <mat-panel-title>Idiomas</mat-panel-title>
+            <mat-panel-description>
+              {{ datos.idiomas?.length || 0 }} registro(s)
+            </mat-panel-description>
+          </mat-expansion-panel-header>
+
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Idioma</th>
+                  <th>Lectura</th>
+                  <th>Escritura</th>
+                  <th>Habla</th>
+                  <th>Certificado</th>
+                  <th>Sustento</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                @for (item of datos.idiomas; track item.id) {
+                  <tr>
+                    <td>{{ item.idioma || '-' }}</td>
+                    <td>{{ item.nivelLectura || '-' }}</td>
+                    <td>{{ item.nivelEscritura || '-' }}</td>
+                    <td>{{ item.nivelHabla || '-' }}</td>
+                    <td>
+                      {{ item.certificado === 1 ? 'Sí' : 'No' }}
+                    </td>
+                    <td>
+                      @if (obtenerDocumentoId(item); as documentoId) {
+                        <button
+                          mat-icon-button
+                          type="button"
+                          matTooltip="Ver sustento"
+                          (click)="descargarDocumento(documentoId)"
+                        >
+                          <mat-icon>visibility</mat-icon>
+                        </button>
+                      } @else {
+                        -
+                      }
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="6" class="empty">No hay idiomas registrados.</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </mat-expansion-panel>
+
+        <!-- CONOCIMIENTOS INFORMÁTICOS -->
+        <mat-expansion-panel>
+          <mat-expansion-panel-header>
+            <mat-panel-title>Conocimientos informáticos</mat-panel-title>
+            <mat-panel-description>
+              {{ datos.conocimientosInformaticos?.length || 0 }} registro(s)
+            </mat-panel-description>
+          </mat-expansion-panel-header>
+
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Herramienta</th>
+                  <th>Nivel</th>
+                  <th>Certificado</th>
+                  <th>Sustento</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                @for (item of datos.conocimientosInformaticos; track item.id) {
+                  <tr>
+                    <td>{{ item.herramienta || '-' }}</td>
+                    <td>{{ item.nivel || '-' }}</td>
+                    <td>
+                      {{ item.certificado === 1 ? 'Sí' : 'No' }}
+                    </td>
+                    <td>
+                      @if (obtenerDocumentoId(item); as documentoId) {
+                        <button
+                          mat-icon-button
+                          type="button"
+                          matTooltip="Ver sustento"
+                          (click)="descargarDocumento(documentoId)"
+                        >
+                          <mat-icon>visibility</mat-icon>
+                        </button>
+                      } @else {
+                        -
+                      }
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="4" class="empty">
+                      No hay conocimientos informáticos registrados.
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </mat-expansion-panel>
+        <!-- FAMILIARES -->
+        <mat-expansion-panel>
+          <mat-expansion-panel-header>
+            <mat-panel-title>Familiares</mat-panel-title>
+
+            <mat-panel-description>
+              {{ datos.familiares?.length || 0 }} registro(s)
+            </mat-panel-description>
+          </mat-expansion-panel-header>
+
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Nombre completo</th>
+                  <th>Parentesco</th>
+                  <th>Fecha de nacimiento</th>
+                  <th>Documento</th>
+                  <th>Teléfono</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                @for (item of datos.familiares; track item.id) {
+                  <tr>
+                    <td>{{ item.nombreCompleto || '-' }}</td>
+                    <td>{{ item.parentesco || '-' }}</td>
+                    <td>{{ item.fechaNacimiento || '-' }}</td>
+                    <td>{{ item.nroDocumento || '-' }}</td>
+                    <td>{{ item.telefono || '-' }}</td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="5" class="empty">No hay familiares registrados.</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </mat-expansion-panel>
+
+        <!-- EXPERIENCIA LABORAL EXTERNA -->
+        <mat-expansion-panel>
+          <mat-expansion-panel-header>
+            <mat-panel-title> Experiencia laboral externa </mat-panel-title>
+
+            <mat-panel-description>
+              {{ datos.experienciaLaboralExterna?.length || 0 }}
+              registro(s)
+            </mat-panel-description>
+          </mat-expansion-panel-header>
+
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Empresa</th>
+                  <th>Cargo</th>
+                  <th>Inicio</th>
+                  <th>Fin</th>
+                  <th>Funciones</th>
+                  <th>Sustento</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                @for (item of datos.experienciaLaboralExterna; track item.id) {
+                  <tr>
+                    <td>{{ item.empresa || '-' }}</td>
+                    <td>{{ item.cargo || '-' }}</td>
+                    <td>{{ item.fechaInicio || '-' }}</td>
+                    <td>{{ item.fechaFin || '-' }}</td>
+                    <td>{{ item.funciones || '-' }}</td>
+
+                    <td>
+                      @if (obtenerDocumentoId(item); as documentoId) {
+                        <button
+                          mat-icon-button
+                          type="button"
+                          matTooltip="Ver sustento"
+                          (click)="descargarDocumento(documentoId)"
+                        >
+                          <mat-icon>visibility</mat-icon>
+                        </button>
+                      } @else {
+                        -
+                      }
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="6" class="empty">No hay experiencia laboral registrada.</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </mat-expansion-panel>
+
+        <!-- RECONOCIMIENTOS -->
+        <mat-expansion-panel>
+          <mat-expansion-panel-header>
+            <mat-panel-title>Reconocimientos</mat-panel-title>
+
+            <mat-panel-description>
+              {{ datos.reconocimientos?.length || 0 }} registro(s)
+            </mat-panel-description>
+          </mat-expansion-panel-header>
+
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Tipo</th>
+                  <th>Descripción</th>
+                  <th>Fecha</th>
+                  <th>Sustento</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                @for (item of datos.reconocimientos; track item.id) {
+                  <tr>
+                    <td>{{ item.tipoReconocimiento || '-' }}</td>
+                    <td>{{ item.descripcion || '-' }}</td>
+                    <td>{{ item.fechaReconocimiento || '-' }}</td>
+
+                    <td>
+                      @if (obtenerDocumentoId(item); as documentoId) {
+                        <button
+                          mat-icon-button
+                          type="button"
+                          matTooltip="Ver sustento"
+                          (click)="descargarDocumento(documentoId)"
+                        >
+                          <mat-icon>visibility</mat-icon>
+                        </button>
+                      } @else {
+                        -
+                      }
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="4" class="empty">No hay reconocimientos registrados.</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </mat-expansion-panel>
+
+        <!-- MEDIDAS DISCIPLINARIAS -->
+        <mat-expansion-panel>
+          <mat-expansion-panel-header>
+            <mat-panel-title> Medidas disciplinarias </mat-panel-title>
+
+            <mat-panel-description>
+              {{ datos.medidasDisciplinarias?.length || 0 }}
+              registro(s)
+            </mat-panel-description>
+          </mat-expansion-panel-header>
+
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Tipo</th>
+                  <th>Descripción</th>
+                  <th>Inicio</th>
+                  <th>Fin</th>
+                  <th>Sustento</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                @for (item of datos.medidasDisciplinarias; track item.id) {
+                  <tr>
+                    <td>{{ item.tipoMedida || '-' }}</td>
+                    <td>{{ item.descripcion || '-' }}</td>
+                    <td>{{ item.fechaInicio || '-' }}</td>
+                    <td>{{ item.fechaFin || '-' }}</td>
+
+                    <td>
+                      @if (obtenerDocumentoId(item); as documentoId) {
+                        <button
+                          mat-icon-button
+                          type="button"
+                          matTooltip="Ver sustento"
+                          (click)="descargarDocumento(documentoId)"
+                        >
+                          <mat-icon>visibility</mat-icon>
+                        </button>
+                      } @else {
+                        -
+                      }
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="5" class="empty">No hay medidas disciplinarias registradas.</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </mat-expansion-panel>
+
+        <!-- DOCUMENTOS DEL LEGAJO -->
+        <mat-expansion-panel>
+          <mat-expansion-panel-header>
+            <mat-panel-title> Documentos del legajo </mat-panel-title>
+
+            <mat-panel-description>
+              {{ datos.documentos?.length || 0 }} registro(s)
+            </mat-panel-description>
+          </mat-expansion-panel-header>
+
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Documento</th>
+                  <th>Fecha</th>
+                  <th>Origen</th>
+                  <th>Observación</th>
+                  <th>Descarga</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                @for (item of datos.documentos; track item.id) {
+                  <tr>
+                    <td>
+                      {{ item.nombreDocumento || item.nombreArchivo || '-' }}
+                    </td>
+
+                    <td>{{ item.fechaDocumento || '-' }}</td>
+                    <td>{{ item.origen || '-' }}</td>
+                    <td>{{ item.observacion || '-' }}</td>
+
+                    <td>
+                      <button
+                        mat-icon-button
+                        type="button"
+                        matTooltip="Descargar documento"
+                        (click)="descargarDocumento(item.id)"
+                      >
+                        <mat-icon>download</mat-icon>
+                      </button>
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="5" class="empty">No hay documentos registrados.</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </mat-expansion-panel>
+      </mat-accordion>
+    </mat-card>
+  }
+</div>

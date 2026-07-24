@@ -1,0 +1,348 @@
+:host {
+  display: block;
+}
+
+.perfil-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 24px;
+}
+
+.perfil-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.perfil-header h1 {
+  margin: 4px 0 8px;
+  font-size: 30px;
+  font-weight: 700;
+  color: #17365d;
+}
+
+.perfil-eyebrow {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: #f58220;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.perfil-subtitle {
+  margin: 0;
+  color: #5f6b76;
+  line-height: 1.5;
+}
+
+.estado-carga {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 280px;
+  gap: 16px;
+  color: #5f6b76;
+}
+
+.mensaje-error {
+  border-left: 5px solid #c62828;
+}
+
+.mensaje-error mat-card-content {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.mensaje-error mat-icon {
+  color: #c62828;
+}
+
+.mensaje-error p {
+  margin: 4px 0 0;
+}
+
+.mensaje-error button {
+  margin-left: auto;
+}
+
+.perfil-grid {
+  display: grid;
+  grid-template-columns: minmax(250px, 320px) minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.perfil-resumen-card,
+.perfil-form-card {
+  border-radius: 16px;
+}
+
+.perfil-resumen-card {
+  position: sticky;
+  top: 20px;
+}
+
+.perfil-resumen-card mat-card-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 28px 24px;
+}
+
+.foto-contenedor {
+  width: 130px;
+  height: 130px;
+  margin-bottom: 18px;
+}
+
+.foto-perfil,
+.foto-placeholder {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+}
+
+.foto-perfil {
+  object-fit: cover;
+  border: 4px solid #eaf2f8;
+}
+
+.foto-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #eaf2f8;
+  color: #005b96;
+}
+
+.foto-placeholder mat-icon {
+  width: 64px;
+  height: 64px;
+  font-size: 64px;
+}
+
+.perfil-resumen-card h2 {
+  margin: 0;
+  text-align: center;
+  font-size: 21px;
+  color: #17365d;
+}
+
+.codigo-empleado {
+  margin: 6px 0 22px;
+  color: #6c757d;
+  font-size: 14px;
+}
+
+.resumen-lista {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.resumen-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 13px 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.resumen-item:last-child {
+  border-bottom: none;
+}
+
+.resumen-item span {
+  color: #6c757d;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.resumen-item strong {
+  color: #263238;
+  font-size: 14px;
+}
+
+.foto-ayuda {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 20px;
+  padding: 12px;
+  border-radius: 10px;
+  background: #fff4e8;
+  color: #744210;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.foto-ayuda mat-icon {
+  flex: 0 0 auto;
+  color: #f58220;
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+}
+
+.perfil-form-card mat-card-header {
+  padding: 24px 24px 0;
+}
+
+.perfil-form-card mat-card-content {
+  padding: 20px 24px 28px;
+}
+
+.seccion-formulario {
+  padding: 22px 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.seccion-formulario:last-of-type {
+  border-bottom: none;
+}
+
+.seccion-formulario h3 {
+  margin: 0 0 18px;
+  color: #005b96;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.campos-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px 18px;
+}
+
+.campo-completo {
+  grid-column: 1 / -1;
+}
+
+mat-form-field {
+  width: 100%;
+}
+
+.acciones-formulario {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.acciones-formulario button {
+  min-width: 135px;
+}
+
+.acciones-formulario mat-spinner {
+  display: inline-block;
+  margin-right: 8px;
+}
+.foto-contenedor {
+  position: relative;
+}
+
+.foto-cargando {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 75%);
+}
+
+.input-foto-oculto {
+  display: none;
+}
+
+.boton-cambiar-foto {
+  width: 100%;
+  margin-top: 4px;
+}
+
+.boton-cambiar-foto mat-icon {
+  margin-right: 6px;
+}
+
+.foto-restricciones {
+  margin: 8px 0 0;
+  text-align: center;
+  color: #6c757d;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.foto-error {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 10px 0 0;
+  color: #c62828;
+  font-size: 12px;
+}
+
+.foto-error mat-icon {
+  width: 18px;
+  height: 18px;
+  font-size: 18px;
+}
+@media (max-width: 1000px) {
+  .perfil-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .perfil-resumen-card {
+    position: static;
+  }
+
+  .perfil-resumen-card mat-card-content {
+    align-items: center;
+  }
+}
+
+@media (max-width: 700px) {
+  .perfil-page {
+    padding: 16px;
+  }
+
+  .perfil-header {
+    flex-direction: column;
+  }
+
+  .perfil-header button {
+    width: 100%;
+  }
+
+  .campos-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .campo-completo {
+    grid-column: auto;
+  }
+
+  .acciones-formulario {
+    flex-direction: column-reverse;
+  }
+
+  .acciones-formulario button {
+    width: 100%;
+  }
+
+  .mensaje-error mat-card-content {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .mensaje-error button {
+    width: 100%;
+    margin-left: 0;
+  }
+}

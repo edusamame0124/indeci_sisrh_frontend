@@ -13,7 +13,18 @@ import { PLANILLA_OPERATIVA_ROLES } from './sisrh-roles.config';
  */
 export const MAIN_NAV_ITEMS: readonly MainNavItem[] = [
   { label: 'Inicio', route: '/', icon: 'home' },
-
+  {
+    label: 'Mi perfil',
+    route: '/portal-empleado/mi-perfil',
+    icon: 'account_circle',
+    requiredAnyRole: [...EMPLEADOS_ACCESS_ROLES],
+  },
+  {
+  label: 'Mi legajo',
+  route: '/legajo/mi-legajo',
+  icon: 'folder_shared',
+  requiredAnyRole: [...EMPLEADOS_ACCESS_ROLES],
+},
   {
     label: 'Catálogos',
     route: '',
@@ -73,7 +84,6 @@ export const MAIN_NAV_ITEMS: readonly MainNavItem[] = [
             icon: 'account_balance_wallet',
           },
           { label: 'Tipo de comisión AFP', route: '/catalogos/tipo-comision-afp', icon: 'percent' },
-
         ],
       },
     ],
@@ -115,7 +125,12 @@ export const MAIN_NAV_ITEMS: readonly MainNavItem[] = [
         route: '/asistencia-empleado/mis-asistencias',
         icon: 'event_available',
       },
-      { label: 'Teletrabajo', route: '/teletrabajo', icon: 'home_work', requiredPermissions: ['PAP_RRHH'] },
+      {
+        label: 'Teletrabajo',
+        route: '/teletrabajo',
+        icon: 'home_work',
+        requiredPermissions: ['PAP_RRHH'],
+      },
     ],
   },
 
@@ -139,9 +154,19 @@ export const MAIN_NAV_ITEMS: readonly MainNavItem[] = [
     icon: 'calculate',
     requiredAnyRole: [...PLANILLA_OPERATIVA_ROLES],
     children: [
-      { label: 'Configuración Anual', route: '/planilla/configuracion-cas', icon: 'settings', sectionHeader: 'Configuración' },
+      {
+        label: 'Configuración Anual',
+        route: '/planilla/configuracion-cas',
+        icon: 'settings',
+        sectionHeader: 'Configuración',
+      },
       { label: 'Conceptos de Planilla', route: '/planilla/conceptos', icon: 'receipt_long' },
-      { label: 'Periodos', route: '/planilla/periodos', icon: 'event', sectionHeader: 'OPERACIÓN MENSUAL' },
+      {
+        label: 'Periodos',
+        route: '/planilla/periodos',
+        icon: 'event',
+        sectionHeader: 'OPERACIÓN MENSUAL',
+      },
       { label: 'Gestión de Asistencia', route: '/asistencia/carga', icon: 'event_available' },
       {
         label: 'Subsidios (Enfermedad/Maternidad)',
@@ -150,10 +175,24 @@ export const MAIN_NAV_ITEMS: readonly MainNavItem[] = [
       },
       { label: 'Suspensiones / Licencias', route: '/planilla/suspensiones', icon: 'event_busy' },
 
-      { label: 'Centro de Validaciones', route: '/planilla/validaciones', icon: 'rule', sectionHeader: 'PROCESAR PLANILLA' },
+      {
+        label: 'Centro de Validaciones',
+        route: '/planilla/validaciones',
+        icon: 'rule',
+        sectionHeader: 'PROCESAR PLANILLA',
+      },
       { label: 'Generación masiva', route: '/planilla/generacion-masiva', icon: 'group_work' },
-      { label: 'Generación individual', route: '/planilla/generacion-individual', icon: 'person_add' },
-      { label: 'Movimientos', route: '/planilla/movimientos', icon: 'list', sectionHeader: 'Resultados' },
+      {
+        label: 'Generación individual',
+        route: '/planilla/generacion-individual',
+        icon: 'person_add',
+      },
+      {
+        label: 'Movimientos',
+        route: '/planilla/movimientos',
+        icon: 'list',
+        sectionHeader: 'Resultados',
+      },
       { label: 'MCPP', route: '/planilla/mcpp', icon: 'receipt' },
     ],
   },
