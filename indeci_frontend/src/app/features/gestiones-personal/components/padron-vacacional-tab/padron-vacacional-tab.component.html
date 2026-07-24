@@ -35,6 +35,18 @@
         <button mat-flat-button color="accent" type="button" (click)="fileInput.click()" [disabled]="cargando()">
           <mat-icon>upload_file</mat-icon> Importar Excel DATOS
         </button>
+
+        <!-- Provisionar para todos los importados: recalcula Corresponden + Saldo, conserva Gozados -->
+        <button
+          mat-stroked-button
+          color="primary"
+          type="button"
+          (click)="provisionarTodos()"
+          [disabled]="cargando()"
+          title="Recalcula 'Corresponden' y 'Saldo' para todos los empleados importados; conserva los gozados del Excel"
+        >
+          <mat-icon>autorenew</mat-icon> Provisionar para todos
+        </button>
       </div>
     </section>
 
@@ -47,8 +59,13 @@
       {{ error() }}
     </div>
 
-    <div class="table-wrap" *ngIf="!cargando() && !error()">
-      <table>
+    <ng-container *ngIf="!cargando() && !error()">
+      <!-- Barra de scroll horizontal superior (espejo), sincronizada con la de abajo. -->
+      <div class="table-scroll-top" #topScroll (scroll)="syncScroll(topScroll, tableWrap)">
+        <div class="table-scroll-top__rail" [style.width.px]="railWidth()"></div>
+      </div>
+      <div class="table-wrap" #tableWrap (scroll)="syncScroll(tableWrap, topScroll)">
+      <table #tableEl>
         <thead>
           <tr>
             <th>DNI</th>
@@ -109,6 +126,13 @@
               <span [ngClass]="claseSemaforo(item.saldo)">
                 {{ item.saldo }}
               </span>
+              <div
+                *ngIf="esDeuda(item.saldo)"
+                class="tag-deuda"
+                title="Saldo negativo por adelanto de vacaciones (goce de un período aún no ganado). Se regulariza al vencer el período (Provisionar para todos)."
+              >
+                Adelanto / Deuda
+              </div>
             </td>
             <td>
               <span
@@ -173,7 +197,8 @@
           </tr>
         </tbody>
       </table>
-    </div>
+      </div>
+    </ng-container>
 
     <mat-paginator
       [length]="totalElements()"

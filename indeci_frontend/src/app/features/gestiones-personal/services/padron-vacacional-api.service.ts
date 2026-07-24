@@ -9,7 +9,9 @@ import {
   HistorialSaldoRow,
   PadronVacacionalPageDto,
   ProvisionarAutoPayload,
-  RecalculoManualResult
+  ProvisionMasivaResult,
+  RecalculoManualResult,
+  RecordVacacionalDetalle
 } from '../models/padron-vacacional.model';
 
 @Injectable({
@@ -69,6 +71,27 @@ export class PadronVacacionalApiService {
     return this.http.post<ApiResponse<RecalculoManualResult>>(
       `${this.baseUrl}/${empleadoId}/provisionar-auto`,
       payload
+    );
+  }
+
+  /**
+   * "Provisionar para todos": recalcula Corresponden y conserva Gozados para TODOS los empleados
+   * con baseline importado, en un solo clic. Sustento obligatorio.
+   */
+  provisionarTodos(payload: ProvisionarAutoPayload): Observable<ApiResponse<ProvisionMasivaResult>> {
+    return this.http.post<ApiResponse<ProvisionMasivaResult>>(
+      `${this.baseUrl}/provisionar-todos`,
+      payload
+    );
+  }
+
+  /**
+   * Detalle de récord vacacional (Opción A): acumulado de la carrera (reconcilia con Vinculación)
+   * + desglose POR PERÍODO (aniversario a aniversario) con sus incidencias y si cumple récord.
+   */
+  recordDetalle(empleadoId: number): Observable<ApiResponse<RecordVacacionalDetalle>> {
+    return this.http.get<ApiResponse<RecordVacacionalDetalle>>(
+      `${this.baseUrl}/${empleadoId}/record-detalle`
     );
   }
 

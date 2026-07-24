@@ -1,0 +1,121 @@
+.import-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 560px;
+  max-width: 100%;
+}
+
+.import-nota {
+  margin: 0;
+  font-size: 13px;
+  color: var(--sisrh-text-muted);
+  background: var(--sisrh-bg-subtle, #f5f7fa);
+  border-radius: 6px;
+  padding: 10px 12px;
+}
+
+.import-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.import-archivo-nombre {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: 13px;
+  color: var(--sisrh-text);
+}
+
+.import-progreso {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.import-fase {
+  margin: 0;
+  font-size: 13px;
+  color: var(--sisrh-text-muted);
+}
+
+.import-error {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  color: var(--sisrh-danger, #c0392b);
+  font-size: 13px;
+}
+
+.import-resumen {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.import-resumen__tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 4px;
+  border-radius: 8px;
+  background: var(--sisrh-bg-subtle, #f5f7fa);
+}
+
+.import-resumen__tile--ok {
+  background: var(--sisrh-success-bg, #e6f4ea);
+}
+
+.import-resumen__tile--error {
+  background: var(--sisrh-danger-bg, #fdecea);
+}
+
+.import-resumen__valor {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--sisrh-text);
+}
+
+.import-resumen__label {
+  font-size: 11px;
+  color: var(--sisrh-text-muted);
+  text-align: center;
+}
+
+.import-detalle-titulo {
+  margin: 4px 0 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--sisrh-text);
+}
+
+.import-tabla {
+  width: 100%;
+  max-height: 320px;
+  overflow-y: auto;
+  display: block;
+}
+
+.import-sin-rechazos {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  color: var(--sisrh-success, #1e7e34);
+  font-size: 13px;
+}
+
+@media (max-width: 640px) {
+  .import-content {
+    min-width: 0;
+  }
+
+  .import-resumen {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

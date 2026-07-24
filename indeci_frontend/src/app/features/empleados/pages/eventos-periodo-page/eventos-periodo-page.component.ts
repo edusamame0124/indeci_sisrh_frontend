@@ -44,6 +44,7 @@ import {
   EventoPeriodoFormDialogComponent,
   type EventoPeriodoDialogData,
 } from './evento-periodo-form-dialog.component';
+import { EventoHistoricoImportDialogComponent } from './evento-historico-import-dialog.component';
 
 @Component({
   selector: 'app-eventos-periodo-page',
@@ -204,6 +205,18 @@ export class EventosPeriodoPageComponent implements OnInit {
       tipos: this.tiposOperativos(),
       categoriasLegajo: this.categoriasLegajo(),
       evento: null,
+    });
+  }
+
+  /** V012_42 F2 — carga única del histórico RR.HH. (LSG/faltas/suspensiones). */
+  abrirImportHistorico(): void {
+    const ref = this.dialog.open(EventoHistoricoImportDialogComponent, {
+      width: '640px',
+      maxWidth: '95vw',
+      disableClose: true,
+    });
+    ref.afterClosed().subscribe((huboInserciones) => {
+      if (huboInserciones) this.cargarEventos();
     });
   }
 

@@ -56,6 +56,12 @@
   max-width: 640px;
 }
 
+.eventos-header__acciones {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 /* ============================ SELECTOR ============================ */
 
 .eventos-selector mat-card-content {

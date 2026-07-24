@@ -1,23 +1,34 @@
 <section class="eventos-page" aria-labelledby="eventos-titulo">
   <header class="eventos-header">
     <div>
-      <h1 id="eventos-titulo">Eventos del período</h1>
+      <h1 id="eventos-titulo">Eventos del periodo</h1>
       <p class="eventos-header__sub">
         Registra licencias, permisos, cese y demás incidencias del empleado.
-        Los días afectos se descuentan del cálculo de planilla cuando el motor v3 está activo.
+        Los días afectos se descuentan del cálculo de planilla.
         Los subsidios por enfermedad y maternidad se gestionan en
         <strong>Asistencia → Subsidios</strong>.
       </p>
     </div>
-    <button
-      type="button"
-      mat-flat-button
-      color="primary"
-      (click)="abrirFormCrear()"
-    >
-      <mat-icon>add</mat-icon>
-      Registrar evento
-    </button>
+    <div class="eventos-header__acciones">
+      <button
+        type="button"
+        mat-stroked-button
+        (click)="abrirImportHistorico()"
+        matTooltip="Carga única del histórico de LSG/faltas/suspensiones entregado por RR.HH. (Excel)"
+      >
+        <mat-icon>upload_file</mat-icon>
+        Importar Excel histórico
+      </button>
+      <button
+        type="button"
+        mat-flat-button
+        color="primary"
+        (click)="abrirFormCrear()"
+      >
+        <mat-icon>add</mat-icon>
+        Registrar evento
+      </button>
+    </div>
   </header>
 
   <mat-card class="eventos-selector">

@@ -1,0 +1,127 @@
+<h2 mat-dialog-title>Importar Excel histórico</h2>
+
+<mat-dialog-content class="import-content">
+  <p class="import-nota">
+    Carga única del histórico de licencias sin goce, inasistencias injustificadas y
+    suspensiones/sanciones PAD entregado por RR.HH. ("DEDUCCIONES DEL TIEMPO DE SERVICIOS",
+    hoja <strong>sistema</strong>). Se materializa en Eventos del período como
+    <strong>VALIDADO</strong>. Base normativa: SPEC_VACACIONES F9.1 / D.Leg. 1405.
+  </p>
+
+  @if (estado() === 'IDLE') {
+    <div class="import-selector">
+      <input
+        type="file"
+        id="archivo-historico"
+        accept=".xlsx"
+        (change)="onArchivoChange($event)"
+        aria-label="Seleccionar archivo Excel histórico"
+      />
+      @if (archivo(); as f) {
+        <p class="import-archivo-nombre">
+          <mat-icon aria-hidden="true">description</mat-icon>
+          {{ f.name }}
+        </p>
+      }
+    </div>
+  }
+
+  @if (procesando()) {
+    <div class="import-progreso" role="status" aria-live="polite">
+      <mat-progress-bar mode="determinate" [value]="progreso()" />
+      <p class="import-fase">{{ fase() }} — {{ progreso() }}%</p>
+    </div>
+  }
+
+  @if (estado() === 'ERROR' && errorMsg()) {
+    <p class="import-error" role="alert">
+      <mat-icon aria-hidden="true">error</mat-icon>
+      {{ errorMsg() }}
+    </p>
+  }
+
+  @if (estado() === 'COMPLETADO' && resultado(); as r) {
+    <div class="import-resumen">
+      <div class="import-resumen__tile import-resumen__tile--ok">
+        <span class="import-resumen__valor">{{ r.insertados }}</span>
+        <span class="import-resumen__label">Insertados</span>
+      </div>
+      <div class="import-resumen__tile">
+        <span class="import-resumen__valor">{{ r.duplicadosOmitidos }}</span>
+        <span class="import-resumen__label">Ya existían</span>
+      </div>
+      <div class="import-resumen__tile" [class.import-resumen__tile--error]="r.rechazados > 0">
+        <span class="import-resumen__valor">{{ r.rechazados }}</span>
+        <span class="import-resumen__label">Rechazados</span>
+      </div>
+      <div class="import-resumen__tile">
+        <span class="import-resumen__valor">{{ r.total }}</span>
+        <span class="import-resumen__label">Total filas</span>
+      </div>
+    </div>
+
+    @if (filasParaRevisar().length > 0) {
+      <h3 class="import-detalle-titulo">Filas que requieren revisión</h3>
+      <table mat-table [dataSource]="filasParaRevisar()" class="import-tabla">
+        <ng-container matColumnDef="numeroFila">
+          <th mat-header-cell *matHeaderCellDef>Fila</th>
+          <td mat-cell *matCellDef="let f">{{ f.numeroFila }}</td>
+        </ng-container>
+        <ng-container matColumnDef="dni">
+          <th mat-header-cell *matHeaderCellDef>DNI</th>
+          <td mat-cell *matCellDef="let f">{{ f.dni ?? '—' }}</td>
+        </ng-container>
+        <ng-container matColumnDef="nombre">
+          <th mat-header-cell *matHeaderCellDef>Servidor</th>
+          <td mat-cell *matCellDef="let f">{{ f.nombre ?? '—' }}</td>
+        </ng-container>
+        <ng-container matColumnDef="motivoExcel">
+          <th mat-header-cell *matHeaderCellDef>Motivo</th>
+          <td mat-cell *matCellDef="let f">{{ f.motivoExcel ?? '—' }}</td>
+        </ng-container>
+        <ng-container matColumnDef="estado">
+          <th mat-header-cell *matHeaderCellDef>Estado</th>
+          <td mat-cell *matCellDef="let f">
+            <mat-icon [attr.aria-label]="f.estado" [matTooltip]="f.estado">
+              {{ filaEstadoIcon(f) }}
+            </mat-icon>
+          </td>
+        </ng-container>
+        <ng-container matColumnDef="mensaje">
+          <th mat-header-cell *matHeaderCellDef>Detalle</th>
+          <td mat-cell *matCellDef="let f">{{ f.mensaje ?? '—' }}</td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="columnasFilas"></tr>
+        <tr mat-row *matRowDef="let row; columns: columnasFilas"></tr>
+      </table>
+    } @else {
+      <p class="import-sin-rechazos">
+        <mat-icon aria-hidden="true">check_circle</mat-icon>
+        Todas las filas se procesaron sin observaciones.
+      </p>
+    }
+  }
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  @if (estado() === 'IDLE' || estado() === 'ERROR') {
+    <button type="button" mat-button (click)="cerrar()">Cancelar</button>
+    <button
+      type="button"
+      mat-flat-button
+      color="primary"
+      [disabled]="!archivo()"
+      (click)="iniciarImport()"
+    >
+      <mat-icon>upload_file</mat-icon>
+      Importar
+    </button>
+  }
+  @if (procesando()) {
+    <button type="button" mat-button disabled>Procesando…</button>
+  }
+  @if (estado() === 'COMPLETADO') {
+    <button type="button" mat-flat-button color="primary" (click)="cerrar()">Cerrar</button>
+  }
+</mat-dialog-actions>

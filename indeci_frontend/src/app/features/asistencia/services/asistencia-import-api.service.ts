@@ -47,12 +47,16 @@ export class AsistenciaImportApiService {
     importacionId: number,
     estrategiaConflicto: EstrategiaConflicto,
     motivoRectificacion?: string,
+    diaInicio?: string | null,
+    diaFin?: string | null,
   ): Observable<{ jobId: string }> {
     return this.http
       .post<ApiResponse<{ jobId: string }>>(`${this.baseUrl}/${importacionId}/confirm/async`, {
         importacionId,
         estrategiaConflicto,
         motivoRectificacion: motivoRectificacion ?? null,
+        diaInicio: diaInicio ?? null,
+        diaFin: diaFin ?? null,
       })
       .pipe(map(extractApiData));
   }
@@ -68,12 +72,16 @@ export class AsistenciaImportApiService {
     importacionId: number,
     estrategiaConflicto: EstrategiaConflicto,
     motivoRectificacion?: string,
+    diaInicio?: string | null,
+    diaFin?: string | null,
   ): Observable<AsistenciaImportPreview> {
     return this.http
       .post<ApiResponse<AsistenciaImportPreview>>(`${this.baseUrl}/${importacionId}/confirm`, {
         importacionId,
         estrategiaConflicto,
         motivoRectificacion: motivoRectificacion ?? null,
+        diaInicio: diaInicio ?? null,
+        diaFin: diaFin ?? null,
       })
       .pipe(map(extractApiData));
   }

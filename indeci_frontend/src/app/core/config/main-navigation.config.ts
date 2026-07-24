@@ -175,24 +175,22 @@ export const MAIN_NAV_ITEMS: readonly MainNavItem[] = [
       },
       { label: 'Suspensiones / Licencias', route: '/planilla/suspensiones', icon: 'event_busy' },
 
+
       {
         label: 'Centro de Validaciones',
         route: '/planilla/validaciones',
         icon: 'rule',
         sectionHeader: 'PROCESAR PLANILLA',
       },
-      { label: 'Generación masiva', route: '/planilla/generacion-masiva', icon: 'group_work' },
-      {
-        label: 'Generación individual',
-        route: '/planilla/generacion-individual',
-        icon: 'person_add',
-      },
+      { label: 'Generación Planilla', route: '/planilla/generacion-masiva', icon: 'group_work' },
+    
       {
         label: 'Movimientos',
         route: '/planilla/movimientos',
         icon: 'list',
         sectionHeader: 'Resultados',
       },
+
       { label: 'MCPP', route: '/planilla/mcpp', icon: 'receipt' },
     ],
   },

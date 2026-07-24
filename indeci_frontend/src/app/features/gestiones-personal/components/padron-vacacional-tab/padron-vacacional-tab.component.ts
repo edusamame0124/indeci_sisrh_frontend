@@ -1,4 +1,14 @@
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  OnDestroy,
+  OnInit,
+  ViewChild,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -8,11 +18,12 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { PadronVacacionalApiService } from '../../services/padron-vacacional-api.service';
-import { PadronVacacionalRowDto, RecalculoManualResult } from '../../models/padron-vacacional.model';
+import { PadronVacacionalRowDto, ProvisionMasivaResult, RecalculoManualResult } from '../../models/padron-vacacional.model';
 import { VacacionDetalleDialogComponent } from '../vacacion-detalle-dialog/vacacion-detalle-dialog.component';
 import { GoceDirectoDialogComponent } from '../goce-directo-dialog/goce-directo-dialog.component';
 import { AcumulacionDecisionDialogComponent } from '../acumulacion-decision-dialog/acumulacion-decision-dialog.component';
 import { ProvisionarAutoDialogComponent } from '../provisionar-auto-dialog/provisionar-auto-dialog.component';
+import { ProvisionarTodosDialogComponent } from '../provisionar-todos-dialog/provisionar-todos-dialog.component';
 import { HistorialSaldoDialogComponent } from '../historial-saldo-dialog/historial-saldo-dialog.component';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { NotificacionService } from '../../../../core/services/notificacion.service';
@@ -34,7 +45,7 @@ import { NotificacionService } from '../../../../core/services/notificacion.serv
   templateUrl: './padron-vacacional-tab.component.html',
   styleUrl: './padron-vacacional-tab.component.css',
 })
-export class PadronVacacionalTabComponent implements OnInit {
+export class PadronVacacionalTabComponent implements OnInit, OnDestroy {
   private readonly apiService = inject(PadronVacacionalApiService);
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
@@ -50,8 +61,41 @@ export class PadronVacacionalTabComponent implements OnInit {
 
   filtroBusqueda = signal('');
 
+  /** Ancho real de la tabla; dimensiona el riel de la barra de scroll superior. */
+  railWidth = signal(0);
+  private resizeObs?: ResizeObserver;
+  private isSyncing = false;
+
+  /**
+   * La tabla vive dentro de un *ngIf (aparece al cargar datos). Al aparecer/cambiar de
+   * tamaño, sincronizamos el ancho del riel superior con el ancho real de la tabla.
+   */
+  @ViewChild('tableEl') set tableElRef(ref: ElementRef<HTMLElement> | undefined) {
+    this.resizeObs?.disconnect();
+    this.resizeObs = undefined;
+    const el = ref?.nativeElement;
+    if (el && typeof ResizeObserver !== 'undefined') {
+      this.resizeObs = new ResizeObserver(() => this.railWidth.set(el.scrollWidth));
+      this.resizeObs.observe(el);
+    }
+  }
+
+  /** Sincroniza el scroll horizontal entre la barra superior y la tabla (sin bucle de eventos). */
+  syncScroll(source: HTMLElement, target: HTMLElement): void {
+    if (this.isSyncing) {
+      return;
+    }
+    this.isSyncing = true;
+    target.scrollLeft = source.scrollLeft;
+    requestAnimationFrame(() => (this.isSyncing = false));
+  }
+
   ngOnInit(): void {
     this.cargarPadron();
+  }
+
+  ngOnDestroy(): void {
+    this.resizeObs?.disconnect();
   }
 
   cargarPadron(): void {
@@ -224,6 +268,46 @@ export class PadronVacacionalTabComponent implements OnInit {
         }
       });
     });
+  }
+
+  /**
+   * "Provisionar para todos": recalcula Corresponden + Saldo para todos los empleados importados,
+   * conservando los gozados. Evita el recálculo individual uno por uno.
+   */
+  provisionarTodos(): void {
+    const dialogRef = this.dialog.open(ProvisionarTodosDialogComponent, { width: '620px' });
+
+    dialogRef.afterClosed().subscribe((result) => {
+      if (!result) {
+        return;
+      }
+      this.cargando.set(true);
+      this.apiService.provisionarTodos(result).subscribe({
+        next: (resp) => {
+          this.cargando.set(false);
+          this.notificacion.exito(this.mensajeMasivo(resp.data), 'Provisión masiva');
+          this.cargarPadron();
+        },
+        error: (err) => {
+          this.cargando.set(false);
+          const msg = err.error?.message || 'Error al provisionar el saldo de los empleados importados';
+          this.snackBar.open(msg, 'Cerrar', { duration: 5000, panelClass: 'error-snackbar' });
+        }
+      });
+    });
+  }
+
+  private mensajeMasivo(r: ProvisionMasivaResult | undefined): string {
+    if (!r) {
+      return 'Provisión masiva completada';
+    }
+    const base = `${r.provisionados} provisionado(s), ${r.sinCambios} sin cambios de ${r.total} importado(s)`;
+    return r.errores.length > 0 ? `${base} · ${r.errores.length} con error` : base;
+  }
+
+  /** Saldo negativo = adelanto/deuda vacacional (goce de período aún no ganado). */
+  esDeuda(saldo: number): boolean {
+    return saldo < 0;
   }
 
   private mensajeRecalculo(resultado: RecalculoManualResult | undefined): string {

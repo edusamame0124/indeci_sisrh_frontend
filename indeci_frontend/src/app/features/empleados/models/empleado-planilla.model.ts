@@ -161,16 +161,25 @@ export interface TiempoServicioRow {
   readonly tieneTraslape: boolean;
 }
 
-/** SPEC_VACACIONES F9.1 — desglose de días no computables (LSG + faltas). */
+/** SPEC_VACACIONES F9.1 / V012_42 — desglose de días no computables (LSG + faltas + suspensiones). */
 export interface DiasNoComputablesRow {
   readonly lsg: number;
   readonly faltas: number;
+  readonly suspensiones: number;
   readonly total: number;
 }
 
-/** Espejo de `TiempoServicioDetalleDto` — antigüedad + días no computables + aniversario efectivo. */
+/**
+ * V012_42 F1 — espejo de `TiempoServicioDetalleDto`: antigüedad bruta (para CTS/LBS, no editable
+ * aquí) + días no computables + tiempo de servicio EFECTIVO (bruto − no computables, base 30/360)
+ * + aniversario efectivo.
+ */
 export interface TiempoServicioDetalleRow {
   readonly tiempoServicio: TiempoServicioRow | null;
   readonly diasNoComputables: DiasNoComputablesRow;
   readonly aniversarioEfectivo: string | null;
+  readonly aniosEfectivos: number;
+  readonly mesesEfectivos: number;
+  readonly diasEfectivos: number;
+  readonly totalDiasEfectivos: number;
 }

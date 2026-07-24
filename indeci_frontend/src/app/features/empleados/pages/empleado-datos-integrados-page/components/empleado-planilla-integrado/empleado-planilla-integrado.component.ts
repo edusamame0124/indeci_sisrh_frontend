@@ -45,7 +45,7 @@ import type { TipoContrato } from '../../../../../catalogos/models/tipo-contrato
 import type { CondicionLaboral } from '../../../../../catalogos/models/condicion-laboral.model';
 import type { TipoPersonaMef } from '../../../../../planilla/models/tipo-persona-mef.model';
 import type { ModalidadCas } from '../../../../../catalogos/models/modalidad-cas.model';
-import type { DiasNoComputablesRow, ElegibilidadVinculoRow, EmpleadoPlanillaRow, EmpleadoRemuneracionHistRow, TiempoServicioRow } from '../../../../models/empleado-planilla.model';
+import type { ElegibilidadVinculoRow, EmpleadoPlanillaRow, EmpleadoRemuneracionHistRow, TiempoServicioDetalleRow } from '../../../../models/empleado-planilla.model';
 import type { IncrementosDsResponse } from '../../../../models/incrementos-ds.model';
 import { RemuneracionCambioDialogComponent } from '../../../empleado-planilla-form-page/components/remuneracion-cambio-dialog/remuneracion-cambio-dialog.component';
 
@@ -363,10 +363,10 @@ const AIRHSP_PATTERN = /^[A-Z0-9]{6}$/;
               </mat-form-field>
             </div>
 
-            <!-- SPEC_VACACIONES F2 — tiempo de servicio acumulado (read-only, base D.Leg. 1405) -->
+            <!-- V012_42 F3 — tiempo de servicio EFECTIVO (bruto − LSG/faltas/suspensiones), base 30/360 D.Leg. 1405 -->
             <div class="grid">
               <mat-form-field appearance="outline" class="half tiempo-servicio">
-                <mat-label>Tiempo de servicio acumulado</mat-label>
+                <mat-label>Tiempo de servicio efectivo</mat-label>
                 <input
                   matInput
                   [value]="tiempoServicioLabel()"
@@ -377,7 +377,12 @@ const AIRHSP_PATTERN = /^[A-Z0-9]{6}$/;
                 @if (tiempoServicioLoading()) {
                   <mat-progress-spinner matSuffix mode="indeterminate" diameter="18" aria-hidden="true" />
                 } @else {
-                  <mat-icon matSuffix fontIcon="schedule" aria-hidden="true" />
+                  <mat-icon
+                    matSuffix
+                    fontIcon="schedule"
+                    aria-hidden="true"
+                    [matTooltip]="tiempoServicioTooltip()"
+                  />
                 }
                 <mat-hint>{{ tiempoServicioHint() }}</mat-hint>
               </mat-form-field>
@@ -399,19 +404,28 @@ const AIRHSP_PATTERN = /^[A-Z0-9]{6}$/;
               </mat-form-field>
             </div>
 
-            <!-- SPEC_VACACIONES F9.1 — días no computables (LSG/faltas), solo informativo. -->
-            @if (diasNoComputables(); as dnc) {
-              @if (dnc.total > 0) {
-                <p class="dias-no-computables">
-                  <mat-icon fontIcon="info" aria-hidden="true" />
-                  Días no computables — LSG: {{ dnc.lsg }} · Faltas: {{ dnc.faltas }}
+            <!-- V012_42 F3 — desglose de transparencia: bruto → descuentos → efectivo. -->
+            @if (tiempoServicioDesglose(); as ts) {
+              <div class="tiempo-servicio-desglose">
+                <p class="tiempo-servicio-desglose__linea">
+                  <span class="tiempo-servicio-desglose__label">Tiempo bruto:</span> {{ ts.bruto }}
                 </p>
-              }
+                @if (ts.dnc.total > 0) {
+                  <p class="tiempo-servicio-desglose__linea">
+                    <span class="tiempo-servicio-desglose__label">Descuentos:</span>
+                    −{{ ts.dnc.total }} {{ ts.dnc.total === 1 ? 'día' : 'días' }}
+                    (LSG: {{ ts.dnc.lsg }} · Faltas: {{ ts.dnc.faltas }} · Suspensiones: {{ ts.dnc.suspensiones }})
+                  </p>
+                }
+                <p class="tiempo-servicio-desglose__linea tiempo-servicio-desglose__linea--efectivo">
+                  <span class="tiempo-servicio-desglose__label">Tiempo efectivo:</span> {{ ts.efectivo }}
+                </p>
+                <p class="tiempo-servicio-desglose__nota">
+                  Cálculo base 30/360, D.Leg. 1405. El récord vacacional (mismo criterio de descuento)
+                  se controla en el Padrón Vacacional.
+                </p>
+              </div>
             }
-            <p class="dias-no-computables__nota">
-              Antigüedad para CTS/LBS. El récord vacacional (neto de LSG/faltas) se controla en el
-              Padrón Vacacional.
-            </p>
 
             <!-- F1 — estado derivado + cese del vínculo -->
             @if (estadoVinculo()) {
@@ -786,29 +800,39 @@ const AIRHSP_PATTERN = /^[A-Z0-9]{6}$/;
       .tiempo-servicio mat-icon[matSuffix] {
         color: var(--sisrh-info, #2563a6);
       }
-      /* SPEC_VACACIONES F9.1 — días no computables (LSG/faltas), informativo. */
-      .dias-no-computables {
+      /* V012_42 F3 — desglose de transparencia (bruto → descuentos → efectivo). Informativo,
+         no es una alerta: tono neutro institucional, no ámbar. */
+      .tiempo-servicio-desglose {
         display: flex;
-        align-items: center;
-        gap: 0.4rem;
-        margin: 0.25rem 0 0;
-        padding: 0.4rem 0.65rem;
-        background: #fef3c7;
-        border: 1px solid #fcd34d;
-        color: #92400e;
+        flex-direction: column;
+        gap: 0.2rem;
+        margin: 0.5rem 0 0;
+        padding: 0.65rem 0.85rem;
+        background: var(--sisrh-surface-muted, #f8fafc);
+        border: 1px solid var(--sisrh-border-soft, #e7ecf2);
         border-radius: 6px;
-        font-size: 0.82rem;
+      }
+      .tiempo-servicio-desglose__linea {
+        margin: 0;
+        font-size: 0.8rem;
+        color: var(--sisrh-text-muted, #64748b);
+        line-height: 1.4;
+      }
+      .tiempo-servicio-desglose__label {
+        font-weight: 600;
+        color: var(--sisrh-text, #334155);
+      }
+      .tiempo-servicio-desglose__linea--efectivo {
+        color: var(--sisrh-text, #334155);
         font-weight: 600;
       }
-      .dias-no-computables mat-icon {
-        font-size: 1.1rem;
-        width: 1.1rem;
-        height: 1.1rem;
+      .tiempo-servicio-desglose__linea--efectivo .tiempo-servicio-desglose__label {
+        color: var(--sisrh-primary, #1f3a5f);
       }
-      .dias-no-computables__nota {
-        margin: 0.25rem 0 0;
+      .tiempo-servicio-desglose__nota {
+        margin: 0.2rem 0 0;
         font-size: 0.72rem;
-        color: #64748b;
+        color: var(--sisrh-text-soft, #94a3b8);
         line-height: 1.4;
       }
       .actions {
@@ -924,35 +948,60 @@ export class EmpleadoPlanillaIntegradoComponent implements OnInit {
     documentoOrigenFecha: this.fb.control<string | null>(null),
   });
 
-  // SPEC_VACACIONES F2 — tiempo de servicio acumulado (read-only, base D.Leg. 1405).
-  readonly tiempoServicio = signal<TiempoServicioRow | null>(null);
+  // V012_42 F1/F3 — tiempo de servicio EFECTIVO (bruto − LSG/faltas/suspensiones, base 30/360,
+  // D.Leg. 1405). Reemplaza la antigua exhibición del bruto: el campo principal ahora es el
+  // efectivo; el bruto (para CTS/LBS) solo se muestra en el desglose de transparencia.
+  readonly tiempoServicioDetalle = signal<TiempoServicioDetalleRow | null>(null);
   readonly tiempoServicioLoading = signal(false);
-  // SPEC_VACACIONES F9.1 — días no computables (LSG/faltas) informativos en Config Remunerativa.
-  readonly diasNoComputables = signal<DiasNoComputablesRow | null>(null);
   readonly tiempoServicioSinVinculo = signal(false);
 
   readonly tiempoServicioLabel = computed(() => {
     if (this.tiempoServicioLoading()) return 'Calculando…';
     if (this.tiempoServicioSinVinculo()) return 'Sin vínculo registrado';
-    const t = this.tiempoServicio();
-    if (!t) return '—';
-    const partes: string[] = [];
-    if (t.anios) partes.push(`${t.anios} ${t.anios === 1 ? 'año' : 'años'}`);
-    if (t.meses) partes.push(`${t.meses} ${t.meses === 1 ? 'mes' : 'meses'}`);
-    partes.push(`${t.dias} ${t.dias === 1 ? 'día' : 'días'}`);
-    return partes.join(', ');
+    const d = this.tiempoServicioDetalle();
+    if (!d?.tiempoServicio) return '—';
+    return this.formatearAniosMesesDias(d.aniosEfectivos, d.mesesEfectivos, d.diasEfectivos);
   });
 
   readonly tiempoServicioHint = computed(() => {
     if (this.tiempoServicioSinVinculo()) {
       return 'El empleado aún no tiene un contrato registrado.';
     }
-    const t = this.tiempoServicio();
-    if (!t) return 'Calculado del historial de contratos (D.Leg. 1405). No editable.';
+    const t = this.tiempoServicioDetalle()?.tiempoServicio;
+    if (!t) return 'Tiempo efectivo — base 30/360, D.Leg. 1405. No editable.';
     const corte = t.fechaCorte ? ` al ${this.fmtDate(t.fechaCorte)}` : '';
     const traslape = t.tieneTraslape ? ' · contratos traslapados fusionados' : '';
-    return `Acumulado de ${t.numVinculos} contrato(s)${corte} (base 30/360, D.Leg. 1405)${traslape}. No editable.`;
+    return `Tiempo efectivo — acumulado de ${t.numVinculos} contrato(s)${corte}${traslape}. No editable.`;
   });
+
+  /**
+   * V012_42 F3 — desglose de transparencia (bruto → descuentos → efectivo) que reemplaza la
+   * antigua nota de advertencia. `null` mientras carga o si no hay vínculo (nada que desglosar).
+   */
+  readonly tiempoServicioDesglose = computed(() => {
+    const d = this.tiempoServicioDetalle();
+    if (!d?.tiempoServicio) return null;
+    return {
+      bruto: this.formatearAniosMesesDias(d.tiempoServicio.anios, d.tiempoServicio.meses, d.tiempoServicio.dias),
+      efectivo: this.formatearAniosMesesDias(d.aniosEfectivos, d.mesesEfectivos, d.diasEfectivos),
+      dnc: d.diasNoComputables,
+    };
+  });
+
+  /** Resumen breve para el tooltip del ícono — apoyo, no explicación principal (ya visible abajo). */
+  readonly tiempoServicioTooltip = computed(() => {
+    const ts = this.tiempoServicioDesglose();
+    if (!ts) return 'Tiempo de servicio efectivo (base 30/360, D.Leg. 1405).';
+    return `Bruto: ${ts.bruto} · Efectivo: ${ts.efectivo}`;
+  });
+
+  private formatearAniosMesesDias(anios: number, meses: number, dias: number): string {
+    const partes: string[] = [];
+    if (anios) partes.push(`${anios} ${anios === 1 ? 'año' : 'años'}`);
+    if (meses) partes.push(`${meses} ${meses === 1 ? 'mes' : 'meses'}`);
+    partes.push(`${dias} ${dias === 1 ? 'día' : 'días'}`);
+    return partes.join(', ');
+  }
 
   // F1 — estado derivado + LBS ; F2 — historial ; F4 — elegibilidad.
   readonly estadoVinculo = signal<string | null>(null);
@@ -1028,28 +1077,24 @@ export class EmpleadoPlanillaIntegradoComponent implements OnInit {
     this.cargarTiempoServicio();
   }
 
-  /** SPEC_VACACIONES F2 — consume el endpoint F1 (tiempo de servicio acumulado). */
+  /**
+   * V012_42 F3 — consume únicamente el endpoint de detalle (F9.1): ya trae el bruto (F1) + el
+   * desglose de no computables + el efectivo en una sola llamada. El backend nunca lanza 404
+   * aquí (devuelve `tiempoServicio: null` cuando el empleado no tiene vínculo activo).
+   */
   private cargarTiempoServicio(): void {
     this.tiempoServicioLoading.set(true);
     this.tiempoServicioSinVinculo.set(false);
-    this.planillaApi.obtenerTiempoServicio(this.empleadoId()).subscribe({
-      next: (t) => {
-        this.tiempoServicio.set(t);
-        this.tiempoServicioLoading.set(false);
-      },
-      error: (err: HttpErrorResponse) => {
-        this.tiempoServicioLoading.set(false);
-        this.tiempoServicio.set(null);
-        // 404 = empleado sin vínculo activo aún (no es un error de la pantalla).
-        this.tiempoServicioSinVinculo.set(err.status === 404);
-      },
-    });
-
-    // SPEC_VACACIONES F9.1 — días no computables (LSG/faltas), solo informativo aquí.
-    // El récord vacacional (efecto real) se controla en el Padrón Vacacional.
     this.planillaApi.obtenerTiempoServicioDetalle(this.empleadoId()).subscribe({
-      next: (d) => this.diasNoComputables.set(d.diasNoComputables),
-      error: () => this.diasNoComputables.set(null),
+      next: (d) => {
+        this.tiempoServicioDetalle.set(d);
+        this.tiempoServicioSinVinculo.set(d.tiempoServicio == null);
+        this.tiempoServicioLoading.set(false);
+      },
+      error: () => {
+        this.tiempoServicioLoading.set(false);
+        this.tiempoServicioDetalle.set(null);
+      },
     });
   }
 

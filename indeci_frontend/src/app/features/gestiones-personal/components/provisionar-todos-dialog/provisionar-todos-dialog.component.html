@@ -1,0 +1,45 @@
+<h2 mat-dialog-title>Provisionar para todos</h2>
+
+<mat-dialog-content>
+  <p class="explicacion">
+    Esta acción recalcula, para <strong>todos los empleados importados</strong>, los días que
+    <strong>corresponden</strong> (30 × períodos ganados) y el <strong>saldo</strong> resultante.
+    Los <strong>días gozados importados del Excel se conservan</strong> (no se reinician); si un
+    empleado tiene adelanto sin período aún ganado, su saldo quedará negativo (deuda) hasta que el
+    período venza. Cada empleado se procesa de forma independiente y trazable.
+  </p>
+
+  <form [formGroup]="form">
+    <div class="sugerencias">
+      <button
+        type="button"
+        *ngFor="let s of sugerencias"
+        mat-stroked-button
+        class="chip-sugerencia"
+        (click)="aplicarSugerencia(s)"
+      >
+        {{ s }}
+      </button>
+    </div>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Sustento del lote</mat-label>
+      <textarea
+        matInput
+        formControlName="sustento"
+        rows="3"
+        placeholder="Detalle el motivo de la provisión masiva..."
+      ></textarea>
+      <mat-error>El sustento es obligatorio.</mat-error>
+    </mat-form-field>
+  </form>
+
+  <p class="norma">Base normativa: D.Leg. 1405 y D.S. 013-2019-PCM.</p>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-stroked-button type="button" [mat-dialog-close]="null">Cancelar</button>
+  <button mat-flat-button color="primary" type="button" [disabled]="form.invalid" (click)="confirmar()">
+    <mat-icon>autorenew</mat-icon> Provisionar todos
+  </button>
+</mat-dialog-actions>

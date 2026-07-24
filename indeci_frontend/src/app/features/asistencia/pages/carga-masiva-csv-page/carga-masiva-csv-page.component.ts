@@ -188,6 +188,14 @@ export class CargaMasivaCsvPageComponent implements OnInit, OnDestroy {
   readonly motivoAnulacion = signal('');
   readonly anulando = signal(false);
 
+  /**
+   * Fase 1 — rango de días CUBIERTO por la carga (editable; se pre-llena con el detectado del
+   * archivo). Las faltas por "día laborable sin marca" se generan SOLO dentro de este rango; los
+   * días del mes fuera de él quedan SIN REGISTRO (no se asume falta sin datos).
+   */
+  readonly rangoCubiertoIni = signal<string | null>(null);
+  readonly rangoCubiertoFin = signal<string | null>(null);
+
   // ---- F5: estado post-confirmación + validación de cabeceras ----
   readonly validandoCabeceras = signal(false);
   readonly validacionResultado = signal<AsistenciaValidacionBatch | null>(null);
@@ -369,7 +377,10 @@ export class CargaMasivaCsvPageComponent implements OnInit, OnDestroy {
     this.iniciarConfirmacion();
 
     this.importApi
-      .confirmarAsync(preview.importacionId, this.estrategia(), motivo)
+      .confirmarAsync(
+        preview.importacionId, this.estrategia(), motivo,
+        this.rangoCubiertoIni(), this.rangoCubiertoFin(),
+      )
       .pipe(
         switchMap(({ jobId }) =>
           timer(0, CargaMasivaCsvPageComponent.POLL_MS).pipe(
@@ -608,7 +619,16 @@ export class CargaMasivaCsvPageComponent implements OnInit, OnDestroy {
 
   private cargarResumen(importacionId: number): void {
     this.importApi.resumen(importacionId).subscribe({
-      next: (resumen) => this.resumen.set(resumen),
+      next: (resumen) => {
+        this.resumen.set(resumen);
+        // Pre-llenar el rango cubierto con el detectado (mín/máx del archivo) si aún no se editó.
+        if (this.rangoCubiertoIni() === null) {
+          this.rangoCubiertoIni.set(resumen.periodoDetectadoIni);
+        }
+        if (this.rangoCubiertoFin() === null) {
+          this.rangoCubiertoFin.set(resumen.periodoDetectadoFin);
+        }
+      },
       error: () => this.resumen.set(null),
     });
   }

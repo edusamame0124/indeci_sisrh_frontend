@@ -106,3 +106,35 @@ export interface EventoPeriodoResponse {
   readonly fechaEmisionDoc?: string | null;
   readonly distribucionMensual?: readonly EventoDistribucionMes[] | null;
 }
+
+/**
+ * V012_42 F2 — import histórico "DEDUCCIONES DEL TIEMPO DE SERVICIOS" (hoja "sistema").
+ * Espejo de {@code EventoHistoricoImportDtos} / {@code EventoHistoricoImportJobDto}.
+ */
+export type EventoHistoricoFilaEstado = 'OK' | 'DUPLICADO_OMITIDO' | 'ERROR';
+
+export interface EventoHistoricoFilaResultado {
+  readonly numeroFila: number;
+  readonly dni: string | null;
+  readonly nombre: string | null;
+  readonly motivoExcel: string | null;
+  readonly estado: EventoHistoricoFilaEstado;
+  readonly mensaje: string | null;
+}
+
+export interface EventoHistoricoImportResult {
+  readonly total: number;
+  readonly insertados: number;
+  readonly duplicadosOmitidos: number;
+  readonly rechazados: number;
+  readonly filas: readonly EventoHistoricoFilaResultado[];
+}
+
+export interface EventoHistoricoImportJob {
+  readonly jobId: string;
+  readonly estado: 'EN_COLA' | 'PROCESANDO' | 'COMPLETADO' | 'ERROR';
+  readonly porcentaje: number;
+  readonly fase: string;
+  readonly resultado: EventoHistoricoImportResult | null;
+  readonly error: string | null;
+}

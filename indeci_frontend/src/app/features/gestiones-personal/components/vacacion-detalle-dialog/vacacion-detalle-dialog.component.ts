@@ -1,14 +1,16 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialogModule, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
-import { PadronVacacionalRowDto } from '../../models/padron-vacacional.model';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { PadronVacacionalRowDto, RecordVacacionalDetalle } from '../../models/padron-vacacional.model';
+import { PadronVacacionalApiService } from '../../services/padron-vacacional-api.service';
 
 @Component({
   selector: 'app-vacacion-detalle-dialog',
   standalone: true,
-  imports: [CommonModule, MatButtonModule, MatDialogModule, MatIconModule],
+  imports: [CommonModule, MatButtonModule, MatDialogModule, MatIconModule, MatProgressSpinnerModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <h2 mat-dialog-title>Detalle de récord vacacional</h2>
@@ -22,47 +24,100 @@ import { PadronVacacionalRowDto } from '../../models/padron-vacacional.model';
         El empleado no tiene un vínculo activo con fechas válidas para computar el récord.
       </div>
 
-      <table *ngIf="!data.sinVinculo" class="desglose">
-        <tbody>
-          <tr>
-            <td>Antigüedad (vínculo)</td>
-            <td class="val">{{ amd(data.aniosServicio, data.mesesServicio, data.diasServicio) }}</td>
-          </tr>
-          <tr class="resta">
-            <td>(−) Licencia sin goce</td>
-            <td class="val">{{ data.diasNoComputablesLsg ?? 0 }} d</td>
-          </tr>
-          <tr class="resta">
-            <td>(−) Faltas injustificadas</td>
-            <td class="val">{{ data.diasNoComputablesFaltas ?? 0 }} d</td>
-          </tr>
-          <tr class="total">
-            <td>= Tiempo efectivo p/ récord</td>
-            <td class="val">{{ amd(data.aniosEfectivos, data.mesesEfectivos, data.diasEfectivos) }}</td>
-          </tr>
-          <tr>
-            <td>Récord</td>
-            <td class="val">
-              <span class="badge" [ngClass]="recordClase()">{{ recordLabel() }}</span>
-            </td>
-          </tr>
-          <tr>
-            <td>Días que corresponden</td>
-            <td class="val">{{ data.diasCorresponden }} d</td>
-          </tr>
-          <tr>
-            <td>Gozados / Saldo</td>
-            <td class="val">{{ data.diasGozados }} d / {{ data.saldo }} d</td>
-          </tr>
-        </tbody>
-      </table>
+      <ng-container *ngIf="!data.sinVinculo">
+        <!-- Resumen (fuente de verdad: BD del padrón) -->
+        <table class="desglose">
+          <tbody>
+            <tr>
+              <td>Días que corresponden</td>
+              <td class="val">{{ data.diasCorresponden }} d</td>
+            </tr>
+            <tr>
+              <td>Gozados / Saldo</td>
+              <td class="val">{{ data.diasGozados }} d / {{ data.saldo }} d</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div *ngIf="cargando()" class="cargando">
+          <mat-spinner diameter="28"></mat-spinner>
+          <span>Cargando desglose…</span>
+        </div>
+
+        <ng-container *ngIf="detalle() as det">
+          <!-- NIVEL 1 — acumulado de la carrera (reconcilia con Configuración Remunerativa) -->
+          <h3 class="seccion">Acumulado de la carrera</h3>
+          <p class="seccion-hint">Antigüedad total y descuentos de toda la carrera (coincide con Configuración Remunerativa / Vinculación).</p>
+          <table class="desglose">
+            <tbody>
+              <tr>
+                <td>Antigüedad total (vínculo)</td>
+                <td class="val">{{ amdTs(det.acumulado.tiempoServicio) }}</td>
+              </tr>
+              <tr class="resta">
+                <td>(−) Licencia sin goce (total)</td>
+                <td class="val">{{ det.acumulado.diasNoComputables.lsg }} d</td>
+              </tr>
+              <tr class="resta">
+                <td>(−) Faltas injustificadas (total)</td>
+                <td class="val">{{ det.acumulado.diasNoComputables.faltas }} d</td>
+              </tr>
+              <tr class="resta" *ngIf="det.acumulado.diasNoComputables.suspensiones > 0">
+                <td>(−) Suspensiones (total)</td>
+                <td class="val">{{ det.acumulado.diasNoComputables.suspensiones }} d</td>
+              </tr>
+              <tr class="total">
+                <td>= Tiempo efectivo total</td>
+                <td class="val">
+                  {{ amd(det.acumulado.aniosEfectivos, det.acumulado.mesesEfectivos, det.acumulado.diasEfectivos) }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- NIVEL 2 — desglose por período (aniversario a aniversario) -->
+          <h3 class="seccion">Récord por período (año de servicio)</h3>
+          <p class="seccion-hint">Cada año de servicio se evalúa con SUS incidencias. Solo los que cumplen récord generan 30 días.</p>
+          <table class="periodos">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Ventana</th>
+                <th class="num">LSG</th>
+                <th class="num">Faltas</th>
+                <th class="num">Efectivo</th>
+                <th>Récord</th>
+                <th class="num">Días</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let p of det.periodos">
+                <td>{{ p.numero }}</td>
+                <td class="ventana">{{ fecha(p.desde) }} → {{ fecha(p.hasta) }}</td>
+                <td class="num" [class.inci]="p.lsg > 0">{{ p.lsg }}</td>
+                <td class="num" [class.inci]="p.faltas > 0">{{ p.faltas }}</td>
+                <td class="num">{{ p.diasEfectivos }} d</td>
+                <td>
+                  <span class="badge" [ngClass]="p.recordOk ? 'badge--success' : 'badge--danger'">
+                    {{ p.recordOk ? 'Cumple' : 'No cumple' }}
+                  </span>
+                </td>
+                <td class="num strong">{{ p.diasGanados }}</td>
+              </tr>
+              <tr *ngIf="det.periodos.length === 0">
+                <td colspan="7" class="empty">Aún no completa un año de servicio.</td>
+              </tr>
+            </tbody>
+          </table>
+        </ng-container>
+      </ng-container>
 
       <p class="nota">
         <strong>Base normativa:</strong> D.Leg. 1405 (art. 2) y D.S. 013-2019-PCM (art. 11).
-        El récord vacacional exige un año de servicios <em>efectivos</em>. La licencia sin goce
-        (suspensión perfecta) y las faltas injustificadas no computan y postergan el aniversario.
-        Cómputo 30/360. Aplica a D.L. 276, CAS (1057) y SERVIR (30057). La antigüedad bruta
-        (para CTS/LBS) se ve en Configuración Remunerativa.
+        El récord vacacional exige un año de servicios <em>efectivos</em> POR PERÍODO. La licencia
+        sin goce (suspensión perfecta) y las faltas injustificadas no computan y postergan el
+        aniversario. Cómputo 30/360. Aplica a D.L. 276, CAS (1057) y SERVIR (30057). La antigüedad
+        bruta (para CTS/LBS) se ve en Configuración Remunerativa.
       </p>
     </mat-dialog-content>
     <mat-dialog-actions align="end">
@@ -85,9 +140,27 @@ import { PadronVacacionalRowDto } from '../../models/padron-vacacional.model';
         border-radius: 6px;
         font-size: 0.85rem;
       }
+      .cargando {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        margin: 1rem 0;
+        color: #64748b;
+        font-size: 0.85rem;
+      }
+      .seccion {
+        margin: 1.1rem 0 0.1rem;
+        font-size: 0.92rem;
+        font-weight: 700;
+        color: #0f172a;
+      }
+      .seccion-hint {
+        margin: 0 0 0.4rem;
+        font-size: 0.72rem;
+        color: #64748b;
+      }
       .desglose {
         width: 100%;
-        margin-top: 1rem;
         border-collapse: collapse;
         font-size: 0.9rem;
       }
@@ -106,10 +179,46 @@ import { PadronVacacionalRowDto } from '../../models/padron-vacacional.model';
         border-top: 2px solid #cbd5e1;
         font-weight: 700;
       }
+      .periodos {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.82rem;
+        margin-top: 0.2rem;
+      }
+      .periodos th,
+      .periodos td {
+        padding: 0.35rem 0.4rem;
+        border-bottom: 1px solid #eee;
+        text-align: left;
+      }
+      .periodos th {
+        background: #f8fafc;
+        font-weight: 600;
+        color: #475569;
+      }
+      .periodos .num {
+        text-align: right;
+      }
+      .periodos .ventana {
+        white-space: nowrap;
+        color: #475569;
+      }
+      .periodos .inci {
+        color: #b91c1c;
+        font-weight: 700;
+      }
+      .periodos .strong {
+        font-weight: 700;
+      }
+      .periodos .empty {
+        text-align: center;
+        color: #94a3b8;
+        padding: 0.75rem;
+      }
       .badge {
-        padding: 0.15rem 0.5rem;
+        padding: 0.1rem 0.45rem;
         border-radius: 999px;
-        font-size: 0.78rem;
+        font-size: 0.72rem;
         font-weight: 700;
       }
       .badge--success {
@@ -119,10 +228,6 @@ import { PadronVacacionalRowDto } from '../../models/padron-vacacional.model';
       .badge--danger {
         background: #fee2e2;
         color: #991b1b;
-      }
-      .badge--secondary {
-        background: #e2e8f0;
-        color: #475569;
       }
       .nota {
         margin-top: 1rem;
@@ -135,6 +240,23 @@ import { PadronVacacionalRowDto } from '../../models/padron-vacacional.model';
 })
 export class VacacionDetalleDialogComponent {
   readonly data = inject<PadronVacacionalRowDto>(MAT_DIALOG_DATA);
+  private readonly api = inject(PadronVacacionalApiService);
+
+  readonly detalle = signal<RecordVacacionalDetalle | null>(null);
+  readonly cargando = signal(false);
+
+  constructor() {
+    if (!this.data.sinVinculo && this.data.empleadoId != null) {
+      this.cargando.set(true);
+      this.api.recordDetalle(this.data.empleadoId).subscribe({
+        next: (resp) => {
+          this.detalle.set(resp.data ?? null);
+          this.cargando.set(false);
+        },
+        error: () => this.cargando.set(false),
+      });
+    }
+  }
 
   /** Formatea años/meses/días omitiendo los componentes en cero (salvo días). */
   amd(anios: number | null, meses: number | null, dias: number | null): string {
@@ -148,15 +270,15 @@ export class VacacionDetalleDialogComponent {
     return partes.join(' ');
   }
 
-  recordLabel(): string {
-    if (this.data.estadoRecord === 'OK') return 'Cumple récord';
-    if (this.data.estadoRecord === 'SIN_RECORD_LEGAL') return 'Sin récord — año efectivo no cumplido';
-    return this.data.estadoRecord;
+  amdTs(ts: { anios: number; meses: number; dias: number } | null): string {
+    if (!ts) return '—';
+    return this.amd(ts.anios, ts.meses, ts.dias);
   }
 
-  recordClase(): string {
-    if (this.data.estadoRecord === 'OK') return 'badge--success';
-    if (this.data.estadoRecord === 'SIN_RECORD_LEGAL') return 'badge--danger';
-    return 'badge--secondary';
+  /** ISO 'YYYY-MM-DD' → 'DD/MM/YY'. */
+  fecha(iso: string): string {
+    if (!iso) return '—';
+    const [y, m, d] = iso.split('-');
+    return `${d}/${m}/${y.slice(2)}`;
   }
 }

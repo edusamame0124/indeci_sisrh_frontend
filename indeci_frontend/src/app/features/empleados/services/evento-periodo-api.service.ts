@@ -5,6 +5,7 @@ import type { ApiResponse } from '../../../core/models/api-response.model';
 import { extractApiData } from '../../../core/http/map-api-response';
 import type {
   EstadoEvento,
+  EventoHistoricoImportJob,
   EventoPeriodoListParams,
   EventoPeriodoPage,
   EventoPeriodoRequest,
@@ -93,6 +94,28 @@ export class EventoPeriodoApiService {
   eliminar(id: number): Observable<null> {
     return this.http
       .delete<ApiResponse<null>>(`${this.baseUrl}/${id}`)
+      .pipe(map(extractApiData));
+  }
+
+  /**
+   * V012_42 F2 — inicia el import histórico del Excel "DEDUCCIONES DEL TIEMPO DE SERVICIOS"
+   * (hoja "sistema") en un job asíncrono; responde el jobId de inmediato. Mismo patrón que
+   * {@code AsistenciaImportApiService.previewAsync}.
+   */
+  importarHistoricoAsync(archivo: File): Observable<{ jobId: string }> {
+    const form = new FormData();
+    form.append('archivo', archivo);
+    return this.http
+      .post<ApiResponse<{ jobId: string }>>(`${this.baseUrl}/importar-historico/async`, form)
+      .pipe(map(extractApiData));
+  }
+
+  /** V012_42 F2 — progreso del job de import histórico. Polling. */
+  importarHistoricoJobEstado(jobId: string): Observable<EventoHistoricoImportJob> {
+    return this.http
+      .get<ApiResponse<EventoHistoricoImportJob>>(
+        `${this.baseUrl}/importar-historico/job/${jobId}`,
+      )
       .pipe(map(extractApiData));
   }
 }

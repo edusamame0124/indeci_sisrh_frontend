@@ -482,6 +482,32 @@
         }
 
         @if (!confirmado()) {
+          <div class="masiva__rango">
+            <p class="masiva__rango-hint">
+              <strong>Rango de días cubierto por esta carga</strong> (sugerido con el mín/máx del
+              archivo, editable). Los días del mes <strong>fuera</strong> de este rango quedarán
+              <strong>sin registro</strong> — NO se marcan como falta. Ajústalo si el archivo no
+              cubre el mes completo (ej. solo del 01 al 15).
+            </p>
+            <mat-form-field appearance="outline" class="masiva__field">
+              <mat-label>Cubre desde</mat-label>
+              <input
+                matInput
+                type="date"
+                [ngModel]="rangoCubiertoIni()"
+                (ngModelChange)="rangoCubiertoIni.set($event)"
+              />
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="masiva__field">
+              <mat-label>Cubre hasta</mat-label>
+              <input
+                matInput
+                type="date"
+                [ngModel]="rangoCubiertoFin()"
+                (ngModelChange)="rangoCubiertoFin.set($event)"
+              />
+            </mat-form-field>
+          </div>
           @if (tieneConflictos()) {
             <mat-form-field appearance="outline" class="masiva__field">
               <mat-label>Estrategia ante asistencia existente</mat-label>
@@ -503,8 +529,8 @@
                 placeholder="Requerido al reemplazar asistencia ya validada"
               />
               <mat-hint>
-                Reemplazar asistencia ya validada requiere un usuario con rol autorizado y este motivo.
-                El sistema valida el rol; sin permiso, esos empleados quedarán bloqueados.
+                Obligatorio para reemplazar asistencia ya validada (queda como traza). Si la planilla
+                del periodo ya fue GENERADA, además se requiere un usuario con rol PLA_APPROVE.
               </mat-hint>
             </mat-form-field>
           }

@@ -29,14 +29,33 @@
   background: #fde0e0;
   border-radius: 4px;
 }
+/* Barra de scroll horizontal ESPEJO arriba de la tabla (sincronizada por TS con la
+   de abajo) para desplazarse sin tener que bajar hasta el final de la tabla. */
+.table-scroll-top {
+  overflow-x: auto;
+  overflow-y: hidden;
+  margin-bottom: 0.35rem;
+}
+.table-scroll-top__rail {
+  height: 1px;
+}
+
+/* La tabla es ancha (13 columnas): scrollea DENTRO de este wrapper en vez de
+   desbordar el card por el margen derecho. Mismo patrón que la tabla hermana. */
+.table-wrap {
+  overflow-x: auto;
+  max-width: 100%;
+}
 table {
   width: 100%;
+  min-width: 1200px;
   border-collapse: collapse;
 }
 th, td {
-  padding: 0.75rem;
+  padding: 0.5rem 0.6rem;
   border-bottom: 1px solid #eee;
   text-align: left;
+  vertical-align: middle;
 }
 th {
   background: #f9f9f9;
@@ -70,3 +89,17 @@ th {
 .badge--danger { background: #ffebee; color: #c62828; }
 .badge--secondary { background: #f5f5f5; color: #616161; }
 .badge--info { background: #e3f2fd; color: #1565c0; }
+
+/* Etiqueta de deuda vacacional (saldo negativo por adelanto). */
+.tag-deuda {
+  display: inline-block;
+  margin-top: 0.2rem;
+  padding: 0.05rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.68em;
+  font-weight: 600;
+  color: #b42318;
+  background: #fef3f2;
+  border: 1px solid #fecdca;
+  white-space: nowrap;
+}

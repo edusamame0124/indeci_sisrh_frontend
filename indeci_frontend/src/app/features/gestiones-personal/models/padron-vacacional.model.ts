@@ -79,6 +79,53 @@ export interface ProvisionarAutoPayload {
   sustento: string;
 }
 
+/** Desglose de días NO computables (espejo de `DiasNoComputablesDto`). */
+export interface DiasNoComputables {
+  lsg: number;
+  faltas: number;
+  suspensiones: number;
+  total: number;
+}
+
+/** Acumulado de la carrera (espejo de `TiempoServicioDetalleDto`) — reconcilia con Vinculación. */
+export interface TiempoServicioDetalle {
+  tiempoServicio: { anios: number; meses: number; dias: number } | null;
+  diasNoComputables: DiasNoComputables;
+  aniversarioEfectivo: string | null;
+  aniosEfectivos: number;
+  mesesEfectivos: number;
+  diasEfectivos: number;
+  totalDiasEfectivos: number;
+}
+
+/** Un período del récord (espejo de `PeriodoRecordDto`). */
+export interface PeriodoRecord {
+  numero: number;
+  desde: string;
+  hasta: string;
+  lsg: number;
+  faltas: number;
+  suspensiones: number;
+  diasEfectivos: number;
+  recordOk: boolean;
+  diasGanados: number;
+}
+
+/** Detalle de récord vacacional (Opción A), espejo de `RecordVacacionalDetalleDto`. */
+export interface RecordVacacionalDetalle {
+  sinVinculo: boolean;
+  acumulado: TiempoServicioDetalle;
+  periodos: PeriodoRecord[];
+}
+
+/** "Provisionar para todos" — resumen del lote, espejo de `ProvisionMasivaResultDto`. */
+export interface ProvisionMasivaResult {
+  total: number;
+  provisionados: number;
+  sinCambios: number;
+  errores: string[];
+}
+
 /** Trazabilidad Visual — una fila del historial completo (activos + anulados), espejo de `HistorialSaldoDto`. */
 export interface HistorialSaldoRow {
   id: number;
