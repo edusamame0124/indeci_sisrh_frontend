@@ -170,6 +170,13 @@ export class MiPerfilPageComponent implements OnInit {
           URL.revokeObjectURL(urlAnterior);
         }
 
+        // Backend responde 204 (blob vacío) cuando aún no se subió una foto.
+        if (blob.size === 0) {
+          this.fotoUrl.set(null);
+          this.errorFoto.set('Cargue una foto de perfil.');
+          return;
+        }
+
         const nuevaUrl = URL.createObjectURL(blob);
         this.fotoUrl.set(nuevaUrl);
       },
