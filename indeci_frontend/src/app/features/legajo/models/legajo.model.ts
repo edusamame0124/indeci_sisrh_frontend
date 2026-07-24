@@ -110,7 +110,7 @@ export interface Capacitacion {
 
   nombreCurso: string;
   institucion: string;
-  horas: number;
+  horas: number | null;
 
   fechaInicio: string;
   fechaFin: string;

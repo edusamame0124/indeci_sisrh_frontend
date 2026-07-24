@@ -280,11 +280,10 @@
                 >
                   @if (guardando()) {
                     <mat-spinner diameter="20"></mat-spinner>
-                    Guardando...
                   } @else {
                     <mat-icon>save</mat-icon>
-                    Guardar cambios
                   }
+                  {{ guardando() ? 'Guardando...' : 'Guardar cambios' }}
                 </button>
               </div>
             }
