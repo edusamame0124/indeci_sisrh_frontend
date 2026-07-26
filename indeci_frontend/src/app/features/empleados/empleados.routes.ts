@@ -1,10 +1,16 @@
 import { Routes } from '@angular/router';
-import { empleadosAccessGuard } from '../../core/guards/empleados-access.guard';
+import { planillaAccessGuard } from '../../core/guards/planilla-access.guard';
 
+/**
+ * Módulo Vinculación — operativo RRHH/TI (gestión de datos de TODOS los empleados).
+ * Usa planillaAccessGuard (PLANILLA_OPERATIVA_ROLES), no empleadosAccessGuard:
+ * ese último incluye EMPLEADO/JEFE/RRHH_PAPELETA (autoservicio), que no deben
+ * entrar aquí (segregación de privilegios).
+ */
 export const EMPLEADOS_ROUTES: Routes = [
   {
     path: '',
-    canActivate: [empleadosAccessGuard],
+    canActivate: [planillaAccessGuard],
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'personas' },
 

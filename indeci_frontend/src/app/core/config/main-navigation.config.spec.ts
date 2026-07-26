@@ -25,7 +25,6 @@ describe('filterVisibleNavItems (Spec 009 — 5 módulos + Inicio)', () => {
       'Planilla',
       'Reportes',
       'Administración',
-      'Portal del empleado',
     ]);
   });
 
@@ -38,7 +37,7 @@ describe('filterVisibleNavItems (Spec 009 — 5 módulos + Inicio)', () => {
     expect(r.find((i) => i.label === 'Administración')).toBeTruthy();
   });
 
-  it('RRHH_ADMIN (legacy) ve Inicio + Catálogos + Módulo Vinculación + Legajo Personal + Planilla + Portal, NO Reportes ni Administración', () => {
+  it('RRHH_ADMIN (legacy) ve Inicio + Catálogos + Módulo Vinculación + Legajo Personal + Planilla, NO Reportes ni Administración', () => {
     const r = filterVisibleNavItems(MAIN_NAV_ITEMS, [], ['RRHH_ADMIN']);
     expect(r.map((i) => i.label)).toEqual([
       'Inicio',
@@ -47,7 +46,6 @@ describe('filterVisibleNavItems (Spec 009 — 5 módulos + Inicio)', () => {
       'Gestiones del personal',
       'Legajo Personal',
       'Planilla',
-      'Portal del empleado',
     ]);
   });
 
@@ -62,7 +60,6 @@ describe('filterVisibleNavItems (Spec 009 — 5 módulos + Inicio)', () => {
       'Planilla',
       'Reportes',
       'Administración',
-      'Portal del empleado',
     ]);
   });
 
@@ -88,7 +85,6 @@ describe('filterVisibleNavItems (Spec 009 — 5 módulos + Inicio)', () => {
       'Legajo Personal',
       'Planilla',
       'Reportes',
-      'Portal del empleado',
     ]);
   });
 
@@ -154,6 +150,16 @@ describe('filterVisibleNavItems (Spec 009 — 5 módulos + Inicio)', () => {
     const r = filterVisibleNavItems(MAIN_NAV_ITEMS, ['PAP_EMPLEADO'], ['EMPLEADO']);
     const gp = r.find((i) => i.label === 'Gestiones del personal');
     expect(gp?.children?.map((c) => c.label)).toEqual(['Gestión del empleado', 'Mis Asistencias']);
+  });
+
+  it('EMPLEADO NO ve módulos operativos (Vinculación, Legajo Personal); sí ve Mi perfil y Mi legajo', () => {
+    const r = filterVisibleNavItems(MAIN_NAV_ITEMS, ['PAP_EMPLEADO'], ['EMPLEADO']);
+    const labels = r.map((i) => i.label);
+    expect(labels).toContain('Mi perfil');
+    expect(labels).toContain('Mi legajo');
+    expect(labels).not.toContain('Módulo Vinculación');
+    expect(labels).not.toContain('Legajo Personal');
+    expect(labels).not.toContain('Portal del empleado');
   });
 
   it('Jefe (PAP_JEFE) ve su gestión pero NO Gestión de RRHH ni Teletrabajo', () => {

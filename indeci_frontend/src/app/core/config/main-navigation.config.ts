@@ -93,7 +93,10 @@ export const MAIN_NAV_ITEMS: readonly MainNavItem[] = [
     label: 'Módulo Vinculación',
     route: '',
     icon: 'people',
-    requiredAnyRole: [...EMPLEADOS_ACCESS_ROLES],
+    // Operativo RRHH/TI (gestión de datos de TODOS los empleados) — no autoservicio.
+    // No usar EMPLEADOS_ACCESS_ROLES: incluye EMPLEADO/JEFE/RRHH_PAPELETA, que no
+    // deben ver ni acceder a este módulo (segregación de privilegios).
+    requiredAnyRole: [...PLANILLA_OPERATIVA_ROLES],
     children: [
       { label: 'Datos personales', route: '/empleados/personas', icon: 'person' },
       { label: 'Eventos del período', route: '/empleados/eventos', icon: 'event_note' },
@@ -138,7 +141,9 @@ export const MAIN_NAV_ITEMS: readonly MainNavItem[] = [
     label: 'Legajo Personal',
     route: '',
     icon: 'folder_shared',
-    requiredAnyRole: [...EMPLEADOS_ACCESS_ROLES],
+    // Operativo RRHH/TI (legajo de TODOS los empleados) — no autoservicio.
+    // EMPLEADO ya tiene su propio acceso vía "Mi legajo" (arriba en este menú).
+    requiredAnyRole: [...PLANILLA_OPERATIVA_ROLES],
     children: [
       {
         label: 'Legajo',
@@ -222,13 +227,6 @@ export const MAIN_NAV_ITEMS: readonly MainNavItem[] = [
       { label: 'Permisos', route: '/admin/permisos', icon: 'key' },
       { label: 'Auditoría', route: '/admin/auditoria', icon: 'history' },
     ],
-  },
-
-  {
-    label: 'Portal del empleado',
-    route: '/portal-empleado',
-    icon: 'person_pin',
-    requiredAnyRole: [...EMPLEADOS_ACCESS_ROLES],
   },
 ];
 
