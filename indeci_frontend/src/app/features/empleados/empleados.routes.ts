@@ -1,16 +1,16 @@
 import { Routes } from '@angular/router';
-import { planillaAccessGuard } from '../../core/guards/planilla-access.guard';
+import { vinculacionAccessGuard } from '../../core/guards/vinculacion-access.guard';
 
 /**
- * Módulo Vinculación — operativo RRHH/TI (gestión de datos de TODOS los empleados).
- * Usa planillaAccessGuard (PLANILLA_OPERATIVA_ROLES), no empleadosAccessGuard:
- * ese último incluye EMPLEADO/JEFE/RRHH_PAPELETA (autoservicio), que no deben
- * entrar aquí (segregación de privilegios).
+ * Módulo Vinculación — gestión de datos de TODOS los empleados.
+ * RBAC V012_45: único rol funcional `VINCULACION` (permisos EMP_READ/EMP_WRITE),
+ * más `SUPER_ADMIN`. Ni el portal de autoservicio ni los roles de planilla
+ * entran aquí (segregación de privilegios).
  */
 export const EMPLEADOS_ROUTES: Routes = [
   {
     path: '',
-    canActivate: [planillaAccessGuard],
+    canActivate: [vinculacionAccessGuard],
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'personas' },
 

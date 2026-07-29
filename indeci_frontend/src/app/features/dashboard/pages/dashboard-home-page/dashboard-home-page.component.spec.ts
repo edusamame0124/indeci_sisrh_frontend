@@ -74,7 +74,9 @@ describe('DashboardHomePageComponent', () => {
 
 
 
-  it('muestra tarjetas alineadas al menú: Empleados accesible y Administración bloqueada para RRHH_ADMIN', () => {
+  // RBAC V012_45: RRHH_ADMIN quedó acotado a Catálogos y Reportes. Vinculación
+  // pasó al rol VINCULACION y Planilla al rol PLANILLA.
+  it('tarjetas alineadas al menú: RRHH_ADMIN accede a Catálogos, no a Empleados ni Planilla', () => {
 
     const fixture = TestBed.createComponent(DashboardHomePageComponent);
 
@@ -84,11 +86,11 @@ describe('DashboardHomePageComponent', () => {
 
 
 
-    expect(el.querySelector('a[href="/empleados/personas"]')).not.toBeNull();
-
-    expect(el.querySelector('a[href="/planilla/periodos"]')).not.toBeNull();
-
     expect(el.querySelector('a[href="/catalogos/bancos"]')).not.toBeNull();
+
+    expect(el.querySelector('a[href="/empleados/personas"]')).toBeNull();
+
+    expect(el.querySelector('a[href="/planilla/periodos"]')).toBeNull();
 
 
 
@@ -97,8 +99,6 @@ describe('DashboardHomePageComponent', () => {
     const lockedText = Array.from(locked).map((n) => n.textContent ?? '').join(' ');
 
     expect(lockedText).toContain('Administración');
-
-    expect(lockedText).toContain('Reportes');
 
   });
 

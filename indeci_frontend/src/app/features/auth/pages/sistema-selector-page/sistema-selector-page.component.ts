@@ -388,7 +388,7 @@ export class SistemaSelectorPageComponent {
   readonly cards = this.selector.cards;
   readonly loggingOut = signal(false);
   /** Entrada al módulo de Administración: mismo predicado que el guard de ruta
-   *  (adminAccessGuard) para evitar deriva. Incluye SUPER_ADMIN, ADMIN_TI/ADMIN
+   *  (adminAccessGuard) para evitar deriva. Incluye SUPER_ADMIN (único rol TI)
    *  y el rol acotado GESTOR_USUARIOS (V012_16). */
   readonly canShowUserManagement = computed(() => hasAdminModuleAccess(this.auth.roles()));
 

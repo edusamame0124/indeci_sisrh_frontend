@@ -38,7 +38,7 @@ describe('ConceptoPlanillaPageComponent (SPEC_CONCEPTOS_PLANILLA — dominio Pla
   });
 
   it('lista conceptos vía GET /api/rrhh/concepto-planilla', () => {
-    configure(['ADMIN']);
+    configure(['SUPER_ADMIN']);
     const fixture = TestBed.createComponent(ConceptoPlanillaPageComponent);
     fixture.detectChanges();
     const req = httpMock.expectOne('/api/rrhh/concepto-planilla');
@@ -81,8 +81,11 @@ describe('ConceptoPlanillaPageComponent (SPEC_CONCEPTOS_PLANILLA — dominio Pla
     expect(comp.displayCols()).not.toContain('acciones');
   });
 
-  it('PLANILLA_ANALISTA tiene PLA_WRITE pero no PLA_APPROVE', () => {
-    configure(['PLANILLA_ANALISTA']);
+  // RBAC V012_45: PLANILLA_ANALISTA y PLANILLA_APROBADOR se fusionaron en PLANILLA,
+  // que concentra PLA_WRITE y PLA_APPROVE (decisión de dirección; el control pasó a
+  // ser detectivo vía @Auditable en PeriodoPlanillaService/ConceptoPlanillaService).
+  it('PLANILLA concentra escritura y aprobación', () => {
+    configure(['PLANILLA']);
     const fixture = TestBed.createComponent(ConceptoPlanillaPageComponent);
     fixture.detectChanges();
     httpMock.expectOne('/api/rrhh/concepto-planilla').flush({ estado: 'OK', mensaje: 'ok', data: [] });
@@ -90,19 +93,22 @@ describe('ConceptoPlanillaPageComponent (SPEC_CONCEPTOS_PLANILLA — dominio Pla
     fixture.detectChanges();
     const comp = fixture.componentInstance;
     expect(comp.canWrite()).toBe(true);
-    expect(comp.canApprove()).toBe(false);
+    expect(comp.canApprove()).toBe(true);
     expect(comp.displayCols()).toContain('acciones');
+    expect(comp.canActivar({ id: 1, estado: 'EN_REVISION' } as never)).toBe(true);
   });
 
-  it('PLANILLA_APROBADOR puede activar un concepto EN_REVISION', () => {
-    configure(['PLANILLA_APROBADOR']);
+  it('ASISTENCIA no puede escribir ni aprobar conceptos', () => {
+    configure(['ASISTENCIA']);
     const fixture = TestBed.createComponent(ConceptoPlanillaPageComponent);
     fixture.detectChanges();
     httpMock.expectOne('/api/rrhh/concepto-planilla').flush({ estado: 'OK', mensaje: 'ok', data: [] });
     flushPlanillaTipos();
     fixture.detectChanges();
     const comp = fixture.componentInstance;
-    expect(comp.canApprove()).toBe(true);
-    expect(comp.canActivar({ id: 1, estado: 'EN_REVISION' } as never)).toBe(true);
+    expect(comp.canWrite()).toBe(false);
+    expect(comp.canApprove()).toBe(false);
+    expect(comp.canActivar({ id: 1, estado: 'EN_REVISION' } as never)).toBe(false);
+    expect(comp.displayCols()).not.toContain('acciones');
   });
 });

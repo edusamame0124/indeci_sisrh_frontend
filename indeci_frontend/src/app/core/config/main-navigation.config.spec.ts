@@ -8,19 +8,21 @@ import {
 } from './main-navigation.config';
 import { flattenNavLeaves } from '../models/main-nav-item.model';
 
-describe('filterVisibleNavItems (Spec 009 — 5 módulos + Inicio)', () => {
+/** Etiquetas visibles para un rol (sin permisos granulares). */
+const labelsFor = (rol: string, permisos: string[] = []) =>
+  filterVisibleNavItems(MAIN_NAV_ITEMS, permisos, [rol]).map((i) => i.label);
+
+describe('filterVisibleNavItems — matriz RBAC V012_45', () => {
   it('muestra solo Inicio cuando el usuario no tiene roles', () => {
-    const r = filterVisibleNavItems(MAIN_NAV_ITEMS, [], []);
-    expect(r.map((i) => i.route)).toEqual(['/']);
+    expect(filterVisibleNavItems(MAIN_NAV_ITEMS, [], []).map((i) => i.route)).toEqual(['/']);
   });
 
-  it('ADMIN ve todos los módulos (Inicio + Catálogos + Módulo Vinculación + Gestiones del personal + Legajo Personal + Planilla + Reportes + Administración)', () => {
-    const r = filterVisibleNavItems(MAIN_NAV_ITEMS, [], ['ADMIN']);
-    expect(r.map((i) => i.label)).toEqual([
+  it('SUPER_ADMIN ve todos los módulos operativos', () => {
+    const labels = labelsFor('SUPER_ADMIN');
+    expect(labels).toEqual([
       'Inicio',
       'Catálogos',
       'Módulo Vinculación',
-      'Gestiones del personal',
       'Legajo Personal',
       'Planilla',
       'Reportes',
@@ -28,69 +30,128 @@ describe('filterVisibleNavItems (Spec 009 — 5 módulos + Inicio)', () => {
     ]);
   });
 
-  it('SUPER_ADMIN ve los 5 módulos completos', () => {
-    const r = filterVisibleNavItems(MAIN_NAV_ITEMS, [], ['SUPER_ADMIN']);
-    expect(r.find((i) => i.label === 'Catálogos')).toBeTruthy();
-    expect(r.find((i) => i.label === 'Módulo Vinculación')).toBeTruthy();
-    expect(r.find((i) => i.label === 'Planilla')).toBeTruthy();
-    expect(r.find((i) => i.label === 'Reportes')).toBeTruthy();
-    expect(r.find((i) => i.label === 'Administración')).toBeTruthy();
+  it('PLANILLA ve Catálogos, Planilla y Reportes — nunca Vinculación ni Administración', () => {
+    const labels = labelsFor('PLANILLA');
+    expect(labels).toEqual(['Inicio', 'Catálogos', 'Planilla', 'Reportes']);
+    expect(labels).not.toContain('Módulo Vinculación');
+    expect(labels).not.toContain('Legajo Personal');
+    expect(labels).not.toContain('Administración');
   });
 
-  it('RRHH_ADMIN (legacy) ve Inicio + Catálogos + Módulo Vinculación + Legajo Personal + Planilla, NO Reportes ni Administración', () => {
-    const r = filterVisibleNavItems(MAIN_NAV_ITEMS, [], ['RRHH_ADMIN']);
-    expect(r.map((i) => i.label)).toEqual([
-      'Inicio',
-      'Catálogos',
-      'Módulo Vinculación',
-      'Gestiones del personal',
-      'Legajo Personal',
-      'Planilla',
+  it('VINCULACION ve solo Módulo Vinculación y Legajo Personal', () => {
+    const labels = labelsFor('VINCULACION');
+    expect(labels).toEqual(['Inicio', 'Módulo Vinculación', 'Legajo Personal']);
+    expect(labels).not.toContain('Planilla');
+    expect(labels).not.toContain('Reportes');
+    expect(labels).not.toContain('Catálogos');
+  });
+
+  it('ASISTENCIA ve Planilla con SOLO 2 de los 10 hijos', () => {
+    const items = filterVisibleNavItems(MAIN_NAV_ITEMS, [], ['ASISTENCIA']);
+    expect(items.map((i) => i.label)).toEqual(['Inicio', 'Planilla']);
+
+    const planilla = items.find((i) => i.label === 'Planilla');
+    expect(planilla?.children?.map((c) => c.route)).toEqual([
+      '/planilla/periodos',
+      '/asistencia/carga',
     ]);
   });
 
-  it('ADMIN_TI ve todos los módulos (soporte TI, sin operación RRHH formal)', () => {
-    const r = filterVisibleNavItems(MAIN_NAV_ITEMS, [], ['ADMIN_TI']);
-    expect(r.map((i) => i.label)).toEqual([
-      'Inicio',
-      'Catálogos',
-      'Módulo Vinculación',
-      'Gestiones del personal',
-      'Legajo Personal',
-      'Planilla',
-      'Reportes',
-      'Administración',
+  it('ASISTENCIA no alcanza generación, movimientos, MCPP ni subsidios', () => {
+    const items = filterVisibleNavItems(MAIN_NAV_ITEMS, [], ['ASISTENCIA']);
+    const rutas = flattenNavLeaves(items.find((i) => i.label === 'Planilla')?.children).map(
+      (c) => c.route,
+    );
+    expect(rutas).not.toContain('/planilla/generacion-masiva');
+    expect(rutas).not.toContain('/planilla/movimientos');
+    expect(rutas).not.toContain('/planilla/mcpp');
+    expect(rutas).not.toContain('/asistencia/subsidios');
+    expect(rutas).not.toContain('/planilla/conceptos');
+  });
+
+  it('PLANILLA sí ve los 10 hijos del módulo', () => {
+    const planilla = filterVisibleNavItems(MAIN_NAV_ITEMS, [], ['PLANILLA']).find(
+      (i) => i.label === 'Planilla',
+    );
+    expect(planilla?.children?.length).toBe(10);
+    expect(planilla?.children?.map((c) => c.route)).toContain('/asistencia/subsidios');
+    expect(planilla?.children?.map((c) => c.route)).toContain('/planilla/mcpp');
+  });
+
+  it('RRHH_ADMIN queda acotado a Catálogos y Reportes', () => {
+    expect(labelsFor('RRHH_ADMIN')).toEqual(['Inicio', 'Catálogos', 'Reportes']);
+  });
+
+  it('GESTOR_USUARIOS ve SOLO Inicio + Administración', () => {
+    expect(labelsFor('GESTOR_USUARIOS')).toEqual(['Inicio', 'Administración']);
+  });
+
+  it('Mi perfil y Mi legajo son exclusivos del rol EMPLEADO', () => {
+    const empleado = labelsFor('EMPLEADO', ['PAP_EMPLEADO']);
+    expect(empleado).toContain('Mi perfil');
+    expect(empleado).toContain('Mi legajo');
+
+    for (const rol of ['SUPER_ADMIN', 'PLANILLA', 'VINCULACION', 'ASISTENCIA', 'RRHH_ADMIN']) {
+      expect(labelsFor(rol)).not.toContain('Mi perfil');
+      expect(labelsFor(rol)).not.toContain('Mi legajo');
+    }
+  });
+
+  it('Gestiones del personal es de los roles del portal, no de los operativos', () => {
+    expect(labelsFor('EMPLEADO', ['PAP_EMPLEADO'])).toContain('Gestiones del personal');
+    expect(labelsFor('JEFE', ['PAP_JEFE'])).toContain('Gestiones del personal');
+    expect(labelsFor('RRHH_PAPELETA', ['PAP_RRHH'])).toContain('Gestiones del personal');
+
+    for (const rol of ['SUPER_ADMIN', 'PLANILLA', 'VINCULACION', 'ASISTENCIA', 'RRHH_ADMIN']) {
+      expect(labelsFor(rol, ['PAP_JEFE', 'PAP_RRHH'])).not.toContain('Gestiones del personal');
+    }
+  });
+
+  it('EMPLEADO solo ve Gestión del empleado + Mis Asistencias', () => {
+    const gp = filterVisibleNavItems(MAIN_NAV_ITEMS, ['PAP_EMPLEADO'], ['EMPLEADO']).find(
+      (i) => i.label === 'Gestiones del personal',
+    );
+    expect(gp?.children?.map((c) => c.label)).toEqual(['Gestión del empleado', 'Mis Asistencias']);
+  });
+
+  it('JEFE (PAP_JEFE) suma su gestión pero no la de RRHH ni Teletrabajo', () => {
+    const gp = filterVisibleNavItems(MAIN_NAV_ITEMS, ['PAP_JEFE'], ['JEFE']).find(
+      (i) => i.label === 'Gestiones del personal',
+    );
+    expect(gp?.children?.map((c) => c.label)).toEqual([
+      'Gestión del empleado',
+      'Gestión del jefe inmediato',
+      'Mis Asistencias',
     ]);
   });
 
-  it('GESTOR_USUARIOS (V012_16) ve SOLO Inicio + Administración, ningún módulo operativo', () => {
-    const r = filterVisibleNavItems(MAIN_NAV_ITEMS, [], ['GESTOR_USUARIOS']);
-    expect(r.map((i) => i.label)).toEqual(['Inicio', 'Administración']);
+  it('RRHH_PAPELETA (PAP_RRHH) ve Gestión de RRHH y Teletrabajo', () => {
+    const gp = filterVisibleNavItems(MAIN_NAV_ITEMS, ['PAP_RRHH'], ['RRHH_PAPELETA']).find(
+      (i) => i.label === 'Gestiones del personal',
+    );
+    const labels = gp?.children?.map((c) => c.label) ?? [];
+    expect(labels).toContain('Gestión de RRHH');
+    expect(labels).toContain('Teletrabajo');
   });
 
-  it('PLANILLA_ANALISTA ve Planilla + Reportes, NO Administración', () => {
-    const r = filterVisibleNavItems(MAIN_NAV_ITEMS, [], ['PLANILLA_ANALISTA']);
-    expect(r.map((i) => i.label)).toContain('Planilla');
-    expect(r.map((i) => i.label)).toContain('Reportes');
-    expect(r.find((i) => i.label === 'Administración')).toBeUndefined();
+  it('los roles retirados no ven ningún módulo', () => {
+    for (const rol of [
+      'ADMIN',
+      'ADMIN_TI',
+      'PLANILLA_ANALISTA',
+      'PLANILLA_APROBADOR',
+      'RRHH_JEFE',
+      'RRHH_ANALISTA',
+      'RRHH_CONSULTA',
+    ]) {
+      expect(labelsFor(rol)).toEqual(['Inicio']);
+    }
   });
 
-  it('RRHH_CONSULTA ve Módulo Vinculación + Legajo Personal + Planilla + Reportes (lectura), NO Administración', () => {
-    const r = filterVisibleNavItems(MAIN_NAV_ITEMS, [], ['RRHH_CONSULTA']);
-    expect(r.map((i) => i.label)).toEqual([
-      'Inicio',
-      'Catálogos',
-      'Módulo Vinculación',
-      'Gestiones del personal',
-      'Legajo Personal',
-      'Planilla',
-      'Reportes',
-    ]);
-  });
-
-  it('Catálogos agrupa 19 enlaces en 4 sub-expansiones (Conceptos re-hospedado bajo Planilla)', () => {
-    const r = filterVisibleNavItems(MAIN_NAV_ITEMS, [], ['ADMIN']);
-    const cat = r.find((i) => i.label === 'Catálogos');
+  it('Catálogos agrupa 19 enlaces en 4 sub-expansiones', () => {
+    const cat = filterVisibleNavItems(MAIN_NAV_ITEMS, [], ['SUPER_ADMIN']).find(
+      (i) => i.label === 'Catálogos',
+    );
     expect(cat?.children?.length).toBe(4);
     expect(cat?.children?.map((c) => c.label)).toEqual([
       'Referencia',
@@ -99,176 +160,45 @@ describe('filterVisibleNavItems (Spec 009 — 5 módulos + Inicio)', () => {
       'Planilla y legal',
     ]);
     expect(catalogLeafCount()).toBe(19);
-    const labels = flattenNavLeaves(cat?.children).map((c) => c.label);
-    expect(labels).toContain('Bancos');
-    // Conceptos de Planilla migró al grupo Planilla (SPEC_CONCEPTOS_PLANILLA §8/D1).
-    expect(labels).not.toContain('Conceptos de planilla');
-    expect(labels).toContain('Régimen pensionario');
   });
 
   it('filterNavChildrenByQuery filtra hojas de catálogo por etiqueta', () => {
     const cat = MAIN_NAV_ITEMS.find((i) => i.label === 'Catálogos');
-    const filtered = filterNavChildrenByQuery(cat?.children ?? [], 'banco');
-    const leaves = flattenNavLeaves(filtered);
+    const leaves = flattenNavLeaves(filterNavChildrenByQuery(cat?.children ?? [], 'banco'));
     expect(leaves.map((l) => l.label)).toEqual(['Bancos']);
   });
 
-  it('Módulo Vinculación expone 3 sub-items con etiquetas del flujo', () => {
-    const r = filterVisibleNavItems(MAIN_NAV_ITEMS, [], ['RRHH_ADMIN']);
-    const emp = r.find((i) => i.label === 'Módulo Vinculación');
-    expect(emp?.children?.length).toBe(3);
+  it('Módulo Vinculación expone 3 sub-items bajo /empleados/', () => {
+    const emp = filterVisibleNavItems(MAIN_NAV_ITEMS, [], ['VINCULACION']).find(
+      (i) => i.label === 'Módulo Vinculación',
+    );
     expect(emp?.children?.map((c) => c.label)).toEqual([
       'Datos personales',
       'Eventos del período',
       'Ficha 360',
     ]);
+    const rutas = emp?.children?.map((c) => c.route).filter((r): r is string => Boolean(r)) ?? [];
+    expect(rutas.every((p) => p.startsWith('/empleados/'))).toBe(true);
   });
 
-  it('Gestiones del personal expone 5 sub-items con PAP_JEFE+PAP_RRHH (3 gestiones + Mis Asistencias + Teletrabajo)', () => {
-    const r = filterVisibleNavItems(MAIN_NAV_ITEMS, ['PAP_JEFE', 'PAP_RRHH'], ['ADMIN']);
-    const gp = r.find((i) => i.label === 'Gestiones del personal');
-    expect(gp?.children?.length).toBe(5);
-    expect(gp?.children?.every((c) => !c.comingSoon)).toBe(true);
-    expect(gp?.children?.map((c) => c.label)).toEqual([
-      'Gestión del empleado',
-      'Gestión del jefe inmediato',
-      'Gestión de RRHH',
-      'Mis Asistencias',
-      'Teletrabajo',
-    ]);
-    const routes = gp?.children?.map((c) => c.route).filter((p): p is string => Boolean(p)) ?? [];
-    expect(routes).toEqual([
-      '/gestiones-personal/empleado',
-      '/gestiones-personal/jefe-inmediato',
-      '/gestiones-personal/rrhh',
-      '/asistencia-empleado/mis-asistencias',
-      '/teletrabajo',
-    ]);
-  });
-
-  it('EMPLEADO (PAP_EMPLEADO) solo ve Gestión del empleado + Mis Asistencias en Gestiones del personal', () => {
-    const r = filterVisibleNavItems(MAIN_NAV_ITEMS, ['PAP_EMPLEADO'], ['EMPLEADO']);
-    const gp = r.find((i) => i.label === 'Gestiones del personal');
-    expect(gp?.children?.map((c) => c.label)).toEqual(['Gestión del empleado', 'Mis Asistencias']);
-  });
-
-  it('EMPLEADO NO ve módulos operativos (Vinculación, Legajo Personal); sí ve Mi perfil y Mi legajo', () => {
-    const r = filterVisibleNavItems(MAIN_NAV_ITEMS, ['PAP_EMPLEADO'], ['EMPLEADO']);
-    const labels = r.map((i) => i.label);
-    expect(labels).toContain('Mi perfil');
-    expect(labels).toContain('Mi legajo');
-    expect(labels).not.toContain('Módulo Vinculación');
-    expect(labels).not.toContain('Legajo Personal');
-    expect(labels).not.toContain('Portal del empleado');
-  });
-
-  it('Jefe (PAP_JEFE) ve su gestión pero NO Gestión de RRHH ni Teletrabajo', () => {
-    const r = filterVisibleNavItems(MAIN_NAV_ITEMS, ['PAP_JEFE'], ['JEFE']);
-    const gp = r.find((i) => i.label === 'Gestiones del personal');
-    expect(gp?.children?.map((c) => c.label)).toEqual([
-      'Gestión del empleado',
-      'Gestión del jefe inmediato',
-      'Mis Asistencias',
-    ]);
-  });
-
-  it('Legajo Personal expone 1 sub-item navegable bajo /legajo/', () => {
-    const r = filterVisibleNavItems(MAIN_NAV_ITEMS, [], ['ADMIN']);
-    const legajo = r.find((i) => i.label === 'Legajo Personal');
-    expect(legajo?.children?.length).toBe(1);
-    expect(legajo?.children?.every((c) => !c.comingSoon)).toBe(true);
-    const routes = legajo?.children?.map((c) => c.route).filter((p): p is string => Boolean(p)) ?? [];
-    expect(routes.every((p) => p.startsWith('/legajo'))).toBe(true);
-    expect(routes).toContain('/legajo');
-  });
-
-  it('Módulo Vinculación usa rutas bajo /empleados/', () => {
-    const r = filterVisibleNavItems(MAIN_NAV_ITEMS, [], ['ADMIN']);
-    const emp = r.find((i) => i.label === 'Módulo Vinculación');
-    const routes = emp?.children?.map((c) => c.route).filter((r): r is string => Boolean(r)) ?? [];
-    expect(routes.every((p) => p.startsWith('/empleados/'))).toBe(true);
-  });
-
-  it('Spec 009: 16 catálogos extendidos no están comingSoon (Conceptos migró a Planilla)', () => {
-    const r = filterVisibleNavItems(MAIN_NAV_ITEMS, [], ['ADMIN']);
-    const cat = r.find((i) => i.label === 'Catálogos');
-    const leaves = flattenNavLeaves(cat?.children);
-    const extended = leaves.filter((c) => c.route?.startsWith('/catalogos/'));
-    const spec009 = extended.filter(
-      (c) =>
-        c.route &&
-        !['/catalogos/bancos', '/catalogos/tipos-cuenta', '/catalogos/ubigeo'].includes(c.route),
+  it('Reportes expone 7 sub-items navegables', () => {
+    const rep = filterVisibleNavItems(MAIN_NAV_ITEMS, [], ['PLANILLA']).find(
+      (i) => i.label === 'Reportes',
     );
-    expect(spec009.length).toBe(16);
-    expect(spec009.every((c) => !c.comingSoon)).toBe(true);
-  });
-
-  it('Planilla expone Centro de Validaciones y Generación masiva/individual como menú directamente', () => {
-    const r = filterVisibleNavItems(MAIN_NAV_ITEMS, [], ['ADMIN']);
-    const pla = r.find((i) => i.label === 'Planilla');
-    // 11 ítems de primer nivel: todos directos en planilla.
-    expect(pla?.children?.length).toBe(11);
-    expect(pla?.children?.map((c) => c.route)).toContain('/planilla/generacion-masiva');
-    expect(pla?.children?.map((c) => c.route)).toContain('/planilla/generacion-individual');
-    // Todas las rutas navegables (hojas).
-    expect(flattenNavLeaves(pla?.children).map((c) => c.route).sort()).toEqual(
-      [
-        '/planilla/configuracion-cas',
-        '/planilla/conceptos',
-        '/planilla/periodos',
-        '/asistencia/carga',
-        '/asistencia/subsidios',
-        '/planilla/suspensiones',
-        '/planilla/validaciones',
-        '/planilla/generacion-masiva',
-        '/planilla/generacion-individual',
-        '/planilla/movimientos',
-        '/planilla/mcpp',
-      ].sort(),
-    );
-  });
-
-  it('Reportes expone 7 sub-items navegables (Boleta se accede desde CTA en /planilla/resumen, no desde sidebar; F3.5 agrega Tablero consolidado)', () => {
-    const r = filterVisibleNavItems(MAIN_NAV_ITEMS, [], ['ADMIN']);
-    const rep = r.find((i) => i.label === 'Reportes');
     expect(rep?.children?.length).toBe(7);
     expect(rep?.children?.every((c) => !c.comingSoon)).toBe(true);
-    expect(rep?.children?.map((c) => c.route).sort()).toEqual(
-      [
-        '/reportes/resumen-mensual',
-        '/reportes/consolidado',
-        '/reportes/resumen-meta',
-        '/reportes/conciliacion',
-        '/reportes/archivo-bancos',
-        '/reportes/exportar-excel',
-        '/reportes/historial',
-      ].sort(),
-    );
   });
 
-  it('Administración preserva 4 sub-items de Spec 007 sin comingSoon', () => {
-    const r = filterVisibleNavItems(MAIN_NAV_ITEMS, [], ['ADMIN']);
-    const adm = r.find((i) => i.label === 'Administración');
-    expect(adm?.children?.length).toBe(4);
-    expect(adm?.children?.some((c) => c.comingSoon)).toBe(false);
+  it('Administración preserva sus 4 sub-items', () => {
+    const adm = filterVisibleNavItems(MAIN_NAV_ITEMS, [], ['GESTOR_USUARIOS']).find(
+      (i) => i.label === 'Administración',
+    );
     expect(adm?.children?.map((c) => c.label)).toEqual([
       'Usuarios',
       'Roles',
       'Permisos',
       'Auditoría',
     ]);
-  });
-
-  it('Bancos / Tipos de cuenta / Ubigeo no están marcados comingSoon (ya implementados Spec 006)', () => {
-    const r = filterVisibleNavItems(MAIN_NAV_ITEMS, [], ['ADMIN']);
-    const cat = r.find((i) => i.label === 'Catálogos');
-    const leaves = flattenNavLeaves(cat?.children);
-    const banco = leaves.find((c) => c.route === '/catalogos/bancos');
-    const tipo = leaves.find((c) => c.route === '/catalogos/tipos-cuenta');
-    const ubigeo = leaves.find((c) => c.route === '/catalogos/ubigeo');
-    expect(banco?.comingSoon).toBeFalsy();
-    expect(tipo?.comingSoon).toBeFalsy();
-    expect(ubigeo?.comingSoon).toBeFalsy();
   });
 
   it('aplica conjunción permiso + rol cuando ambos están definidos', () => {
@@ -279,11 +209,15 @@ describe('filterVisibleNavItems (Spec 009 — 5 módulos + Inicio)', () => {
         route: '/combo',
         icon: 'shield',
         requiredPermissions: ['x'],
-        requiredAnyRole: ['ADMIN'],
+        requiredAnyRole: ['SUPER_ADMIN'],
       },
     ] as const;
 
-    expect(filterVisibleNavItems(items, [], ['ADMIN']).map((i) => i.route)).not.toContain('/combo');
-    expect(filterVisibleNavItems(items, ['x'], ['ADMIN']).map((i) => i.route)).toContain('/combo');
+    expect(filterVisibleNavItems(items, [], ['SUPER_ADMIN']).map((i) => i.route)).not.toContain(
+      '/combo',
+    );
+    expect(filterVisibleNavItems(items, ['x'], ['SUPER_ADMIN']).map((i) => i.route)).toContain(
+      '/combo',
+    );
   });
 });

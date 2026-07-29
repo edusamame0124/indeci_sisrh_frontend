@@ -3,6 +3,7 @@ import { finalize } from 'rxjs';
 
 import { LegajoApiService } from './legajo-api';
 import { LegajoResumen } from '../models/legajo.model';
+import { normalizarFotoPerfil } from '../utils/legajo-foto.util';
 
 @Injectable({
   providedIn: 'root',
@@ -44,51 +45,8 @@ export class LegajoStateService {
 
     const foto = r?.fotoPerfil ?? r?.persona?.fotoPerfil ?? r?.persona?.foto ?? null;
 
-    return this.normalizarFotoPerfil(foto);
+    return normalizarFotoPerfil(foto);
   });
-  private normalizarFotoPerfil(foto: string | null | undefined): string | null {
-    if (!foto) {
-      return null;
-    }
-
-    const value = foto.trim();
-
-    if (!value) {
-      return null;
-    }
-
-    // Ya viene lista para mostrar
-    if (value.startsWith('data:image')) {
-      return value;
-    }
-
-    // Ya viene como URL
-    if (value.startsWith('http://') || value.startsWith('https://')) {
-      return value;
-    }
-
-    // Base64 PNG
-    if (value.startsWith('iVBOR')) {
-      return `data:image/png;base64,${value}`;
-    }
-
-    // Base64 JPG/JPEG
-    if (value.startsWith('/9j/')) {
-      return `data:image/jpeg;base64,${value}`;
-    }
-
-    // Base64 WEBP
-    if (value.startsWith('UklGR')) {
-      return `data:image/webp;base64,${value}`;
-    }
-
-    // Fallback: asumimos imagen PNG si parece base64
-    if (/^[A-Za-z0-9+/=]+$/.test(value) && value.length > 100) {
-      return `data:image/png;base64,${value}`;
-    }
-
-    return value;
-  }
   readonly nombreCompleto = computed(() => {
     const p = this.persona();
 

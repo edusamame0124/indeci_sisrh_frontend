@@ -8,32 +8,24 @@ import {
 } from './reportes-access.guard';
 import { AuthService } from '../services/auth.service';
 
-describe('hasReportesAccess', () => {
-  it('permite roles TI', () => {
-    expect(hasReportesAccess(['ADMIN'])).toBe(true);
-    expect(hasReportesAccess(['ADMIN_TI'])).toBe(true);
+describe('hasReportesAccess (RBAC V012_45)', () => {
+  it('permite SUPER_ADMIN, PLANILLA y RRHH_ADMIN', () => {
     expect(hasReportesAccess(['SUPER_ADMIN'])).toBe(true);
+    expect(hasReportesAccess(['PLANILLA'])).toBe(true);
+    expect(hasReportesAccess(['RRHH_ADMIN'])).toBe(true);
   });
-  it('permite RRHH_JEFE y RRHH_CONSULTA', () => {
-    expect(hasReportesAccess(['RRHH_JEFE'])).toBe(true);
-    expect(hasReportesAccess(['RRHH_CONSULTA'])).toBe(true);
+  it('deniega VINCULACION y ASISTENCIA', () => {
+    expect(hasReportesAccess(['VINCULACION'])).toBe(false);
+    expect(hasReportesAccess(['ASISTENCIA'])).toBe(false);
   });
-  it('permite analistas de planilla (archivo bancos / AIRHSP)', () => {
-    expect(hasReportesAccess(['PLANILLA_ANALISTA'])).toBe(true);
-    expect(hasReportesAccess(['PLANILLA_APROBADOR'])).toBe(true);
-  });
-  it('rechaza RRHH_ADMIN legacy sin ampliación', () => {
-    expect(hasReportesAccess(['RRHH_ADMIN'])).toBe(false);
-  });
-  it('rechaza roles desconocidos', () => {
-    expect(hasReportesAccess(['SOLICITANTE'])).toBe(false);
+  it('deniega roles retirados, portal y vacío', () => {
+    expect(hasReportesAccess(['RRHH_JEFE'])).toBe(false);
+    expect(hasReportesAccess(['RRHH_CONSULTA'])).toBe(false);
+    expect(hasReportesAccess(['EMPLEADO'])).toBe(false);
     expect(hasReportesAccess([])).toBe(false);
   });
-  it('incluye roles TI y RRHH de reportes en REPORTES_ACCESS_ROLES', () => {
-    expect(REPORTES_ACCESS_ROLES).toContain('SUPER_ADMIN');
-    expect(REPORTES_ACCESS_ROLES).toContain('ADMIN_TI');
-    expect(REPORTES_ACCESS_ROLES).toContain('PLANILLA_ANALISTA');
-    expect(REPORTES_ACCESS_ROLES).toContain('RRHH_CONSULTA');
+  it('REPORTES_ACCESS_ROLES contiene exactamente los 3 roles vigentes', () => {
+    expect(REPORTES_ACCESS_ROLES).toEqual(['SUPER_ADMIN', 'PLANILLA', 'RRHH_ADMIN']);
   });
 });
 
@@ -42,12 +34,12 @@ describe('reportesAccessGuard', () => {
     TestBed.configureTestingModule({ providers: [provideRouter([])] });
   });
 
-  it('permite SUPER_ADMIN autenticado', () => {
+  it('permite PLANILLA autenticado', () => {
     const auth = TestBed.inject(AuthService);
     vi.spyOn(auth, 'isAuthenticated').mockReturnValue(true);
-    vi.spyOn(auth, 'roles').mockReturnValue(['SUPER_ADMIN']);
+    vi.spyOn(auth, 'roles').mockReturnValue(['PLANILLA']);
     const result = TestBed.runInInjectionContext(() =>
-      reportesAccessGuard({} as never, { url: '/reportes/boleta/42/2026-05' } as never),
+      reportesAccessGuard({} as never, { url: '/reportes/resumen-mensual' } as never),
     );
     expect(result).toBe(true);
   });
@@ -57,7 +49,7 @@ describe('reportesAccessGuard', () => {
     vi.spyOn(auth, 'isAuthenticated').mockReturnValue(false);
     vi.spyOn(auth, 'roles').mockReturnValue([]);
     const result = TestBed.runInInjectionContext(() =>
-      reportesAccessGuard({} as never, { url: '/reportes/boleta/42/2026-05' } as never),
+      reportesAccessGuard({} as never, { url: '/reportes/resumen-mensual' } as never),
     );
     expect(result).toBeInstanceOf(UrlTree);
     expect(String(result as UrlTree)).toContain('/auth/login');
@@ -66,9 +58,9 @@ describe('reportesAccessGuard', () => {
   it('redirige a / si autenticado sin rol de reportes', () => {
     const auth = TestBed.inject(AuthService);
     vi.spyOn(auth, 'isAuthenticated').mockReturnValue(true);
-    vi.spyOn(auth, 'roles').mockReturnValue(['RRHH_ANALISTA']);
+    vi.spyOn(auth, 'roles').mockReturnValue(['ASISTENCIA']);
     const result = TestBed.runInInjectionContext(() =>
-      reportesAccessGuard({} as never, { url: '/reportes/boleta/42/2026-05' } as never),
+      reportesAccessGuard({} as never, { url: '/reportes/resumen-mensual' } as never),
     );
     expect(result).toBeInstanceOf(UrlTree);
     expect(String(result as UrlTree)).toContain('/');

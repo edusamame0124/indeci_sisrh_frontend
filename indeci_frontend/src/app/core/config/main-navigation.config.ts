@@ -1,15 +1,29 @@
 import type { MainNavItem, MainNavChildItem } from '../models/main-nav-item.model';
 import { flattenNavLeaves } from '../models/main-nav-item.model';
-import { ADMIN_MODULE_ACCESS_ROLES } from '../guards/admin-access.guard';
-import { CATALOGOS_ACCESS_ROLES } from '../guards/catalogos-access.guard';
-import { REPORTES_ACCESS_ROLES } from '../guards/reportes-access.guard';
-import { EMPLEADOS_ACCESS_ROLES } from './empleados-access-roles';
-import { PLANILLA_OPERATIVA_ROLES } from './sisrh-roles.config';
+import {
+  ADMIN_MODULE_ACCESS_ROLES,
+  ASISTENCIA_ACCESS_ROLES,
+  AUTOSERVICIO_ROLES,
+  CATALOGOS_ACCESS_ROLES,
+  GESTIONES_PERSONAL_ROLES,
+  PLANILLA_FULL_ROLES,
+  PLANILLA_MENU_ROLES,
+  REPORTES_ACCESS_ROLES,
+  VINCULACION_ACCESS_ROLES,
+} from './sisrh-roles.config';
 
 /**
  * Menú lateral principal (shell post-login).
- * Fase 5: catálogos agrupados en 4 sub-expansiones + íconos únicos por ítem.
- * Las rutas no cambian; los guards de ruta siguen siendo la fuente de verdad.
+ *
+ * RBAC V012_45 — un rol funcional por módulo:
+ *   PLANILLA → Planilla (10/10), Catálogos (lectura), Reportes.
+ *   ASISTENCIA → solo Periodos y Gestión de Asistencia dentro de Planilla.
+ *   VINCULACION → Módulo Vinculación y Legajo Personal.
+ *   RRHH_ADMIN → Catálogos y Reportes.
+ *   EMPLEADO → Mi perfil, Mi legajo y Gestiones del personal.
+ *
+ * Los guards de ruta siguen siendo la fuente de verdad del acceso; este archivo
+ * solo decide qué se dibuja en el sidebar.
  */
 export const MAIN_NAV_ITEMS: readonly MainNavItem[] = [
   { label: 'Inicio', route: '/', icon: 'home' },
@@ -17,14 +31,14 @@ export const MAIN_NAV_ITEMS: readonly MainNavItem[] = [
     label: 'Mi perfil',
     route: '/portal-empleado/mi-perfil',
     icon: 'account_circle',
-    requiredAnyRole: [...EMPLEADOS_ACCESS_ROLES],
+    requiredAnyRole: [...AUTOSERVICIO_ROLES],
   },
   {
-  label: 'Mi legajo',
-  route: '/legajo/mi-legajo',
-  icon: 'folder_shared',
-  requiredAnyRole: [...EMPLEADOS_ACCESS_ROLES],
-},
+    label: 'Mi legajo',
+    route: '/legajo/mi-legajo',
+    icon: 'folder_shared',
+    requiredAnyRole: [...AUTOSERVICIO_ROLES],
+  },
   {
     label: 'Catálogos',
     route: '',
@@ -93,10 +107,9 @@ export const MAIN_NAV_ITEMS: readonly MainNavItem[] = [
     label: 'Módulo Vinculación',
     route: '',
     icon: 'people',
-    // Operativo RRHH/TI (gestión de datos de TODOS los empleados) — no autoservicio.
-    // No usar EMPLEADOS_ACCESS_ROLES: incluye EMPLEADO/JEFE/RRHH_PAPELETA, que no
-    // deben ver ni acceder a este módulo (segregación de privilegios).
-    requiredAnyRole: [...PLANILLA_OPERATIVA_ROLES],
+    // Único rol funcional: VINCULACION (+ SUPER_ADMIN). Ni el portal de
+    // autoservicio ni los roles de planilla entran aquí.
+    requiredAnyRole: [...VINCULACION_ACCESS_ROLES],
     children: [
       { label: 'Datos personales', route: '/empleados/personas', icon: 'person' },
       { label: 'Eventos del período', route: '/empleados/eventos', icon: 'event_note' },
@@ -108,7 +121,8 @@ export const MAIN_NAV_ITEMS: readonly MainNavItem[] = [
     label: 'Gestiones del personal',
     route: '',
     icon: 'manage_accounts',
-    requiredAnyRole: [...EMPLEADOS_ACCESS_ROLES],
+    // Papeletas / autoservicio: roles del portal. Los hijos se recortan por PAP_*.
+    requiredAnyRole: [...GESTIONES_PERSONAL_ROLES],
     children: [
       { label: 'Gestión del empleado', route: '/gestiones-personal/empleado', icon: 'badge' },
       {
@@ -141,9 +155,9 @@ export const MAIN_NAV_ITEMS: readonly MainNavItem[] = [
     label: 'Legajo Personal',
     route: '',
     icon: 'folder_shared',
-    // Operativo RRHH/TI (legajo de TODOS los empleados) — no autoservicio.
+    // Legajo de TODOS los empleados → módulo Vinculación.
     // EMPLEADO ya tiene su propio acceso vía "Mi legajo" (arriba en este menú).
-    requiredAnyRole: [...PLANILLA_OPERATIVA_ROLES],
+    requiredAnyRole: [...VINCULACION_ACCESS_ROLES],
     children: [
       {
         label: 'Legajo',
@@ -157,46 +171,78 @@ export const MAIN_NAV_ITEMS: readonly MainNavItem[] = [
     label: 'Planilla',
     route: '',
     icon: 'calculate',
-    requiredAnyRole: [...PLANILLA_OPERATIVA_ROLES],
+    // Padre abierto también a ASISTENCIA, que solo ve 2 de los 10 hijos.
+    requiredAnyRole: [...PLANILLA_MENU_ROLES],
     children: [
       {
         label: 'Configuración Anual',
         route: '/planilla/configuracion-cas',
         icon: 'settings',
         sectionHeader: 'Configuración',
+        requiredAnyRole: [...PLANILLA_FULL_ROLES],
       },
-      { label: 'Conceptos de Planilla', route: '/planilla/conceptos', icon: 'receipt_long' },
       {
+        label: 'Conceptos de Planilla',
+        route: '/planilla/conceptos',
+        icon: 'receipt_long',
+        requiredAnyRole: [...PLANILLA_FULL_ROLES],
+      },
+      {
+        // Visible para ASISTENCIA: consulta el período abierto (PER_READ).
         label: 'Periodos',
         route: '/planilla/periodos',
         icon: 'event',
         sectionHeader: 'OPERACIÓN MENSUAL',
+        requiredAnyRole: [...PLANILLA_MENU_ROLES],
       },
-      { label: 'Gestión de Asistencia', route: '/asistencia/carga', icon: 'event_available' },
+      {
+        // Operado por ASISTENCIA y PLANILLA (permisos ASI_*).
+        label: 'Gestión de Asistencia',
+        route: '/asistencia/carga',
+        icon: 'event_available',
+        requiredAnyRole: [...ASISTENCIA_ACCESS_ROLES],
+      },
       {
         label: 'Subsidios (Enfermedad/Maternidad)',
         route: '/asistencia/subsidios',
         icon: 'medical_services',
+        requiredAnyRole: [...PLANILLA_FULL_ROLES],
       },
-      { label: 'Suspensiones / Licencias', route: '/planilla/suspensiones', icon: 'event_busy' },
-
+      {
+        label: 'Suspensiones / Licencias',
+        route: '/planilla/suspensiones',
+        icon: 'event_busy',
+        requiredAnyRole: [...PLANILLA_FULL_ROLES],
+      },
 
       {
         label: 'Centro de Validaciones',
         route: '/planilla/validaciones',
         icon: 'rule',
         sectionHeader: 'PROCESAR PLANILLA',
+        requiredAnyRole: [...PLANILLA_FULL_ROLES],
       },
-      { label: 'Generación Planilla', route: '/planilla/generacion-masiva', icon: 'group_work' },
-    
+      {
+        label: 'Generación Planilla',
+        route: '/planilla/generacion-masiva',
+        icon: 'group_work',
+        requiredAnyRole: [...PLANILLA_FULL_ROLES],
+      },
+
       {
         label: 'Movimientos',
         route: '/planilla/movimientos',
         icon: 'list',
         sectionHeader: 'Resultados',
+        requiredAnyRole: [...PLANILLA_FULL_ROLES],
       },
 
-      { label: 'MCPP', route: '/planilla/mcpp', icon: 'receipt' },
+      {
+        label: 'MCPP',
+        route: '/planilla/mcpp',
+        icon: 'receipt',
+        requiredAnyRole: [...PLANILLA_FULL_ROLES],
+      },
     ],
   },
 

@@ -61,11 +61,11 @@ describe('MainLayoutComponent (Spec 009 — sidebar reorganizado)', () => {
     expect(text).not.toContain('Reportes');
   });
 
-  it('ADMIN ve los 5 módulos y los labels del flujo Empleados', () => {
+  it('SUPER_ADMIN ve todos los módulos operativos y los labels de Vinculación', () => {
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
       imports: [MainLayoutComponent],
-      providers: [...commonProviders, provideAuth(['ADMIN'], 'admin.test')],
+      providers: [...commonProviders, provideAuth(['SUPER_ADMIN'], 'admin.test')],
     });
     const fixture = TestBed.createComponent(MainLayoutComponent);
     fixture.detectChanges();
@@ -75,14 +75,63 @@ describe('MainLayoutComponent (Spec 009 — sidebar reorganizado)', () => {
     expect(text).toContain('Planilla');
     expect(text).toContain('Reportes');
     expect(text).toContain('Administración');
-    // Sub-items reales del módulo de vinculación y gestiones del personal
     expect(text).toContain('Datos personales');
     expect(text).toContain('Eventos del período');
     expect(text).toContain('Ficha 360');
-    expect(text).toContain('Gestiones del personal');
   });
 
-  it('RRHH_ADMIN ve Catálogos (lectura) y NO ve Reportes ni Administración', () => {
+  it('PLANILLA ve Planilla, Catálogos y Reportes; no Vinculación ni Administración', () => {
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      imports: [MainLayoutComponent],
+      providers: [...commonProviders, provideAuth(['PLANILLA'], 'planilla.test')],
+    });
+    const fixture = TestBed.createComponent(MainLayoutComponent);
+    fixture.detectChanges();
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text).toContain('Catálogos');
+    expect(text).toContain('Planilla');
+    expect(text).toContain('Reportes');
+    expect(text).not.toContain('Módulo Vinculación');
+    expect(text).not.toContain('Legajo Personal');
+    expect(text).not.toContain('Administración');
+  });
+
+  it('VINCULACION ve Vinculación y Legajo Personal; no Planilla ni Reportes', () => {
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      imports: [MainLayoutComponent],
+      providers: [...commonProviders, provideAuth(['VINCULACION'], 'vinc.test')],
+    });
+    const fixture = TestBed.createComponent(MainLayoutComponent);
+    fixture.detectChanges();
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text).toContain('Módulo Vinculación');
+    expect(text).toContain('Legajo Personal');
+    expect(text).not.toContain('Planilla');
+    expect(text).not.toContain('Reportes');
+    expect(text).not.toContain('Catálogos');
+  });
+
+  it('ASISTENCIA ve Planilla pero solo Periodos y Gestión de Asistencia', () => {
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      imports: [MainLayoutComponent],
+      providers: [...commonProviders, provideAuth(['ASISTENCIA'], 'asis.test')],
+    });
+    const fixture = TestBed.createComponent(MainLayoutComponent);
+    fixture.detectChanges();
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text).toContain('Planilla');
+    expect(text).toContain('Periodos');
+    expect(text).toContain('Gestión de Asistencia');
+    expect(text).not.toContain('Generación Planilla');
+    expect(text).not.toContain('MCPP');
+    expect(text).not.toContain('Movimientos');
+    expect(text).not.toContain('Módulo Vinculación');
+  });
+
+  it('RRHH_ADMIN queda acotado a Catálogos y Reportes', () => {
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
       imports: [MainLayoutComponent],
@@ -92,9 +141,9 @@ describe('MainLayoutComponent (Spec 009 — sidebar reorganizado)', () => {
     fixture.detectChanges();
     const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
     expect(text).toContain('Catálogos');
-    expect(text).toContain('Módulo Vinculación');
-    expect(text).toContain('Planilla');
-    expect(text).not.toContain('Reportes');
+    expect(text).toContain('Reportes');
+    expect(text).not.toContain('Módulo Vinculación');
+    expect(text).not.toContain('Legajo Personal');
     expect(text).not.toContain('Administración');
   });
 
@@ -123,7 +172,7 @@ describe('MainLayoutComponent (Spec 009 — sidebar reorganizado)', () => {
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
       imports: [MainLayoutComponent],
-      providers: [...commonProviders, provideAuth(['ADMIN'], 'admin.test')],
+      providers: [...commonProviders, provideAuth(['SUPER_ADMIN'], 'admin.test')],
     });
     const fixture = TestBed.createComponent(MainLayoutComponent);
     fixture.detectChanges();
@@ -139,7 +188,7 @@ describe('MainLayoutComponent (Spec 009 — sidebar reorganizado)', () => {
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
       imports: [MainLayoutComponent],
-      providers: [...commonProviders, provideAuth(['ADMIN'], 'admin.test')],
+      providers: [...commonProviders, provideAuth(['SUPER_ADMIN'], 'admin.test')],
     });
     const fixture = TestBed.createComponent(MainLayoutComponent);
     fixture.detectChanges();
@@ -150,7 +199,8 @@ describe('MainLayoutComponent (Spec 009 — sidebar reorganizado)', () => {
     // Spec 009 — todos los items implementados deben renderizar como <a>:
     expect(root.querySelector('a[href="/planilla/periodos"]')).not.toBeNull();
     expect(root.querySelector('a[href="/planilla/generacion-masiva"]')).not.toBeNull();
-    expect(root.querySelector('a[href="/planilla/generacion-individual"]')).not.toBeNull();
+    // `/planilla/generacion-individual` no está en el sidebar: se accede por CTA
+    // desde Generación Planilla. La aserción anterior lo exigía y fallaba.
     expect(root.querySelector('a[href="/planilla/movimientos"]')).not.toBeNull();
     expect(root.querySelector('a[href="/reportes/resumen-mensual"]')).not.toBeNull();
     expect(root.querySelector('a[href="/reportes/exportar-excel"]')).not.toBeNull();

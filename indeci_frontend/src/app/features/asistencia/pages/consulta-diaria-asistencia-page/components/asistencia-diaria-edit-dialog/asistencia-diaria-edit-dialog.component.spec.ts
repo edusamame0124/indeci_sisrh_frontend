@@ -14,6 +14,7 @@ function rowBase(partial?: Partial<AsistenciaDiariaRow>): AsistenciaDiariaRow {
   return {
     detalleId: 1,
     cabeceraId: 2,
+    importacionId: null,
     empleadoId: 3,
     dni: '12345678',
     nombreCompleto: 'SERVIDOR PUBLICO',

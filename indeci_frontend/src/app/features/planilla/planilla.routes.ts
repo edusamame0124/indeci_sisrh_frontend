@@ -1,11 +1,25 @@
 import { Routes } from '@angular/router';
-import { planillaAccessGuard } from '../../core/guards/planilla-access.guard';
+import {
+  planillaAccessGuard,
+  planillaPeriodosGuard,
+} from '../../core/guards/planilla-access.guard';
 
 /**
  * Rutas Módulo 3 — Planilla electrónica (Spec 009 / T159).
- * Por ahora solo `periodos` está implementada (T152). Las demás llegan con T153-T158.
+ *
+ * RBAC V012_45: `periodos` se declara ANTES del bloque general porque es el
+ * único punto de planilla que alcanza el rol `ASISTENCIA` (solo consulta —
+ * el backend le niega PLA_WRITE). El resto exige `PLANILLA` o `SUPER_ADMIN`.
  */
 export const PLANILLA_ROUTES: Routes = [
+  /* ——— Periodos (T152) — también visible para ASISTENCIA (solo lectura) ——— */
+  {
+    path: 'periodos',
+    canActivate: [planillaPeriodosGuard],
+    loadComponent: () =>
+      import('./pages/periodos-page/periodos-page.component').then((m) => m.PeriodosPageComponent),
+    title: 'Periodos de planilla — SISRH-INDECI',
+  },
   {
     path: '',
     canActivate: [planillaAccessGuard],
@@ -41,16 +55,6 @@ export const PLANILLA_ROUTES: Routes = [
             (m) => m.RecalculoWizardPageComponent,
           ),
         title: 'Asistente de Recálculo — SISRH-INDECI',
-      },
-
-      /* ——— Periodos (T152) ——— */
-      {
-        path: 'periodos',
-        loadComponent: () =>
-          import('./pages/periodos-page/periodos-page.component').then(
-            (m) => m.PeriodosPageComponent,
-          ),
-        title: 'Periodos de planilla — SISRH-INDECI',
       },
 
       /* ——— Track B — Generar aguinaldo (proceso aparte) ——— */

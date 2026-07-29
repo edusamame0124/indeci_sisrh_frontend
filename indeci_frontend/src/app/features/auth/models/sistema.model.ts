@@ -81,15 +81,11 @@ export const SISTEMAS_METADATA: ReadonlyArray<SistemaMetadata> = [
     // Los códigos con sufijo legacy se mapean a su display real para no exponerlos crudos.
     rolesDisplay: {
       SUPER_ADMIN: 'Super Administrador',
-      ADMIN_TI: 'Administrador TI',
-      ADMIN: 'Administrador',
       GESTOR_USUARIOS: 'Gestor de Usuarios',
-      RRHH_JEFE: 'Jefe RRHH',
-      RRHH_ANALISTA: 'Analista RRHH',
-      PLANILLA_ANALISTA: 'Analista de Planilla',
-      PLANILLA_APROBADOR: 'Aprobador de Planilla',
-      RRHH_CONSULTA: 'Consulta RRHH',
-      RRHH_ADMIN: 'Administrador RRHH',
+      PLANILLA: 'Planilla',
+      VINCULACION: 'Vinculación y Legajo',
+      ASISTENCIA: 'Asistencia',
+      RRHH_ADMIN: 'Operador RRHH',
     },
   },
   {

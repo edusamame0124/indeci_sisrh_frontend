@@ -46,18 +46,19 @@ export class MiPerfilPageComponent implements OnInit {
   readonly modoEdicion = signal(false);
   readonly error = signal<string | null>(null);
   readonly fotoUrl = signal<string | null>(null);
+  readonly cargandoFoto = signal(false);
   readonly subiendoFoto = signal(false);
   readonly errorFoto = signal<string | null>(null);
+  /** Celular peruano: exactamente 9 dígitos numéricos. */
+  private static readonly PATRON_CELULAR = /^[0-9]{9}$/;
+
   readonly formulario = this.fb.nonNullable.group({
-    telefono: ['', [Validators.pattern(/^[0-9]{7,15}$/), Validators.maxLength(15)]],
+    telefono: ['', [Validators.pattern(MiPerfilPageComponent.PATRON_CELULAR)]],
     correoPersonal: ['', [Validators.email, Validators.maxLength(150)]],
     direccion: ['', [Validators.maxLength(300)]],
     contactoEmergenciaNombre: ['', [Validators.maxLength(150)]],
     contactoEmergenciaParentesco: ['', [Validators.maxLength(50)]],
-    contactoEmergenciaTelefono: [
-      '',
-      [Validators.pattern(/^[0-9]{7,15}$/), Validators.maxLength(15)],
-    ],
+    contactoEmergenciaTelefono: ['', [Validators.pattern(MiPerfilPageComponent.PATRON_CELULAR)]],
   });
 
   ngOnInit(): void {
@@ -88,6 +89,19 @@ export class MiPerfilPageComponent implements OnInit {
   activarEdicion(): void {
     this.modoEdicion.set(true);
     this.formulario.enable();
+    // Si algún dato precargado (legado) ya es inválido, mostrar el aviso de una
+    // vez en vez de solo deshabilitar "Guardar cambios" sin explicación.
+    this.formulario.markAllAsTouched();
+  }
+
+  /** Filtra a solo dígitos y recorta a 9 mientras el usuario escribe (teléfono / celular). */
+  soloNumeros(event: Event, controlName: 'telefono' | 'contactoEmergenciaTelefono'): void {
+    const input = event.target as HTMLInputElement;
+    const limpio = input.value.replace(/\D/g, '').slice(0, 9);
+
+    if (limpio !== input.value) {
+      this.formulario.get(controlName)?.setValue(limpio);
+    }
   }
 
   cancelarEdicion(): void {
@@ -161,9 +175,12 @@ export class MiPerfilPageComponent implements OnInit {
   }
   cargarFoto(): void {
     this.errorFoto.set(null);
+    this.cargandoFoto.set(true);
 
     this.personaApi.obtenerFotoMiPerfil().subscribe({
       next: (blob) => {
+        this.cargandoFoto.set(false);
+
         const urlAnterior = this.fotoUrl();
 
         if (urlAnterior) {
@@ -182,6 +199,7 @@ export class MiPerfilPageComponent implements OnInit {
       },
       error: (error: unknown) => {
         console.error('Error al cargar la foto', error);
+        this.cargandoFoto.set(false);
         this.fotoUrl.set(null);
       },
     });

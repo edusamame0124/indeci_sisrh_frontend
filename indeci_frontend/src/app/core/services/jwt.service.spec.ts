@@ -42,9 +42,9 @@ describe('JwtService', () => {
     });
 
     it('decodes a valid JWT payload', () => {
-      const token = makeJwt({ sub: 'jdoe', exp: 1234567890, roles: ['ADMIN'] });
+      const token = makeJwt({ sub: 'jdoe', exp: 1234567890, roles: ['SUPER_ADMIN'] });
       const decoded = service.decode<{ sub: string; exp: number; roles: string[] }>(token);
-      expect(decoded).toEqual({ sub: 'jdoe', exp: 1234567890, roles: ['ADMIN'] });
+      expect(decoded).toEqual({ sub: 'jdoe', exp: 1234567890, roles: ['SUPER_ADMIN'] });
     });
   });
 

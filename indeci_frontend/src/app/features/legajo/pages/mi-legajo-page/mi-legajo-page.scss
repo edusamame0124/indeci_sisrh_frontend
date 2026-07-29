@@ -151,15 +151,24 @@
   }
 }
 
+.foto-panel img,
 .foto-placeholder {
   width: 150px;
   height: 180px;
+  border-radius: 8px;
+}
+
+.foto-panel img {
+  object-fit: cover;
+  border: 1px solid #d7d7d7;
+}
+
+.foto-placeholder {
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
   border: 1px solid #d7d7d7;
-  border-radius: 8px;
   background: #eeeeee;
 
   mat-icon {

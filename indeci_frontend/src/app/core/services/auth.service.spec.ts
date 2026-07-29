@@ -38,7 +38,7 @@ describe('AuthService (signals)', () => {
       sub: 'jdoe',
       otpValidado: true,
       newPassOk: true,
-      roles: ['ADMIN'],
+      roles: ['SUPER_ADMIN'],
       permisos: ['READ', 'WRITE'],
       exp: futureExp,
       iat: Math.floor(Date.now() / 1000),
@@ -52,7 +52,7 @@ describe('AuthService (signals)', () => {
     });
 
     expect(service.username()).toBe('jdoe');
-    expect(service.roles()).toEqual(['ADMIN']);
+    expect(service.roles()).toEqual(['SUPER_ADMIN']);
     expect(service.permisos()).toEqual(['READ', 'WRITE']);
     expect(service.isAuthenticated()).toBe(true);
   });

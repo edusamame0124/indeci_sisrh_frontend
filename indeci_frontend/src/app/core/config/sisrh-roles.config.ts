@@ -1,99 +1,100 @@
 /**
- * Catálogo central de roles SISRH — Fase 1 (TI vs RRHH segregados).
- * Fuente de verdad para guards de navegación. Los permisos granulares (PLA_*)
- * viven en JWT `permisos[]` y se endurecen en Fase 2 (@PreAuthorize backend).
+ * Catálogo central de roles SISRH — matriz RBAC vigente (V012_45).
+ *
+ * Cada módulo del menú tiene UN rol funcional responsable. `SUPER_ADMIN` es el
+ * único rol técnico y conserva bypass total (en backend vía `ROLE_SUPER_ADMIN`).
+ *
+ *   PLANILLA    → todo el módulo de planilla, asistencia y subsidios.
+ *   VINCULACION → Módulo Vinculación + Legajo Personal.
+ *   ASISTENCIA  → solo carga de asistencia + CONSULTA de períodos.
+ *   RRHH_ADMIN  → Catálogos (lectura+escritura) y Reportes.
+ *
+ * Retirados en V012_43/44/45: ADMIN, ADMIN_TI, PLANILLA_ANALISTA,
+ * PLANILLA_APROBADOR, RRHH_JEFE, RRHH_ANALISTA, RRHH_CONSULTA.
+ *
+ * Los permisos granulares (`PLA_*`, `ASI_*`, `PER_READ`, `EMP_*`, `CAT_*`,
+ * `RPT_*`) viven en el JWT (`permisos[]`) y se aplican con @PreAuthorize en el
+ * backend. Este archivo gobierna únicamente la navegación del frontend.
  */
 
-/** Oficina de Informática — acceso técnico (no operación RRHH formal). */
-export const TI_SUPER_ROLES = ['SUPER_ADMIN'] as const;
-export const TI_ADMIN_ROLES = ['ADMIN_TI', 'ADMIN'] as const;
-/** ADMIN: legacy en BD; ADMIN_TI: rol institucional TI Fase 1. */
-export const TI_ALL_ROLES = [...TI_SUPER_ROLES, ...TI_ADMIN_ROLES] as const;
+/* ────────────────────────── Roles base ────────────────────────── */
 
-/**
- * Rol SISRH acotado (V012_16): acceso EXCLUSIVO al módulo Administración
- * (Usuarios + Roles/Permisos + Auditoría). Deliberadamente NO es un rol TI:
- * no debe entrar a Catálogos, Empleados, Planilla ni Reportes. Por eso vive
- * solo aquí y se suma únicamente a ADMIN_MODULE_ACCESS_ROLES. */
+/** Oficina de Informática — único rol técnico, con bypass total. */
+export const TI_SUPER_ROLES = ['SUPER_ADMIN'] as const;
+export const TI_ALL_ROLES = [...TI_SUPER_ROLES] as const;
+
+/** Rol acotado (V012_16): acceso EXCLUSIVO al módulo Administración. */
 export const USER_ADMIN_ROLES = ['GESTOR_USUARIOS'] as const;
 
-/** RRHH — procesos de negocio (nunca roles TI). */
-export const RRHH_JEFE_ROLES = ['RRHH_JEFE'] as const;
-export const RRHH_ANALISTA_ROLES = ['RRHH_ANALISTA'] as const;
-export const PLANILLA_ANALISTA_ROLES = ['PLANILLA_ANALISTA'] as const;
-export const PLANILLA_APROBADOR_ROLES = ['PLANILLA_APROBADOR'] as const;
-export const RRHH_CONSULTA_ROLES = ['RRHH_CONSULTA'] as const;
-/** Compatibilidad temporal con instalaciones previas. */
-export const RRHH_LEGACY_ROLES = ['RRHH_ADMIN'] as const;
+/** Roles funcionales de negocio (V012_45) — uno por módulo. */
+export const PLANILLA_ROLES = ['PLANILLA'] as const;
+export const VINCULACION_ROLES = ['VINCULACION'] as const;
+export const ASISTENCIA_ROLES = ['ASISTENCIA'] as const;
+export const RRHH_ADMIN_ROLES = ['RRHH_ADMIN'] as const;
 
-export const RRHH_ALL_OPERATIONAL_ROLES = [
-  ...RRHH_JEFE_ROLES,
-  ...RRHH_ANALISTA_ROLES,
-  ...PLANILLA_ANALISTA_ROLES,
-  ...PLANILLA_APROBADOR_ROLES,
-  ...RRHH_CONSULTA_ROLES,
-  ...RRHH_LEGACY_ROLES,
-] as const;
-
-/** Módulo Administración — TI + rol acotado GESTOR_USUARIOS (V012_16).
- *  GESTOR_USUARIOS accede solo a este módulo, a ninguno de los operativos. */
-export const ADMIN_MODULE_ACCESS_ROLES = [...TI_ALL_ROLES, ...USER_ADMIN_ROLES] as const;
-
-/** Catálogos: lectura RRHH + TI; escritura solo TI (Fase 2 por permiso CAT_WRITE). */
-export const CATALOGOS_ACCESS_ROLES = [...TI_ALL_ROLES, ...RRHH_ALL_OPERATIONAL_ROLES] as const;
-export const CATALOGOS_WRITE_ROLES = [...TI_ALL_ROLES] as const;
-
-/** Roles del portal de papeletas (empleado, jefe inmediato, gestión RRHH).
- *  Acceso EXCLUSIVO a /gestiones-personal y autoservicio.
- *  NO deben ver módulos de planilla operativa (MCPP, Suspensiones, Cierre, Semáforo). */
+/** Portal de papeletas — autoservicio y gestión de solicitudes. */
 export const PORTAL_PAPELETAS_ROLES = ['EMPLEADO', 'JEFE', 'RRHH_PAPELETA'] as const;
 
-/** Módulos operativos TI + RRHH: Planilla, Empleados, Catálogos.
- *  Excluye deliberadamente PORTAL_PAPELETAS_ROLES (segregación de privilegios). */
-export const PLANILLA_OPERATIVA_ROLES = [
-  ...TI_ALL_ROLES,
-  ...RRHH_JEFE_ROLES,
-  ...RRHH_ANALISTA_ROLES,
-  ...PLANILLA_ANALISTA_ROLES,
-  ...PLANILLA_APROBADOR_ROLES,
-  ...RRHH_CONSULTA_ROLES,
-  ...RRHH_LEGACY_ROLES,
-] as const;
+/** Autoservicio estricto (Mi perfil / Mi legajo): solo el propio empleado. */
+export const AUTOSERVICIO_ROLES = ['EMPLEADO'] as const;
+
+/* ──────────────────── Conjuntos por módulo ──────────────────── */
+
+/** Administración — TI + rol acotado GESTOR_USUARIOS. */
+export const ADMIN_MODULE_ACCESS_ROLES = [...TI_ALL_ROLES, ...USER_ADMIN_ROLES] as const;
 
 /**
- * Conceptos de Planilla (SPEC_CONCEPTOS_PLANILLA §8/D1) — escritura.
- * Equivale a PLA_WRITE: crea borradores, edita configuraciones, envía a revisión.
- * El dominio pertenece a Planilla; reutiliza los roles operativos de planilla
- * (no `CATALOGOS_WRITE_ROLES`, que era solo TI).
+ * Planilla COMPLETO: los 10 ítems del menú, escritura y aprobación.
+ * `ASISTENCIA` queda deliberadamente fuera.
  */
-export const PLANILLA_WRITE_ROLES = [...PLANILLA_OPERATIVA_ROLES] as const;
+export const PLANILLA_FULL_ROLES = [...TI_ALL_ROLES, ...PLANILLA_ROLES] as const;
 
 /**
- * Conceptos de Planilla (SPEC_CONCEPTOS_PLANILLA §8/D1) — aprobación.
- * Equivale a PLA_APPROVE: activa / cierra / anula configuraciones sensibles.
- * Solo TI (super/admin), jefe RRHH y aprobador de planilla.
+ * Ítem padre "Planilla" del menú. Incluye `ASISTENCIA` porque ve 2 de los 10
+ * hijos (Periodos y Gestión de Asistencia); el resto se recorta por hijo con
+ * `PLANILLA_FULL_ROLES`.
  */
-export const PLANILLA_APPROVE_ROLES = [
+export const PLANILLA_MENU_ROLES = [
   ...TI_ALL_ROLES,
-  ...RRHH_JEFE_ROLES,
-  ...PLANILLA_APROBADOR_ROLES,
+  ...PLANILLA_ROLES,
+  ...ASISTENCIA_ROLES,
 ] as const;
 
-/** Empleados + Portal papeletas: incluye roles operativos TI/RRHH + portal autoservicio.
- *  Usado por empleadosAccessGuard y gestiones-personal. */
-export const EMPLEADOS_ACCESS_ROLES = [
-  ...PLANILLA_OPERATIVA_ROLES,
-  ...PORTAL_PAPELETAS_ROLES,
+/** Módulo Asistencia (carga y corrección de marcaciones). */
+export const ASISTENCIA_ACCESS_ROLES = [
+  ...TI_ALL_ROLES,
+  ...PLANILLA_ROLES,
+  ...ASISTENCIA_ROLES,
 ] as const;
 
-/** Reportes: TI + jefe RRHH + consulta + analistas planilla (archivo bancos / AIRHSP). */
+/** Módulo Vinculación + Legajo Personal (legajo de TODOS los empleados). */
+export const VINCULACION_ACCESS_ROLES = [...TI_ALL_ROLES, ...VINCULACION_ROLES] as const;
+
+/** Catálogos — lectura. `PLANILLA` entra solo a consultar. */
+export const CATALOGOS_ACCESS_ROLES = [
+  ...TI_ALL_ROLES,
+  ...PLANILLA_ROLES,
+  ...RRHH_ADMIN_ROLES,
+] as const;
+
+/** Catálogos — escritura (CAT_WRITE). `PLANILLA` NO escribe. */
+export const CATALOGOS_WRITE_ROLES = [...TI_ALL_ROLES, ...RRHH_ADMIN_ROLES] as const;
+
+/** Reportes — salidas de planilla; compartido por PLANILLA y RRHH_ADMIN. */
 export const REPORTES_ACCESS_ROLES = [
   ...TI_ALL_ROLES,
-  ...RRHH_JEFE_ROLES,
-  ...RRHH_CONSULTA_ROLES,
-  ...PLANILLA_ANALISTA_ROLES,
-  ...PLANILLA_APROBADOR_ROLES,
+  ...PLANILLA_ROLES,
+  ...RRHH_ADMIN_ROLES,
 ] as const;
+
+/** PLA_WRITE — crear borradores, editar configuraciones, enviar a revisión. */
+export const PLANILLA_WRITE_ROLES = [...PLANILLA_FULL_ROLES] as const;
+
+/** PLA_APPROVE — activar / aprobar / cerrar / reabrir / anular. */
+export const PLANILLA_APPROVE_ROLES = [...PLANILLA_FULL_ROLES] as const;
+
+/** Gestiones del personal (papeletas). Sus hijos se filtran por permisos PAP_*. */
+export const GESTIONES_PERSONAL_ROLES = [...PORTAL_PAPELETAS_ROLES] as const;
 
 export function hasAnyRole(
   userRoles: ReadonlyArray<string>,

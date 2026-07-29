@@ -1,16 +1,17 @@
 import { Routes } from '@angular/router';
-import { empleadosAccessGuard } from '../../core/guards/empleados-access.guard';
+import { gestionesPersonalGuard } from '../../core/guards/empleados-access.guard';
 import { requirePermisos } from '../../core/guards/permiso-access.guard';
 
 /**
- * Rutas del módulo "Gestiones del personal".
- * Agrupa las gestiones del empleado, del jefe inmediato y de RRHH.
- * Reutiliza el mismo set de roles que el módulo Empleados (`empleadosAccessGuard`).
+ * Rutas del módulo "Gestiones del personal" (papeletas).
+ * RBAC V012_45: es autoservicio — lo ven los roles del portal (`EMPLEADO`,
+ * `JEFE`, `RRHH_PAPELETA`). Los sub-ítems se recortan además por permisos
+ * `PAP_JEFE` / `PAP_RRHH`.
  */
 export const GESTIONES_PERSONAL_ROUTES: Routes = [
   {
     path: '',
-    canActivate: [empleadosAccessGuard],
+    canActivate: [gestionesPersonalGuard],
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'empleado' },
 

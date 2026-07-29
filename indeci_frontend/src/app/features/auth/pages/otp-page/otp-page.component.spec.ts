@@ -45,7 +45,7 @@ describe('OtpPageComponent (US1 integration)', () => {
     req.flush({
       token: 'access-final',
       refreshToken: 'refresh-24h',
-      roles: ['ADMIN'],
+      roles: ['SUPER_ADMIN'],
       permisos: ['READ'],
       newPass: 'N',
       requiereOtp: false,

@@ -46,13 +46,13 @@
                 [src]="fotoUrl()"
                 [alt]="'Fotografía de ' + persona.nombreCompleto"
               />
-            } @else {
+            } @else if (!cargandoFoto()) {
               <div class="foto-placeholder">
                 <mat-icon>person</mat-icon>
               </div>
             }
 
-            @if (subiendoFoto()) {
+            @if (subiendoFoto() || cargandoFoto()) {
               <div class="foto-cargando">
                 <mat-spinner diameter="34"></mat-spinner>
               </div>
@@ -183,14 +183,15 @@
                   <input
                     matInput
                     formControlName="telefono"
-                    maxlength="15"
+                    maxlength="9"
                     inputmode="numeric"
                     autocomplete="tel"
+                    (input)="soloNumeros($event, 'telefono')"
                   />
                   <mat-icon matSuffix>phone</mat-icon>
 
                   @if (formulario.controls.telefono.hasError('pattern')) {
-                    <mat-error> Ingresa entre 7 y 15 números. </mat-error>
+                    <mat-error> Ingresa 9 dígitos numéricos. </mat-error>
                   }
                 </mat-form-field>
 
@@ -223,6 +224,10 @@
                   <mat-hint align="end">
                     {{ formulario.controls.direccion.value.length }}/300
                   </mat-hint>
+
+                  @if (formulario.controls.direccion.hasError('maxlength')) {
+                    <mat-error> No debe superar los 300 caracteres. </mat-error>
+                  }
                 </mat-form-field>
               </div>
             </section>
@@ -235,12 +240,20 @@
                   <mat-label>Nombre completo</mat-label>
                   <input matInput formControlName="contactoEmergenciaNombre" maxlength="150" />
                   <mat-icon matSuffix>person</mat-icon>
+
+                  @if (formulario.controls.contactoEmergenciaNombre.hasError('maxlength')) {
+                    <mat-error> No debe superar los 150 caracteres. </mat-error>
+                  }
                 </mat-form-field>
 
                 <mat-form-field appearance="outline">
                   <mat-label>Parentesco</mat-label>
                   <input matInput formControlName="contactoEmergenciaParentesco" maxlength="50" />
                   <mat-icon matSuffix>family_restroom</mat-icon>
+
+                  @if (formulario.controls.contactoEmergenciaParentesco.hasError('maxlength')) {
+                    <mat-error> No debe superar los 50 caracteres. </mat-error>
+                  }
                 </mat-form-field>
 
                 <mat-form-field appearance="outline">
@@ -248,14 +261,15 @@
                   <input
                     matInput
                     formControlName="contactoEmergenciaTelefono"
-                    maxlength="15"
+                    maxlength="9"
                     inputmode="numeric"
                     autocomplete="tel"
+                    (input)="soloNumeros($event, 'contactoEmergenciaTelefono')"
                   />
                   <mat-icon matSuffix>phone_in_talk</mat-icon>
 
                   @if (formulario.controls.contactoEmergenciaTelefono.hasError('pattern')) {
-                    <mat-error> Ingresa entre 7 y 15 números. </mat-error>
+                    <mat-error> Ingresa 9 dígitos numéricos. </mat-error>
                   }
                 </mat-form-field>
               </div>

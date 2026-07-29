@@ -67,7 +67,7 @@ describe('SistemaSelectorService', () => {
 
   it('claim con SISRH + roles → SISRH activa, sin externos', () => {
     auth.setSession({
-      token: accessTokenConSistemas({ sisrh: ['SUPER_ADMIN', 'ADMIN_TI'] }),
+      token: accessTokenConSistemas({ sisrh: ['SUPER_ADMIN', 'PLANILLA'] }),
       roles: [],
       permisos: [],
     });
@@ -77,7 +77,7 @@ describe('SistemaSelectorService', () => {
     expect(cards).toHaveLength(1);
     expect(cards[0].codigo).toBe('sisrh');
     expect(cards[0].bloqueada).toBe(false);
-    expect(cards[0].roles.map((r) => r.code)).toEqual(['SUPER_ADMIN', 'ADMIN_TI']);
+    expect(cards[0].roles.map((r) => r.code)).toEqual(['SUPER_ADMIN', 'PLANILLA']);
   });
 
   it('claim con 3 sistemas → 3 cards en orden 1-2-3', () => {

@@ -1,14 +1,31 @@
 import { Routes } from '@angular/router';
-import { planillaAccessGuard } from '../../core/guards/planilla-access.guard';
+import {
+  asistenciaAccessGuard,
+  planillaAccessGuard,
+} from '../../core/guards/planilla-access.guard';
 
 /**
  * Rutas Módulo M04 — Asistencia (SPEC §12.2 PANTALLA-02).
- * Mismo set de roles que Planilla (ROL_RRHH) — reutiliza `planillaAccessGuard`.
+ *
+ * RBAC V012_45: la carga y el detalle de importaciones los operan `ASISTENCIA`
+ * y `PLANILLA` (permisos `ASI_*`). `subsidios` NO: es cálculo remunerativo
+ * (permisos `SUB_*`), exclusivo de `PLANILLA`, por eso declara su propio guard
+ * antes del bloque general.
  */
 export const ASISTENCIA_ROUTES: Routes = [
+  /* ——— Subsidios por Enfermedad/Incapacidad Temporal y Maternidad — solo PLANILLA ——— */
+  {
+    path: 'subsidios',
+    canActivate: [planillaAccessGuard],
+    loadComponent: () =>
+      import(
+        './pages/subsidios-enfermedad-maternidad/subsidios-enfermedad-maternidad.component'
+      ).then((m) => m.SubsidiosEnfermedadMaternidadComponent),
+    title: 'Subsidios por Enfermedad y Maternidad — SISRH-INDECI',
+  },
   {
     path: '',
-    canActivate: [planillaAccessGuard],
+    canActivate: [asistenciaAccessGuard],
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'carga' },
 
@@ -30,16 +47,6 @@ export const ASISTENCIA_ROUTES: Routes = [
             (m) => m.DetalleImportacionPageComponent,
           ),
         title: 'Detalle de importación — SISRH-INDECI',
-      },
-
-      /* ——— Subsidios por Enfermedad/Incapacidad Temporal y Maternidad (subrama de Carga) ——— */
-      {
-        path: 'subsidios',
-        loadComponent: () =>
-          import(
-            './pages/subsidios-enfermedad-maternidad/subsidios-enfermedad-maternidad.component'
-          ).then((m) => m.SubsidiosEnfermedadMaternidadComponent),
-        title: 'Subsidios por Enfermedad y Maternidad — SISRH-INDECI',
       },
     ],
   },

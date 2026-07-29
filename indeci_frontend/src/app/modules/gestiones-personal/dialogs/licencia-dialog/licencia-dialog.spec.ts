@@ -36,10 +36,10 @@ describe('LicenciaDialog', () => {
 
   it('modo unificado: la modalidad SIN_GOCE define el flujo sin goce', () => {
     component.modalidadGoce = 'SIN_GOCE';
-    expect(component.esFlujoSinGoce()).toBeTrue();
+    expect(component.esFlujoSinGoce()).toBe(true);
 
     component.modalidadGoce = 'CON_GOCE';
-    expect(component.esFlujoSinGoce()).toBeFalse();
+    expect(component.esFlujoSinGoce()).toBe(false);
   });
 
   it('tiposFiltrados separa con goce / sin goce según la modalidad', () => {
@@ -77,9 +77,9 @@ describe('LicenciaDialog', () => {
     component.modalidadGoce = 'SIN_GOCE';
 
     component.tipoLicenciaId = 2;
-    expect(component.esMotivoOtros()).toBeTrue();
+    expect(component.esMotivoOtros()).toBe(true);
 
     component.tipoLicenciaId = 3;
-    expect(component.esMotivoOtros()).toBeFalse();
+    expect(component.esMotivoOtros()).toBe(false);
   });
 });

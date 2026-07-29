@@ -1,12 +1,16 @@
 import { Routes } from '@angular/router';
-import { empleadosAccessGuard } from '../../core/guards/empleados-access.guard';
-import { planillaAccessGuard } from '../../core/guards/planilla-access.guard';
+import { autoservicioGuard } from '../../core/guards/autoservicio.guard';
+import { vinculacionAccessGuard } from '../../core/guards/vinculacion-access.guard';
 
+/**
+ * RBAC V012_45: "Mi legajo" es autoservicio estricto (rol EMPLEADO); el legajo
+ * de TODAS las personas pertenece al módulo Vinculación (rol VINCULACION).
+ */
 export const LEGAJO_ROUTES: Routes = [
   {
-    // Autoservicio — EMPLEADO/JEFE/RRHH_PAPELETA deben poder entrar.
+    // Autoservicio — el propio trabajador (rol EMPLEADO).
     path: 'mi-legajo',
-    canActivate: [empleadosAccessGuard],
+    canActivate: [autoservicioGuard],
     loadComponent: () =>
       import('./pages/mi-legajo-page/mi-legajo-page').then(
         (m) => m.MiLegajoPage,
@@ -14,9 +18,9 @@ export const LEGAJO_ROUTES: Routes = [
     title: 'Mi legajo — SISRH-INDECI',
   },
   {
-    // Operativo RRHH/TI — legajo de TODOS los empleados, no autoservicio.
+    // Operativo — legajo de TODOS los empleados, no autoservicio.
     path: '',
-    canActivate: [planillaAccessGuard],
+    canActivate: [vinculacionAccessGuard],
     loadComponent: () =>
       import('./pages/legajo-list-page/legajo-list-page/legajo-list-page').then(
         (m) => m.LegajoListPage,
@@ -24,9 +28,9 @@ export const LEGAJO_ROUTES: Routes = [
     title: 'Legajo Personal — SISRH-INDECI',
   },
   {
-    // Operativo RRHH/TI — detalle del legajo de CUALQUIER persona.
+    // Operativo — detalle del legajo de CUALQUIER persona.
     path: ':personaId',
-    canActivate: [planillaAccessGuard],
+    canActivate: [vinculacionAccessGuard],
     loadComponent: () =>
       import('./pages/legajo-detalle-page/legajo-detalle-page/legajo-detalle-page').then(
         (m) => m.LegajoDetallePage,

@@ -1,8 +1,11 @@
-import { EMPLEADOS_ACCESS_ROLES as _EMPLEADOS_ACCESS_ROLES } from './sisrh-roles.config';
+import { GESTIONES_PERSONAL_ROLES } from './sisrh-roles.config';
 
 /**
- * Roles con acceso a módulos Empleados y Planilla.
- * Reexporta desde sisrh-roles.config (Fase 1 — TI / RRHH segregados).
+ * @deprecated RBAC V012_45 disolvió el conjunto único "empleados": Vinculación y
+ * Legajo pasaron a `VINCULACION_ACCESS_ROLES`, y el autoservicio a
+ * `AUTOSERVICIO_ROLES`. Este alias conserva únicamente el sentido restante
+ * (Gestiones del personal / papeletas). Importar directamente desde
+ * `sisrh-roles.config` en código nuevo.
  */
-export const EMPLEADOS_ACCESS_ROLES = _EMPLEADOS_ACCESS_ROLES;
+export const EMPLEADOS_ACCESS_ROLES = GESTIONES_PERSONAL_ROLES;
 export type EmpleadosAccessRole = (typeof EMPLEADOS_ACCESS_ROLES)[number];

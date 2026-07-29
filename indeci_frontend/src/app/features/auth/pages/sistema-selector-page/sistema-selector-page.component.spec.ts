@@ -166,7 +166,7 @@ describe('SistemaSelectorPageComponent', () => {
   });
 
   it('canShowUserManagement false sin rol del módulo Administración', () => {
-    mountWithRoles(['RRHH_CONSULTA']);
+    mountWithRoles(['PLANILLA']);
     expect(component.canShowUserManagement()).toBe(false);
   });
 

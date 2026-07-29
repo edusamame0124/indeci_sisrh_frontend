@@ -8,33 +8,31 @@ import {
 } from './catalogos-access.guard';
 import { AuthService } from '../services/auth.service';
 
-describe('hasCatalogosAccess (Spec 009 amplía lectura a RRHH_ADMIN)', () => {
-  it('permite ADMIN', () => {
-    expect(hasCatalogosAccess(['ADMIN'])).toBe(true);
-  });
-  it('permite SUPER_ADMIN', () => {
+describe('hasCatalogosAccess — lectura (RBAC V012_45)', () => {
+  it('permite SUPER_ADMIN, RRHH_ADMIN y PLANILLA', () => {
     expect(hasCatalogosAccess(['SUPER_ADMIN'])).toBe(true);
-  });
-  it('permite RRHH_ADMIN (consulta de catálogos)', () => {
     expect(hasCatalogosAccess(['RRHH_ADMIN'])).toBe(true);
+    expect(hasCatalogosAccess(['PLANILLA'])).toBe(true);
   });
-  it('deniega otros roles', () => {
-    expect(hasCatalogosAccess(['USER'])).toBe(false);
+  it('deniega VINCULACION, ASISTENCIA y el portal', () => {
+    expect(hasCatalogosAccess(['VINCULACION'])).toBe(false);
+    expect(hasCatalogosAccess(['ASISTENCIA'])).toBe(false);
+    expect(hasCatalogosAccess(['EMPLEADO'])).toBe(false);
     expect(hasCatalogosAccess([])).toBe(false);
   });
 });
 
-describe('hasCatalogosWrite (escritura restringida — FR-C7 Spec 009)', () => {
-  it('permite ADMIN', () => {
-    expect(hasCatalogosWrite(['ADMIN'])).toBe(true);
-  });
-  it('permite SUPER_ADMIN', () => {
+describe('hasCatalogosWrite — escritura acotada a RRHH_ADMIN', () => {
+  it('permite SUPER_ADMIN y RRHH_ADMIN', () => {
     expect(hasCatalogosWrite(['SUPER_ADMIN'])).toBe(true);
+    expect(hasCatalogosWrite(['RRHH_ADMIN'])).toBe(true);
   });
-  it('deniega RRHH_ADMIN (solo lectura)', () => {
-    expect(hasCatalogosWrite(['RRHH_ADMIN'])).toBe(false);
+  it('deniega PLANILLA: entra solo en lectura', () => {
+    expect(hasCatalogosWrite(['PLANILLA'])).toBe(false);
   });
-  it('deniega otros', () => {
+  it('deniega el resto', () => {
+    expect(hasCatalogosWrite(['VINCULACION'])).toBe(false);
+    expect(hasCatalogosWrite(['ASISTENCIA'])).toBe(false);
     expect(hasCatalogosWrite([])).toBe(false);
   });
 });
@@ -44,22 +42,12 @@ describe('catalogosAccessGuard', () => {
     TestBed.configureTestingModule({ providers: [provideRouter([])] });
   });
 
-  it('permite ADMIN autenticado', () => {
-    const auth = TestBed.inject(AuthService);
-    vi.spyOn(auth, 'isAuthenticated').mockReturnValue(true);
-    vi.spyOn(auth, 'roles').mockReturnValue(['ADMIN']);
-    const result = TestBed.runInInjectionContext(() =>
-      catalogosAccessGuard({} as never, { url: '/catalogos/bancos' } as never),
-    );
-    expect(result).toBe(true);
-  });
-
-  it('permite RRHH_ADMIN autenticado (Spec 009 — consulta)', () => {
+  it('permite RRHH_ADMIN autenticado', () => {
     const auth = TestBed.inject(AuthService);
     vi.spyOn(auth, 'isAuthenticated').mockReturnValue(true);
     vi.spyOn(auth, 'roles').mockReturnValue(['RRHH_ADMIN']);
     const result = TestBed.runInInjectionContext(() =>
-      catalogosAccessGuard({} as never, { url: '/catalogos/sexo' } as never),
+      catalogosAccessGuard({} as never, { url: '/catalogos/bancos' } as never),
     );
     expect(result).toBe(true);
   });
@@ -67,7 +55,7 @@ describe('catalogosAccessGuard', () => {
   it('redirige a / cuando no tiene rol autorizado', () => {
     const auth = TestBed.inject(AuthService);
     vi.spyOn(auth, 'isAuthenticated').mockReturnValue(true);
-    vi.spyOn(auth, 'roles').mockReturnValue(['USER']);
+    vi.spyOn(auth, 'roles').mockReturnValue(['VINCULACION']);
 
     const result = TestBed.runInInjectionContext(() =>
       catalogosAccessGuard({} as never, { url: '/catalogos/bancos' } as never),

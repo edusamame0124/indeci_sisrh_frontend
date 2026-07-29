@@ -1,45 +1,41 @@
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, UrlTree } from '@angular/router';
-import { empleadosAccessGuard, hasEmpleadosAccess } from './empleados-access.guard';
+import { gestionesPersonalGuard, hasGestionesPersonalAccess } from './empleados-access.guard';
 import { AuthService } from '../services/auth.service';
 
-describe('hasEmpleadosAccess', () => {
-  it('allows ADMIN', () => {
-    expect(hasEmpleadosAccess(['ADMIN'])).toBe(true);
+describe('hasGestionesPersonalAccess (RBAC V012_45)', () => {
+  it('permite los roles del portal', () => {
+    expect(hasGestionesPersonalAccess(['EMPLEADO'])).toBe(true);
+    expect(hasGestionesPersonalAccess(['JEFE'])).toBe(true);
+    expect(hasGestionesPersonalAccess(['RRHH_PAPELETA'])).toBe(true);
   });
-  it('allows RRHH_ADMIN', () => {
-    expect(hasEmpleadosAccess(['RRHH_ADMIN', 'AREA'])).toBe(true);
+
+  it('deniega los roles operativos: papeletas es autoservicio', () => {
+    expect(hasGestionesPersonalAccess(['PLANILLA'])).toBe(false);
+    expect(hasGestionesPersonalAccess(['VINCULACION'])).toBe(false);
+    expect(hasGestionesPersonalAccess(['ASISTENCIA'])).toBe(false);
+    expect(hasGestionesPersonalAccess(['RRHH_ADMIN'])).toBe(false);
+    expect(hasGestionesPersonalAccess(['SUPER_ADMIN'])).toBe(false);
   });
-  it('allows SUPER_ADMIN', () => {
-    expect(hasEmpleadosAccess(['SUPER_ADMIN'])).toBe(true);
-  });
-  it('denies otros', () => {
-    expect(hasEmpleadosAccess(['POSTULANTE'])).toBe(false);
+
+  it('deniega roles retirados y vacíos', () => {
+    expect(hasGestionesPersonalAccess(['RRHH_ANALISTA'])).toBe(false);
+    expect(hasGestionesPersonalAccess([])).toBe(false);
   });
 });
 
-describe('empleadosAccessGuard', () => {
+describe('gestionesPersonalGuard', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({ providers: [provideRouter([])] });
   });
 
-  it('permite ADMIN autenticado', () => {
+  it('permite EMPLEADO autenticado', () => {
     const auth = TestBed.inject(AuthService);
     vi.spyOn(auth, 'isAuthenticated').mockReturnValue(true);
-    vi.spyOn(auth, 'roles').mockReturnValue(['ADMIN']);
+    vi.spyOn(auth, 'roles').mockReturnValue(['EMPLEADO']);
     const result = TestBed.runInInjectionContext(() =>
-      empleadosAccessGuard({} as never, { url: '/empleados/personas' } as never),
-    );
-    expect(result).toBe(true);
-  });
-
-  it('permite RRHH_ADMIN autenticado', () => {
-    const auth = TestBed.inject(AuthService);
-    vi.spyOn(auth, 'isAuthenticated').mockReturnValue(true);
-    vi.spyOn(auth, 'roles').mockReturnValue(['RRHH_ADMIN']);
-    const result = TestBed.runInInjectionContext(() =>
-      empleadosAccessGuard({} as never, { url: '/empleados/puesto' } as never),
+      gestionesPersonalGuard({} as never, { url: '/gestiones-personal/empleado' } as never),
     );
     expect(result).toBe(true);
   });
@@ -50,19 +46,19 @@ describe('empleadosAccessGuard', () => {
     vi.spyOn(auth, 'roles').mockReturnValue([]);
 
     const result = TestBed.runInInjectionContext(() =>
-      empleadosAccessGuard({} as never, { url: '/empleados/personas' } as never),
+      gestionesPersonalGuard({} as never, { url: '/gestiones-personal/empleado' } as never),
     );
     expect(result).toBeInstanceOf(UrlTree);
     expect(String(result as UrlTree)).toContain('/auth/login');
   });
 
-  it('redirige a / cuando autenticado pero sin rol RRHH', () => {
+  it('redirige a / cuando autenticado sin rol del portal', () => {
     const auth = TestBed.inject(AuthService);
     vi.spyOn(auth, 'isAuthenticated').mockReturnValue(true);
-    vi.spyOn(auth, 'roles').mockReturnValue(['SOLICITANTE']);
+    vi.spyOn(auth, 'roles').mockReturnValue(['PLANILLA']);
 
     const result = TestBed.runInInjectionContext(() =>
-      empleadosAccessGuard({} as never, { url: '/empleados/personas' } as never),
+      gestionesPersonalGuard({} as never, { url: '/gestiones-personal/empleado' } as never),
     );
     expect(result).toBeInstanceOf(UrlTree);
     expect(String(result as UrlTree)).toContain('/');

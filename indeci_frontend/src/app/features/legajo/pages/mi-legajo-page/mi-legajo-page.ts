@@ -11,6 +11,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 
 import { LegajoApiService } from '../../services/legajo-api';
 import type { LegajoResumen } from '../../models/legajo.model';
+import { PersonaApiService } from '../../../empleados/services/persona-api.service';
 
 @Component({
   selector: 'app-mi-legajo-page',
@@ -30,13 +31,46 @@ import type { LegajoResumen } from '../../models/legajo.model';
 export class MiLegajoPage implements OnInit {
   private readonly router = inject(Router);
   private readonly legajoApi = inject(LegajoApiService);
+  private readonly personaApi = inject(PersonaApiService);
 
   readonly legajo = signal<LegajoResumen | null>(null);
   readonly cargando = signal(false);
   readonly error = signal<string | null>(null);
 
+  /**
+   * Misma foto que "Mi perfil" — se sube/cambia solo desde allí, acá es de solo lectura.
+   * Se pide por separado (mismo endpoint /persona/me/foto) en vez de venir embebida en
+   * el legajo: esa descarga pasa por FTP y no debe bloquear el resto de la pantalla.
+   */
+  readonly fotoUrl = signal<string | null>(null);
+  readonly cargandoFoto = signal(false);
+
   ngOnInit(): void {
     this.cargarMiLegajo();
+    this.cargarFoto();
+  }
+
+  private cargarFoto(): void {
+    this.cargandoFoto.set(true);
+
+    this.personaApi.obtenerFotoMiPerfil().subscribe({
+      next: (blob) => {
+        this.cargandoFoto.set(false);
+
+        // Backend responde 204 (blob vacío) cuando aún no se subió una foto.
+        if (blob.size === 0) {
+          this.fotoUrl.set(null);
+          return;
+        }
+
+        this.fotoUrl.set(URL.createObjectURL(blob));
+      },
+      error: (error: unknown) => {
+        console.error('Error al cargar la foto', error);
+        this.cargandoFoto.set(false);
+        this.fotoUrl.set(null);
+      },
+    });
   }
 
   cargarMiLegajo(): void {
