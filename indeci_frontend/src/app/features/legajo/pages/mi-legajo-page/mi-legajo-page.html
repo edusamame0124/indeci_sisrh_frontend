@@ -238,21 +238,6 @@
           </div>
         </div>
 
-        <div class="foto-panel">
-          @if (fotoUrl()) {
-            <img [src]="fotoUrl()" alt="Fotografía del trabajador" />
-          } @else if (cargandoFoto()) {
-            <div class="foto-placeholder">
-              <mat-spinner diameter="34"></mat-spinner>
-            </div>
-          } @else {
-            <div class="foto-placeholder">
-              <mat-icon>person</mat-icon>
-            </div>
-          }
-
-          <span>Fotografía del trabajador</span>
-        </div>
       </div>
     </mat-card>
 
