@@ -1,5 +1,25 @@
 export type EstadoImportacion = 'BORRADOR_PREVIEW' | 'CONFIRMADA' | 'PARCIAL' | 'FALLIDA';
 
+/**
+ * Formato de marcador detectado al leer el archivo (V012_46). Reloj 1 (clásico,
+ * con DNI) y COEN/Reloj 2 (log de eventos, otra sede, sin DNI) conviven en el
+ * mismo período sin pisarse — ver SPEC_ASISTENCIA_COEN.md D8. `null` en cargas
+ * anteriores a esta columna, donde el origen no quedó registrado.
+ */
+export type FormatoOrigenMarcador = 'RELOJ1_DIARIO' | 'RELOJ2_COEN' | null;
+
+/** Etiqueta legible del origen, para el badge de carga y la columna del historial. */
+export function formatoOrigenLabel(formato: FormatoOrigenMarcador): string {
+  switch (formato) {
+    case 'RELOJ1_DIARIO':
+      return 'Reloj 1';
+    case 'RELOJ2_COEN':
+      return 'COEN';
+    default:
+      return '—';
+  }
+}
+
 export type EstrategiaConflicto =
   | 'OMITIR_EXISTENTES'
   | 'REEMPLAZAR_EMPLEADOS_ARCHIVO'
@@ -41,6 +61,7 @@ export interface AsistenciaImportPreview {
   readonly importacionId: number | null;
   readonly periodo: string;
   readonly nombreArchivo: string;
+  readonly formatoOrigen: FormatoOrigenMarcador;
   readonly encoding: string | null;
   readonly hashArchivo: string;
   readonly filasTotal: number;
@@ -77,6 +98,7 @@ export interface AsistenciaImportHistorial {
   readonly id: number;
   readonly periodo: string;
   readonly nombreArchivo: string;
+  readonly formatoOrigen: FormatoOrigenMarcador;
   readonly usuario: string;
   readonly fechaImportacion: string;
   readonly estado: EstadoImportacion;
@@ -148,6 +170,7 @@ export interface AsistenciaImportResumen {
   readonly importacionId: number;
   readonly nombreArchivo: string;
   readonly periodo: string;
+  readonly formatoOrigen: FormatoOrigenMarcador;
   readonly periodoDetectadoIni: string | null;
   readonly periodoDetectadoFin: string | null;
   readonly filasLeidas: number;

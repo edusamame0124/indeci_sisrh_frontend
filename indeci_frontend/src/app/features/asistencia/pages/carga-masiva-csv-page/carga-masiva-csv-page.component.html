@@ -113,6 +113,14 @@
               <strong class="masiva__resumen-valor" [title]="r.nombreArchivo">{{ r.nombreArchivo }}</strong>
               <span class="masiva__resumen-sub">{{ fmtBytes(r.tamanoBytes) }}</span>
             </div>
+            <div
+              class="masiva__resumen-item"
+              matTooltip="Formato de marcador detectado automáticamente. Reloj 1 y COEN cubren
+                sedes distintas y conviven sin pisarse en el mismo período."
+            >
+              <span class="masiva__resumen-label">Origen detectado</span>
+              <strong class="masiva__resumen-valor">{{ formatoOrigenLabel(r.formatoOrigen) }}</strong>
+            </div>
             <div class="masiva__resumen-item">
               <span class="masiva__resumen-label">Periodo detectado</span>
               <strong class="masiva__resumen-valor">

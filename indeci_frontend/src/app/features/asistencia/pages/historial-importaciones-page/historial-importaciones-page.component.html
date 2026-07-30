@@ -42,6 +42,16 @@
           <th mat-header-cell *matHeaderCellDef scope="col">Archivo</th>
           <td mat-cell *matCellDef="let row">{{ row.nombreArchivo }}</td>
         </ng-container>
+        <ng-container matColumnDef="origen">
+          <th mat-header-cell *matHeaderCellDef scope="col">Origen</th>
+          <td mat-cell *matCellDef="let row">
+            <span
+              class="historial__badge"
+              [class.historial__badge--ok]="row.formatoOrigen === 'RELOJ2_COEN'"
+              matTooltip="Formato de marcador con el que se cargó este archivo (Reloj 1 o COEN)"
+            >{{ formatoOrigenLabel(row.formatoOrigen) }}</span>
+          </td>
+        </ng-container>
         <ng-container matColumnDef="estado">
           <th mat-header-cell *matHeaderCellDef scope="col">Estado</th>
           <td mat-cell *matCellDef="let row">

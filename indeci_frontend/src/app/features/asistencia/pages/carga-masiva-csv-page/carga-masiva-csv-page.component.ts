@@ -48,6 +48,7 @@ import type {
   AsistenciaValidacionBatch,
   EstrategiaConflicto,
 } from '../../models/asistencia-import.model';
+import { formatoOrigenLabel } from '../../models/asistencia-import.model';
 
 /** Máquina de estados de la UI de validación (Opción B). */
 type EstadoValidacion = 'IDLE' | 'PROCESANDO' | 'COMPLETADO' | 'ERROR';
@@ -165,6 +166,9 @@ export class CargaMasivaCsvPageComponent implements OnInit, OnDestroy {
   readonly estrategia = signal<EstrategiaConflicto>('OMITIR_EXISTENTES');
 
   // ---- Detalle server-side ----
+  /** Expuesto al template: etiqueta legible del origen detectado (Reloj 1 / COEN). */
+  readonly formatoOrigenLabel = formatoOrigenLabel;
+
   readonly resumen = signal<AsistenciaImportResumen | null>(null);
   readonly detalleRows = signal<readonly AsistenciaImportFilaDetalle[]>([]);
   readonly detalleTotal = signal(0);

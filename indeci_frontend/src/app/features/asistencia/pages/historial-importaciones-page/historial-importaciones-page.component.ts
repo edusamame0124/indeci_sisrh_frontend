@@ -20,6 +20,7 @@ import type {
   AsistenciaImportHistorial,
   AsistenciaValidacionBatch,
 } from '../../models/asistencia-import.model';
+import { formatoOrigenLabel } from '../../models/asistencia-import.model';
 import {
   CalculoProgresoCircularComponent,
   type EstadoProgresoCircular,
@@ -52,7 +53,9 @@ export class HistorialImportacionesPageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private static readonly POLL_MS = 700;
 
-  readonly columnas = ['fecha', 'periodo', 'archivo', 'estado', 'validacion', 'filas', 'empleados', 'usuario', 'acciones'] as const;
+  readonly columnas = ['fecha', 'periodo', 'archivo', 'origen', 'estado', 'validacion', 'filas', 'empleados', 'usuario', 'acciones'] as const;
+  /** Expuesto al template: etiqueta legible del origen (Reloj 1 / COEN). */
+  readonly formatoOrigenLabel = formatoOrigenLabel;
   readonly periodoFiltro = signal('');
   readonly rows = signal<readonly AsistenciaImportHistorial[]>([]);
   readonly loading = signal(false);
@@ -187,6 +190,15 @@ export class HistorialImportacionesPageComponent implements OnInit {
     return this.periodosConPlanilla().has(row.periodo);
   }
 
+  /**
+   * Marca qué periodos del historial ya tienen planilla generada, para advertir
+   * que hay que coordinar un recálculo antes de seguir corrigiendo asistencia.
+   *
+   * Usa el endpoint de existencia (`/periodo/{p}/existe`), que devuelve un
+   * booleano: antes se descargaban TODOS los movimientos del periodo solo para
+   * evaluar `length > 0`, lo que además exigía PLA_READ y hacía fallar la
+   * consulta con 403 para el rol ASISTENCIA.
+   */
   private cargarPeriodosConPlanilla(rows: readonly AsistenciaImportHistorial[]): void {
     const periodos = Array.from(new Set(rows.map((row) => row.periodo)));
     if (periodos.length === 0) {
@@ -194,8 +206,8 @@ export class HistorialImportacionesPageComponent implements OnInit {
       return;
     }
     const checks = periodos.map((periodo) =>
-      this.movimientoApi.listarPeriodo(periodo).pipe(
-        map((movimientos) => ({ periodo, tienePlanilla: movimientos.length > 0 })),
+      this.movimientoApi.existePlanillaEnPeriodo(periodo).pipe(
+        map((tienePlanilla) => ({ periodo, tienePlanilla })),
         catchError(() => of({ periodo, tienePlanilla: false })),
       ),
     );

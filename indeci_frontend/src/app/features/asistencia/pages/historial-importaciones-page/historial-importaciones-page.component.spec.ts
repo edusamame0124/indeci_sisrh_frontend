@@ -17,6 +17,7 @@ describe('HistorialImportacionesPageComponent', () => {
     id: 11,
     periodo: '2026-06',
     nombreArchivo: 'marcador.csv',
+    formatoOrigen: 'RELOJ1_DIARIO',
     usuario: 'rrhh',
     fechaImportacion: '2026-06-07T10:15:00',
     estado: 'CONFIRMADA',
@@ -52,7 +53,8 @@ describe('HistorialImportacionesPageComponent', () => {
     })),
   };
   const movimientoApi = {
-    listarPeriodo: vi.fn(() => of([{ id: 99 }])),
+    // Endpoint de existencia: devuelve solo el booleano de estado, sin movimientos.
+    existePlanillaEnPeriodo: vi.fn(() => of(true)),
   };
   const snack = {
     open: vi.fn(),
@@ -64,7 +66,7 @@ describe('HistorialImportacionesPageComponent', () => {
   beforeEach(async () => {
     importApi.historial.mockClear();
     importApi.validarCabeceras.mockClear();
-    movimientoApi.listarPeriodo.mockClear();
+    movimientoApi.existePlanillaEnPeriodo.mockClear();
     snack.open.mockClear();
     errors.translate.mockClear();
 
@@ -88,7 +90,7 @@ describe('HistorialImportacionesPageComponent', () => {
     const component = fixture.componentInstance;
     const text = fixture.nativeElement.textContent as string;
     expect(importApi.historial).toHaveBeenCalledWith(null);
-    expect(movimientoApi.listarPeriodo).toHaveBeenCalledWith('2026-06');
+    expect(movimientoApi.existePlanillaEnPeriodo).toHaveBeenCalledWith('2026-06');
     expect(component.rows()).toEqual([row]);
     expect(component.total()).toBe(1);
     expect(text).toContain('marcador.csv');

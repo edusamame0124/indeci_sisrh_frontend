@@ -30,6 +30,19 @@ export class MovimientoPlanillaApiService {
       .pipe(map((r) => [...extractApiData(r)]));
   }
 
+  /**
+   * ¿El periodo ya tiene planilla generada? Devuelve solo el booleano de estado.
+   *
+   * Preferir este método sobre `listarPeriodo()` cuando solo se necesite saber si
+   * existe planilla: no descarga los movimientos y lo autoriza `PERIODO_READ`, de
+   * modo que el rol ASISTENCIA puede consultarlo sin acceso a los montos.
+   */
+  existePlanillaEnPeriodo(periodo: string): Observable<boolean> {
+    return this.http
+      .get<ApiResponse<boolean>>(`${this.baseUrl}/periodo/${periodo}/existe`)
+      .pipe(map(extractApiData));
+  }
+
   /** Historial de cabeceras de planilla de un empleado (PANTALLA-08). */
   listarPorEmpleado(empleadoId: number): Observable<readonly MovimientoPlanillaRow[]> {
     return this.http
