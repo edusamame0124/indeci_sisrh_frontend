@@ -123,7 +123,6 @@
               </strong>
             </div>
           </div>
-
         </mat-card-content>
       </mat-card>
 
@@ -155,13 +154,13 @@
 
               <mat-form-field appearance="outline">
                 <mat-label>Fecha de nacimiento</mat-label>
+
                 <input
                   matInput
-                  [value]="
-                    persona.fechaNacimiento ? (persona.fechaNacimiento | date: 'dd/MM/yyyy') : ''
-                  "
+                  [value]="formatearFechaNacimiento(persona.fechaNacimiento)"
                   readonly
                 />
+
                 <mat-icon matSuffix>calendar_month</mat-icon>
               </mat-form-field>
 

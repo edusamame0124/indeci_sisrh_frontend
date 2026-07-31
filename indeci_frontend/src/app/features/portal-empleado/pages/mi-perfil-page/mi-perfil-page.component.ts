@@ -267,4 +267,18 @@ export class MiPerfilPageComponent implements OnInit {
         },
       });
   }
+  formatearFechaNacimiento(fecha: string | null | undefined): string {
+    if (!fecha) {
+      return '';
+    }
+
+    const fechaSinHora = fecha.substring(0, 10);
+    const [anio, mes, dia] = fechaSinHora.split('-');
+
+    if (!anio || !mes || !dia) {
+      return '';
+    }
+
+    return `${dia}/${mes}/${anio}`;
+  }
 }
