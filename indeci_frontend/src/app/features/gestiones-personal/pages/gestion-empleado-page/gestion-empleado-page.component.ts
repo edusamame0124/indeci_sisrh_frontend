@@ -347,9 +347,63 @@ export class GestionEmpleadoPageComponent implements OnInit {
     });
   }
 
-  /** Solo una papeleta en BORRADOR (aún no enviada al jefe) puede eliminarse. */
+  /** Solo una papeleta en BORRADOR (aún no enviada al jefe) puede editarse/eliminarse. */
   esBorrador(item: SolicitudRrhh): boolean {
     return (item.estadoSolicitud ?? '').toLowerCase().includes('borrador');
+  }
+
+  /** Abre el diálogo correspondiente (por código de tipo) precargado para editar la papeleta. */
+  abrirEdicion(item: SolicitudRrhh): void {
+    if (!this.esBorrador(item)) {
+      return;
+    }
+
+    const tipoSolicitud = this.tiposSolicitud().find((t) => t.id === item.tipoSolicitudId) ?? null;
+
+    if (!tipoSolicitud) {
+      this.error.set('No se pudo determinar el tipo de la papeleta a editar.');
+      return;
+    }
+
+    const codigo = String(tipoSolicitud.codigo ?? '').padStart(3, '0');
+
+    let componente: any;
+    let width = '900px';
+
+    if (['001', '002', '003', '004', '005', '006', '007'].includes(codigo)) {
+      componente = PermisoComunDialog;
+    } else if (codigo === '008' || codigo === '009') {
+      componente = LactanciaDialog;
+    } else if (codigo === '010') {
+      componente = DescansoMedicoDialog;
+    } else if (codigo === '011') {
+      componente = LicenciaDialog;
+    } else if (codigo === '012') {
+      componente = VacacionesDialog;
+      width = '1100px';
+    } else if (codigo === '013') {
+      componente = CompensacionDialog;
+      width = '1100px';
+    } else if (codigo === 'TELETRABAJO') {
+      componente = TeletrabajoPapeletaDialog;
+      width = '760px';
+    } else {
+      this.error.set('Este tipo de papeleta no admite edición.');
+      return;
+    }
+
+    const ref = this.dialog.open(componente, {
+      width,
+      maxWidth: '95vw',
+      disableClose: true,
+      data: { tipoSolicitud, solicitudExistente: item },
+    });
+
+    ref.afterClosed().subscribe((actualizar: boolean) => {
+      if (actualizar) {
+        this.cargarSolicitudes();
+      }
+    });
   }
 
   /** Elimina una papeleta propia en BORRADOR previa confirmación. */
@@ -394,6 +448,22 @@ export class GestionEmpleadoPageComponent implements OnInit {
   getNombreEmpleado(): string {
     const primeraSolicitud = this.solicitudes()[0];
     return primeraSolicitud?.empleado ?? 'Empleado';
+  }
+
+  /**
+   * Art. 34 — días CALENDARIO reales que descontarán el saldo anual (suma de
+   * `detallesVacacion[].diasCalendario`, excluyendo "_ACTUAL"). Devuelve null si no aplica
+   * (no es vacaciones) o si coincide con `cantidadDias` (Programación: no aporta info nueva) —
+   * solo vale la pena mostrarlo cuando difiere del hábil (Fraccionamiento con fin de semana
+   * atrapado en el rango).
+   */
+  diasCalendarioReferencia(item: SolicitudRrhh): number | null {
+    const detalles = (item.detallesVacacion ?? []).filter((d) => !d.tipo.endsWith('_ACTUAL'));
+    if (detalles.length === 0) {
+      return null;
+    }
+    const total = detalles.reduce((acc, d) => acc + (d.diasCalendario ?? d.totalDias ?? 0), 0);
+    return total !== (item.cantidadDias ?? 0) ? total : null;
   }
 
   claseEstado(estado: string): string {

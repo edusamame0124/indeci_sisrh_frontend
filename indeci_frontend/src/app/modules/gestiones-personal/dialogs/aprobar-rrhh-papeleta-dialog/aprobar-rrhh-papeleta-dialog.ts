@@ -31,6 +31,27 @@ export class AprobarRrhhPapeletaDialogComponent {
     @Inject(MAT_DIALOG_DATA) public readonly solicitud: SolicitudRrhh,
   ) {}
 
+  /** Detalles de goce real (excluye "_ACTUAL": el período previo que se reprograma/fracciona). */
+  private detallesGoceReal() {
+    return (this.solicitud.detallesVacacion ?? []).filter((d) => !d.tipo.endsWith('_ACTUAL'));
+  }
+
+  /** Días HÁBILES (Art. 35.b/c) — lo que controla el pool de fraccionamiento. */
+  diasHabilesSolicitud(): number {
+    return this.detallesGoceReal().reduce((acc, d) => acc + (d.totalDias ?? 0), 0);
+  }
+
+  /** Días CALENDARIO (Art. 34) — lo que efectivamente descontará el saldo anual al aprobar. */
+  diasCalendarioSolicitud(): number {
+    return this.detallesGoceReal().reduce((acc, d) => acc + (d.diasCalendario ?? d.totalDias ?? 0), 0);
+  }
+
+  /** true si hay diferencia entre lo hábil (control Art. 35) y lo calendario (descuento real Art. 34). */
+  diasCalendarioDifiereDeHabiles(): boolean {
+    return this.detallesGoceReal().length > 0
+      && this.diasCalendarioSolicitud() !== this.diasHabilesSolicitud();
+  }
+
   seleccionarArchivo(event: Event): void {
     const input = event.target as HTMLInputElement;
     this.archivo = input.files?.[0] ?? null;

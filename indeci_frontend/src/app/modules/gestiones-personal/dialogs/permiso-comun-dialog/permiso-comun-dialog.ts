@@ -9,11 +9,14 @@ import { MatIconModule } from '@angular/material/icon';
 import {
   CrearSolicitudRrhhRequest,
   SolicitudesRrhhService,
+  SolicitudRrhh,
   TipoSolicitudRrhh,
 } from '../../services/solicitudes-rrhh';
 
 interface PermisoComunDialogData {
   tipoSolicitud: TipoSolicitudRrhh;
+  /** Presente solo en modo edición: papeleta propia en BORRADOR a modificar. */
+  solicitudExistente?: SolicitudRrhh;
 }
 
 @Component({
@@ -43,11 +46,41 @@ export class PermisoComunDialog {
   lugarComision = '';
   archivoSustento: File | null = null;
   tituloDialog = 'Permiso';
+
+  tipoSolicitud!: TipoSolicitudRrhh;
+  /** Presente solo en modo edición: papeleta propia en BORRADOR a modificar. */
+  solicitudExistente: SolicitudRrhh | null = null;
+
   constructor(
     @Inject(MAT_DIALOG_DATA)
-    public tipoSolicitud: TipoSolicitudRrhh,
+    public data: TipoSolicitudRrhh | PermisoComunDialogData,
   ) {
-    this.tituloDialog = this.tipoSolicitud?.nombre ?? 'Permiso';
+    if (data && 'tipoSolicitud' in data) {
+      this.tipoSolicitud = data.tipoSolicitud;
+      this.solicitudExistente = data.solicitudExistente ?? null;
+    } else {
+      this.tipoSolicitud = data;
+    }
+
+    this.tituloDialog = this.esEdicion()
+      ? `Editar ${this.tipoSolicitud?.nombre ?? 'permiso'}`
+      : (this.tipoSolicitud?.nombre ?? 'Permiso');
+
+    if (this.solicitudExistente) {
+      const s = this.solicitudExistente;
+      this.fechaInicio = s.fechaInicio ?? '';
+      this.fechaFin = s.fechaFin ?? s.fechaInicio ?? '';
+      this.horaInicio = s.horaInicio ?? '';
+      this.horaFin = s.horaFin ?? '';
+      this.motivo = s.motivo ?? '';
+      this.observacion = s.observacion ?? '';
+      this.lugarComision = s.lugarComision ?? '';
+      this.calcularHoras();
+    }
+  }
+
+  esEdicion(): boolean {
+    return !!this.solicitudExistente?.id;
   }
 
   codigoTipoSolicitud(): string {
@@ -148,7 +181,7 @@ export class PermisoComunDialog {
       return;
     }
 
-    if (this.requiereSustento() && !this.archivoSustento) {
+    if (this.requiereSustento() && !this.esEdicion() && !this.archivoSustento) {
       this.error.set('Debe adjuntar el documento de sustento.');
       return;
     }
@@ -177,7 +210,11 @@ export class PermisoComunDialog {
 
     this.guardando.set(true);
 
-    this.service.crearSolicitud(payload, this.archivoSustento).subscribe({
+    const obs$ = this.esEdicion()
+      ? this.service.editarSolicitud(this.solicitudExistente!.id, payload)
+      : this.service.crearSolicitud(payload, this.archivoSustento);
+
+    obs$.subscribe({
       next: () => {
         this.guardando.set(false);
         this.dialogRef.close(true);
@@ -186,7 +223,11 @@ export class PermisoComunDialog {
         this.guardando.set(false);
 
         const mensaje =
-          err?.error?.mensaje ?? err?.error?.message ?? 'No se pudo registrar la papeleta.';
+          err?.error?.mensaje ??
+          err?.error?.message ??
+          (this.esEdicion()
+            ? 'No se pudo editar la papeleta.'
+            : 'No se pudo registrar la papeleta.');
 
         this.error.set(mensaje);
       },

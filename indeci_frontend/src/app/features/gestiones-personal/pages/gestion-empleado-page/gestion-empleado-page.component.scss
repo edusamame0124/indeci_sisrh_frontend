@@ -170,6 +170,15 @@
   border-radius: 14px;
 }
 
+/* Art. 34 — referencia de días calendario junto al conteo hábil (Fraccionamiento). */
+.dias-calendario-ref {
+  display: block;
+  color: #723600;
+  font-size: 0.8rem;
+  font-weight: 400;
+  line-height: 1.3;
+}
+
 table {
   width: 100%;
   border-collapse: collapse;

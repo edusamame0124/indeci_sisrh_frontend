@@ -32,6 +32,29 @@ export interface SolicitudRrhh {
   cantidadHoras: number | null;
   /** Papeleta de Teletrabajo (Ley N° 31572): actividades del día. */
   detallesTeletrabajo?: DetalleTeletrabajo[] | null;
+
+  // Campos adicionales del backend (SolicitudRrhhResponseDto) — necesarios para precargar
+  // el formulario correspondiente al editar una papeleta existente.
+  lugarComision?: string | null;
+  fechaNacimientoHijo?: string | null;
+  fechaFinPostnatal?: string | null;
+  minutosIngreso?: number | null;
+  minutosSalida?: number | null;
+  tipoDescansoMedicoId?: number | null;
+  tipoDescansoMedico?: string | null;
+  nombreMedico?: string | null;
+  numeroColegiatura?: string | null;
+  tipoLicenciaId?: number | null;
+  tipoLicencia?: string | null;
+  documento1?: string | null;
+  documento2?: string | null;
+  totalFolios?: number | null;
+  tipoVacacionId?: number | null;
+  tipoVacacion?: string | null;
+  /** Papeleta de Teletrabajo: modalidad elegida (PARCIAL/COMPLETA). */
+  modalidadTeletrabajo?: string | null;
+  detallesVacacion?: DetalleVacacionRequest[] | null;
+  detallesCompensacion?: DetalleCompensacionRequest[] | null;
 }
 
 /** Papeleta de Teletrabajo (Ley N° 31572): actividad del día (respuesta). */
@@ -132,6 +155,12 @@ export interface DetalleVacacionRequest {
   fechaInicio: string;
   fechaFin: string;
   totalDias: number;
+  /**
+   * Días CALENDARIO reales (Art. 34) — solo lo llena el backend en la respuesta (nunca se
+   * envía). Para Fraccionamiento difiere de `totalDias` (hábiles, Art. 35.b/c): es lo que
+   * efectivamente descuenta el saldo anual.
+   */
+  diasCalendario?: number | null;
   /** Hub Vacacional — id del período origen elegido del dropdown (solo en detalles "_ACTUAL"). */
   vacacionOrigenId?: number | null;
 }
@@ -305,6 +334,21 @@ export class SolicitudesRrhhService {
     return this.http.post<ApiResponse<SolicitudRrhh>>(
       `${this.apiUrl}/rrhh/solicitudes/registrar`,
       formData,
+    );
+  }
+
+  /**
+   * Edita una papeleta propia mientras está en BORRADOR (no enviada al jefe). El backend
+   * valida propiedad y estado; no admite reemplazar el sustento/documentos adjuntos (solo
+   * campos de texto/fecha) — para cambiar el archivo, eliminar y crear de nuevo.
+   */
+  editarSolicitud(
+    idPapeleta: number,
+    payload: CrearSolicitudRrhhRequest,
+  ): Observable<ApiResponse<unknown>> {
+    return this.http.put<ApiResponse<unknown>>(
+      `${this.apiUrl}/rrhh/solicitudes/editar/${idPapeleta}`,
+      payload,
     );
   }
 

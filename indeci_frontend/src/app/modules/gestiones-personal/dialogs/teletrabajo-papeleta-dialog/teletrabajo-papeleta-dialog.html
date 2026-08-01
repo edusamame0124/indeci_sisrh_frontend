@@ -1,6 +1,6 @@
 <h2 mat-dialog-title>
   <mat-icon class="title-icon">home_work</mat-icon>
-  Reporte de Teletrabajo
+  {{ tituloDialog }}
 </h2>
 
 <mat-dialog-content class="dialog-body">
@@ -100,6 +100,6 @@
     [disabled]="guardando()"
   >
     <mat-icon>save</mat-icon>
-    {{ guardando() ? 'Guardando...' : 'Guardar borrador' }}
+    {{ guardando() ? 'Guardando...' : esEdicion() ? 'Guardar cambios' : 'Guardar borrador' }}
   </button>
 </mat-dialog-actions>

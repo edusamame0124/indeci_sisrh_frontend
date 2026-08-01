@@ -197,6 +197,14 @@
       <small class="art35-nota">
         Los días hábiles excluyen sábados y domingos; los feriados se validan oficialmente al guardar.
       </small>
+
+      <!-- Art. 34 — el fin de semana "atrapado" dentro de una fracción sí descuenta el saldo anual,
+           aunque no cuente como día hábil (Art. 35). Transparencia para el empleado. -->
+      <div class="art34-banner" *ngIf="diasCalendarioDifiereDeHabiles()">
+        💡 Esto descontará <strong>{{ diasCalendarioFraccionados() }} día(s)</strong> de su saldo
+        vacacional anual (Art. 34), aunque solo sean {{ diasHabilesFraccionados() }} día(s) hábiles
+        fraccionados: el fin de semana dentro del período también se computa.
+      </div>
     </div>
 
     <div class="field field--full" *ngIf="puedeAgregarFraccion()">
@@ -218,10 +226,15 @@
       <textarea rows="3" [(ngModel)]="motivo"></textarea>
     </label>
 
-    <label class="field field--full" *ngIf="requiereSustento()">
+    <label class="field field--full" *ngIf="requiereSustento() && !esEdicion()">
       <span>Documento de sustento</span>
       <input type="file" (change)="onArchivoSeleccionado($event)" />
     </label>
+
+    <p class="hint field field--full" *ngIf="requiereSustento() && esEdicion()">
+      El documento de sustento no se puede reemplazar al editar. Si necesita cambiarlo, elimine
+      esta papeleta y cree una nueva.
+    </p>
 
     <label class="field field--full" *ngIf="requiereObservacion()">
       <span>Observación *</span>
@@ -253,6 +266,6 @@
     "
   >
     <mat-icon>save</mat-icon>
-    {{ guardando() ? 'Guardando...' : 'Guardar borrador' }}
+    {{ guardando() ? 'Guardando...' : esEdicion() ? 'Guardar cambios' : 'Guardar borrador' }}
   </button>
 </mat-dialog-actions>

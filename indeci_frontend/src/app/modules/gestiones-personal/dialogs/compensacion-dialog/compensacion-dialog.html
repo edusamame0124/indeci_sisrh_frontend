@@ -126,13 +126,18 @@
       />
     </label>
 
-    <label class="field field--full" *ngIf="requiereSustento()">
+    <label class="field field--full" *ngIf="requiereSustento() && !esEdicion()">
       <span>Documento de sustento</span>
       <input
         type="file"
         (change)="onArchivoSeleccionado($event)"
       />
     </label>
+
+    <p class="hint field field--full" *ngIf="requiereSustento() && esEdicion()">
+      El documento de sustento no se puede reemplazar al editar. Si necesita cambiarlo, elimine
+      esta papeleta y cree una nueva.
+    </p>
 
     <label class="field field--full">
       <span>
@@ -170,6 +175,6 @@
     [disabled]="guardando()"
   >
     <mat-icon>save</mat-icon>
-    {{ guardando() ? 'Guardando...' : 'Guardar borrador' }}
+    {{ guardando() ? 'Guardando...' : esEdicion() ? 'Guardar cambios' : 'Guardar borrador' }}
   </button>
 </mat-dialog-actions>

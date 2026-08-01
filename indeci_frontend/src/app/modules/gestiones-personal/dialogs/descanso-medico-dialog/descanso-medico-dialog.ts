@@ -10,6 +10,7 @@ import {
   CrearSolicitudRrhhRequest,
   DocumentoRequeridoDescansoMedico,
   SolicitudesRrhhService,
+  SolicitudRrhh,
   TipoDescansoMedico,
   TipoSolicitudRrhh,
 } from '../../services/solicitudes-rrhh';
@@ -17,6 +18,8 @@ interface DescansoMedicoDialogData {
   tipoSolicitud: TipoSolicitudRrhh;
   expedidoPorNombre?: string;
   tipoDescansoNombre?: string;
+  /** Presente solo en modo edición: papeleta propia en BORRADOR a modificar. */
+  solicitudExistente?: SolicitudRrhh;
 }
 @Component({
   selector: 'app-descanso-medico-dialog',
@@ -58,6 +61,9 @@ export class DescansoMedicoDialog implements OnInit {
 
   expedidoPorNombre: string | null = null;
 
+  /** Presente solo en modo edición: papeleta propia en BORRADOR a modificar. */
+  solicitudExistente: SolicitudRrhh | null = null;
+
   constructor(
     @Inject(MAT_DIALOG_DATA)
     public data: TipoSolicitudRrhh | DescansoMedicoDialogData,
@@ -65,11 +71,29 @@ export class DescansoMedicoDialog implements OnInit {
     if ('tipoSolicitud' in data) {
       this.tipoSolicitud = data.tipoSolicitud;
       this.expedidoPorNombre = data.expedidoPorNombre ?? data.tipoDescansoNombre ?? null;
+      this.solicitudExistente = data.solicitudExistente ?? null;
     } else {
       this.tipoSolicitud = data;
     }
 
-    this.tituloDialog = this.tipoSolicitud?.nombre ?? 'Descanso médico';
+    this.tituloDialog = this.esEdicion()
+      ? `Editar ${this.tipoSolicitud?.nombre ?? 'descanso médico'}`
+      : (this.tipoSolicitud?.nombre ?? 'Descanso médico');
+
+    if (this.solicitudExistente) {
+      const s = this.solicitudExistente;
+      this.fechaInicio = s.fechaInicio ?? '';
+      this.fechaFin = s.fechaFin ?? '';
+      this.nombreMedico = s.nombreMedico ?? '';
+      this.numeroColegiatura = s.numeroColegiatura ?? '';
+      this.motivo = s.motivo ?? '';
+      this.observacion = s.observacion ?? '';
+      this.tipoDescansoMedicoId = s.tipoDescansoMedicoId ?? null;
+    }
+  }
+
+  esEdicion(): boolean {
+    return !!this.solicitudExistente?.id;
   }
 
   ngOnInit(): void {
@@ -86,6 +110,12 @@ export class DescansoMedicoDialog implements OnInit {
         this.cargandoTipos.set(false);
 
         this.seleccionarTipoDescansoInicial();
+
+        // Edición: el tipo ya viene preseleccionado (constructor); solo falta cargar la
+        // lista de documentos requeridos (informativa — no se puede reemplazar el archivo).
+        if (this.esEdicion() && this.tipoDescansoMedicoId) {
+          this.onTipoDescansoChange(this.tipoDescansoMedicoId);
+        }
       },
       error: () => {
         this.error.set('No se pudo cargar el catálogo de descanso médico.');
@@ -294,7 +324,7 @@ export class DescansoMedicoDialog implements OnInit {
       return;
     }
 
-    if (!this.validarDocumentos()) {
+    if (!this.esEdicion() && !this.validarDocumentos()) {
       return;
     }
 
@@ -347,7 +377,11 @@ export class DescansoMedicoDialog implements OnInit {
 
     this.guardando.set(true);
 
-    this.service.crearSolicitudConDocumentos(payload, archivos).subscribe({
+    const obs$ = this.esEdicion()
+      ? this.service.editarSolicitud(this.solicitudExistente!.id, payload)
+      : this.service.crearSolicitudConDocumentos(payload, archivos);
+
+    obs$.subscribe({
       next: () => {
         this.guardando.set(false);
         this.dialogRef.close(true);
@@ -356,7 +390,11 @@ export class DescansoMedicoDialog implements OnInit {
         this.guardando.set(false);
 
         const mensaje =
-          err?.error?.mensaje ?? err?.error?.message ?? 'No se pudo registrar el descanso médico.';
+          err?.error?.mensaje ??
+          err?.error?.message ??
+          (this.esEdicion()
+            ? 'No se pudo editar el descanso médico.'
+            : 'No se pudo registrar el descanso médico.');
 
         this.error.set(mensaje);
       },

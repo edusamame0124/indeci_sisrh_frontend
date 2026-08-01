@@ -57,8 +57,13 @@
         {{ doc.descripcion }}
       </small>
 
-      <input type="file" (change)="onDocumentoSeleccionado($event, doc)" />
+      <input type="file" *ngIf="!esEdicion()" (change)="onDocumentoSeleccionado($event, doc)" />
     </div>
+
+    <p class="hint field field--full" *ngIf="esEdicion() && documentosRequeridos().length > 0">
+      Los documentos adjuntos no se pueden reemplazar al editar. Si necesita cambiarlos, elimine
+      esta papeleta y cree una nueva.
+    </p>
 
     <label class="field field--full" *ngIf="requiereObservacion()">
       <span>Observación *</span>
@@ -84,6 +89,6 @@
     [disabled]="guardando()"
   >
     <mat-icon>save</mat-icon>
-    {{ guardando() ? 'Guardando...' : 'Guardar borrador' }}
+    {{ guardando() ? 'Guardando...' : esEdicion() ? 'Guardar cambios' : 'Guardar borrador' }}
   </button>
 </mat-dialog-actions>

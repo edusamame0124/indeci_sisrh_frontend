@@ -10,6 +10,7 @@ import {
   CrearSolicitudRrhhRequest,
   DetalleCompensacionRequest,
   SolicitudesRrhhService,
+  SolicitudRrhh,
   TipoSolicitudRrhh,
 } from '../../services/solicitudes-rrhh';
 
@@ -19,6 +20,12 @@ interface DetalleCompensacionForm {
   horaFin: string;
   cantidadHoras: number | null;
   cantidadHorasTexto: string;
+}
+
+interface CompensacionDialogData {
+  tipoSolicitud: TipoSolicitudRrhh;
+  /** Presente solo en modo edición: papeleta propia en BORRADOR a modificar. */
+  solicitudExistente?: SolicitudRrhh;
 }
 
 @Component({
@@ -59,11 +66,49 @@ export class CompensacionDialog {
     },
   ];
 
+  tipoSolicitud!: TipoSolicitudRrhh;
+  /** Presente solo en modo edición: papeleta propia en BORRADOR a modificar. */
+  solicitudExistente: SolicitudRrhh | null = null;
+
   constructor(
     @Inject(MAT_DIALOG_DATA)
-    public tipoSolicitud: TipoSolicitudRrhh,
+    public data: TipoSolicitudRrhh | CompensacionDialogData,
   ) {
-    this.tituloDialog = this.tipoSolicitud?.nombre ?? 'Permiso personal compensable por horas';
+    if (data && 'tipoSolicitud' in data) {
+      this.tipoSolicitud = data.tipoSolicitud;
+      this.solicitudExistente = data.solicitudExistente ?? null;
+    } else {
+      this.tipoSolicitud = data;
+    }
+
+    this.tituloDialog = this.esEdicion()
+      ? `Editar ${this.tipoSolicitud?.nombre ?? 'permiso compensable por horas'}`
+      : (this.tipoSolicitud?.nombre ?? 'Permiso personal compensable por horas');
+
+    if (this.solicitudExistente) {
+      const s = this.solicitudExistente;
+      this.fechaInicio = s.fechaInicio ?? '';
+      this.fechaFin = s.fechaFin ?? s.fechaInicio ?? '';
+      this.horaInicio = s.horaInicio ?? '';
+      this.horaFin = s.horaFin ?? '';
+      this.motivo = s.motivo ?? '';
+      this.observacion = s.observacion ?? '';
+      this.calcularHorasPermiso();
+
+      if (s.detallesCompensacion && s.detallesCompensacion.length > 0) {
+        this.detallesCompensacion = s.detallesCompensacion.map((det) => ({
+          fechaCompensacion: det.fechaCompensacion,
+          horaInicio: det.horaInicio,
+          horaFin: det.horaFin,
+          cantidadHoras: det.cantidadHoras,
+          cantidadHorasTexto: this.formatearHoras(det.cantidadHoras ?? 0),
+        }));
+      }
+    }
+  }
+
+  esEdicion(): boolean {
+    return !!this.solicitudExistente?.id;
   }
 
   requiereSustento(): boolean {
@@ -216,7 +261,7 @@ export class CompensacionDialog {
       return;
     }
 
-    if (this.requiereSustento() && !this.archivoSustento) {
+    if (this.requiereSustento() && !this.esEdicion() && !this.archivoSustento) {
       this.error.set('Debe adjuntar el documento de sustento.');
       return;
     }
@@ -285,7 +330,11 @@ export class CompensacionDialog {
 
     this.guardando.set(true);
 
-    this.service.crearSolicitud(payload, this.archivoSustento).subscribe({
+    const obs$ = this.esEdicion()
+      ? this.service.editarSolicitud(this.solicitudExistente!.id, payload)
+      : this.service.crearSolicitud(payload, this.archivoSustento);
+
+    obs$.subscribe({
       next: () => {
         this.guardando.set(false);
         this.dialogRef.close(true);
@@ -294,7 +343,11 @@ export class CompensacionDialog {
         this.guardando.set(false);
 
         const mensaje =
-          err?.error?.mensaje ?? err?.error?.message ?? 'No se pudo registrar la compensación.';
+          err?.error?.mensaje ??
+          err?.error?.message ??
+          (this.esEdicion()
+            ? 'No se pudo editar la compensación.'
+            : 'No se pudo registrar la compensación.');
 
         this.error.set(mensaje);
       },

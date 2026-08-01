@@ -13,6 +13,7 @@ import {
   SaldoProporcional,
   SaldoVacacional,
   SolicitudesRrhhService,
+  SolicitudRrhh,
   TipoSolicitudRrhh,
   TipoVacacion,
 } from '../../services/solicitudes-rrhh';
@@ -23,6 +24,12 @@ interface DetalleVacacionForm {
   fechaInicio: string;
   fechaFin: string;
   totalDias: number | null;
+  /**
+   * Días CALENDARIO reales (Art. 34) — solo informativo/estimado en el cliente; el backend
+   * recalcula y persiste el valor autoritativo. Para Fraccionamiento difiere de `totalDias`
+   * (hábiles, Art. 35.b/c): es lo que efectivamente descontará el saldo anual.
+   */
+  diasCalendario?: number | null;
   /** Hub Vacacional — id del período origen elegido del dropdown (solo detalles "_ACTUAL"). */
   vacacionOrigenId?: number | null;
   /** Art. 34 D.S. 013-2019-PCM — true si el +2 del fin de semana (viernes) se aplicó a este período. */
@@ -35,6 +42,8 @@ interface VacacionesDialogData {
   tipoSolicitud: TipoSolicitudRrhh;
   tipoVacacionCodigo?: string;
   tipoVacacionNombre?: string;
+  /** Presente solo en modo edición: papeleta propia en BORRADOR a modificar. */
+  solicitudExistente?: SolicitudRrhh;
 }
 
 @Component({
@@ -91,6 +100,9 @@ export class VacacionesDialog implements OnInit {
   tipoVacacionCodigoInicial: string | null = null;
   tipoVacacionNombre: string | null = null;
 
+  /** Presente solo en modo edición: papeleta propia en BORRADOR a modificar. */
+  solicitudExistente: SolicitudRrhh | null = null;
+
   constructor(
     @Inject(MAT_DIALOG_DATA)
     public data: TipoSolicitudRrhh | VacacionesDialogData,
@@ -99,17 +111,78 @@ export class VacacionesDialog implements OnInit {
       this.tipoSolicitud = data.tipoSolicitud;
       this.tipoVacacionCodigoInicial = data.tipoVacacionCodigo ?? null;
       this.tipoVacacionNombre = data.tipoVacacionNombre ?? null;
+      this.solicitudExistente = data.solicitudExistente ?? null;
     } else {
       this.tipoSolicitud = data;
     }
 
-    this.tituloDialog = this.tipoSolicitud?.nombre ?? 'Solicitud de vacaciones';
+    this.tituloDialog = this.esEdicion()
+      ? `Editar ${this.solicitudExistente?.tipoVacacion ?? this.tipoSolicitud?.nombre ?? 'solicitud de vacaciones'}`
+      : (this.tipoSolicitud?.nombre ?? 'Solicitud de vacaciones');
+
+    if (this.solicitudExistente) {
+      this.tipoVacacionId = this.solicitudExistente.tipoVacacionId ?? null;
+      this.motivo = this.solicitudExistente.motivo ?? '';
+      this.observacion = this.solicitudExistente.observacion ?? '';
+    }
+  }
+
+  esEdicion(): boolean {
+    return !!this.solicitudExistente?.id;
+  }
+
+  /** Título de cada fila del detalle, igual que onTipoVacacionChange() al crear. */
+  private tituloDetalle(tipo: string, indice: number): string {
+    if (tipo === 'PROGRAMACION') return 'Periodo de programación';
+    if (tipo === 'ADELANTO') return 'Periodo de adelanto';
+    if (tipo === 'REPROG_ACTUAL') return 'Periodo actual';
+    if (tipo === 'REPROG_NUEVO') {
+      const nuevos = this.detallesVacacion.filter((x) => x.tipo === 'REPROG_NUEVO').length;
+      return `Nuevo periodo ${nuevos + 1}`;
+    }
+    if (tipo === 'FRACC_ACTUAL') return 'Periodo actual';
+    if (this.esFraccionNueva(tipo)) {
+      const fracciones = this.detallesVacacion.filter((x) => this.esFraccionNueva(x.tipo)).length;
+      return `Fracción ${fracciones + 1}`;
+    }
+    return `Periodo ${indice + 1}`;
+  }
+
+  /** Edición: reconstruye el detalle guardado (en vez del template en blanco de onTipoVacacionChange). */
+  private cargarDetalleExistente(): void {
+    const detalles = this.solicitudExistente?.detallesVacacion ?? [];
+
+    this.detallesVacacion = [];
+    for (const det of detalles) {
+      this.detallesVacacion.push({
+        tipo: det.tipo,
+        titulo: this.tituloDetalle(det.tipo, this.detallesVacacion.length),
+        fechaInicio: det.fechaInicio,
+        fechaFin: det.fechaFin,
+        totalDias: det.totalDias,
+        // Del backend (autoritativo, ya persistido) — NO se recalcula aquí para no pisar el
+        // valor guardado en detalles "_ACTUAL" (período histórico ya consolidado).
+        diasCalendario: det.diasCalendario ?? null,
+        vacacionOrigenId: det.vacacionOrigenId ?? null,
+      });
+    }
+
+    if (this.esAdelanto()) {
+      this.cargarSaldoProporcional();
+    }
+    if (this.codigoTipoVacacion() === '003') {
+      this.cargarPeriodosProgramados();
+    }
   }
 
   ngOnInit(): void {
     this.cargarTiposVacacion();
     this.cargarSaldoVacacional();
     this.cargarFeriados();
+
+    if (this.esEdicion()) {
+      this.cargarDetalleExistente();
+    }
   }
 
   /** Carga los feriados del año actual y el siguiente (cubre rangos de fracciones a fin de año). */
@@ -358,11 +431,12 @@ export class VacacionesDialog implements OnInit {
   }
 
   /**
-   * Art. 34 D.S. 013-2019-PCM — días calendario del período:
-   *   base = (Hasta − Desde) + 1;  si INICIA o CONCLUYE en viernes ⇒ +2 (sábado y domingo
-   *   inmediatos se computan). El operador OR evita la duplicidad del +4 cuando ambos
-   *   extremos caen en viernes (incluido el mismo viernes de 1 día). El usuario NUNCA digita
-   *   este valor (campo `disabled`); solo edita las fechas.
+   * Art. 34 D.S. 013-2019-PCM — días calendario del período: base = (Hasta − Desde) + 1; si
+   * INICIA o CONCLUYE en viernes, el sábado/domingo inmediatos se computan dentro del período,
+   * pero SOLO si aún no están dentro de [inicio, fin] (evita doble conteo cuando el rango ya
+   * cubre ese fin de semana, ej. viernes a miércoles siguiente = 6, no 8). Espejo exacto de
+   * `SolicitudRrhhService.calcularDiasArt34` en el backend (blindaje server-side). El usuario
+   * NUNCA digita este valor (campo `disabled`); solo edita las fechas.
    */
   calcularDias(detalle: DetalleVacacionForm): void {
     detalle.reglaViernesArt34 = false;
@@ -372,18 +446,22 @@ export class VacacionesDialog implements OnInit {
     if (this.esFraccionNueva(detalle.tipo)) {
       if (!detalle.fechaInicio || !detalle.fechaFin) {
         detalle.totalDias = null;
+        detalle.diasCalendario = null;
         return;
       }
       if (this.aDate(detalle.fechaFin) < this.aDate(detalle.fechaInicio)) {
         detalle.totalDias = null;
+        detalle.diasCalendario = null;
         this.error.set('La fecha fin no puede ser menor que la fecha inicio.');
         return;
       }
-      // Media jornada: SOLO válida sobre un único día HÁBIL (no sábado/domingo).
+      // Media jornada: SOLO válida sobre un único día HÁBIL (no sábado/domingo). No activa la
+      // regla del viernes (Art. 34): el trabajador vuelve a laborar el resto de ese mismo día.
       const unicoDiaHabil =
         detalle.fechaInicio === detalle.fechaFin && this.esHabilIso(detalle.fechaInicio);
       if (detalle.mediaJornada && unicoDiaHabil) {
         detalle.totalDias = 0.5;
+        detalle.diasCalendario = 0.5;
         this.error.set(null);
         return;
       }
@@ -391,37 +469,42 @@ export class VacacionesDialog implements OnInit {
       const habiles = this.diasHabilesEntre(detalle.fechaInicio, detalle.fechaFin);
       if (habiles <= 0) {
         detalle.totalDias = null;
+        detalle.diasCalendario = null;
         this.error.set(
           'El período seleccionado no tiene días hábiles (sábados, domingos y feriados no se computan).',
         );
         return;
       }
       detalle.totalDias = habiles;
+      // Días CALENDARIO reales (Art. 34) — lo que efectivamente descontará el saldo anual,
+      // distinto de los días HÁBILES de arriba (que solo controlan la bolsa Art. 35.b/c). Es
+      // una ESTIMACIÓN visual: el backend recalcula y persiste el valor autoritativo al guardar.
+      detalle.diasCalendario = this.diasCalendarioArt34(detalle.fechaInicio, detalle.fechaFin);
       this.error.set(null);
       return;
     }
 
     if (!detalle.fechaInicio || !detalle.fechaFin) {
       detalle.totalDias = null;
+      detalle.diasCalendario = null;
       return;
     }
 
-    // 'T00:00:00' fuerza hora LOCAL (Perú UTC-5, sin DST) → getDay() sin corrimiento de zona.
     const inicio = new Date(`${detalle.fechaInicio}T00:00:00`);
     const fin = new Date(`${detalle.fechaFin}T00:00:00`);
 
-    const diasBase = Math.floor((fin.getTime() - inicio.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-
-    if (diasBase <= 0) {
+    if (fin.getTime() < inicio.getTime()) {
       detalle.totalDias = null;
+      detalle.diasCalendario = null;
       this.error.set('La fecha fin no puede ser menor que la fecha inicio.');
       return;
     }
 
-    const aplicaViernes =
+    detalle.reglaViernesArt34 =
       inicio.getDay() === this.DIA_VIERNES || fin.getDay() === this.DIA_VIERNES;
-    detalle.reglaViernesArt34 = aplicaViernes;
-    detalle.totalDias = diasBase + (aplicaViernes ? this.DIAS_ART34_FIN_SEMANA : 0);
+
+    detalle.totalDias = this.diasCalendarioArt34(detalle.fechaInicio, detalle.fechaFin);
+    detalle.diasCalendario = detalle.totalDias;
 
     if (detalle.totalDias > this.MAX_DIAS_LEGAL) {
       this.error.set(
@@ -432,6 +515,35 @@ export class VacacionesDialog implements OnInit {
     }
 
     this.error.set(null);
+  }
+
+  /**
+   * Art. 34 D.S. 013-2019-PCM — días calendario del período: base = (Hasta − Desde) + 1; si
+   * INICIA o CONCLUYE en viernes, el sábado/domingo inmediatos se computan dentro del período,
+   * pero SOLO si aún no están dentro de [inicio, fin] (evita doble conteo cuando el rango ya
+   * cubre ese fin de semana, ej. viernes a miércoles siguiente = 6, no 8). Espejo exacto de
+   * `SolicitudRrhhService.calcularDiasArt34` en el backend (blindaje server-side).
+   */
+  private diasCalendarioArt34(fechaInicioIso: string, fechaFinIso: string): number {
+    // 'T00:00:00' fuerza hora LOCAL (Perú UTC-5, sin DST) → getDay() sin corrimiento de zona.
+    const inicio = new Date(`${fechaInicioIso}T00:00:00`);
+    const fin = new Date(`${fechaFinIso}T00:00:00`);
+
+    const diasBase = Math.floor((fin.getTime() - inicio.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+
+    let extra = 0;
+    if (inicio.getDay() === this.DIA_VIERNES) {
+      const sabado = new Date(inicio);
+      sabado.setDate(sabado.getDate() + 1);
+      const domingo = new Date(inicio);
+      domingo.setDate(domingo.getDate() + 2);
+      if (sabado.getTime() > fin.getTime()) extra++;
+      if (domingo.getTime() > fin.getTime()) extra++;
+    }
+    if (fin.getDay() === this.DIA_VIERNES && fin.getTime() !== inicio.getTime()) {
+      extra += this.DIAS_ART34_FIN_SEMANA;
+    }
+    return diasBase + extra;
   }
 
   /** true si algún período supera el máximo legal de 30 días (Art. 34) — bloquea Guardar. */
@@ -563,11 +675,27 @@ export class VacacionesDialog implements OnInit {
     return this.esFraccionNueva(detalle.tipo) && cal >= 1 && cal < 7;
   }
 
-  /** Tracker: días hábiles fraccionados solicitados (suma de FRACC_n). */
+  /** Tracker: días hábiles fraccionados solicitados (suma de FRACC_n) — controla el pool Art. 35.b/c. */
   diasHabilesFraccionados(): number {
     return this.detallesVacacion
       .filter((d) => this.esFraccionNueva(d.tipo))
       .reduce((acc, d) => acc + (d.totalDias ?? 0), 0);
+  }
+
+  /**
+   * Días CALENDARIO (Art. 34) que realmente descontará el saldo anual — distinto de los días
+   * hábiles de arriba cuando la fracción "atrapa" un fin de semana dentro de su rango. Es una
+   * estimación visual (mismo cálculo que hace el backend al guardar).
+   */
+  diasCalendarioFraccionados(): number {
+    return this.detallesVacacion
+      .filter((d) => this.esFraccionNueva(d.tipo))
+      .reduce((acc, d) => acc + (d.diasCalendario ?? d.totalDias ?? 0), 0);
+  }
+
+  /** true si el fin de semana "atrapado" hace que el descuento real de saldo difiera del hábil. */
+  diasCalendarioDifiereDeHabiles(): boolean {
+    return this.diasCalendarioFraccionados() !== this.diasHabilesFraccionados();
   }
 
   get poolDiasHabiles(): number {
@@ -830,7 +958,7 @@ export class VacacionesDialog implements OnInit {
       return;
     }
 
-    if (this.requiereSustento() && !this.archivoSustento) {
+    if (this.requiereSustento() && !this.esEdicion() && !this.archivoSustento) {
       this.error.set('Debe adjuntar el documento de sustento.');
       return;
     }
@@ -880,7 +1008,11 @@ export class VacacionesDialog implements OnInit {
 
     this.guardando.set(true);
 
-    this.service.crearSolicitud(payload, this.archivoSustento).subscribe({
+    const obs$ = this.esEdicion()
+      ? this.service.editarSolicitud(this.solicitudExistente!.id, payload)
+      : this.service.crearSolicitud(payload, this.archivoSustento);
+
+    obs$.subscribe({
       next: () => {
         this.guardando.set(false);
         this.dialogRef.close(true);
@@ -889,7 +1021,11 @@ export class VacacionesDialog implements OnInit {
         this.guardando.set(false);
 
         const mensaje =
-          err?.error?.mensaje ?? err?.error?.message ?? 'No se pudo registrar las vacaciones.';
+          err?.error?.mensaje ??
+          err?.error?.message ??
+          (this.esEdicion()
+            ? 'No se pudo editar la solicitud de vacaciones.'
+            : 'No se pudo registrar las vacaciones.');
 
         this.error.set(mensaje);
       },

@@ -212,3 +212,77 @@
     min-height: 100px;
   }
 }
+
+/* Tabs (Vista mensual / Consulta por rango) */
+
+.tabs-asistencia {
+  margin-top: 0.5rem;
+}
+
+.tab-panel {
+  padding-top: 1rem;
+}
+
+.rango-filtros {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.rango-campo {
+  min-width: 180px;
+}
+
+.rango-hint {
+  align-self: center;
+  color: #b91c1c;
+  font-size: 0.8rem;
+}
+
+.rango-count {
+  margin: 0 0 0.5rem;
+  color: #475569;
+  font-size: 0.85rem;
+}
+
+.rango-table-wrap {
+  overflow-x: auto;
+}
+
+.rango-table {
+  width: 100%;
+}
+
+/* Badges de condición (mismo criterio que la consulta diaria RRHH) */
+
+.diaria__badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  background: #f8fafd;
+  color: #0a1e35;
+}
+
+.diaria__badge--ok {
+  background: #e8f5e9;
+  color: #1b5e20;
+}
+
+.diaria__badge--warn {
+  background: #fff8e1;
+  color: #e65100;
+}
+
+.diaria__badge--danger {
+  background: #ffebee;
+  color: #b71c1c;
+}
+
+.diaria__badge--info {
+  background: #e3f2fd;
+  color: #0d47a1;
+}

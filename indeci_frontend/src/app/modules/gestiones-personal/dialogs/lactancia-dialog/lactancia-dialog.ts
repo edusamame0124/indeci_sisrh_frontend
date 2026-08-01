@@ -9,11 +9,14 @@ import { MatIconModule } from '@angular/material/icon';
 import {
   CrearSolicitudRrhhRequest,
   SolicitudesRrhhService,
+  SolicitudRrhh,
   TipoSolicitudRrhh,
 } from '../../services/solicitudes-rrhh';
 
 interface LactanciaDialogData {
   tipoSolicitud: TipoSolicitudRrhh;
+  /** Presente solo en modo edición: papeleta propia en BORRADOR a modificar. */
+  solicitudExistente?: SolicitudRrhh;
 }
 
 @Component({
@@ -50,21 +53,51 @@ export class LactanciaDialog {
   observacion = '';
   archivoSustento: File | null = null;
   tituloDialog = 'Permiso';
+
+  tipoSolicitud!: TipoSolicitudRrhh;
+  /** Presente solo en modo edición: papeleta propia en BORRADOR a modificar. */
+  solicitudExistente: SolicitudRrhh | null = null;
+
   constructor(
     @Inject(MAT_DIALOG_DATA)
-    public tipoSolicitud: TipoSolicitudRrhh,
+    public data: TipoSolicitudRrhh | LactanciaDialogData,
   ) {
-    this.tituloDialog = this.tipoSolicitud?.nombre ?? 'Permiso por lactancia';
-  }
-  /** 
-  get tipoSolicitud(): TipoSolicitudRrhh {
-    return this.data.tipoSolicitud;
+    if (data && 'tipoSolicitud' in data) {
+      this.tipoSolicitud = data.tipoSolicitud;
+      this.solicitudExistente = data.solicitudExistente ?? null;
+    } else {
+      this.tipoSolicitud = data;
+    }
+
+    this.tituloDialog = this.esEdicion()
+      ? `Editar ${this.tipoSolicitud?.nombre ?? 'permiso por lactancia'}`
+      : (this.tipoSolicitud?.nombre ?? 'Permiso por lactancia');
+
+    if (this.solicitudExistente) {
+      const s = this.solicitudExistente;
+      this.fechaNacimientoHijo = s.fechaNacimientoHijo ?? '';
+      this.fechaFinPostnatal = s.fechaFinPostnatal ?? '';
+      this.calcularFechaPrimerAnio();
+      this.motivo = s.motivo ?? '';
+      this.observacion = s.observacion ?? '';
+
+      const esFraccionada = s.minutosIngreso != null || s.minutosSalida != null;
+      this.modoLactancia = esFraccionada ? 'FRACCIONADO' : 'NO_FRACCIONADO';
+
+      if (esFraccionada) {
+        this.minutosIngreso = s.minutosIngreso ?? null;
+        this.minutosSalida = s.minutosSalida ?? null;
+      } else {
+        this.horaInicio = s.horaInicio ?? '';
+        this.horaFin = s.horaFin ?? '';
+        this.calcularHoras();
+      }
+    }
   }
 
-  get tituloDialog(): string {
-    return this.tipoSolicitud?.nombre ?? 'Permiso por lactancia';
+  esEdicion(): boolean {
+    return !!this.solicitudExistente?.id;
   }
-*/
   requiereSustento(): boolean {
     return Number(this.tipoSolicitud?.requiereSustento ?? 0) === 1;
   }
@@ -223,7 +256,7 @@ export class LactanciaDialog {
       this.error.set('Ingrese el motivo de la solicitud.');
       return;
     }
-    if (this.requiereSustento() && !this.archivoSustento) {
+    if (this.requiereSustento() && !this.esEdicion() && !this.archivoSustento) {
       this.error.set('Debe adjuntar el documento de sustento.');
       return;
     }
@@ -262,7 +295,11 @@ export class LactanciaDialog {
 
     this.guardando.set(true);
 
-    this.service.crearSolicitud(payload, this.archivoSustento).subscribe({
+    const obs$ = this.esEdicion()
+      ? this.service.editarSolicitud(this.solicitudExistente!.id, payload)
+      : this.service.crearSolicitud(payload, this.archivoSustento);
+
+    obs$.subscribe({
       next: () => {
         this.guardando.set(false);
         this.dialogRef.close(true);
@@ -271,7 +308,9 @@ export class LactanciaDialog {
         this.guardando.set(false);
 
         const mensaje =
-          err?.error?.mensaje ?? err?.error?.message ?? 'No se pudo registrar la lactancia.';
+          err?.error?.mensaje ??
+          err?.error?.message ??
+          (this.esEdicion() ? 'No se pudo editar la lactancia.' : 'No se pudo registrar la lactancia.');
 
         this.error.set(mensaje);
       },

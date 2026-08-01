@@ -5,7 +5,20 @@
     <strong>Solicitud:</strong> #{{ solicitud.id }} <br />
     <strong>Empleado:</strong> {{ solicitud.empleado }} <br />
     <strong>Tipo:</strong> {{ solicitud.tipoSolicitud }} <br />
-    <strong>Estado actual:</strong> {{ solicitud.estadoSolicitud }}
+    <strong>Estado actual:</strong> {{ solicitud.estadoSolicitud }} <br />
+    <ng-container *ngIf="solicitud.cantidadDias !== null">
+      <strong>Días:</strong> {{ solicitud.cantidadDias }} día(s)
+    </ng-container>
+  </section>
+
+  <!-- Fraccionamiento (Art. 35): el pool hábil que se muestra al empleado NO es lo que se
+       descuenta del saldo — el fin de semana atrapado dentro del rango también cuenta (Art. 34).
+       Corroboración explícita para RRHH antes de aprobar. -->
+  <section class="info art34-aviso" *ngIf="diasCalendarioDifiereDeHabiles()">
+    💡 Esta es una solicitud de <strong>Fraccionamiento</strong>: consume
+    <strong>{{ diasHabilesSolicitud() }} día(s) hábiles</strong> de la bolsa Art. 35.b/c, pero al
+    aprobar descontará <strong>{{ diasCalendarioSolicitud() }} día(s) calendario</strong> del saldo
+    anual del empleado (Art. 34 — el fin de semana dentro del período también se computa).
   </section>
 
   <section

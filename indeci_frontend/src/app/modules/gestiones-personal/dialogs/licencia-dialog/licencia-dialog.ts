@@ -9,6 +9,7 @@ import { MatIconModule } from '@angular/material/icon';
 import {
   CrearSolicitudRrhhRequest,
   SolicitudesRrhhService,
+  SolicitudRrhh,
   TipoLicencia,
   TipoSolicitudRrhh,
 } from '../../services/solicitudes-rrhh';
@@ -16,6 +17,8 @@ import {
 interface LicenciaDialogData {
   tipoSolicitud: TipoSolicitudRrhh;
   tipoLicenciaNombre?: string;
+  /** Presente solo en modo edición: papeleta propia en BORRADOR a modificar. */
+  solicitudExistente?: SolicitudRrhh;
 }
 
 /** Modalidad de goce elegida en el formulario único. */
@@ -86,6 +89,9 @@ export class LicenciaDialog implements OnInit {
   tipoSolicitud!: TipoSolicitudRrhh;
   tipoLicenciaNombre: string | null = null;
 
+  /** Presente solo en modo edición: papeleta propia en BORRADOR a modificar. */
+  solicitudExistente: SolicitudRrhh | null = null;
+
   constructor(
     @Inject(MAT_DIALOG_DATA)
     public data: TipoSolicitudRrhh | LicenciaDialogData,
@@ -93,6 +99,7 @@ export class LicenciaDialog implements OnInit {
     if ('tipoSolicitud' in data) {
       this.tipoSolicitud = data.tipoSolicitud;
       this.tipoLicenciaNombre = data.tipoLicenciaNombre ?? null;
+      this.solicitudExistente = data.solicitudExistente ?? null;
     } else {
       this.tipoSolicitud = data;
     }
@@ -102,7 +109,25 @@ export class LicenciaDialog implements OnInit {
 
     this.tituloDialog = this.esModoUnificado
       ? 'Nueva licencia'
-      : this.tipoSolicitud?.nombre ?? 'Licencia';
+      : (this.tipoSolicitud?.nombre ?? 'Licencia');
+
+    if (this.solicitudExistente) {
+      // Editar solo aplica a licencias CON GOCE: las "sin goce" nacen directo en
+      // PENDIENTE_FIRMA (nunca pasan por BORRADOR), así que nunca llegan aquí en edición.
+      const s = this.solicitudExistente;
+      this.modalidadGoce = 'CON_GOCE';
+      this.tipoLicenciaId = s.tipoLicenciaId ?? null;
+      this.fechaInicio = s.fechaInicio ?? '';
+      this.fechaFin = s.fechaFin ?? '';
+      this.motivo = s.motivo ?? '';
+      this.observacion = s.observacion ?? '';
+      this.totalFolios = s.totalFolios ?? null;
+      this.tituloDialog = `Editar ${s.tipoLicencia ?? this.tipoSolicitud?.nombre ?? 'licencia'}`;
+    }
+  }
+
+  esEdicion(): boolean {
+    return !!this.solicitudExistente?.id;
   }
 
   ngOnInit(): void {
@@ -119,6 +144,11 @@ export class LicenciaDialog implements OnInit {
         this.cargandoTipos.set(false);
 
         this.seleccionarTipoLicenciaInicial();
+
+        // Edición: el tipo ya viene preseleccionado (constructor); solo falta calcular días.
+        if (this.esEdicion()) {
+          this.calcularDias();
+        }
       },
       error: () => {
         this.error.set('No se pudo cargar el catálogo de tipos de licencia.');
@@ -554,7 +584,11 @@ export class LicenciaDialog implements OnInit {
 
     this.guardando.set(true);
 
-    this.service.crearSolicitud(payload, this.archivoSustento).subscribe({
+    const obs$ = this.esEdicion()
+      ? this.service.editarSolicitud(this.solicitudExistente!.id, payload)
+      : this.service.crearSolicitud(payload, this.archivoSustento);
+
+    obs$.subscribe({
       next: () => {
         this.guardando.set(false);
         this.dialogRef.close(true);
@@ -563,7 +597,9 @@ export class LicenciaDialog implements OnInit {
         this.guardando.set(false);
 
         const mensaje =
-          err?.error?.mensaje ?? err?.error?.message ?? 'No se pudo registrar la licencia.';
+          err?.error?.mensaje ??
+          err?.error?.message ??
+          (this.esEdicion() ? 'No se pudo editar la licencia.' : 'No se pudo registrar la licencia.');
 
         this.error.set(mensaje);
       },

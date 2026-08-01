@@ -219,6 +219,13 @@
               <td>
                 <ng-container *ngIf="item.cantidadDias !== null && item.cantidadDias !== undefined">
                   {{ item.cantidadDias }} día(s)
+                  <small
+                    *ngIf="diasCalendarioReferencia(item) as diasCal"
+                    class="dias-calendario-ref"
+                    title="Días calendario que descuenta del saldo anual (Art. 34) — distinto de los días hábiles fraccionados (Art. 35)"
+                  >
+                    descuenta {{ diasCal }} día(s) de su saldo vacacional
+                  </small>
                 </ng-container>
 
                 <ng-container
@@ -253,6 +260,34 @@
                   (click)="abrirTrazabilidad(item)"
                 >
                   <mat-icon>history</mat-icon>
+                </button>
+
+                <button
+                  mat-icon-button
+                  [disabled]="!esBorrador(item)"
+                  [matTooltip]="
+                    esBorrador(item)
+                      ? 'Editar papeleta'
+                      : 'Solo se puede editar mientras esté en borrador (no enviada)'
+                  "
+                  (click)="abrirEdicion(item)"
+                >
+                  <mat-icon>edit</mat-icon>
+                </button>
+
+                <button
+                  mat-icon-button
+                  color="warn"
+                  class="btn-eliminar"
+                  [disabled]="!esBorrador(item)"
+                  [matTooltip]="
+                    esBorrador(item)
+                      ? 'Eliminar papeleta'
+                      : 'Solo se puede eliminar mientras esté en borrador (no enviada)'
+                  "
+                  (click)="eliminarBorrador(item)"
+                >
+                  <mat-icon>delete_outline</mat-icon>
                 </button>
               </td>
             </tr>
@@ -329,6 +364,13 @@
                     <td>
                       <ng-container *ngIf="item.cantidadDias !== null && item.cantidadDias !== undefined">
                         {{ item.cantidadDias }}
+                        <small
+                          *ngIf="diasCalendarioReferencia(item) as diasCal"
+                          class="dias-calendario-ref"
+                          title="Días calendario que descuenta del saldo anual (Art. 34) — distinto de los días hábiles fraccionados (Art. 35)"
+                        >
+                          descuenta {{ diasCal }} día(s) de su saldo vacacional
+                        </small>
                       </ng-container>
                       <ng-container *ngIf="item.cantidadDias === null || item.cantidadDias === undefined">
                         -
@@ -346,6 +388,34 @@
 
                       <button mat-icon-button title="Trazabilidad documental" (click)="abrirTrazabilidad(item)">
                         <mat-icon>history</mat-icon>
+                      </button>
+
+                      <button
+                        mat-icon-button
+                        [disabled]="!esBorrador(item)"
+                        [matTooltip]="
+                          esBorrador(item)
+                            ? 'Editar papeleta'
+                            : 'Solo se puede editar mientras esté en borrador (no enviada)'
+                        "
+                        (click)="abrirEdicion(item)"
+                      >
+                        <mat-icon>edit</mat-icon>
+                      </button>
+
+                      <button
+                        mat-icon-button
+                        color="warn"
+                        class="btn-eliminar"
+                        [disabled]="!esBorrador(item)"
+                        [matTooltip]="
+                          esBorrador(item)
+                            ? 'Eliminar papeleta'
+                            : 'Solo se puede eliminar mientras esté en borrador (no enviada)'
+                        "
+                        (click)="eliminarBorrador(item)"
+                      >
+                        <mat-icon>delete_outline</mat-icon>
                       </button>
                     </td>
                   </tr>
@@ -405,6 +475,19 @@
 
                       <button mat-icon-button title="Enviar papeleta firmada" (click)="abrirEnvio(item)">
                         <mat-icon>upload_file</mat-icon>
+                      </button>
+
+                      <button
+                        mat-icon-button
+                        [disabled]="!esBorrador(item)"
+                        [matTooltip]="
+                          esBorrador(item)
+                            ? 'Editar papeleta'
+                            : 'Solo se puede editar mientras esté en borrador (no enviada)'
+                        "
+                        (click)="abrirEdicion(item)"
+                      >
+                        <mat-icon>edit</mat-icon>
                       </button>
 
                       <button

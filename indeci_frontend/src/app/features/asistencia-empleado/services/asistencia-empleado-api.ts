@@ -3,6 +3,9 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { map, Observable } from 'rxjs';
 
 import { environment } from '../../../../environments/environment';
+import type { ApiResponse } from '../../../core/models/api-response.model';
+import { extractApiData } from '../../../core/http/map-api-response';
+import type { AsistenciaDiariaPage } from '../../asistencia/models/asistencia-diaria.model';
 import { MiAsistenciaEmpleado } from '../models/asistencia-empleado.model';
 
 @Injectable({
@@ -23,6 +26,36 @@ export class AsistenciaEmpleadoApiService {
     return this.http
       .get<any>(`${this.apiUrl}/rrhh/asistencia/mis-asistencias`, { params })
       .pipe(map((resp) => this.extraerLista(resp)));
+  }
+
+  /** Consulta paginada por rango libre de fechas (tab "Consulta por rango"). */
+  listarMisAsistenciasPage(
+    fechaInicio: string,
+    fechaFin: string,
+    page: number,
+    size: number,
+  ): Observable<AsistenciaDiariaPage> {
+    const params = new HttpParams()
+      .set('fechaInicio', fechaInicio)
+      .set('fechaFin', fechaFin)
+      .set('page', page)
+      .set('size', size);
+
+    return this.http
+      .get<ApiResponse<AsistenciaDiariaPage>>(`${this.apiUrl}/rrhh/asistencia/mis-asistencias`, { params })
+      .pipe(map(extractApiData));
+  }
+
+  /** Descarga el PDF de asistencia propia por rango (blob — lleva el JWT vía interceptor). */
+  descargarPdfRango(fechaInicio: string, fechaFin: string): Observable<Blob> {
+    const params = new HttpParams()
+      .set('fechaInicio', fechaInicio)
+      .set('fechaFin', fechaFin);
+
+    return this.http.get(`${this.apiUrl}/rrhh/asistencia/mis-asistencias/pdf`, {
+      params,
+      responseType: 'blob',
+    });
   }
 
   private extraerLista(resp: any): MiAsistenciaEmpleado[] {

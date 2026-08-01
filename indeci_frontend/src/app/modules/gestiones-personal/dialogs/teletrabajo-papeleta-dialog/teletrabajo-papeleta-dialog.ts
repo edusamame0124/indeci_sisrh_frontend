@@ -10,12 +10,19 @@ import {
   CrearSolicitudRrhhRequest,
   DetalleTeletrabajoRequest,
   SolicitudesRrhhService,
+  SolicitudRrhh,
   TipoSolicitudRrhh,
 } from '../../services/solicitudes-rrhh';
 
 interface ActividadFila {
   actividad: string;
   medioVerificacion: string;
+}
+
+interface TeletrabajoPapeletaDialogData {
+  tipoSolicitud: TipoSolicitudRrhh;
+  /** Presente solo en modo edición: papeleta propia en BORRADOR a modificar. */
+  solicitudExistente?: SolicitudRrhh;
 }
 
 /**
@@ -48,10 +55,44 @@ export class TeletrabajoPapeletaDialog {
 
   actividades: ActividadFila[] = [{ actividad: '', medioVerificacion: '' }];
 
+  tipoSolicitud!: TipoSolicitudRrhh;
+  /** Presente solo en modo edición: papeleta propia en BORRADOR a modificar. */
+  solicitudExistente: SolicitudRrhh | null = null;
+
+  tituloDialog = 'Reporte de teletrabajo';
+
   constructor(
     @Inject(MAT_DIALOG_DATA)
-    public tipoSolicitud: TipoSolicitudRrhh,
-  ) {}
+    public data: TipoSolicitudRrhh | TeletrabajoPapeletaDialogData,
+  ) {
+    if (data && 'tipoSolicitud' in data) {
+      this.tipoSolicitud = data.tipoSolicitud;
+      this.solicitudExistente = data.solicitudExistente ?? null;
+    } else {
+      this.tipoSolicitud = data;
+    }
+
+    this.tituloDialog = this.esEdicion()
+      ? `Editar ${this.tipoSolicitud?.nombre ?? 'reporte de teletrabajo'}`
+      : (this.tipoSolicitud?.nombre ?? 'Reporte de teletrabajo');
+
+    if (this.solicitudExistente) {
+      const s = this.solicitudExistente;
+      this.fechaReporte = s.fechaInicio ?? this.hoy;
+      this.modalidad = s.modalidadTeletrabajo === 'COMPLETA' ? 'COMPLETA' : 'PARCIAL';
+
+      if (s.detallesTeletrabajo && s.detallesTeletrabajo.length > 0) {
+        this.actividades = s.detallesTeletrabajo.map((det) => ({
+          actividad: det.actividad ?? '',
+          medioVerificacion: det.medioVerificacion ?? '',
+        }));
+      }
+    }
+  }
+
+  esEdicion(): boolean {
+    return !!this.solicitudExistente?.id;
+  }
 
   agregarActividad(): void {
     this.actividades = [...this.actividades, { actividad: '', medioVerificacion: '' }];
@@ -110,7 +151,11 @@ export class TeletrabajoPapeletaDialog {
 
     this.guardando.set(true);
 
-    this.service.crearSolicitud(payload).subscribe({
+    const obs$ = this.esEdicion()
+      ? this.service.editarSolicitud(this.solicitudExistente!.id, payload)
+      : this.service.crearSolicitud(payload);
+
+    obs$.subscribe({
       next: () => {
         this.guardando.set(false);
         this.dialogRef.close(true);
@@ -119,7 +164,11 @@ export class TeletrabajoPapeletaDialog {
         this.guardando.set(false);
 
         const mensaje =
-          err?.error?.mensaje ?? err?.error?.message ?? 'No se pudo registrar el reporte de teletrabajo.';
+          err?.error?.mensaje ??
+          err?.error?.message ??
+          (this.esEdicion()
+            ? 'No se pudo editar el reporte de teletrabajo.'
+            : 'No se pudo registrar el reporte de teletrabajo.');
 
         this.error.set(mensaje);
       },
