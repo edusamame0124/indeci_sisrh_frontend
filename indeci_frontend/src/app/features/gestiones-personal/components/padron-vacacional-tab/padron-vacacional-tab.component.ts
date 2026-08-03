@@ -21,6 +21,7 @@ import { PadronVacacionalApiService } from '../../services/padron-vacacional-api
 import { PadronVacacionalRowDto, ProvisionMasivaResult, RecalculoManualResult } from '../../models/padron-vacacional.model';
 import { VacacionDetalleDialogComponent } from '../vacacion-detalle-dialog/vacacion-detalle-dialog.component';
 import { GoceDirectoDialogComponent } from '../goce-directo-dialog/goce-directo-dialog.component';
+import { CorregirGozadosDialogComponent } from '../corregir-gozados-dialog/corregir-gozados-dialog.component';
 import { AcumulacionDecisionDialogComponent } from '../acumulacion-decision-dialog/acumulacion-decision-dialog.component';
 import { ProvisionarAutoDialogComponent } from '../provisionar-auto-dialog/provisionar-auto-dialog.component';
 import { ProvisionarTodosDialogComponent } from '../provisionar-todos-dialog/provisionar-todos-dialog.component';
@@ -238,6 +239,38 @@ export class PadronVacacionalTabComponent implements OnInit, OnDestroy {
           }
         });
       }
+    });
+  }
+
+  /**
+   * "Editar Gozados": corrige el TOTAL de días gozados del empleado a un valor arbitrario.
+   * Excepción al flujo normal de papeletas — motivo obligatorio (Poka-Yoke), queda auditada
+   * y con fila nueva en el histórico de goces. El Saldo se recalcula solo al recargar el padrón.
+   */
+  editarGozados(item: PadronVacacionalRowDto): void {
+    const dialogRef = this.dialog.open(CorregirGozadosDialogComponent, {
+      width: '600px',
+      data: item
+    });
+
+    dialogRef.afterClosed().subscribe((result) => {
+      if (!result) {
+        return;
+      }
+      this.apiService.corregirGozados(item.empleadoId, result).subscribe({
+        next: (resp) => {
+          const delta = resp.data?.delta ?? 0;
+          const mensaje = delta === 0
+            ? 'El total de días gozados ya estaba correcto — sin cambios'
+            : `Días gozados corregidos: ${resp.data?.gozadoAnterior} → ${resp.data?.gozadoNuevo}`;
+          this.notificacion.exito(mensaje);
+          this.cargarPadron();
+        },
+        error: (err) => {
+          const msg = err.error?.message || 'Error al corregir los días gozados';
+          this.snackBar.open(msg, 'Cerrar', { duration: 5000, panelClass: 'error-snackbar' });
+        }
+      });
     });
   }
 

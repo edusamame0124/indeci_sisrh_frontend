@@ -1,0 +1,50 @@
+<h2 mat-dialog-title>Editar Días Gozados</h2>
+
+<mat-dialog-content>
+  <div class="empleado-info">
+    <strong>{{ data.nombreCompleto }}</strong> ({{ data.dni }})
+  </div>
+
+  <p class="explicacion">
+    Corrige el total de días gozados del empleado a un valor específico (dato migrado
+    incompleto, error de digitación, goce gestionado fuera del flujo de papeletas). Esta es
+    una excepción al flujo normal de aprobación de papeletas: queda registrada en auditoría
+    junto con el motivo, y el Saldo se recalcula automáticamente.
+  </p>
+
+  <div class="resumen-actual">
+    <span>Corresponden: <strong>{{ data.diasCorresponden }}</strong></span>
+    <span>Gozados actuales: <strong>{{ data.diasGozados }}</strong></span>
+    <span>Saldo actual: <strong>{{ data.saldo }}</strong></span>
+  </div>
+
+  <form [formGroup]="form">
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Nuevo total de días gozados</mat-label>
+      <input matInput type="number" min="0" step="0.5" formControlName="nuevoTotalGozado" />
+      <mat-error>El nuevo total es obligatorio y no puede ser negativo.</mat-error>
+    </mat-form-field>
+
+    <p class="delta-preview" *ngIf="delta !== 0">
+      {{ delta > 0 ? 'Descontará' : 'Liberará' }} <strong>{{ delta > 0 ? delta : -delta }}</strong> día(s) de saldo.
+    </p>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Motivo de la corrección</mat-label>
+      <textarea
+        matInput
+        formControlName="motivo"
+        rows="3"
+        placeholder="Detalle por qué se corrige el total de días gozados..."
+      ></textarea>
+      <mat-error>El motivo es obligatorio.</mat-error>
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button mat-dialog-close>Cancelar</button>
+  <button mat-flat-button color="primary" [disabled]="form.invalid" (click)="confirmar()">
+    Confirmar
+  </button>
+</mat-dialog-actions>

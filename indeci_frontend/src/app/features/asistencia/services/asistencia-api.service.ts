@@ -70,6 +70,14 @@ export class AsistenciaApiService {
       .pipe(map(extractApiData));
   }
 
+  /** Reporte de asistencia consolidado por período (XLSX, blob — lleva el JWT vía interceptor). */
+  descargarResumenPeriodoXlsx(fechaInicio: string, fechaFin: string): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/diaria/xlsx`, {
+      params: { fechaInicio, fechaFin },
+      responseType: 'blob',
+    });
+  }
+
   /**
    * Detalle diario de una importación (lote) — módulo de detalle del historial.
    * Mismo formato que la consulta diaria, pero abarca todo el período del lote (solo lectura).

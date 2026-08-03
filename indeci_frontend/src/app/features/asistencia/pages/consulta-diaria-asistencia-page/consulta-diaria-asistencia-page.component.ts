@@ -129,6 +129,7 @@ export class ConsultaDiariaAsistenciaPageComponent {
   readonly pageSize = signal(10);
   readonly loading = signal(false);
   readonly loadError = signal<string | null>(null);
+  readonly exportando = signal(false);
 
   constructor() {
     effect(() => {
@@ -277,5 +278,36 @@ export class ConsultaDiariaAsistenciaPageComponent {
       return;
     }
     this.router.navigate(['/asistencia/importaciones', row.importacionId]);
+  }
+
+  /** Exporta el reporte de asistencia consolidado (XLSX) del rango seleccionado. */
+  exportarXlsx(): void {
+    const fechaInicio = toIsoDate(this.fechaInicioModel());
+    const fechaFin = toIsoDate(this.fechaFinModel());
+    if (!fechaInicio || !fechaFin || !this.rangoValido() || this.exportando()) return;
+
+    this.exportando.set(true);
+    this.api.descargarResumenPeriodoXlsx(fechaInicio, fechaFin)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (blob) => {
+          const url = URL.createObjectURL(blob);
+          const enlace = document.createElement('a');
+          enlace.href = url;
+          enlace.download = `reporte_asistencia_${fechaInicio}_${fechaFin}.xlsx`;
+          enlace.click();
+          URL.revokeObjectURL(url);
+          this.exportando.set(false);
+        },
+        error: (err: unknown) => {
+          this.exportando.set(false);
+          const body = err instanceof HttpErrorResponse ? err.error : null;
+          this.snack.open(
+            isErrorResponse(body) ? this.errors.translate(body.mensaje) : this.errors.translate(null),
+            'Cerrar',
+            { duration: 5000 },
+          );
+        },
+      });
   }
 }

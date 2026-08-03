@@ -6,6 +6,8 @@ import { ApiResponse } from '../../../core/models/api-response.model';
 import {
   AcumulacionDecisionDto,
   AcumulacionDecisionPayload,
+  CorreccionGozadosResult,
+  CorregirGozadosPayload,
   HistorialSaldoRow,
   PadronVacacionalPageDto,
   ProvisionarAutoPayload,
@@ -81,6 +83,19 @@ export class PadronVacacionalApiService {
   provisionarTodos(payload: ProvisionarAutoPayload): Observable<ApiResponse<ProvisionMasivaResult>> {
     return this.http.post<ApiResponse<ProvisionMasivaResult>>(
       `${this.baseUrl}/provisionar-todos`,
+      payload
+    );
+  }
+
+  /**
+   * "Editar Gozados": corrige el TOTAL de días gozados de un empleado a un valor arbitrario
+   * (dato migrado incompleto, error de digitación, goce gestionado fuera de papeletas). El
+   * motivo es obligatorio (Poka-Yoke); queda auditado y como fila nueva en el histórico de
+   * goces. Saldo/Récord se recalculan solos al recargar el padrón.
+   */
+  corregirGozados(empleadoId: number, payload: CorregirGozadosPayload): Observable<ApiResponse<CorreccionGozadosResult>> {
+    return this.http.post<ApiResponse<CorreccionGozadosResult>>(
+      `${this.baseUrl}/${empleadoId}/corregir-gozados`,
       payload
     );
   }

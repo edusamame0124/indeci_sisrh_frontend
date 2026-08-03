@@ -168,7 +168,7 @@ export const MAIN_NAV_ITEMS: readonly MainNavItem[] = [
   },
 
   {
-    label: 'Planilla',
+    label: 'Planilla y Asistencia',
     route: '',
     icon: 'calculate',
     // Padre abierto también a ASISTENCIA, que solo ve 2 de los 10 hijos.

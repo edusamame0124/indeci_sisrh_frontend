@@ -126,6 +126,19 @@ export interface ProvisionMasivaResult {
   errores: string[];
 }
 
+/** "Editar Gozados" — payload obligatorio, espejo de `CorregirGozadosDto`. */
+export interface CorregirGozadosPayload {
+  nuevoTotalGozado: number;
+  motivo: string;
+}
+
+/** "Editar Gozados" — resultado de la corrección, espejo de `CorreccionGozadosResultDto`. */
+export interface CorreccionGozadosResult {
+  gozadoAnterior: number;
+  gozadoNuevo: number;
+  delta: number;
+}
+
 /** Trazabilidad Visual — una fila del historial completo (activos + anulados), espejo de `HistorialSaldoDto`. */
 export interface HistorialSaldoRow {
   id: number;

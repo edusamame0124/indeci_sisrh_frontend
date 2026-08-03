@@ -166,6 +166,14 @@
               <button
                 *ngIf="!item.sinVinculo"
                 mat-icon-button
+                title="Editar Gozados — corrige el total de días gozados (motivo obligatorio, queda auditado)"
+                (click)="editarGozados(item)"
+              >
+                <mat-icon>edit_note</mat-icon>
+              </button>
+              <button
+                *ngIf="!item.sinVinculo"
+                mat-icon-button
                 title="Provisionar Auto — recalcula el saldo con el récord real (D.Leg. 1405)"
                 (click)="provisionarAuto(item)"
               >

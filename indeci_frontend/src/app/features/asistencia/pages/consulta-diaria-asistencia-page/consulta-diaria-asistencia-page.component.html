@@ -72,6 +72,23 @@
       <mat-icon fontIcon="search" aria-hidden="true" />
       Buscar
     </button>
+
+    <button
+      mat-stroked-button
+      type="button"
+      (click)="exportarXlsx()"
+      [disabled]="!rangoValido() || exportando()"
+      matTooltip="Descarga el reporte de asistencia consolidado (formato institucional) del rango seleccionado"
+      matTooltipPosition="above"
+    >
+      @if (exportando()) {
+        <mat-progress-spinner diameter="18" mode="indeterminate" />
+      } @else {
+        <mat-icon fontIcon="description" aria-hidden="true" />
+      }
+      {{ exportando() ? 'Generando...' : 'Exportar reporte' }}
+    </button>
+
     @if (!rangoValido()) {
       <span class="diaria__hint">La fecha fin debe ser posterior o igual a la de inicio.</span>
     }
