@@ -14,6 +14,91 @@
     </mat-card-header>
   </mat-card>
 
+  @if (puedeVerBackfill()) {
+    <mat-card class="asistencia-shell__backfill">
+      <mat-card-content>
+        <div class="asistencia-shell__backfill-header">
+          <mat-icon aria-hidden="true">build</mat-icon>
+          <div>
+            <strong>Backfill único — Reconciliación de asistencia por papeletas aprobadas</strong>
+            <p>
+              Acción temporal de mantenimiento (solo SUPER_ADMIN). Reconcilia todas las
+              papeletas ya aprobadas contra la asistencia registrada: Vacaciones y Licencia
+              (justifican el día), y papeletas tipo permiso ya aprobadas —Comisión de Servicio,
+              etc.— que autorizan automáticamente la tardanza que cubren. Es seguro ejecutarla
+              más de una vez — no cambia nada adicional si ya se corrió.
+            </p>
+          </div>
+        </div>
+
+        <button
+          mat-flat-button
+          color="warn"
+          type="button"
+          (click)="ejecutarBackfillAsistencia()"
+          [disabled]="backfillEjecutando()"
+        >
+          @if (backfillEjecutando()) {
+            <mat-spinner diameter="18" />
+          } @else {
+            <mat-icon>play_arrow</mat-icon>
+          }
+          {{ backfillEjecutando() ? 'Ejecutando...' : 'Ejecutar backfill' }}
+        </button>
+
+        @if (backfillResultado() !== null) {
+          <p class="asistencia-shell__backfill-ok">
+            ✓ Listo — {{ backfillResultado() }} papeleta(s) procesada(s).
+          </p>
+        }
+        @if (backfillError()) {
+          <p class="asistencia-shell__backfill-error">✗ {{ backfillError() }}</p>
+        }
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="asistencia-shell__backfill">
+      <mat-card-content>
+        <div class="asistencia-shell__backfill-header">
+          <mat-icon aria-hidden="true">event</mat-icon>
+          <div>
+            <strong>Backfill único — Corrección de feriados mal clasificados</strong>
+            <p>
+              Acción temporal de mantenimiento (solo SUPER_ADMIN), independiente del backfill de
+              arriba. Corrige días ya registrados como Laboral/Observado que en realidad son
+              feriado según el calendario oficial (ej. Fiestas Patrias, Día de la Fuerza Aérea) y
+              no tienen marcación real. Es seguro ejecutarla más de una vez.
+            </p>
+          </div>
+        </div>
+
+        <button
+          mat-flat-button
+          color="warn"
+          type="button"
+          (click)="ejecutarBackfillFeriados()"
+          [disabled]="backfillFeriadosEjecutando()"
+        >
+          @if (backfillFeriadosEjecutando()) {
+            <mat-spinner diameter="18" />
+          } @else {
+            <mat-icon>play_arrow</mat-icon>
+          }
+          {{ backfillFeriadosEjecutando() ? 'Ejecutando...' : 'Ejecutar backfill' }}
+        </button>
+
+        @if (backfillFeriadosResultado() !== null) {
+          <p class="asistencia-shell__backfill-ok">
+            ✓ Listo — {{ backfillFeriadosResultado() }} día(s) corregido(s).
+          </p>
+        }
+        @if (backfillFeriadosError()) {
+          <p class="asistencia-shell__backfill-error">✗ {{ backfillFeriadosError() }}</p>
+        }
+      </mat-card-content>
+    </mat-card>
+  }
+
   <section class="asistencia-shell__tabs">
     <mat-tab-group
       animationDuration="150ms"

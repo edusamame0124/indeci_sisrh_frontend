@@ -29,7 +29,7 @@ import { isErrorResponse } from '../../../../core/models/error-response.model';
 import { AsistenciaApiService } from '../../services/asistencia-api.service';
 import { AsistenciaTabService } from '../../services/asistencia-tab.service';
 import type { AsistenciaDiariaRow } from '../../models/asistencia-diaria.model';
-import { badgeClass, condicionLabel, fmtMin } from '../../utils/asistencia-diaria-display.utils';
+import { badgeClass, condicionLabel, fmtMin } from '../../../../shared/utils/asistencia-display.utils';
 import {
   AsistenciaDiariaEditDialogComponent,
 } from './components/asistencia-diaria-edit-dialog/asistencia-diaria-edit-dialog.component';

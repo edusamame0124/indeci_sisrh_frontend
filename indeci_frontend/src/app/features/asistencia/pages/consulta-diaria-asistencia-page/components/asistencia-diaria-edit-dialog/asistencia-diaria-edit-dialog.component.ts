@@ -15,7 +15,7 @@ import { ErrorMessageService } from '../../../../../../core/services/error-messa
 import { isErrorResponse } from '../../../../../../core/models/error-response.model';
 import type { AsistenciaDiariaRow, AsistenciaDiariaEditInput } from '../../../../models/asistencia-diaria.model';
 import { TIPOS_DIA } from '../../../../models/asistencia.model';
-import { CONDICION_LABELS } from '../../../../models/asistencia-diaria.model';
+import { CONDICION_LABELS } from '../../../../../../shared/utils/asistencia-display.utils';
 
 export interface AsistenciaDiariaEditDialogData {
   readonly row: AsistenciaDiariaRow;

@@ -294,6 +294,19 @@
   background: var(--sisrh-warning-100, #fff4db);
 }
 
+/* Ícono "justificado por papeleta aprobada" (Vacaciones/Teletrabajo/Permiso) — esquina de la celda. */
+.cal-celda__papeleta-icon {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  font-size: 14px;
+  width: 14px;
+  height: 14px;
+  color: #4527a0;
+  opacity: 0.85;
+  pointer-events: auto;
+}
+
 /* Desglose de descuento por tardanza (espejo Excel) */
 .desglose {
   margin-top: 1rem;
@@ -453,6 +466,20 @@
 .cal-dia--sancion_pad .cal-celda__tipo {
   color: var(--sisrh-danger, #b42318);
   font-weight: 700;
+}
+
+/* Día sin ningún dato real (ni marcador, ni papeleta) — neutro, distinto del verde "Presente"
+   que antes se asumía por defecto. Va después de .cal-dia--laboral a propósito para ganar en
+   cascada (misma especificidad, ambas clases conviven en el mismo elemento). */
+.cal-dia--sin-registro {
+  background: var(--sisrh-surface-muted, #f8fafc);
+  border-color: var(--sisrh-border, #e2e8f0);
+  border-style: dashed;
+}
+
+.cal-dia--sin-registro .cal-celda__tipo {
+  color: var(--sisrh-text-muted, #64748b);
+  font-style: italic;
 }
 
 .leyenda-dot.cal-dia--laboral {

@@ -19,7 +19,7 @@ import { AsistenciaImportApiService } from '../../services/asistencia-import-api
 import { AsistenciaTabService } from '../../services/asistencia-tab.service';
 import type { AsistenciaDiariaRow } from '../../models/asistencia-diaria.model';
 import type { AsistenciaImportResumen } from '../../models/asistencia-import.model';
-import { badgeClass, condicionLabel, fmtMin } from '../../utils/asistencia-diaria-display.utils';
+import { badgeClass, condicionLabel, fmtMin } from '../../../../shared/utils/asistencia-display.utils';
 import {
   AsistenciaEmpleadoPeriodoDialogComponent,
 } from './components/asistencia-empleado-periodo-dialog/asistencia-empleado-periodo-dialog.component';

@@ -68,7 +68,7 @@
 
                     @if (dia.estado !== 'SIN_REGISTRO') {
                       <div class="dia-estado">
-                        {{ dia.estado.replace('_', ' ') }}
+                        {{ condicionLabel(dia.estado) }}
                       </div>
                     } @else {
                       <div class="dia-estado sin-registro-label">

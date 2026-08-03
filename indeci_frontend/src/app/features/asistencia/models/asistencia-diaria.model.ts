@@ -62,20 +62,3 @@ export interface AsistenciaDiariaEditInput {
 }
 
 export type AsistenciaDiariaPage = SpringPage<AsistenciaDiariaRow>;
-
-/** Etiquetas es-PE para tipoDia en la columna Condición. */
-export const CONDICION_LABELS: Record<string, string> = {
-  LABORAL: 'Presente',
-  TARDANZA: 'Tardío',
-  FALTA: 'Falto',
-  LICENCIA: 'Licencia',
-  VACACIONES: 'Vacaciones',
-  DESCANSO: 'Descanso',
-  FERIADO: 'Feriado',
-  OBSERVADO: 'Observado',
-  SANCION_PAD: 'Sanción PAD',
-  TELETRABAJO: 'Teletrabajo',
-  PERMISO: 'Permiso c/goce',
-  OMISION_MARCACION: 'Omisión de marca',
-  ASISTENCIA_JUSTIFICADA: 'Justificada',
-};

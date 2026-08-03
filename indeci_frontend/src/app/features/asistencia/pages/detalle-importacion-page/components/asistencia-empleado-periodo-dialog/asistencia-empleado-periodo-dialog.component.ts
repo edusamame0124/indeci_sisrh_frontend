@@ -9,7 +9,7 @@ import { AsistenciaApiService } from '../../../../services/asistencia-api.servic
 import { ErrorMessageService } from '../../../../../../core/services/error-message.service';
 import { isErrorResponse } from '../../../../../../core/models/error-response.model';
 import type { AsistenciaDia, AsistenciaResponse } from '../../../../models/asistencia.model';
-import { badgeClass, condicionLabel, fmtMin } from '../../../../utils/asistencia-diaria-display.utils';
+import { badgeClass, condicionLabel, fmtMin } from '../../../../../../shared/utils/asistencia-display.utils';
 
 export interface AsistenciaEmpleadoPeriodoDialogData {
   readonly empleadoId: number;

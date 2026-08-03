@@ -58,7 +58,14 @@ export interface AsistenciaDia {
   horasExtra35Min?: number | null;
   horasExtra100Min?: number | null;
   horasExtraTotalMin?: number | null;
-  origen?: 'MANUAL' | 'IMPORT_MARCADOR' | null;
+  origen?: 'MANUAL' | 'IMPORT_MARCADOR' | 'PAPELETA' | 'CALENDARIO' | null;
+  /**
+   * Marca de solo-frontend (nunca viene del backend, nunca se envía a guardar()): el día no
+   * tiene ningún dato real (ni marcador importado, ni papeleta) — construirCalendario() lo
+   * completó con un valor por defecto solo para poder dibujar la celda. Se limpia en cuanto el
+   * usuario edita el día manualmente (a partir de ahí sí es un dato real a guardar).
+   */
+  sinRegistro?: boolean;
 }
 
 /** Respuesta GET — espejo de `AsistenciaResponseDto`. */

@@ -1,11 +1,32 @@
-import { CONDICION_LABELS } from '../models/asistencia-diaria.model';
-
 /**
- * Helpers de presentación de la asistencia diaria, compartidos por la consulta diaria y el
- * detalle de importación (DRY). Funciones puras — sin estado ni dependencias de Angular.
+ * Presentación de asistencia — fuente única de verdad para traducir el código interno
+ * TIPO_DIA (INDECI_ASISTENCIA_DETALLE, CHECK INDECI_ASIST_DET_TIPO_CK) a su etiqueta oficial
+ * ante el empleado. El código interno (ej. "LABORAL") nunca debe mostrarse tal cual en
+ * pantalla ni en documentos impresos — ver el enum espejo `TipoDiaAsistencia` en el backend
+ * (com.indeci.rrhh.service.asistencia), que usa el mismo texto para el PDF oficial.
+ *
+ * Vive en `shared/` porque lo consumen 2+ features (asistencia, asistencia-empleado) sin
+ * relación de dependencia entre sí.
  */
 
-/** Etiqueta es-PE de la condición (tipoDia) para la columna "Condición". */
+/** Etiqueta es-PE oficial por código TIPO_DIA. */
+export const CONDICION_LABELS: Record<string, string> = {
+  LABORAL: 'Presente',
+  TARDANZA: 'Tardío',
+  FALTA: 'Falto',
+  LICENCIA: 'Licencia',
+  VACACIONES: 'Vacaciones',
+  DESCANSO: 'Descanso',
+  FERIADO: 'Feriado',
+  OBSERVADO: 'Observado',
+  SANCION_PAD: 'Sanción PAD',
+  TELETRABAJO: 'Teletrabajo',
+  PERMISO: 'Permiso c/goce',
+  OMISION_MARCACION: 'Omisión de marca',
+  ASISTENCIA_JUSTIFICADA: 'Justificada',
+};
+
+/** Etiqueta es-PE de la condición (tipoDia) para mostrar al usuario. */
 export function condicionLabel(tipo: string | null | undefined): string {
   if (!tipo) return '—';
   return CONDICION_LABELS[tipo] ?? tipo;
@@ -27,6 +48,8 @@ export function badgeClass(tipo: string | null | undefined): string {
     case 'PERMISO':
     case 'LICENCIA':
       return 'diaria__badge diaria__badge--info';
+    case 'VACACIONES':
+      return 'diaria__badge diaria__badge--vacaciones';
     default:
       return 'diaria__badge';
   }

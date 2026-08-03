@@ -3,7 +3,7 @@ import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/materia
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import type { AsistenciaDiariaRow } from '../../../../models/asistencia-diaria.model';
-import { condicionLabel, fmtMin } from '../../../../utils/asistencia-diaria-display.utils';
+import { condicionLabel, fmtMin } from '../../../../../../shared/utils/asistencia-display.utils';
 
 export interface AsistenciaDiariaVerDialogData {
   readonly row: AsistenciaDiariaRow;

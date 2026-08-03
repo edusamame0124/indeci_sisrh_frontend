@@ -33,6 +33,42 @@
   min-width: 0;
 }
 
+/* Backfill único (temporal, SUPER_ADMIN) — deliberadamente distinto (ámbar) del resto de la UI. */
+.asistencia-shell__backfill {
+  border: 1px solid #fde68a;
+  border-radius: var(--radius-md, 7px);
+  background: #fffbeb;
+  box-shadow: none;
+}
+
+.asistencia-shell__backfill-header {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 12px;
+  color: #92400e;
+}
+
+.asistencia-shell__backfill-header p {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: #78350f;
+}
+
+.asistencia-shell__backfill-ok {
+  margin: 10px 0 0;
+  color: #166534;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.asistencia-shell__backfill-error {
+  margin: 10px 0 0;
+  color: #b91c1c;
+  font-weight: 600;
+  font-size: 13px;
+}
+
 .asistencia-shell__tabs ::ng-deep .mat-mdc-tab-labels {
   border-bottom: 0.5px solid var(--border-subtle, #EEF0F4);
 }

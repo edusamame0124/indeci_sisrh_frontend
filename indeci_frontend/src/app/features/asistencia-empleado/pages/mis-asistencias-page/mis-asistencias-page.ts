@@ -26,7 +26,7 @@ import {
   MiAsistenciaEmpleado,
 } from '../../models/asistencia-empleado.model';
 import type { AsistenciaDiariaRow } from '../../../asistencia/models/asistencia-diaria.model';
-import { badgeClass, condicionLabel, fmtMin } from '../../../asistencia/utils/asistencia-diaria-display.utils';
+import { badgeClass, condicionLabel, fmtMin } from '../../../../shared/utils/asistencia-display.utils';
 
 function parseIsoDate(iso: string | null | undefined): Date | null {
   if (!iso) return null;
@@ -87,20 +87,26 @@ export class MisAsistenciasPage implements OnInit {
 
   readonly diasSemana = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
   private readonly cachePorMes = new Map<string, MiAsistenciaEmpleado[]>();
+
+  /**
+   * Estados visibles en la leyenda del calendario mensual. La etiqueta se deriva de
+   * `condicionLabel` (fuente única compartida) — no se hardcodea un texto paralelo que pueda
+   * desincronizarse (bug real: esta leyenda decía "Laboral" mientras el resto del sistema ya
+   * usaba "Presente").
+   */
+  private static readonly ESTADOS_LEYENDA: readonly EstadoDiaAsistenciaEmpleado[] = [
+    'LABORAL', 'TARDANZA', 'FALTA', 'LICENCIA', 'VACACIONES', 'DESCANSO', 'FERIADO', 'OBSERVADO',
+  ];
+
   readonly leyenda: {
     estado: EstadoDiaAsistenciaEmpleado;
     label: string;
     className: string;
-  }[] = [
-    { estado: 'LABORAL', label: 'Laboral', className: 'laboral' },
-    { estado: 'TARDANZA', label: 'Tardanza', className: 'tardanza' },
-    { estado: 'FALTA', label: 'Falta', className: 'falta' },
-    { estado: 'LICENCIA', label: 'Licencia', className: 'licencia' },
-    { estado: 'VACACIONES', label: 'Vacaciones', className: 'vacaciones' },
-    { estado: 'DESCANSO', label: 'Descanso', className: 'descanso' },
-    { estado: 'FERIADO', label: 'Feriado', className: 'feriado' },
-    { estado: 'OBSERVADO', label: 'Observado', className: 'observado' },
-  ];
+  }[] = MisAsistenciasPage.ESTADOS_LEYENDA.map((estado) => ({
+    estado,
+    label: condicionLabel(estado),
+    className: estado.toLowerCase(),
+  }));
 
   readonly tituloMes = computed(() => {
     const fecha = this.fechaVista();

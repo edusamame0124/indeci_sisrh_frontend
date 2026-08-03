@@ -105,4 +105,26 @@ export class AsistenciaApiService {
       .patch<ApiResponse<AsistenciaDiariaRow>>(`${this.baseUrl}/diaria/${detalleId}`, body)
       .pipe(map(extractApiData));
   }
+
+  /**
+   * Backfill ÚNICO (temporal, SUPER_ADMIN) — reconcilia todas las papeletas de Vacaciones y
+   * Licencia ya APROBADAS contra las cabeceras de asistencia activas actuales. Idempotente.
+   * Devuelve la cantidad de papeletas procesadas.
+   */
+  backfillReconciliacionVacaciones(): Observable<number> {
+    return this.http
+      .post<ApiResponse<number>>(`${this.baseUrl}/backfill-reconciliacion-vacaciones`, {})
+      .pipe(map(extractApiData));
+  }
+
+  /**
+   * Backfill ÚNICO (temporal, SUPER_ADMIN, independiente del anterior) — corrige días ya
+   * persistidos mal clasificados como LABORAL/OBSERVADO que en realidad son FERIADO según el
+   * catálogo oficial. Idempotente. Devuelve la cantidad de días corregidos.
+   */
+  backfillFeriados(): Observable<number> {
+    return this.http
+      .post<ApiResponse<number>>(`${this.baseUrl}/backfill-feriados`, {})
+      .pipe(map(extractApiData));
+  }
 }

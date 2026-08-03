@@ -161,7 +161,10 @@
                   @if (dia === null) {
                     <span class="cal-celda cal-celda--vacia" aria-hidden="true"></span>
                   } @else {
-                    <div class="cal-celda {{ claseDia(dia.tipoDia) }}">
+                    <div
+                      class="cal-celda {{ claseDia(dia.tipoDia) }}"
+                      [class.cal-dia--sin-registro]="dia.sinRegistro"
+                    >
                       <button
                         type="button"
                         class="cal-celda__sancion-btn"
@@ -177,11 +180,19 @@
                         class="cal-celda__btn"
                         (click)="cycleTipo(dia)"
                         [matTooltip]="tooltipDia(dia)"
-                        [attr.aria-label]="'Día ' + numeroDia(dia) + ', tipo ' + dia.tipoDia"
+                        [attr.aria-label]="'Día ' + numeroDia(dia) + ', ' + etiquetaDia(dia)"
                       >
                         <span class="cal-celda__num">{{ numeroDia(dia) }}</span>
-                        <span class="cal-celda__tipo">{{ condicionLabels[dia.tipoDia] || dia.tipoDia }}</span>
+                        <span class="cal-celda__tipo">{{ etiquetaDia(dia) }}</span>
                       </button>
+                      @if (esDeOrigenPapeleta(dia)) {
+                        <mat-icon
+                          class="cal-celda__papeleta-icon"
+                          fontIcon="description"
+                          [matTooltip]="dia.observacion || 'Justificado por papeleta aprobada'"
+                          aria-label="Justificado por papeleta aprobada — ver detalle"
+                        />
+                      }
                       @if (dia.tipoDia === 'TARDANZA') {
                         <input
                           class="cal-celda__min"

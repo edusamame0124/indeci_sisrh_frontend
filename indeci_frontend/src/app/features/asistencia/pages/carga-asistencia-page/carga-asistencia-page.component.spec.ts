@@ -126,6 +126,26 @@ describe('CargaAsistenciaPageComponent (Spec 010 PANTALLA-02)', () => {
     expect(dia('2026-05-04')?.tipoDia).toBe('FALTA'); // guardado
   });
 
+  it('los dÃ­as de semana sin dato guardado quedan marcados sinRegistro, no como Presente confirmado', () => {
+    const comp = conPeriodo().componentInstance;
+    comp.onEmpleadoChange(42);
+    httpMock.expectOne('/api/rrhh/asistencia/42/2026-05').flush({
+      data: asistencia(42, 3000, [
+        { dia: '2026-05-04', tipoDia: 'FALTA', minutosTardanza: 0, observacion: null },
+      ]),
+    });
+
+    const dia = (clave: string) => comp.dias().find((d) => d.dia === clave);
+    // 05-01 (viernes) nunca se cargÃ³: sigue etiquetado LABORAL para el ciclo/CSS por defecto,
+    // pero marcado sinRegistro para que ni el resumen ni el guardado lo traten como real.
+    expect(dia('2026-05-01')?.sinRegistro).toBe(true);
+    expect(comp.etiquetaDia(dia('2026-05-01')!)).toBe('Sin registro');
+    // El fin de semana es un hecho de calendario, no un dato por confirmar.
+    expect(dia('2026-05-02')?.sinRegistro).toBeFalsy();
+    // El dÃ­a guardado (real) tampoco queda marcado.
+    expect(dia('2026-05-04')?.sinRegistro).toBeFalsy();
+  });
+
   it('resumen() calcula el descuento segÃºn D.Leg. 276 Art. 24 (REGLA 276-02)', () => {
     const comp = conPeriodo().componentInstance;
     comp.onEmpleadoChange(42);
@@ -140,8 +160,9 @@ describe('CargaAsistenciaPageComponent (Spec 010 PANTALLA-02)', () => {
     const r = comp.resumen();
     expect(r.totalMinTardanza).toBe(120);
     expect(r.diasFalta).toBe(2);
-    // TARDANZA (1) + LABORAL 06,07 (2) = 3
-    expect(r.diasLaborados).toBe(3);
+    // Solo TARDANZA (05-01, dato real) cuenta como laborado. 05-06/05-07 no tienen dato
+    // guardado (sinRegistro=true) y ya no se asumen LABORAL en el resumen en tiempo real.
+    expect(r.diasLaborados).toBe(1);
     // (3000/30/8/60) * 120 = 25.00
     expect(r.descuentoTardanza).toBe(25);
     // (3000/30) * 2 = 200.00
@@ -211,8 +232,33 @@ describe('CargaAsistenciaPageComponent (Spec 010 PANTALLA-02)', () => {
     expect(req.request.method).toBe('POST');
     expect(req.request.body.empleadoId).toBe(42);
     expect(req.request.body.periodo).toBe('2026-05');
-    expect(req.request.body.dias.length).toBe(7);
+    // Del periodo de 7 dÃ­as sin ningÃºn dato guardado, solo el fin de semana (2 dÃ­as, hecho de
+    // calendario) va en el payload â€” los 5 dÃ­as de semana quedan sinRegistro y se excluyen
+    // para no persistir un LABORAL inventado (bug real de integridad de datos corregido).
+    expect(req.request.body.dias.length).toBe(2);
     req.flush({ data: null });
+    // guardar() exitoso refresca el calendario (cargarAsistencia()) â€” hay que atenderlo o
+    // httpMock.verify() falla por una solicitud abierta.
+    httpMock.expectOne('/api/rrhh/asistencia/42/2026-05').flush({ data: asistencia(42) });
+  });
+
+  it('guardar() excluye los dÃ­as sin registro pero incluye los editados manualmente', () => {
+    const comp = conPeriodo().componentInstance;
+    comp.onEmpleadoChange(42);
+    httpMock.expectOne('/api/rrhh/asistencia/42/2026-05').flush({ data: asistencia(42) });
+
+    const lunes = comp.dias().find((d) => d.dia === '2026-05-04')!;
+    comp.cycleTipo(lunes); // LABORAL -> TARDANZA: pasa a ser un dato real, decidido por RR.HH.
+
+    comp.guardar();
+    const req = httpMock.expectOne('/api/rrhh/asistencia');
+    // Fin de semana (2) + el lunes recién editado (1) = 3.
+    expect(req.request.body.dias.length).toBe(3);
+    expect(
+      (req.request.body.dias as AsistenciaDia[]).find((d) => d.dia === '2026-05-04')?.tipoDia,
+    ).toBe('TARDANZA');
+    req.flush({ data: null });
+    httpMock.expectOne('/api/rrhh/asistencia/42/2026-05').flush({ data: asistencia(42) });
   });
 });
 

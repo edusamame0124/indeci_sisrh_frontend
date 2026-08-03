@@ -37,7 +37,7 @@ import {
   type EstadoAsistencia,
   type TipoDia,
 } from '../../models/asistencia.model';
-import { CONDICION_LABELS } from '../../models/asistencia-diaria.model';
+import { CONDICION_LABELS } from '../../../../shared/utils/asistencia-display.utils';
 import {
   SancionPadDialogComponent,
   type SancionPadDialogData,
@@ -163,6 +163,9 @@ export class CargaAsistenciaPageComponent implements OnInit {
     let diasSancionPad = 0;
     let totalMinTardanza = 0;
     for (const d of this.dias()) {
+      // Un día "sin registro" es un placeholder de dibujo, no un dato real — no debe sumar al
+      // resumen en tiempo real (mismo criterio que guardar(), que tampoco lo persiste).
+      if (d.sinRegistro) continue;
       if (TIPOS_LABORADOS.has(d.tipoDia)) diasLaborados++;
       if (TIPOS_DESCUENTAN_COMO_FALTA.has(d.tipoDia)) diasFalta++;
       if (d.tipoDia === 'SANCION_PAD') diasSancionPad++;
@@ -313,6 +316,8 @@ export class CargaAsistenciaPageComponent implements OnInit {
               tipoDia: tipo,
               minutosTardanza: tipo === 'TARDANZA' ? d.minutosTardanza : 0,
               observacion: tipo === 'SANCION_PAD' ? d.observacion : null,
+              // El usuario acaba de decidir el día: deja de ser un valor por defecto sin dato.
+              sinRegistro: false,
             }
           : d,
       ),
@@ -335,7 +340,7 @@ export class CargaAsistenciaPageComponent implements OnInit {
       this.dias.update((lista) =>
         lista.map((d) =>
           d.dia === dia.dia
-            ? { ...d, tipoDia: 'SANCION_PAD', minutosTardanza: 0, observacion: motivo }
+            ? { ...d, tipoDia: 'SANCION_PAD', minutosTardanza: 0, observacion: motivo, sinRegistro: false }
             : d,
         ),
       );
@@ -371,13 +376,29 @@ export class CargaAsistenciaPageComponent implements OnInit {
     return 0;
   }
 
-  /** Tooltip del día con el descuento referencial cuando aplica. */
+  /** true si el día viene justificado por una papeleta aprobada (RR.HH. debe poder verificarlo). */
+  esDeOrigenPapeleta(dia: AsistenciaDia): boolean {
+    return dia.origen === 'PAPELETA';
+  }
+
+  /** Etiqueta visible de la celda: "Sin registro" si no hay ningún dato real para el día. */
+  etiquetaDia(dia: AsistenciaDia): string {
+    return dia.sinRegistro ? 'Sin registro' : (this.condicionLabels[dia.tipoDia] ?? dia.tipoDia);
+  }
+
+  /** Tooltip del día con el descuento referencial y, si aplica, la papeleta que lo justifica. */
   tooltipDia(dia: AsistenciaDia): string {
-    const etiqueta = this.condicionLabels[dia.tipoDia] ?? dia.tipoDia;
+    const etiqueta = this.etiquetaDia(dia);
     const accion = dia.tipoDia === 'SANCION_PAD' ? 'clic para editar motivo' : 'clic para cambiar';
-    const base = `${dia.dia} — ${etiqueta} (${accion})`;
+    let base = `${dia.dia} — ${etiqueta} (${accion})`;
     const desc = this.descuentoDia(dia);
-    return desc > 0 ? `${base} · Descuento S/ ${this.fmtMonto(desc)}` : base;
+    if (desc > 0) {
+      base += ` · Descuento S/ ${this.fmtMonto(desc)}`;
+    }
+    if (this.esDeOrigenPapeleta(dia) && dia.observacion) {
+      base += ` · ${dia.observacion}`;
+    }
+    return base;
   }
 
   // ============ Guardar ============
@@ -407,7 +428,9 @@ export class CargaAsistenciaPageComponent implements OnInit {
         remuneracionBase: this.remuneracionBase(),
         observacion: this.observacion().trim() || null,
         estado: this.estadoAsistencia(),
-        dias: this.dias(),
+        // Los días "sin registro" son un placeholder de dibujo (nunca fueron editados ni
+        // tienen dato real detrás) — se excluyen para no persistir un LABORAL inventado.
+        dias: this.dias().filter((d) => !d.sinRegistro),
       })
       .subscribe({
         next: () => {
@@ -541,8 +564,11 @@ export class CargaAsistenciaPageComponent implements OnInit {
   }
 
   /**
-   * Arma el calendario del perÃ­odo: un dÃ­a por fecha entre inicio y fin.
-   * Usa los dÃ­as ya guardados; el resto: fin de semana â†’ DESCANSO, resto â†’ LABORAL.
+   * Arma el calendario del período: un día por fecha entre inicio y fin. Usa los días ya
+   * guardados; el resto: fin de semana → DESCANSO (hecho de calendario, siempre cierto),
+   * día de semana → "Sin registro" (sinRegistro=true) — NO se asume LABORAL, porque eso se
+   * terminaba persistiendo si RR.HH. guardaba sin darse cuenta (bug real de integridad de
+   * datos: un día jamás cargado quedaba como "Presente" confirmado en BD).
    */
   private construirCalendario(
     fechaInicio: string,
@@ -559,12 +585,17 @@ export class CargaAsistenciaPageComponent implements OnInit {
         dias.push({ ...previo });
       } else {
         const finDeSemana = cursor.getDay() === 0 || cursor.getDay() === 6;
-        dias.push({
-          dia: clave,
-          tipoDia: finDeSemana ? 'DESCANSO' : 'LABORAL',
-          minutosTardanza: 0,
-          observacion: null,
-        });
+        dias.push(
+          finDeSemana
+            ? { dia: clave, tipoDia: 'DESCANSO', minutosTardanza: 0, observacion: null }
+            : {
+                dia: clave,
+                tipoDia: 'LABORAL',
+                minutosTardanza: 0,
+                observacion: null,
+                sinRegistro: true,
+              },
+        );
       }
     }
     return dias;
