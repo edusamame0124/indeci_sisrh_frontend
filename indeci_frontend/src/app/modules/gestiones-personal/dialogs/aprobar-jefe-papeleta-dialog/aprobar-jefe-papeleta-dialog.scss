@@ -58,6 +58,39 @@ textarea {
   resize: vertical;
 }
 
+.required {
+  color: #dc2626;
+}
+
+.field--invalid input {
+  border-color: #dc2626;
+}
+
+.file-hint {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: #16a34a;
+}
+
+.file-hint mat-icon {
+  font-size: 16px;
+  height: 16px;
+  width: 16px;
+}
+
+.file-hint--muted {
+  color: #64748b;
+  font-weight: 400;
+}
+
+.field--invalid .file-hint--muted {
+  color: #dc2626;
+  font-weight: 600;
+}
+
 .actividades {
   border: 1px solid #e2e8f0;
   border-radius: 14px;

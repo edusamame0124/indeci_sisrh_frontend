@@ -30,10 +30,15 @@
       </thead>
 
       <tbody>
-        <tr *ngFor="let doc of documentos()">
+        <tr *ngFor="let doc of documentos()" [class.fila-fabricada]="esFabricado(doc)">
           <td>{{ doc.versionDoc }}</td>
           <td>{{ doc.etapa }}</td>
-          <td>{{ doc.nombreArchivo }}</td>
+          <td>
+            {{ doc.nombreArchivo }}
+            <span class="badge-fabricado" *ngIf="esFabricado(doc)" title="Generado automáticamente por el sistema: no es la papeleta firmada real">
+              <mat-icon [inline]="true">warning</mat-icon> sin firma real
+            </span>
+          </td>
           <td>{{ doc.observacion || 'Sin observación' }}</td>
           <td>{{ doc.usuarioUpload }}</td>
           <td>{{ doc.createdAt | date: 'dd/MM/yyyy HH:mm' }}</td>
@@ -52,6 +57,59 @@
       </tbody>
     </table>
   </div>
+
+  <section class="subsanar" *ngIf="puedeSubsanar() && !cargando() && !error()">
+    <button mat-stroked-button type="button" (click)="toggleFormSubsanar()">
+      <mat-icon>upload_file</mat-icon>
+      {{ mostrarFormSubsanar() ? 'Cancelar subsanación' : 'Subsanar documento' }}
+    </button>
+
+    <div class="subsanar-form" *ngIf="mostrarFormSubsanar()">
+      <p class="subsanar-hint">
+        Use esta opción solo si un documento fue generado automáticamente por el sistema
+        (marcado como "sin firma real" arriba) porque en su momento se aprobó sin adjuntar
+        la papeleta firmada. Esto agrega el PDF real como una nueva versión, sin cambiar el
+        estado de la solicitud.
+      </p>
+
+      <label class="field">
+        <span>Etapa a subsanar</span>
+        <select [(ngModel)]="etapaSubsanar">
+          <option value="" disabled>Seleccione...</option>
+          <option value="JEFE">Jefe</option>
+          <option value="RRHH">RRHH</option>
+        </select>
+      </label>
+
+      <label class="field">
+        <span>Archivo PDF real firmado</span>
+        <input type="file" accept="application/pdf" (change)="seleccionarArchivoSubsanar($event)" />
+      </label>
+
+      <label class="field">
+        <span>Observación</span>
+        <textarea
+          rows="3"
+          [(ngModel)]="observacionSubsanar"
+          placeholder="Opcional: detalle de la subsanación"
+        ></textarea>
+      </label>
+
+      <div *ngIf="errorSubsanar()" class="error">
+        {{ errorSubsanar() }}
+      </div>
+
+      <button
+        mat-flat-button
+        color="primary"
+        type="button"
+        (click)="subsanar()"
+        [disabled]="subsanando()"
+      >
+        {{ subsanando() ? 'Guardando...' : 'Guardar documento subsanado' }}
+      </button>
+    </div>
+  </section>
 </mat-dialog-content>
 
 <mat-dialog-actions align="end">

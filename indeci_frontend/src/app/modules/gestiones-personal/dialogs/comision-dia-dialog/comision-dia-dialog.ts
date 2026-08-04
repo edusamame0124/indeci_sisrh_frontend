@@ -138,6 +138,11 @@ export class ComisionDiaDialog {
       return;
     }
 
+    if (!this.esEdicion() && !this.archivoSustento) {
+      this.error.set('Debe adjuntar el documento de sustento.');
+      return;
+    }
+
     this.calcularDias();
 
     const payload: CrearSolicitudRrhhRequest = {

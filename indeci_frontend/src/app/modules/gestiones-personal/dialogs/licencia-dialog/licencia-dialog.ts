@@ -557,6 +557,13 @@ export class LicenciaDialog implements OnInit {
       return;
     }
 
+    // Con goce: el adjunto es obligatorio (RR.HH., 2026-08-04). Sin goce no aplica
+    // aquí: usa su propio flujo de papeleta firmada (generarPapeleta/enviarAlJefe).
+    if (!this.esFlujoSinGoce() && !this.esEdicion() && !this.archivoSustento) {
+      this.error.set('Debe adjuntar el archivo de sustento.');
+      return;
+    }
+
     if (!this.requiereSustento() && !this.esFlujoSinGoce()) {
       this.archivoSustento = null;
     }

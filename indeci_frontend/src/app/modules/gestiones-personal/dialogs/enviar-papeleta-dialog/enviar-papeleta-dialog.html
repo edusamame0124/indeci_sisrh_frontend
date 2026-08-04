@@ -7,9 +7,15 @@
     <strong>Estado actual:</strong> {{ solicitud.estadoSolicitud }}
   </div>
 
-  <label class="field field--full">
-    <span>Papeleta firmada PDF <small>(opcional)</small></span>
+  <label class="field field--full" [class.field--invalid]="archivoInvalido()">
+    <span>Papeleta firmada PDF <span class="required">*</span></span>
     <input type="file" accept="application/pdf" (change)="seleccionarArchivo($event)" />
+    <span class="file-hint" *ngIf="archivo">
+      <mat-icon [inline]="true">check_circle</mat-icon>{{ archivo.name }}
+    </span>
+    <span class="file-hint file-hint--muted" *ngIf="!archivo">
+      Obligatorio para enviar. Solo PDF.
+    </span>
   </label>
 
   <label class="field">
@@ -31,7 +37,7 @@
     Cancelar
   </button>
 
-  <button mat-flat-button color="primary" type="button" (click)="enviar()" [disabled]="enviando()">
+  <button mat-flat-button color="primary" type="button" (click)="enviar()" [disabled]="enviando() || !archivo">
     <mat-icon>send</mat-icon>
     {{ enviando() ? 'Enviando...' : 'Enviar al jefe' }}
   </button>

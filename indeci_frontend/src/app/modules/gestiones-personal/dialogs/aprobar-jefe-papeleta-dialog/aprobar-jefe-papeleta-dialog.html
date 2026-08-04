@@ -51,9 +51,15 @@
   <section class="step">
     <h3>2. Adjuntar papeleta firmada por el jefe</h3>
 
-    <label class="field">
-      <span>Archivo PDF firmado</span>
+    <label class="field" [class.field--invalid]="archivoInvalido()">
+      <span>Archivo PDF firmado <span class="required">*</span></span>
       <input type="file" accept="application/pdf" (change)="seleccionarArchivo($event)" />
+      <span class="file-hint" *ngIf="archivo">
+        <mat-icon [inline]="true">check_circle</mat-icon>{{ archivo.name }}
+      </span>
+      <span class="file-hint file-hint--muted" *ngIf="!archivo">
+        Obligatorio para aprobar. Solo PDF.
+      </span>
     </label>
 
     <label class="field">
@@ -76,7 +82,7 @@
     Cancelar
   </button>
 
-  <button mat-flat-button color="primary" type="button" (click)="aprobar()" [disabled]="procesando()">
+  <button mat-flat-button color="primary" type="button" (click)="aprobar()" [disabled]="procesando() || !archivo">
     <mat-icon>verified</mat-icon>
     {{ procesando() ? 'Aprobando...' : 'Aprobar y enviar a RRHH' }}
   </button>

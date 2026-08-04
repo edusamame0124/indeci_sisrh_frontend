@@ -473,4 +473,26 @@ export class SolicitudesRrhhService {
       responseType: 'blob',
     });
   }
+
+  /**
+   * Remediación: agrega el PDF real como nueva versión del documento de la etapa
+   * JEFE/RRHH, sin reabrir ni cambiar el estado de la solicitud.
+   */
+  subsanarDocumento(
+    idPapeleta: number,
+    etapa: string,
+    file: File,
+    observacion: string,
+  ): Observable<ApiResponse<unknown>> {
+    const formData = new FormData();
+
+    formData.append('etapa', etapa);
+    formData.append('file', file);
+    formData.append('observacion', observacion ?? '');
+
+    return this.http.put<ApiResponse<unknown>>(
+      `${this.apiUrl}/rrhh/solicitudes-doc/subsanar/${idPapeleta}`,
+      formData,
+    );
+  }
 }

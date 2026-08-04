@@ -65,6 +65,75 @@ tbody tr:hover {
   padding: 1.2rem;
 }
 
+.fila-fabricada {
+  background: #fffbeb;
+}
+
+.badge-fabricado {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  margin-left: 0.4rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  background: #fef3c7;
+  color: #92400e;
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.badge-fabricado mat-icon {
+  font-size: 14px;
+  height: 14px;
+  width: 14px;
+}
+
+.subsanar {
+  margin-top: 1rem;
+  border-top: 1px solid #e2e8f0;
+  padding-top: 1rem;
+}
+
+.subsanar-form {
+  margin-top: 0.85rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.subsanar-hint {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.82rem;
+}
+
+.subsanar .field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.subsanar select,
+.subsanar input,
+.subsanar textarea {
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 0.6rem;
+  font-size: 0.85rem;
+  outline: none;
+}
+
+.subsanar textarea {
+  resize: vertical;
+}
+
 @media (max-width: 900px) {
   .dialog-body {
     min-width: auto;

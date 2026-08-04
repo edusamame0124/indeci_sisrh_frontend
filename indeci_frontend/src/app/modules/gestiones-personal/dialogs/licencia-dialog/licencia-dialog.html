@@ -81,9 +81,15 @@
       <input type="number" min="1" [(ngModel)]="totalFolios" />
     </label>
 
-    <!-- ARCHIVO DE SUSTENTO (opcional) -->
-    <label class="field field--full" *ngIf="(esFlujoSinGoce() || requiereSustento()) && !esEdicion()">
+    <!-- ARCHIVO DE SUSTENTO — obligatorio en con goce (RR.HH., 2026-08-04); en sin goce
+         este paso sigue siendo opcional, la papeleta firmada es el adjunto obligatorio. -->
+    <label class="field field--full" *ngIf="esFlujoSinGoce() && !esEdicion()">
       <span>Archivo de sustento <small class="opcional">(opcional)</small></span>
+      <input type="file" (change)="onArchivoSeleccionado($event)" />
+    </label>
+
+    <label class="field field--full" *ngIf="!esFlujoSinGoce() && requiereSustento() && !esEdicion()">
+      <span>Archivo de sustento *</span>
       <input type="file" (change)="onArchivoSeleccionado($event)" />
     </label>
 

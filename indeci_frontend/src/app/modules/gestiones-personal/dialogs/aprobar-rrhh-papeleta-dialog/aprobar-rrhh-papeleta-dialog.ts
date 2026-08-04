@@ -1,4 +1,4 @@
-import { Component, Inject, signal } from '@angular/core';
+import { Component, Inject, computed, signal } from '@angular/core';
 import { NgFor, NgIf } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
@@ -24,6 +24,9 @@ export class AprobarRrhhPapeletaDialogComponent {
 
   procesando = signal(false);
   error = signal<string | null>(null);
+  /** true tras un intento de aprobar sin haber adjuntado la papeleta firmada. */
+  archivoTocado = signal(false);
+  archivoInvalido = computed(() => this.archivoTocado() && !this.archivo);
 
   constructor(
     private readonly service: SolicitudesRrhhService,
@@ -55,6 +58,9 @@ export class AprobarRrhhPapeletaDialogComponent {
   seleccionarArchivo(event: Event): void {
     const input = event.target as HTMLInputElement;
     this.archivo = input.files?.[0] ?? null;
+    if (this.archivo) {
+      this.archivoTocado.set(false);
+    }
   }
 
   /** SPEC_VACACIONES F9.1-bis — descarga la papeleta firmada más reciente (excluye el sustento). */
@@ -103,10 +109,15 @@ export class AprobarRrhhPapeletaDialogComponent {
   }
 
   aprobar(): void {
-    
+    this.error.set(null);
+
+    if (!this.archivo) {
+      this.archivoTocado.set(true);
+      this.error.set('Debe adjuntar la papeleta firmada en PDF antes de aprobar.');
+      return;
+    }
 
     this.procesando.set(true);
-    this.error.set(null);
 
     this.service.aprobarRrhh(
       this.solicitud.id,
