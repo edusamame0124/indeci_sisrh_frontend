@@ -1,0 +1,61 @@
+<h2 mat-dialog-title>{{ tituloDialog }}</h2>
+
+<mat-dialog-content class="dialog-body">
+  <div class="grid">
+    <label class="field">
+      <span>Fecha inicio</span>
+      <input type="date" [(ngModel)]="fechaInicio" (ngModelChange)="calcularDias()" />
+    </label>
+
+    <label class="field">
+      <span>Fecha fin</span>
+      <input type="date" [(ngModel)]="fechaFin" (ngModelChange)="calcularDias()" />
+    </label>
+
+    <label class="field">
+      <span>Cantidad de días</span>
+      <input type="text" [value]="cantidadDiasTexto" disabled />
+    </label>
+
+    <label class="field field--full" *ngIf="requiereLugar()">
+      <span>Lugar de comisión</span>
+      <input type="text" [(ngModel)]="lugarComision" />
+    </label>
+
+    <label class="field field--full">
+      <span>Motivo / sustento (opcional)</span>
+      <textarea rows="3" [(ngModel)]="motivo"></textarea>
+    </label>
+
+    <label class="field field--full" *ngIf="!esEdicion()">
+      <span>Documento de sustento (opcional)</span>
+      <input type="file" (change)="onArchivoSeleccionado($event)" />
+    </label>
+
+    <p class="hint field field--full" *ngIf="esEdicion()">
+      El documento de sustento no se puede reemplazar al editar. Si necesita cambiarlo, elimine
+      esta papeleta y cree una nueva.
+    </p>
+  </div>
+
+  <div *ngIf="error()" class="error">
+    {{ error() }}
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-stroked-button type="button" (click)="cerrar()" [disabled]="guardando()">
+    Cancelar
+  </button>
+
+  <button
+    mat-flat-button
+    color="primary"
+    type="button"
+    (click)="guardar()"
+    [disabled]="guardando()"
+  >
+    <mat-icon>save</mat-icon>
+    {{ guardando() ? 'Guardando...' : esEdicion() ? 'Guardar cambios' : 'Guardar borrador' }}
+  </button>
+</mat-dialog-actions>

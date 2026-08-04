@@ -25,6 +25,7 @@ import { ConfirmDialogComponent } from '../../../../shared/components/confirm-di
 import { NotificacionService } from '../../../../core/services/notificacion.service';
 
 import { PermisoComunDialog } from '../../../../modules/gestiones-personal/dialogs/permiso-comun-dialog/permiso-comun-dialog';
+import { ComisionDiaDialog } from '../../../../modules/gestiones-personal/dialogs/comision-dia-dialog/comision-dia-dialog';
 import { LactanciaDialog } from '../../../../modules/gestiones-personal/dialogs/lactancia-dialog/lactancia-dialog';
 import { LicenciaDialog } from '../../../../modules/gestiones-personal/dialogs/licencia-dialog/licencia-dialog';
 import { DescansoMedicoDialog } from '../../../../modules/gestiones-personal/dialogs/descanso-medico-dialog/descanso-medico-dialog';
@@ -254,6 +255,11 @@ export class GestionEmpleadoPageComponent implements OnInit {
     this.abrirDialogoPorCodigo(codigo, PermisoComunDialog, '900px');
   }
 
+  // Comisión de servicio por día (V012_53) — independiente de '006' (por horas).
+  abrirComisionDia(): void {
+    this.abrirDialogoPorCodigo('COMISION_DIA', ComisionDiaDialog, '900px');
+  }
+
   // Papeleta de Teletrabajo (Ley N° 31572) — reporte diario de actividades.
   // Gate Poka-Yoke: solo servidores con resolución activa en su legajo.
   abrirTeletrabajo(): void {
@@ -372,6 +378,8 @@ export class GestionEmpleadoPageComponent implements OnInit {
 
     if (['001', '002', '003', '004', '005', '006', '007'].includes(codigo)) {
       componente = PermisoComunDialog;
+    } else if (codigo === 'COMISION_DIA') {
+      componente = ComisionDiaDialog;
     } else if (codigo === '008' || codigo === '009') {
       componente = LactanciaDialog;
     } else if (codigo === '010') {
