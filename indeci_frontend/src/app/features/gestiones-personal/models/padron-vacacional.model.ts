@@ -23,6 +23,8 @@ export interface PadronVacacionalRowDto {
   // sin evaluación; el 3ro NUNCA bloquea/pierde saldo automático, solo requiere decisión RR.HH.)
   periodosAcumuladosSinGozar: number;
   requiereDecisionAcumulacion: boolean;
+  /** V012_55 — true si el empleado tiene al menos un goce registrado por Override. */
+  tieneOverride: boolean;
 }
 
 export interface PadronVacacionalPageDto {
@@ -111,11 +113,29 @@ export interface PeriodoRecord {
   diasGanados: number;
 }
 
+/** Trazabilidad Visual — una fila de goce (INDECI_VACACIONES), espejo de `GoceRegistradoDto`. */
+export interface GoceRegistrado {
+  id: number;
+  fechaRegistro: string | null;
+  usuarioRegistro: string | null;
+  periodoDesde: string;
+  periodoHasta: string;
+  dias: number | null;
+  tipoGoce: string | null;
+  origen: string | null;
+  esAdelanto: number | null;
+  documentoSustento: string | null;
+  motivoExcepcion: string | null;
+  estado: string | null;
+}
+
 /** Detalle de récord vacacional (Opción A), espejo de `RecordVacacionalDetalleDto`. */
 export interface RecordVacacionalDetalle {
   sinVinculo: boolean;
   acumulado: TiempoServicioDetalle;
   periodos: PeriodoRecord[];
+  /** V012_55 — el goce por Override más reciente del empleado, o null si nunca tuvo uno. */
+  ultimoOverride: GoceRegistrado | null;
 }
 
 /** "Provisionar para todos" — resumen del lote, espejo de `ProvisionMasivaResultDto`. */

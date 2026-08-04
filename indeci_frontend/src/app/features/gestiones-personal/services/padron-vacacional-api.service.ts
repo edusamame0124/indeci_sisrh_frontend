@@ -8,6 +8,7 @@ import {
   AcumulacionDecisionPayload,
   CorreccionGozadosResult,
   CorregirGozadosPayload,
+  GoceRegistrado,
   HistorialSaldoRow,
   PadronVacacionalPageDto,
   ProvisionarAutoPayload,
@@ -114,6 +115,16 @@ export class PadronVacacionalApiService {
   historialSaldo(empleadoId: number): Observable<ApiResponse<HistorialSaldoRow[]>> {
     return this.http.get<ApiResponse<HistorialSaldoRow[]>>(
       `${this.baseUrl}/${empleadoId}/historial-saldo`
+    );
+  }
+
+  /**
+   * Trazabilidad Visual (V012_55) — historial de goces (INDECI_VACACIONES) de un empleado, con
+   * quién y cuándo registró cada uno. Alimenta la pestaña "Goces Directos" del modal Historial.
+   */
+  listarGoces(empleadoId: number): Observable<ApiResponse<GoceRegistrado[]>> {
+    return this.http.get<ApiResponse<GoceRegistrado[]>>(
+      `${this.baseUrl}/${empleadoId}/goces`
     );
   }
 }

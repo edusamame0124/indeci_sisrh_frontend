@@ -135,4 +135,15 @@ export class AsistenciaApiService {
       .post<ApiResponse<number>>(`${this.baseUrl}/backfill-feriados`, {})
       .pipe(map(extractApiData));
   }
+
+  /**
+   * Backfill ÚNICO (temporal, SUPER_ADMIN, independiente de los anteriores) — corrige
+   * cabeceras activas con días huérfanos por re-importaciones anteriores al fix de fusión
+   * de días (guardarImportacion). Idempotente. Devuelve la cantidad de cabeceras corregidas.
+   */
+  backfillDiasHuerfanos(): Observable<number> {
+    return this.http
+      .post<ApiResponse<number>>(`${this.baseUrl}/backfill-dias-huerfanos`, {})
+      .pipe(map(extractApiData));
+  }
 }

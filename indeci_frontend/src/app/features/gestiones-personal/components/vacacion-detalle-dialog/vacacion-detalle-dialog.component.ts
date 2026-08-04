@@ -25,6 +25,34 @@ import { PadronVacacionalApiService } from '../../services/padron-vacacional-api
       </div>
 
       <ng-container *ngIf="!data.sinVinculo">
+        <!-- V012_55 — Trazabilidad del último "Registro Directo de Goce (Override)", si existe. -->
+        <div class="traza" *ngIf="detalle()?.ultimoOverride as ov">
+          <div class="traza-head">
+            <mat-icon>verified_user</mat-icon>
+            Trazabilidad del registro
+            <span class="badge badge--override">Override</span>
+          </div>
+          <dl class="traza-grid">
+            <dt>Registrado por</dt>
+            <dd>{{ ov.usuarioRegistro || 'Sin dato (registro previo a V012_55)' }}</dd>
+            <dt>Fecha y hora</dt>
+            <dd class="mono">{{ ov.fechaRegistro ? (ov.fechaRegistro | date: 'dd/MM/yyyy · HH:mm') : '—' }}</dd>
+            <dt>Período</dt>
+            <dd class="mono">{{ fecha(ov.periodoDesde) }} – {{ fecha(ov.periodoHasta) }} ({{ ov.dias }} d)</dd>
+            <dt>Documento sustento</dt>
+            <dd class="mono">{{ ov.documentoSustento || '—' }}</dd>
+            <dt>Motivo / bypass</dt>
+            <dd>{{ ov.motivoExcepcion || '—' }}</dd>
+            <dt>Adelanto vacacional</dt>
+            <dd>
+              <span class="badge" [class.badge--success]="ov.esAdelanto === 1" [class.badge--secondary]="ov.esAdelanto !== 1">
+                {{ ov.esAdelanto === 1 ? 'Sí — ignoró límite de saldo' : 'No' }}
+              </span>
+            </dd>
+          </dl>
+          <p class="traza-hint">Si el empleado tiene más de un registro por Override, este es el más reciente — ver "Historial" para el listado completo.</p>
+        </div>
+
         <!-- Resumen (fuente de verdad: BD del padrón) -->
         <table class="desglose">
           <tbody>
@@ -235,6 +263,55 @@ import { PadronVacacionalApiService } from '../../services/padron-vacacional-api
         color: #64748b;
         line-height: 1.4;
       }
+      .traza {
+        margin-bottom: 1rem;
+        border: 1.5px dashed #b45309;
+        background: #fef3c7;
+        border-radius: 8px;
+        padding: 0.75rem 0.9rem;
+      }
+      .traza-head {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        color: #92400e;
+        font-weight: 700;
+        font-size: 0.82rem;
+      }
+      .traza-head mat-icon {
+        font-size: 1.05rem;
+        width: 1.05rem;
+        height: 1.05rem;
+      }
+      .traza-grid {
+        margin: 0.6rem 0 0;
+        display: grid;
+        grid-template-columns: auto 1fr;
+        row-gap: 0.35rem;
+        column-gap: 0.7rem;
+        font-size: 0.82rem;
+      }
+      .traza-grid dt {
+        color: #92400e;
+        opacity: 0.85;
+        font-weight: 600;
+        white-space: nowrap;
+      }
+      .traza-grid dd {
+        margin: 0;
+        color: #1e293b;
+      }
+      .traza-hint {
+        margin: 0.6rem 0 0;
+        font-size: 0.72rem;
+        color: #92400e;
+        opacity: 0.85;
+      }
+      .mono {
+        font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+      }
+      .badge--override { background: #b45309; color: #fff; }
+      .badge--secondary { background: #f1f5f9; color: #475569; }
     `,
   ],
 })

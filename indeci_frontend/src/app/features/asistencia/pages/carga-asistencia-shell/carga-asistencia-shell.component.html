@@ -97,6 +97,49 @@
         }
       </mat-card-content>
     </mat-card>
+
+    <mat-card class="asistencia-shell__backfill">
+      <mat-card-content>
+        <div class="asistencia-shell__backfill-header">
+          <mat-icon aria-hidden="true">restore</mat-icon>
+          <div>
+            <strong>Backfill único — Días huérfanos por re-importación</strong>
+            <p>
+              Acción temporal de mantenimiento (solo SUPER_ADMIN), independiente de los backfills
+              de arriba. Corrige cabeceras activas de asistencia que quedaron con días faltantes
+              porque una re-importación anterior (reloj o COEN) reemplazó la carga previa sin
+              conservar los días fuera de su rango. Restaura esos días desde la versión anterior
+              (ya cargada) y recalcula los totales. No toca períodos ya cerrados/aprobados. Es
+              seguro ejecutarla más de una vez.
+            </p>
+          </div>
+        </div>
+
+        <button
+          mat-flat-button
+          color="warn"
+          type="button"
+          (click)="ejecutarBackfillDiasHuerfanos()"
+          [disabled]="backfillHuerfanosEjecutando()"
+        >
+          @if (backfillHuerfanosEjecutando()) {
+            <mat-spinner diameter="18" />
+          } @else {
+            <mat-icon>play_arrow</mat-icon>
+          }
+          {{ backfillHuerfanosEjecutando() ? 'Ejecutando...' : 'Ejecutar backfill' }}
+        </button>
+
+        @if (backfillHuerfanosResultado() !== null) {
+          <p class="asistencia-shell__backfill-ok">
+            ✓ Listo — {{ backfillHuerfanosResultado() }} cabecera(s) corregida(s).
+          </p>
+        }
+        @if (backfillHuerfanosError()) {
+          <p class="asistencia-shell__backfill-error">✗ {{ backfillHuerfanosError() }}</p>
+        }
+      </mat-card-content>
+    </mat-card>
   }
 
   <section class="asistencia-shell__tabs">

@@ -90,6 +90,17 @@ th {
 .badge--secondary { background: #f5f5f5; color: #616161; }
 .badge--info { background: #e3f2fd; color: #1565c0; }
 
+/* V012_55 — señal de que el empleado tiene al menos un goce registrado por Override. */
+.dot-override {
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 999px;
+  background: #b45309;
+  margin-right: 0.35rem;
+  vertical-align: middle;
+}
+
 /* Etiqueta de deuda vacacional (saldo negativo por adelanto). */
 .tag-deuda {
   display: inline-block;

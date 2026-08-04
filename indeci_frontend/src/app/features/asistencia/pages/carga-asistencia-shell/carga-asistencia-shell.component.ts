@@ -99,4 +99,33 @@ export class CargaAsistenciaShellComponent {
       },
     });
   }
+
+  /**
+   * Backfill ÚNICO (temporal, independiente de los anteriores) — corrige cabeceras activas
+   * que quedaron con cobertura incompleta por re-importaciones anteriores al fix de fusión
+   * de días en guardarImportacion (días huérfanos en versiones inactivas). Mismo criterio de
+   * visibilidad: solo SUPER_ADMIN.
+   */
+  readonly backfillHuerfanosEjecutando = signal(false);
+  readonly backfillHuerfanosResultado = signal<number | null>(null);
+  readonly backfillHuerfanosError = signal<string | null>(null);
+
+  ejecutarBackfillDiasHuerfanos(): void {
+    this.backfillHuerfanosEjecutando.set(true);
+    this.backfillHuerfanosResultado.set(null);
+    this.backfillHuerfanosError.set(null);
+
+    this.asistenciaApi.backfillDiasHuerfanos().subscribe({
+      next: (corregidas) => {
+        this.backfillHuerfanosEjecutando.set(false);
+        this.backfillHuerfanosResultado.set(corregidas);
+      },
+      error: (err) => {
+        this.backfillHuerfanosEjecutando.set(false);
+        this.backfillHuerfanosError.set(
+          err?.error?.mensaje ?? err?.error?.message ?? 'No se pudo ejecutar el backfill.',
+        );
+      },
+    });
+  }
 }

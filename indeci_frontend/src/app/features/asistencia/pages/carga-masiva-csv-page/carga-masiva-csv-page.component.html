@@ -493,9 +493,16 @@
           <div class="masiva__rango">
             <p class="masiva__rango-hint">
               <strong>Rango de días cubierto por esta carga</strong> (sugerido con el mín/máx del
-              archivo, editable). Los días del mes <strong>fuera</strong> de este rango quedarán
-              <strong>sin registro</strong> — NO se marcan como falta. Ajústalo si el archivo no
-              cubre el mes completo (ej. solo del 01 al 15).
+              archivo, editable).
+              @if (tieneConflictos()) {
+                Los días del mes <strong>fuera</strong> de este rango que ya tenían asistencia
+                registrada <strong>se conservarán</strong> — no se pierden al confirmar. Ajusta el
+                rango solo para indicar qué parte del mes cubre el archivo que estás subiendo ahora.
+              } @else {
+                Los días del mes <strong>fuera</strong> de este rango quedarán
+                <strong>sin registro</strong> — NO se marcan como falta. Ajústalo si el archivo no
+                cubre el mes completo (ej. solo del 01 al 15).
+              }
             </p>
             <mat-form-field appearance="outline" class="masiva__field">
               <mat-label>Cubre desde</mat-label>

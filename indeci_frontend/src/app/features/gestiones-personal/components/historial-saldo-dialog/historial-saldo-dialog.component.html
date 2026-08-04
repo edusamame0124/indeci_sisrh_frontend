@@ -5,48 +5,95 @@
     <strong>{{ data.nombreCompleto }}</strong> ({{ data.dni }})
   </div>
 
-  <div *ngIf="cargando()" class="loading">
-    <mat-spinner diameter="28"></mat-spinner>
-    <span>Cargando historial...</span>
-  </div>
+  <mat-tab-group animationDuration="0ms">
+    <mat-tab label="Recálculos de saldo">
+      <div *ngIf="cargando()" class="loading">
+        <mat-spinner diameter="28"></mat-spinner>
+        <span>Cargando historial...</span>
+      </div>
 
-  <div *ngIf="error()" class="alert">{{ error() }}</div>
+      <div *ngIf="error()" class="alert">{{ error() }}</div>
 
-  <div class="table-wrap" *ngIf="!cargando() && !error()">
-    <table>
-      <thead>
-        <tr>
-          <th>Año</th>
-          <th class="text-right">Ganados</th>
-          <th class="text-right">Gozados</th>
-          <th class="text-right">Saldo</th>
-          <th>Origen</th>
-          <th>Estado</th>
-          <th>Observación</th>
-          <th>Fecha</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let f of filas()" [class.fila-anulada]="!esActivo(f)">
-          <td>{{ f.anio }}</td>
-          <td class="text-right">{{ f.diasGanados }}</td>
-          <td class="text-right">{{ f.diasGozados }}</td>
-          <td class="text-right">{{ f.diasSaldo }}</td>
-          <td>{{ f.origen || '—' }}</td>
-          <td>
-            <span class="badge" [class.badge--success]="esActivo(f)" [class.badge--danger]="!esActivo(f)">
-              {{ esActivo(f) ? 'Activo' : 'Anulado' }}
-            </span>
-          </td>
-          <td class="observacion">{{ f.observacion || '—' }}</td>
-          <td>{{ formatearFecha(f.createdAt) }}</td>
-        </tr>
-        <tr *ngIf="filas().length === 0">
-          <td colspan="8" class="empty">Sin registros de saldo para este empleado.</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
+      <div class="table-wrap" *ngIf="!cargando() && !error()">
+        <table>
+          <thead>
+            <tr>
+              <th>Año</th>
+              <th class="text-right">Ganados</th>
+              <th class="text-right">Gozados</th>
+              <th class="text-right">Saldo</th>
+              <th>Origen</th>
+              <th>Estado</th>
+              <th>Observación</th>
+              <th>Fecha</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let f of filas()" [class.fila-anulada]="!esActivo(f)">
+              <td>{{ f.anio }}</td>
+              <td class="text-right">{{ f.diasGanados }}</td>
+              <td class="text-right">{{ f.diasGozados }}</td>
+              <td class="text-right">{{ f.diasSaldo }}</td>
+              <td>{{ f.origen || '—' }}</td>
+              <td>
+                <span class="badge" [class.badge--success]="esActivo(f)" [class.badge--danger]="!esActivo(f)">
+                  {{ esActivo(f) ? 'Activo' : 'Anulado' }}
+                </span>
+              </td>
+              <td class="observacion">{{ f.observacion || '—' }}</td>
+              <td>{{ formatearFecha(f.createdAt) }}</td>
+            </tr>
+            <tr *ngIf="filas().length === 0">
+              <td colspan="8" class="empty">Sin registros de saldo para este empleado.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </mat-tab>
+
+    <mat-tab label="Goces Directos">
+      <div *ngIf="cargandoGoces()" class="loading">
+        <mat-spinner diameter="28"></mat-spinner>
+        <span>Cargando goces...</span>
+      </div>
+
+      <div *ngIf="errorGoces()" class="alert">{{ errorGoces() }}</div>
+
+      <div class="table-wrap" *ngIf="!cargandoGoces() && !errorGoces()">
+        <table>
+          <thead>
+            <tr>
+              <th>Fecha registro</th>
+              <th>Usuario</th>
+              <th>Período</th>
+              <th class="text-right">Días</th>
+              <th>Tipo</th>
+              <th>Documento</th>
+              <th>Motivo</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let g of goces()">
+              <td>{{ g.fechaRegistro ? formatearFecha(g.fechaRegistro) : '—' }}</td>
+              <td>{{ g.usuarioRegistro || '—' }}</td>
+              <td>{{ formatearSoloFecha(g.periodoDesde) }} – {{ formatearSoloFecha(g.periodoHasta) }}</td>
+              <td class="text-right">{{ g.dias ?? '—' }}</td>
+              <td>
+                <span class="badge" [class.badge--override]="esOverride(g)" [class.badge--success]="!esOverride(g)">
+                  {{ esOverride(g) ? 'Override' : 'Regular' }}
+                </span>
+              </td>
+              <td>{{ g.documentoSustento || '—' }}</td>
+              <td class="observacion">{{ g.motivoExcepcion || '—' }}</td>
+            </tr>
+            <tr *ngIf="goces().length === 0">
+              <td colspan="7" class="empty">Sin goces registrados para este empleado.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </mat-tab>
+  </mat-tab-group>
 </mat-dialog-content>
 
 <mat-dialog-actions align="end">
