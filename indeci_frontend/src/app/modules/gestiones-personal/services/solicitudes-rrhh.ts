@@ -398,6 +398,17 @@ export class SolicitudesRrhhService {
     );
   }
 
+  rechazarRrhh(idPapeleta: number, observacion: string): Observable<ApiResponse<unknown>> {
+    const formData = new FormData();
+
+    formData.append('observacion', observacion);
+
+    return this.http.put<ApiResponse<unknown>>(
+      `${this.apiUrl}/rrhh/solicitudes/rechazar-rrhh/${idPapeleta}`,
+      formData,
+    );
+  }
+
   listarSolicitudesColaboradores(): Observable<ApiResponse<SolicitudRrhh[]>> {
     return this.http.get<ApiResponse<SolicitudRrhh[]>>(
       `${this.apiUrl}/rrhh/solicitudes/mis-colaboradores`,

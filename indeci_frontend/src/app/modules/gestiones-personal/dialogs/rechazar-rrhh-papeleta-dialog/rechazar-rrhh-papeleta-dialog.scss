@@ -1,0 +1,54 @@
+.dialog-body {
+  min-width: 480px;
+}
+
+.info {
+  background: #fef2f2;
+  border-radius: 12px;
+  padding: 0.85rem;
+  margin-bottom: 1rem;
+  color: #7f1d1d;
+  font-size: 0.86rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 1rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+textarea {
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 0.65rem;
+  font-size: 0.85rem;
+  outline: none;
+  resize: vertical;
+}
+
+.required {
+  color: #dc2626;
+}
+
+.field--invalid textarea {
+  border-color: #dc2626;
+}
+
+.error {
+  background: #fee2e2;
+  color: #991b1b;
+  border-radius: 10px;
+  padding: 0.65rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+@media (max-width: 650px) {
+  .dialog-body {
+    min-width: auto;
+  }
+}

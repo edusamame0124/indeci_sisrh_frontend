@@ -1,0 +1,34 @@
+<h2 mat-dialog-title>Rechazar papeleta (RRHH)</h2>
+
+<mat-dialog-content class="dialog-body">
+  <section class="info">
+    <strong>Solicitud:</strong> #{{ solicitud.id }} <br />
+    <strong>Empleado:</strong> {{ solicitud.empleado }} <br />
+    <strong>Tipo:</strong> {{ solicitud.tipoSolicitud }} <br />
+    <strong>Estado actual:</strong> {{ solicitud.estadoSolicitud }}
+  </section>
+
+  <label class="field" [class.field--invalid]="motivoTocado() && !observacion.trim()">
+    <span>Motivo del rechazo <span class="required">*</span></span>
+    <textarea
+      rows="4"
+      [(ngModel)]="observacion"
+      placeholder="Explique por qué se rechaza esta solicitud. El empleado podrá verlo en el historial de la papeleta."
+    ></textarea>
+  </label>
+
+  <div *ngIf="error()" class="error">
+    {{ error() }}
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-stroked-button type="button" (click)="cerrar()" [disabled]="procesando()">
+    Cancelar
+  </button>
+
+  <button mat-flat-button color="warn" type="button" (click)="rechazar()" [disabled]="procesando()">
+    <mat-icon>cancel</mat-icon>
+    {{ procesando() ? 'Rechazando...' : 'Rechazar' }}
+  </button>
+</mat-dialog-actions>

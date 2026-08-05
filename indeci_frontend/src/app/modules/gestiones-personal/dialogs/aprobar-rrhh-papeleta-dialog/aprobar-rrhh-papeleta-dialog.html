@@ -62,16 +62,16 @@
   </section>
 
   <section class="step">
-    <h3>2. Adjuntar papeleta firmada por RRHH</h3>
+    <h3>2. Adjuntar papeleta firmada por RRHH (opcional)</h3>
 
-    <label class="field" [class.field--invalid]="archivoInvalido()">
-      <span>Archivo PDF firmado <span class="required">*</span></span>
+    <label class="field">
+      <span>Archivo PDF firmado</span>
       <input type="file" accept="application/pdf" (change)="seleccionarArchivo($event)" />
       <span class="file-hint" *ngIf="archivo">
         <mat-icon [inline]="true">check_circle</mat-icon>{{ archivo.name }}
       </span>
       <span class="file-hint file-hint--muted" *ngIf="!archivo">
-        Obligatorio para aprobar. Solo PDF.
+        Opcional. Solo PDF.
       </span>
     </label>
 
@@ -95,7 +95,7 @@
     Cancelar
   </button>
 
-  <button mat-flat-button color="primary" type="button" (click)="aprobar()" [disabled]="procesando() || !archivo">
+  <button mat-flat-button color="primary" type="button" (click)="aprobar()" [disabled]="procesando()">
     <mat-icon>verified_user</mat-icon>
     {{ procesando() ? 'Aprobando...' : 'Aprobar por RRHH' }}
   </button>

@@ -17,6 +17,8 @@ import {
 
 import { AprobarRrhhPapeletaDialogComponent } from '../../../../modules/gestiones-personal/dialogs/aprobar-rrhh-papeleta-dialog/aprobar-rrhh-papeleta-dialog';
 
+import { RechazarRrhhPapeletaDialogComponent } from '../../../../modules/gestiones-personal/dialogs/rechazar-rrhh-papeleta-dialog/rechazar-rrhh-papeleta-dialog';
+
 import { TrazabilidadPapeletaDialogComponent } from '../../../../modules/gestiones-personal/dialogs/trazabilidad-papeleta-dialog/trazabilidad-papeleta-dialog';
 
 import { PadronVacacionalTabComponent } from '../../components/padron-vacacional-tab/padron-vacacional-tab.component';
@@ -55,6 +57,14 @@ export class GestionRrhhPageComponent implements OnInit {
    * exige con @PreAuthorize('PAP_APROBAR_RRHH') como fuente de verdad.
    */
   readonly puedeAprobarRrhh = computed(() => this.auth.permisos().includes('PAP_APROBAR_RRHH'));
+
+  /**
+   * Rechazar en RRHH exige solo el permiso de módulo (PAP_RRHH), no PAP_APROBAR_RRHH:
+   * a diferencia de aprobar, rechazar no compromete saldo vacacional ni planilla, así que
+   * cualquiera con acceso al módulo puede hacerlo (mismo criterio que Jefe: PAP_JEFE para
+   * ambas acciones). El backend lo exige con @PreAuthorize('PAP_RRHH') como fuente de verdad.
+   */
+  readonly puedeRechazarRrhh = computed(() => this.auth.permisos().includes('PAP_RRHH'));
 
   solicitudes = signal<SolicitudRrhh[]>([]);
   cargando = signal(false);
@@ -124,6 +134,21 @@ export class GestionRrhhPageComponent implements OnInit {
   abrirAprobar(item: SolicitudRrhh): void {
     const ref = this.dialog.open(AprobarRrhhPapeletaDialogComponent, {
       width: '620px',
+      maxWidth: '95vw',
+      disableClose: true,
+      data: item,
+    });
+
+    ref.afterClosed().subscribe((actualizar: boolean) => {
+      if (actualizar) {
+        this.cargarSolicitudes();
+      }
+    });
+  }
+
+  abrirRechazar(item: SolicitudRrhh): void {
+    const ref = this.dialog.open(RechazarRrhhPapeletaDialogComponent, {
+      width: '560px',
       maxWidth: '95vw',
       disableClose: true,
       data: item,

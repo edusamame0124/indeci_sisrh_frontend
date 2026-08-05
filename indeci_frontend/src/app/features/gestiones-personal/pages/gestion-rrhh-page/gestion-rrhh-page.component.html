@@ -115,6 +115,15 @@
                     </button>
 
                     <button
+                      *ngIf="puedeRechazarRrhh()"
+                      mat-icon-button
+                      title="Rechazar"
+                      (click)="abrirRechazar(item)"
+                    >
+                      <mat-icon>cancel</mat-icon>
+                    </button>
+
+                    <button
                       mat-icon-button
                       title="Trazabilidad documental"
                       (click)="abrirTrazabilidad(item)"

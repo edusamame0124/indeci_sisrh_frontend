@@ -42,6 +42,10 @@ export class CompensacionDialog {
   guardando = signal(false);
   error = signal<string | null>(null);
 
+  // Jornada laboral máxima diaria (Art. 25 Constitución / D.Leg. 276-728): el permiso
+  // compensable por horas no puede exceder un día completo de trabajo.
+  private readonly MAX_HORAS_COMPENSABLE = 8;
+
   tituloDialog = 'Permiso personal compensable por horas';
 
   fechaInicio = '';
@@ -149,7 +153,21 @@ export class CompensacionDialog {
 
     this.cantidadHoras = horas;
     this.cantidadHorasTexto = this.formatearHoras(horas);
+
+    if (horas > this.MAX_HORAS_COMPENSABLE) {
+      this.error.set(
+        `El permiso compensable por horas no puede exceder las ${this.MAX_HORAS_COMPENSABLE} horas ` +
+          `(jornada máxima diaria). Solicitadas: ${this.cantidadHorasTexto}.`,
+      );
+      return;
+    }
+
     this.error.set(null);
+  }
+
+  /** true si las horas solicitadas superan la jornada máxima diaria (bloquea Guardar). */
+  excedeMaximoHoras(): boolean {
+    return (this.cantidadHoras ?? 0) > this.MAX_HORAS_COMPENSABLE;
   }
 
   calcularHorasDetalle(detalle: DetalleCompensacionForm): void {
@@ -253,6 +271,14 @@ export class CompensacionDialog {
 
     if (!this.cantidadHoras || this.cantidadHoras <= 0) {
       this.error.set('La hora de ingreso no puede ser menor o igual que la hora de salida.');
+      return;
+    }
+
+    if (this.excedeMaximoHoras()) {
+      this.error.set(
+        `El permiso compensable por horas no puede exceder las ${this.MAX_HORAS_COMPENSABLE} horas ` +
+          `(jornada máxima diaria). Solicitadas: ${this.cantidadHorasTexto}.`,
+      );
       return;
     }
 

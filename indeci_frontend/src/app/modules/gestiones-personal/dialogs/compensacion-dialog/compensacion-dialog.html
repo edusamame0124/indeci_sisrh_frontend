@@ -172,7 +172,7 @@
     color="primary"
     type="button"
     (click)="guardar()"
-    [disabled]="guardando()"
+    [disabled]="guardando() || excedeMaximoHoras()"
   >
     <mat-icon>save</mat-icon>
     {{ guardando() ? 'Guardando...' : esEdicion() ? 'Guardar cambios' : 'Guardar borrador' }}
