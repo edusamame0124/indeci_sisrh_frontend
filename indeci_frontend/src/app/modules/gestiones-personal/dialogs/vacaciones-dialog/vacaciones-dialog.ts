@@ -206,6 +206,19 @@ export class VacacionesDialog implements OnInit {
     }
   }
 
+  /**
+   * Adelanto de Vacaciones (Art. 4 D.Leg. 1405): solo aplica a quien AÚN no tiene saldo
+   * vacacional acumulado. Con saldo > 0 corresponde usar Programación en su lugar.
+   */
+  tieneSaldoVacacional(): boolean {
+    return (this.saldoVacacional()?.saldo ?? 0) > 0;
+  }
+
+  /** true si la opción del <select> corresponde a Adelanto y el empleado ya tiene saldo. */
+  opcionAdelantoDeshabilitada(tipo: TipoVacacion): boolean {
+    return this.codigoDesdeTipoVacacion(tipo) === '002' && this.tieneSaldoVacacional();
+  }
+
   /** Obtenidos/Gozados/Saldo — SIEMPRE visible, independiente del tipo elegido (pedido RR.HH.). */
   private cargarSaldoVacacional(): void {
     this.cargandoSaldo.set(true);

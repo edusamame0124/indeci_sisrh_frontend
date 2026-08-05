@@ -41,6 +41,11 @@ export class PermisoComunDialog {
   cantidadHoras: number | null = null;
   cantidadHorasTexto = '';
 
+  // Omisión de Registro de Asistencia (código 004): la regla de negocio es entrada XOR salida
+  // (una sola marca faltante, no un rango con duración) — ver PapeletaJustificacionResolver.
+  tipoOmision: 'INGRESO' | 'SALIDA' | '' = '';
+  horaOmision = '';
+
   motivo = '';
   observacion = '';
   lugarComision = '';
@@ -75,7 +80,20 @@ export class PermisoComunDialog {
       this.motivo = s.motivo ?? '';
       this.observacion = s.observacion ?? '';
       this.lugarComision = s.lugarComision ?? '';
-      this.calcularHoras();
+
+      if (this.esOmision()) {
+        // Legado: papeletas creadas antes de este ajuste guardan ambas horas → no se puede
+        // inferir el tipo con certeza; se deja en blanco para que el usuario lo reconfirme.
+        if (s.horaInicio && !s.horaFin) {
+          this.tipoOmision = 'SALIDA';
+          this.horaOmision = s.horaInicio;
+        } else if (s.horaFin && !s.horaInicio) {
+          this.tipoOmision = 'INGRESO';
+          this.horaOmision = s.horaFin;
+        }
+      } else {
+        this.calcularHoras();
+      }
     }
   }
 
@@ -85,6 +103,16 @@ export class PermisoComunDialog {
 
   codigoTipoSolicitud(): string {
     return String(this.tipoSolicitud?.codigo ?? '').padStart(3, '0');
+  }
+
+  /** Código 004 — Permiso de Justificación de Omisión de Registro de Asistencia. */
+  esOmision(): boolean {
+    return this.codigoTipoSolicitud() === '004';
+  }
+
+  onTipoOmisionChange(): void {
+    this.horaOmision = '';
+    this.error.set(null);
   }
 
   requiereMotivo(): boolean {
@@ -159,16 +187,32 @@ export class PermisoComunDialog {
       return;
     }
 
-    if (!this.horaInicio || !this.horaFin) {
-      this.error.set('Ingrese la hora de salida y la hora de ingreso.');
-      return;
-    }
+    if (this.esOmision()) {
+      // Omisión de marcación = una sola marca faltante (entrada XOR salida), no una ventana de
+      // tiempo: no aplica "cantidad de horas" ni el par hora-salida/hora-ingreso genérico.
+      if (!this.tipoOmision) {
+        this.error.set('Seleccione si la omisión fue de Ingreso o de Salida.');
+        return;
+      }
 
-    this.calcularHoras();
+      if (!this.horaOmision) {
+        this.error.set(`Ingrese la hora de ${this.tipoOmision === 'INGRESO' ? 'ingreso' : 'salida'}.`);
+        return;
+      }
 
-    if (!this.cantidadHoras || this.cantidadHoras <= 0) {
-      this.error.set('La hora de ingreso no puede ser menor o igual que la hora de salida.');
-      return;
+      this.cantidadHoras = null;
+    } else {
+      if (!this.horaInicio || !this.horaFin) {
+        this.error.set('Ingrese la hora de salida y la hora de ingreso.');
+        return;
+      }
+
+      this.calcularHoras();
+
+      if (!this.cantidadHoras || this.cantidadHoras <= 0) {
+        this.error.set('La hora de ingreso no puede ser menor o igual que la hora de salida.');
+        return;
+      }
     }
 
     if (this.requiereMotivo() && !this.motivo.trim()) {
@@ -195,6 +239,19 @@ export class PermisoComunDialog {
       this.archivoSustento = null;
     }
 
+    // Mapeo al esquema existente (sin migración): Ingreso → horaFin, Salida → horaInicio, igual
+    // a las etiquetas ya usadas por este mismo diálogo para el resto de permisos por horas.
+    const horaInicioPayload = this.esOmision()
+      ? this.tipoOmision === 'SALIDA'
+        ? this.horaOmision
+        : null
+      : this.horaInicio;
+    const horaFinPayload = this.esOmision()
+      ? this.tipoOmision === 'INGRESO'
+        ? this.horaOmision
+        : null
+      : this.horaFin;
+
     const payload: CrearSolicitudRrhhRequest = {
       tipoSolicitudId: Number(this.tipoSolicitud.id),
       fechaInicio: this.fechaInicio,
@@ -202,8 +259,8 @@ export class PermisoComunDialog {
       cantidadDias: null,
       motivo: this.requiereMotivo() ? this.motivo.trim() : null,
       observacion: this.requiereObservacion() ? this.observacion.trim() : null,
-      horaInicio: this.horaInicio,
-      horaFin: this.horaFin,
+      horaInicio: horaInicioPayload,
+      horaFin: horaFinPayload,
       cantidadHoras: this.cantidadHoras,
       lugarComision: this.requiereLugar() ? this.lugarComision.trim() : null,
     };

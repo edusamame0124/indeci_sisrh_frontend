@@ -7,20 +7,38 @@
       <input type="date" [(ngModel)]="fechaInicio" (ngModelChange)="onFechaInicioChange()" />
     </label>
 
-    <label class="field">
-      <span>Hora de salida</span>
-      <input type="time" [(ngModel)]="horaInicio" (change)="calcularHoras()" />
-    </label>
+    <ng-container *ngIf="!esOmision()">
+      <label class="field">
+        <span>Hora de salida</span>
+        <input type="time" [(ngModel)]="horaInicio" (change)="calcularHoras()" />
+      </label>
 
-    <label class="field">
-      <span>Hora de ingreso</span>
-      <input type="time" [(ngModel)]="horaFin" (change)="calcularHoras()" />
-    </label>
+      <label class="field">
+        <span>Hora de ingreso</span>
+        <input type="time" [(ngModel)]="horaFin" (change)="calcularHoras()" />
+      </label>
 
-    <label class="field">
-      <span>Cantidad de horas</span>
-      <input type="text" [value]="cantidadHorasTexto" disabled />
-    </label>
+      <label class="field">
+        <span>Cantidad de horas</span>
+        <input type="text" [value]="cantidadHorasTexto" disabled />
+      </label>
+    </ng-container>
+
+    <ng-container *ngIf="esOmision()">
+      <label class="field">
+        <span>Tipo</span>
+        <select [(ngModel)]="tipoOmision" (ngModelChange)="onTipoOmisionChange()">
+          <option value="">Seleccione</option>
+          <option value="INGRESO">Ingreso</option>
+          <option value="SALIDA">Salida</option>
+        </select>
+      </label>
+
+      <label class="field" *ngIf="tipoOmision">
+        <span>Hora de {{ tipoOmision === 'INGRESO' ? 'ingreso' : 'salida' }}</span>
+        <input type="time" [(ngModel)]="horaOmision" />
+      </label>
+    </ng-container>
 
     <label class="field field--full" *ngIf="requiereLugar()">
       <span>Lugar de comisión</span>

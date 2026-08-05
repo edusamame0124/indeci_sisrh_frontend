@@ -37,10 +37,18 @@
       <span>Tipo de vacación</span>
       <select [(ngModel)]="tipoVacacionId" (ngModelChange)="onTipoVacacionChange()">
         <option [ngValue]="null">Seleccione</option>
-        <option *ngFor="let tipo of tiposVacacion()" [ngValue]="tipo.id">
+        <option
+          *ngFor="let tipo of tiposVacacion()"
+          [ngValue]="tipo.id"
+          [disabled]="opcionAdelantoDeshabilitada(tipo)"
+        >
           {{ tipo.nombre }}
         </option>
       </select>
+      <small *ngIf="tieneSaldoVacacional()" class="field__hint">
+        El Adelanto de vacaciones solo está disponible si no cuenta con saldo vacacional
+        acumulado.
+      </small>
     </label>
 
     <div class="field field--full" *ngIf="tipoVacacionNombre">

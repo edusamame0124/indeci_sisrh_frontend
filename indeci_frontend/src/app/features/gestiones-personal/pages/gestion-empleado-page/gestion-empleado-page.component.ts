@@ -152,6 +152,14 @@ export class GestionEmpleadoPageComponent implements OnInit {
     this.cargarSaldoVacacional();
   }
 
+  /**
+   * Adelanto de Vacaciones (Art. 4 D.Leg. 1405): solo aplica a quien AÚN no tiene saldo
+   * vacacional acumulado. Con saldo > 0 corresponde usar Programación en su lugar.
+   */
+  tieneSaldoVacacional(): boolean {
+    return (this.saldoVacacional()?.saldo ?? 0) > 0;
+  }
+
   private cargarSaldoVacacional(): void {
     this.cargandoSaldoVacacional.set(true);
     this.service.obtenerMiSaldo().subscribe({

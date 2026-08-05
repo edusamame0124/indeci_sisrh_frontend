@@ -145,7 +145,16 @@
               <span>Programación de vacaciones</span>
             </button>
 
-            <button mat-menu-item (click)="abrirVacaciones('002', 'ADELANTO DE VACACIONES')">
+            <button
+              mat-menu-item
+              [disabled]="tieneSaldoVacacional()"
+              [matTooltip]="
+                tieneSaldoVacacional()
+                  ? 'Disponible solo si no cuenta con saldo vacacional acumulado'
+                  : ''
+              "
+              (click)="abrirVacaciones('002', 'ADELANTO DE VACACIONES')"
+            >
               <span>Adelanto de vacaciones</span>
             </button>
 
