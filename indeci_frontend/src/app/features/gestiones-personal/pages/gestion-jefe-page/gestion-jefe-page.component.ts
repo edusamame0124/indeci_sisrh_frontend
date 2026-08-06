@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, OnInit, inject, signal, computed } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  inject,
+  signal,
+  computed,
+} from '@angular/core';
 import { DatePipe, NgClass, NgFor, NgIf } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -13,7 +20,6 @@ import {
   SolicitudRrhh,
   SolicitudesRrhhService,
 } from '../../../../modules/gestiones-personal/services/solicitudes-rrhh';
-
 
 import { AprobarJefePapeletaDialogComponent } from '../../../../modules/gestiones-personal/dialogs/aprobar-jefe-papeleta-dialog/aprobar-jefe-papeleta-dialog';
 
@@ -74,13 +80,21 @@ export class GestionJefePageComponent implements OnInit {
       .sort((a, b) => b.id - a.id);
   });
 
-  estados = computed(() =>
-    [...new Set(this.solicitudes().map((x) => x.estadoSolicitud).filter(Boolean))],
-  );
+  estados = computed(() => [
+    ...new Set(
+      this.solicitudes()
+        .map((x) => x.estadoSolicitud)
+        .filter(Boolean),
+    ),
+  ]);
 
-  tipos = computed(() =>
-    [...new Set(this.solicitudes().map((x) => x.tipoSolicitud).filter(Boolean))],
-  );
+  tipos = computed(() => [
+    ...new Set(
+      this.solicitudes()
+        .map((x) => x.tipoSolicitud)
+        .filter(Boolean),
+    ),
+  ]);
 
   ngOnInit(): void {
     this.cargarSolicitudes();
@@ -103,14 +117,12 @@ export class GestionJefePageComponent implements OnInit {
   }
 
   abrirTrazabilidad(item: SolicitudRrhh): void {
-  this.dialog.open(TrazabilidadPapeletaDialogComponent, {
-    width: '960px',
-    maxWidth: '96vw',
-    data: item,
-  });
-}
-  
-
+    this.dialog.open(TrazabilidadPapeletaDialogComponent, {
+      width: '960px',
+      maxWidth: '96vw',
+      data: item,
+    });
+  }
 
   limpiarFiltros(): void {
     this.filtroTexto.set('');
@@ -134,7 +146,26 @@ export class GestionJefePageComponent implements OnInit {
   }
 
   rechazar(item: SolicitudRrhh): void {
-    alert(`Pendiente endpoint de rechazo para la papeleta #${item.id}`);
+    const confirmar = window.confirm(
+      `¿Está seguro de rechazar la papeleta N.° ${item.id} de ${item.empleado}?`,
+    );
+
+    if (!confirmar) {
+      return;
+    }
+
+    this.service.rechazarJefe(item.id).subscribe({
+      next: () => {
+        window.alert('La papeleta fue rechazada correctamente.');
+        this.cargarSolicitudes();
+      },
+      error: (error) => {
+        const mensaje =
+          error?.error?.mensaje ?? error?.error?.message ?? 'No se pudo rechazar la papeleta.';
+
+        window.alert(mensaje);
+      },
+    });
   }
 
   claseEstado(estado: string): string {

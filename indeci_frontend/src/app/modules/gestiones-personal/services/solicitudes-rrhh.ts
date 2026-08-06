@@ -253,9 +253,7 @@ export class SolicitudesRrhhService {
    * bloqueo Poka-Yoke del botón "Reporte Teletrabajo".
    */
   obtenerMiTeletrabajo(): Observable<ApiResponse<boolean>> {
-    return this.http.get<ApiResponse<boolean>>(
-      `${this.apiUrl}/rrhh/solicitudes/mi-teletrabajo`,
-    );
+    return this.http.get<ApiResponse<boolean>>(`${this.apiUrl}/rrhh/solicitudes/mi-teletrabajo`);
   }
 
   listarTiposSolicitud(): Observable<ApiResponse<TipoSolicitudRrhh[]>> {
@@ -433,7 +431,12 @@ export class SolicitudesRrhhService {
       formData,
     );
   }
-
+  rechazarJefe(idPapeleta: number): Observable<ApiResponse<unknown>> {
+    return this.http.put<ApiResponse<unknown>>(
+      `${this.apiUrl}/rrhh/solicitudes/rechazar-jefe/${idPapeleta}`,
+      null,
+    );
+  }
   descargarFormatoPapeleta(idPapeleta: number): Observable<Blob> {
     // SPEC_VACACIONES F9.1-bis — endpoint real que genera el PDF oficial (Jasper) y lo stremea.
     return this.http.get(`${this.apiUrl}/rrhh/solicitudes/${idPapeleta}/papeleta/pdf`, {
