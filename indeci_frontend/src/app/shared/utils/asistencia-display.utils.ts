@@ -44,6 +44,7 @@ export function badgeClass(tipo: string | null | undefined): string {
       return 'diaria__badge diaria__badge--warn';
     case 'FALTA':
     case 'SANCION_PAD':
+    case 'OBSERVADO': // requiere acción de RR.HH. (autorizar/no autorizar, o revisar salida anticipada)
       return 'diaria__badge diaria__badge--danger';
     case 'PERMISO':
     case 'LICENCIA':

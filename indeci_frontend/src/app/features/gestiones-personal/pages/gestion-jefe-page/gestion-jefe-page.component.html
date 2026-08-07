@@ -36,7 +36,7 @@
 
           <select [ngModel]="filtroEstado()" (ngModelChange)="filtroEstado.set($event)">
             <option value="">Todos los estados</option>
-            <option *ngFor="let estado of estados()" [value]="estado">{{ estado }}</option>
+            <option *ngFor="let estado of estados()" [value]="estado">{{ etiquetaEstado(estado) }}</option>
           </select>
 
           <button mat-stroked-button type="button" (click)="limpiarFiltros()">
@@ -86,7 +86,7 @@
               <td>{{ item.tipoSolicitud }}</td>
               <td>
                 <span [ngClass]="claseEstado(item.estadoSolicitud)">
-                  {{ item.estadoSolicitud }}
+                  {{ etiquetaEstado(item.estadoSolicitud) }}
                 </span>
               </td>
               <td>{{ item.fechaInicio | date: 'dd/MM/yyyy' }}</td>
@@ -103,13 +103,23 @@
               <td>{{ item.motivo }}</td>
               <td>{{ item.observacion }}</td>
               <td class="acciones">
-                <button
-                  mat-icon-button
-                  title="Aprobar y enviar a RRHH"
-                  (click)="abrirAprobar(item)"
-                >
-                  <mat-icon>verified</mat-icon>
-                </button>
+                <ng-container *ngIf="puedeAprobar(item); else sinAccion">
+                  <button
+                    mat-icon-button
+                    title="Aprobar y enviar a RRHH"
+                    (click)="abrirAprobar(item)"
+                  >
+                    <mat-icon>verified</mat-icon>
+                  </button>
+
+                  <button
+                    mat-icon-button
+                    title="Rechazar papeleta"
+                    (click)="rechazar(item)"
+                  >
+                    <mat-icon>cancel</mat-icon>
+                  </button>
+                </ng-container>
 
                 <button
                   mat-icon-button
@@ -119,13 +129,11 @@
                   <mat-icon>history</mat-icon>
                 </button>
 
-                <button
-                  mat-icon-button
-                  title="Rechazar papeleta"
-                  (click)="rechazar(item)"
-                >
-                  <mat-icon>cancel</mat-icon>
-                </button>
+                <ng-template #sinAccion>
+                  <span class="sin-accion" title="Ya fue resuelta; no requiere ninguna acción tuya">
+                    Sin acción pendiente
+                  </span>
+                </ng-template>
               </td>
             </tr>
 

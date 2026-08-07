@@ -10,6 +10,7 @@ import {
   SolicitudRrhh,
   SolicitudesRrhhService,
 } from '../../services/solicitudes-rrhh';
+import { NotificacionService } from '../../../../core/services/notificacion.service';
 
 @Component({
   selector: 'app-aprobar-rrhh-papeleta-dialog',
@@ -27,6 +28,7 @@ export class AprobarRrhhPapeletaDialogComponent {
 
   constructor(
     private readonly service: SolicitudesRrhhService,
+    private readonly notificacion: NotificacionService,
     private readonly dialogRef: MatDialogRef<AprobarRrhhPapeletaDialogComponent>,
     @Inject(MAT_DIALOG_DATA) public readonly solicitud: SolicitudRrhh,
   ) {}
@@ -111,8 +113,16 @@ export class AprobarRrhhPapeletaDialogComponent {
       this.archivo,
       this.observacion,
     ).subscribe({
-      next: () => {
+      next: (resp) => {
         this.procesando.set(false);
+        const advertencias = resp.data?.advertencias ?? [];
+        if (advertencias.length > 0) {
+          // P3 (2026-08-07): aprobada igual, pero avisamos que no tuvo efecto en un período
+          // ya cerrado — antes esto se descartaba en silencio.
+          this.notificacion.advertencia(`Papeleta aprobada. ${advertencias.join(' ')}`);
+        } else {
+          this.notificacion.exito('Papeleta aprobada por RR.HH.');
+        }
         this.dialogRef.close(true);
       },
       error: (err) => {

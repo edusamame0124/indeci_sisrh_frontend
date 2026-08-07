@@ -48,4 +48,20 @@ export class NotificacionService {
       });
     });
   }
+
+  /**
+   * Toast de advertencia (ámbar). La operación SÍ fue exitosa — no es un error — pero hay
+   * algo no bloqueante que el usuario debe saber (p. ej. aprobar una papeleta cuyo período
+   * ya tiene planilla cerrada: se aprueba igual, pero no reconcilia esa asistencia).
+   */
+  advertencia(mensaje: string): void {
+    setTimeout(() => {
+      this.snack.open(mensaje, 'Cerrar', {
+        duration: 8000,
+        horizontalPosition: 'end',
+        verticalPosition: 'top',
+        panelClass: 'sisrh-snack-warning',
+      });
+    });
+  }
 }

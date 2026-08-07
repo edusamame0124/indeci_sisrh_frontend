@@ -3,7 +3,7 @@ import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/materia
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import type { AsistenciaDiariaRow } from '../../../../models/asistencia-diaria.model';
-import { condicionLabel, fmtMin } from '../../../../../../shared/utils/asistencia-display.utils';
+import { badgeClass, condicionLabel, fmtMin } from '../../../../../../shared/utils/asistencia-display.utils';
 
 export interface AsistenciaDiariaVerDialogData {
   readonly row: AsistenciaDiariaRow;
@@ -24,6 +24,20 @@ export class AsistenciaDiariaVerDialogComponent {
   // Helpers de presentación compartidos (DRY).
   readonly condicionLabel = condicionLabel;
   readonly fmtMin = fmtMin;
+  readonly badgeClass = badgeClass;
+
+  /**
+   * Minutos sin laborar por salida anticipada, visibles solo mientras la condición siga
+   * Observado (decisión RR.HH. 2026-08-07). Si una papeleta ya la justificó, el backend
+   * devuelve la condición como Presente con los minutos en cero y el tag deja de mostrarse.
+   */
+  get minutosSalidaAnticipadaPendiente(): number | null {
+    const row = this.data.row;
+    if (row.tipoDia !== 'OBSERVADO') return null;
+    return row.minutosSalidaAnticipada && row.minutosSalidaAnticipada > 0
+      ? row.minutosSalidaAnticipada
+      : null;
+  }
 
   cerrar(): void {
     this.dialogRef.close();

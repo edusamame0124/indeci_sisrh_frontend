@@ -9,6 +9,11 @@ export interface ApiResponse<T> {
   data: T;
 }
 
+/** P3 (2026-08-07) — espejo de AprobarRrhhResultDto: advertencias no bloqueantes de aprobar. */
+export interface AprobarRrhhResultDto {
+  advertencias: string[];
+}
+
 export interface SolicitudRrhh {
   id: number;
   empleadoId: number;
@@ -381,7 +386,7 @@ export class SolicitudesRrhhService {
     idPapeleta: number,
     file: File | null,
     observacion: string,
-  ): Observable<ApiResponse<unknown>> {
+  ): Observable<ApiResponse<AprobarRrhhResultDto>> {
     const formData = new FormData();
 
     if (file) {
@@ -390,7 +395,7 @@ export class SolicitudesRrhhService {
 
     formData.append('observacion', observacion);
 
-    return this.http.put<ApiResponse<unknown>>(
+    return this.http.put<ApiResponse<AprobarRrhhResultDto>>(
       `${this.apiUrl}/rrhh/solicitudes/aprobar-rrhh/${idPapeleta}`,
       formData,
     );

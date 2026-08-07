@@ -23,7 +23,7 @@
 }
 
 .edit-dialog__section-title {
-  margin: 0 0 12px;
+  margin: 0;
   font-size: 14px;
   font-weight: 600;
   color: var(--sisrh-text, #1f2937);
@@ -32,9 +32,27 @@
 .edit-dialog__papeleta {
   padding: 16px;
   margin-bottom: 16px;
-  border: 1px solid var(--sisrh-border, #d9e1ea);
-  border-radius: 8px;
+  border: 1px solid var(--sisrh-primary-fade, #bddce2);
+  border-radius: var(--sisrh-radius-md, 8px);
   background: var(--sisrh-surface-muted, #f8fafc);
+}
+
+.edit-dialog__papeleta-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.edit-dialog__chip-aprobada {
+  flex: none;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #1b5e20;
+  background: #e8f5e9;
 }
 
 .edit-dialog__papeleta-grid {

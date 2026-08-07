@@ -3,7 +3,7 @@
  * Espejo de los DTOs Java `Asistencia*Dto`.
  */
 
-/** Tipos de día del calendario (espejo del CHECK INDECI_ASIST_DET_TIPO_CK). */
+/** Tipos de día del calendario (espejo del CHECK INDECI_ASIST_DET_TIPO_CK — 13 valores). */
 export const TIPOS_DIA = [
   'LABORAL',
   'TARDANZA',
@@ -14,6 +14,11 @@ export const TIPOS_DIA = [
   'FERIADO',
   'OBSERVADO',
   'SANCION_PAD',
+  // Teletrabajo (Ley 31572) y Permiso c/goce: derivados de papeleta aprobada, pero el
+  // catálogo del backend sí los acepta para corrección manual (p.ej. edición diaria) —
+  // ver auditoría 2026-08-07, faltaban aquí aunque TipoDiaAsistencia.java sí los tiene.
+  'TELETRABAJO',
+  'PERMISO',
   // Regla SERVIR/INDECI "Omisión de marcación": entrada XOR salida.
   'OMISION_MARCACION',
   // Omisión cubierta por papeleta 004 aprobada (tiempo completo).
@@ -23,13 +28,20 @@ export type TipoDia = (typeof TIPOS_DIA)[number];
 
 /**
  * Tipos seleccionables por click directo en la celda del calendario (ciclo).
- * Se excluyen los derivados por el sistema (SANCION_PAD exige motivo; OMISION_MARCACION
- * y ASISTENCIA_JUSTIFICADA los deriva la carga/cruce de papeletas, no se marcan a mano).
+ * Se excluyen los derivados por el sistema: SANCION_PAD exige motivo; OMISION_MARCACION y
+ * ASISTENCIA_JUSTIFICADA los deriva la carga/cruce de papeletas; TELETRABAJO y PERMISO también
+ * son derivados de papeleta — se editan a mano solo desde el formulario de Consulta diaria
+ * (que sí permite elegir tipoDia libremente), no cicleando la celda del calendario.
  */
 // Tipo anotado como TipoDia[] a propósito: TS 5.5+ infiere un predicado que estrecharía el
 // element type y rompería usos como TIPOS_DIA_CICLABLES.indexOf(tipoDiaCompleto).
 export const TIPOS_DIA_CICLABLES: readonly TipoDia[] = TIPOS_DIA.filter(
-  (t) => t !== 'SANCION_PAD' && t !== 'OMISION_MARCACION' && t !== 'ASISTENCIA_JUSTIFICADA',
+  (t) =>
+    t !== 'SANCION_PAD' &&
+    t !== 'OMISION_MARCACION' &&
+    t !== 'ASISTENCIA_JUSTIFICADA' &&
+    t !== 'TELETRABAJO' &&
+    t !== 'PERMISO',
 );
 
 export const ESTADOS_ASISTENCIA = [

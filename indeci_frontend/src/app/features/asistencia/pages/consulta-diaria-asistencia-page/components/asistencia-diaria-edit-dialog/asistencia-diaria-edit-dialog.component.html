@@ -15,7 +15,10 @@
   <form [formGroup]="form" class="edit-dialog__form" novalidate>
     @if (tienePapeleta) {
       <section class="edit-dialog__papeleta edit-dialog__full" aria-labelledby="papeleta-section-title">
-        <h3 id="papeleta-section-title" class="edit-dialog__section-title">Papeleta / Permiso</h3>
+        <div class="edit-dialog__papeleta-header">
+          <h3 id="papeleta-section-title" class="edit-dialog__section-title">Papeleta / Permiso cubre este día</h3>
+          <span class="edit-dialog__chip-aprobada">Aprobada</span>
+        </div>
         <dl class="edit-dialog__papeleta-grid">
           <div><dt>Tipo</dt><dd>{{ data.row.papeletaTipo || '—' }}</dd></div>
           <div><dt>Motivo</dt><dd>{{ data.row.papeletaMotivo || '—' }}</dd></div>

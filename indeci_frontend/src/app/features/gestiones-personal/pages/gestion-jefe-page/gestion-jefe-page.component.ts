@@ -168,13 +168,37 @@ export class GestionJefePageComponent implements OnInit {
     });
   }
 
+  /**
+   * Solo se puede aprobar/rechazar cuando el empleado ya envió la papeleta firmada
+   * (backend exige ESTADO=ENVIADO en aprobarSupervisor()/rechazarSupervisor()). El resto
+   * de estados que llegan a esta bandeja (Aprobado/Rechazado ya resuelto) no son accionables.
+   */
+  puedeAprobar(item: SolicitudRrhh): boolean {
+    return item.estadoSolicitud?.toLowerCase() === 'enviado';
+  }
+
+  /**
+   * "Enviado" es el nombre pensado desde el punto de vista del empleado ("ya envié mi
+   * papeleta"). Visto desde la bandeja del Jefe, ese mismo texto puede leerse como "ya la
+   * envié yo a RRHH" y confundir. Se muestra como acción pendiente SOLO en esta pantalla,
+   * sin tocar el nombre real del estado en la base de datos (otras pantallas, como "Mis
+   * solicitudes" del empleado, siguen mostrando "Enviado" correctamente).
+   */
+  etiquetaEstado(estado: string): string {
+    return estado?.toLowerCase() === 'enviado' ? 'Pendiente de tu aprobación' : estado;
+  }
+
   claseEstado(estado: string): string {
     const valor = estado?.toLowerCase() ?? '';
 
+    // "rechaz" va PRIMERO: "Rechazado por RRHH"/"Rechazado por Jefe" contienen "rrhh"/"jefe"
+    // como substring y antes quedaban mal pintados de verde/azul (color de aprobado) en vez
+    // de rojo, porque esos checks se evaluaban antes que el de rechazo.
+    if (valor.includes('rechaz')) return 'badge badge--rechazado';
+    if (valor === 'enviado') return 'badge badge--accion';
     if (valor.includes('rrhh')) return 'badge badge--rrhh';
     if (valor.includes('jefe')) return 'badge badge--jefe';
     if (valor.includes('empleado')) return 'badge badge--empleado';
-    if (valor.includes('rechaz')) return 'badge badge--rechazado';
 
     return 'badge';
   }

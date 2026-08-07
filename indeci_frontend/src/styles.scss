@@ -1171,3 +1171,15 @@ mat-icon.material-symbols-outlined {
     background-color: #b42318 !important;
   }
 }
+
+/* P3 (2026-08-07) — advertencia no bloqueante (ej. papeleta aprobada, período ya cerrado). */
+.sisrh-snack-warning.mat-mdc-snack-bar-container {
+  --mdc-snackbar-container-color: #92600a;
+  --mdc-snackbar-supporting-text-color: #ffffff;
+  --mat-snack-bar-button-color: #ffffff;
+
+  .mdc-snackbar__surface,
+  .mat-mdc-snackbar-surface {
+    background-color: #92600a !important;
+  }
+}
