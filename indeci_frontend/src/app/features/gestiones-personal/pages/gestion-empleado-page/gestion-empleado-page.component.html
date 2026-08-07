@@ -263,7 +263,16 @@
                   <mat-icon>picture_as_pdf</mat-icon>
                 </button>
 
-                <button mat-icon-button title="Enviar papeleta firmada" (click)="abrirEnvio(item)">
+                <button
+                  mat-icon-button
+                  [disabled]="estaRechazada(item)"
+                  [matTooltip]="
+                    estaRechazada(item)
+                      ? 'No se puede reenviar: la papeleta fue rechazada'
+                      : 'Enviar papeleta firmada'
+                  "
+                  (click)="abrirEnvio(item)"
+                >
                   <mat-icon>upload_file</mat-icon>
                 </button>
 
@@ -395,7 +404,16 @@
                         <mat-icon>picture_as_pdf</mat-icon>
                       </button>
 
-                      <button mat-icon-button title="Enviar papeleta firmada" (click)="abrirEnvio(item)">
+                      <button
+                        mat-icon-button
+                        [disabled]="estaRechazada(item)"
+                        [matTooltip]="
+                          estaRechazada(item)
+                            ? 'No se puede reenviar: la papeleta fue rechazada'
+                            : 'Enviar papeleta firmada'
+                        "
+                        (click)="abrirEnvio(item)"
+                      >
                         <mat-icon>upload_file</mat-icon>
                       </button>
 
@@ -486,7 +504,16 @@
                         <mat-icon>picture_as_pdf</mat-icon>
                       </button>
 
-                      <button mat-icon-button title="Enviar papeleta firmada" (click)="abrirEnvio(item)">
+                      <button
+                        mat-icon-button
+                        [disabled]="estaRechazada(item)"
+                        [matTooltip]="
+                          estaRechazada(item)
+                            ? 'No se puede reenviar: la papeleta fue rechazada'
+                            : 'Enviar papeleta firmada'
+                        "
+                        (click)="abrirEnvio(item)"
+                      >
                         <mat-icon>upload_file</mat-icon>
                       </button>
 

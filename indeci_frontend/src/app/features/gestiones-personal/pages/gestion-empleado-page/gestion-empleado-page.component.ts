@@ -366,6 +366,11 @@ export class GestionEmpleadoPageComponent implements OnInit {
     return (item.estadoSolicitud ?? '').toLowerCase().includes('borrador');
   }
 
+  /** Rechazada por el jefe inmediato o por RRHH: ya no admite reenvío (el backend la bloquea). */
+  estaRechazada(item: SolicitudRrhh): boolean {
+    return (item.estadoSolicitud ?? '').toLowerCase().includes('rechaz');
+  }
+
   /** Abre el diálogo correspondiente (por código de tipo) precargado para editar la papeleta. */
   abrirEdicion(item: SolicitudRrhh): void {
     if (!this.esBorrador(item)) {
