@@ -485,10 +485,12 @@ export class GestionEmpleadoPageComponent implements OnInit {
   claseEstado(estado: string): string {
     const valor = estado?.toLowerCase() ?? '';
 
+    // "rechaz" se evalúa antes que "rrhh"/"jefe": un estado como "Rechazado por RRHH"
+    // contiene ambas palabras y debe pintarse en rojo, no en el verde/azul de aprobado.
+    if (valor.includes('rechaz')) return 'badge badge--rechazado';
     if (valor.includes('rrhh')) return 'badge badge--rrhh';
     if (valor.includes('jefe')) return 'badge badge--jefe';
     if (valor.includes('borrador')) return 'badge badge--borrador';
-    if (valor.includes('rechaz')) return 'badge badge--rechazado';
 
     return 'badge';
   }

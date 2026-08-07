@@ -140,6 +140,49 @@
         }
       </mat-card-content>
     </mat-card>
+
+    <mat-card class="asistencia-shell__backfill">
+      <mat-card-content>
+        <div class="asistencia-shell__backfill-header">
+          <mat-icon aria-hidden="true">logout</mat-icon>
+          <div>
+            <strong>Backfill único — Salida anticipada no reconocida</strong>
+            <p>
+              Acción temporal de mantenimiento (solo SUPER_ADMIN), independiente de los backfills
+              de arriba. Corrige días ya registrados como Presente que en realidad tienen salida
+              anticipada real del marcador (bug de import corregido el 2026-08-07: el dato nunca
+              llegaba al detalle final). Solo toca días que siguen exactamente en Presente — no
+              modifica Tardanza, Vacaciones, Licencia ni ningún día ya decidido manualmente. Es
+              seguro ejecutarla más de una vez.
+            </p>
+          </div>
+        </div>
+
+        <button
+          mat-flat-button
+          color="warn"
+          type="button"
+          (click)="ejecutarBackfillSalidaAnticipada()"
+          [disabled]="backfillSalidaAnticipadaEjecutando()"
+        >
+          @if (backfillSalidaAnticipadaEjecutando()) {
+            <mat-spinner diameter="18" />
+          } @else {
+            <mat-icon>play_arrow</mat-icon>
+          }
+          {{ backfillSalidaAnticipadaEjecutando() ? 'Ejecutando...' : 'Ejecutar backfill' }}
+        </button>
+
+        @if (backfillSalidaAnticipadaResultado() !== null) {
+          <p class="asistencia-shell__backfill-ok">
+            ✓ Listo — {{ backfillSalidaAnticipadaResultado() }} día(s) corregido(s).
+          </p>
+        }
+        @if (backfillSalidaAnticipadaError()) {
+          <p class="asistencia-shell__backfill-error">✗ {{ backfillSalidaAnticipadaError() }}</p>
+        }
+      </mat-card-content>
+    </mat-card>
   }
 
   <section class="asistencia-shell__tabs">

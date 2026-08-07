@@ -128,4 +128,33 @@ export class CargaAsistenciaShellComponent {
       },
     });
   }
+
+  /**
+   * Backfill ÚNICO (temporal, independiente de los anteriores) — corrige días ya persistidos
+   * mal clasificados como LABORAL ("Presente") porque el parser del marcador nunca llenaba el
+   * dato de salida anticipada (bug corregido 2026-08-07). Mismo criterio de visibilidad: solo
+   * SUPER_ADMIN.
+   */
+  readonly backfillSalidaAnticipadaEjecutando = signal(false);
+  readonly backfillSalidaAnticipadaResultado = signal<number | null>(null);
+  readonly backfillSalidaAnticipadaError = signal<string | null>(null);
+
+  ejecutarBackfillSalidaAnticipada(): void {
+    this.backfillSalidaAnticipadaEjecutando.set(true);
+    this.backfillSalidaAnticipadaResultado.set(null);
+    this.backfillSalidaAnticipadaError.set(null);
+
+    this.asistenciaApi.backfillSalidaAnticipada().subscribe({
+      next: (corregidos) => {
+        this.backfillSalidaAnticipadaEjecutando.set(false);
+        this.backfillSalidaAnticipadaResultado.set(corregidos);
+      },
+      error: (err) => {
+        this.backfillSalidaAnticipadaEjecutando.set(false);
+        this.backfillSalidaAnticipadaError.set(
+          err?.error?.mensaje ?? err?.error?.message ?? 'No se pudo ejecutar el backfill.',
+        );
+      },
+    });
+  }
 }

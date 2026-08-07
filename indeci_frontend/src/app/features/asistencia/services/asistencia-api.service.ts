@@ -146,4 +146,17 @@ export class AsistenciaApiService {
       .post<ApiResponse<number>>(`${this.baseUrl}/backfill-dias-huerfanos`, {})
       .pipe(map(extractApiData));
   }
+
+  /**
+   * Backfill ÚNICO (temporal, SUPER_ADMIN, independiente de los anteriores) — corrige días ya
+   * persistidos mal clasificados como LABORAL ("Presente") porque el parser del marcador nunca
+   * llenaba el dato de salida anticipada (bug corregido 2026-08-07). Solo toca días que siguen
+   * exactamente en LABORAL. No es una función permanente: quitar una vez ejecutado en cada
+   * ambiente.
+   */
+  backfillSalidaAnticipada(): Observable<number> {
+    return this.http
+      .post<ApiResponse<number>>(`${this.baseUrl}/backfill-salida-anticipada`, {})
+      .pipe(map(extractApiData));
+  }
 }
