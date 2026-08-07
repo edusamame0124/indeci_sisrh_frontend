@@ -52,11 +52,13 @@ export class GestionRrhhPageComponent implements OnInit {
   private readonly auth = inject(AuthService);
 
   /**
-   * Aprobar/Rechazar papeletas RRHH exige el permiso de APROBACIÓN (SoD): el
-   * analista opera el módulo (PAP_RRHH) pero no aprueba. El backend además lo
-   * exige con @PreAuthorize('PAP_APROBAR_RRHH') como fuente de verdad.
+   * Aprobar papeletas RRHH exige el permiso de APROBACIÓN (SoD): el analista opera el
+   * módulo (PAP_RRHH) pero no aprueba. El backend además lo exige con
+   * @PreAuthorize('PAP_APROBAR_RRHH') como fuente de verdad.
    */
-  readonly puedeAprobarRrhh = computed(() => this.auth.permisos().includes('PAP_APROBAR_RRHH'));
+  readonly tienePermisoAprobarRrhh = computed(() =>
+    this.auth.permisos().includes('PAP_APROBAR_RRHH'),
+  );
 
   /**
    * Rechazar en RRHH exige solo el permiso de módulo (PAP_RRHH), no PAP_APROBAR_RRHH:
@@ -64,7 +66,26 @@ export class GestionRrhhPageComponent implements OnInit {
    * cualquiera con acceso al módulo puede hacerlo (mismo criterio que Jefe: PAP_JEFE para
    * ambas acciones). El backend lo exige con @PreAuthorize('PAP_RRHH') como fuente de verdad.
    */
-  readonly puedeRechazarRrhh = computed(() => this.auth.permisos().includes('PAP_RRHH'));
+  readonly tienePermisoRechazarRrhh = computed(() => this.auth.permisos().includes('PAP_RRHH'));
+
+  /** true si la papeleta ya fue aprobada por el Jefe — única etapa accionable por RRHH. */
+  private estaAprobadaPorJefe(item: SolicitudRrhh): boolean {
+    const valor = item.estadoSolicitud?.toLowerCase() ?? '';
+    return valor.includes('aprobado') && valor.includes('jefe');
+  }
+
+  /**
+   * Solo se puede aprobar/rechazar cuando el Jefe ya aprobó (backend exige
+   * ESTADO=APROBADO_JEFE en aprobarRrhh()/rechazarRrhh()). El resto de estados que llegan
+   * a esta bandeja (ya resueltos por RRHH) no son accionables.
+   */
+  puedeAprobarRrhh(item: SolicitudRrhh): boolean {
+    return this.tienePermisoAprobarRrhh() && this.estaAprobadaPorJefe(item);
+  }
+
+  puedeRechazarRrhh(item: SolicitudRrhh): boolean {
+    return this.tienePermisoRechazarRrhh() && this.estaAprobadaPorJefe(item);
+  }
 
   solicitudes = signal<SolicitudRrhh[]>([]);
   cargando = signal(false);
@@ -172,10 +193,13 @@ export class GestionRrhhPageComponent implements OnInit {
   claseEstado(estado: string): string {
     const valor = estado?.toLowerCase() ?? '';
 
+    // "rechaz" va PRIMERO: "Rechazado por RRHH"/"Rechazado por Jefe" contienen "rrhh"/"jefe"
+    // como substring y quedarían mal pintados de verde/azul (color de aprobado) si se evalúan
+    // esos checks antes que el de rechazo.
+    if (valor.includes('rechaz')) return 'badge badge--rechazado';
     if (valor.includes('rrhh')) return 'badge badge--rrhh';
     if (valor.includes('jefe')) return 'badge badge--jefe';
     if (valor.includes('empleado')) return 'badge badge--empleado';
-    if (valor.includes('rechaz')) return 'badge badge--rechazado';
 
     return 'badge';
   }

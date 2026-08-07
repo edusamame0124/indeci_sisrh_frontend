@@ -30,7 +30,7 @@ import { PadronVacacionalApiService } from '../../services/padron-vacacional-api
           <div class="traza-head">
             <mat-icon>verified_user</mat-icon>
             Trazabilidad del registro
-            <span class="badge badge--override">Override</span>
+            <span class="badge badge--override">Goce Directo</span>
           </div>
           <dl class="traza-grid">
             <dt>Registrado por</dt>
@@ -50,7 +50,7 @@ import { PadronVacacionalApiService } from '../../services/padron-vacacional-api
               </span>
             </dd>
           </dl>
-          <p class="traza-hint">Si el empleado tiene más de un registro por Override, este es el más reciente — ver "Historial" para el listado completo.</p>
+          <p class="traza-hint">Si el empleado tiene más de un Goce Directo registrado, este es el más reciente — ver "Historial" para el listado completo.</p>
         </div>
 
         <!-- Resumen (fuente de verdad: BD del padrón) -->

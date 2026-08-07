@@ -106,7 +106,7 @@
                   <td>{{ item.observacion }}</td>
                   <td class="acciones">
                     <button
-                      *ngIf="puedeAprobarRrhh()"
+                      *ngIf="puedeAprobarRrhh(item)"
                       mat-icon-button
                       title="Aprobar como RRHH"
                       (click)="abrirAprobar(item)"
@@ -115,7 +115,7 @@
                     </button>
 
                     <button
-                      *ngIf="puedeRechazarRrhh()"
+                      *ngIf="puedeRechazarRrhh(item)"
                       mat-icon-button
                       title="Rechazar"
                       (click)="abrirRechazar(item)"

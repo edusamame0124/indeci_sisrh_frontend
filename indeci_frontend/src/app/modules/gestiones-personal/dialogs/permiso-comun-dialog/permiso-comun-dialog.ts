@@ -85,10 +85,10 @@ export class PermisoComunDialog {
         // Legado: papeletas creadas antes de este ajuste guardan ambas horas → no se puede
         // inferir el tipo con certeza; se deja en blanco para que el usuario lo reconfirme.
         if (s.horaInicio && !s.horaFin) {
-          this.tipoOmision = 'SALIDA';
+          this.tipoOmision = 'INGRESO';
           this.horaOmision = s.horaInicio;
         } else if (s.horaFin && !s.horaInicio) {
-          this.tipoOmision = 'INGRESO';
+          this.tipoOmision = 'SALIDA';
           this.horaOmision = s.horaFin;
         }
       } else {
@@ -239,15 +239,15 @@ export class PermisoComunDialog {
       this.archivoSustento = null;
     }
 
-    // Mapeo al esquema existente (sin migración): Ingreso → horaFin, Salida → horaInicio, igual
-    // a las etiquetas ya usadas por este mismo diálogo para el resto de permisos por horas.
+    // Mapeo natural: Ingreso → horaInicio, Salida → horaFin. Una omisión es una sola marca
+    // faltante (no un rango), así que el campo contrario siempre queda null.
     const horaInicioPayload = this.esOmision()
-      ? this.tipoOmision === 'SALIDA'
+      ? this.tipoOmision === 'INGRESO'
         ? this.horaOmision
         : null
       : this.horaInicio;
     const horaFinPayload = this.esOmision()
-      ? this.tipoOmision === 'INGRESO'
+      ? this.tipoOmision === 'SALIDA'
         ? this.horaOmision
         : null
       : this.horaFin;
