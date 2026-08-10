@@ -24,6 +24,7 @@ import { EmpleadoPuestoIntegradoComponent } from './components/empleado-puesto-i
 import { EmpleadoBancoIntegradoComponent } from './components/empleado-banco-integrado/empleado-banco-integrado.component';
 import { EmpleadoPensionIntegradoComponent } from './components/empleado-pension-integrado/empleado-pension-integrado.component';
 import { EmpleadoSaludIntegradoComponent } from './components/empleado-salud-integrado/empleado-salud-integrado.component';
+import { EmpleadoJornadaExcepcionIntegradoComponent } from './components/empleado-jornada-excepcion-integrado/empleado-jornada-excepcion-integrado.component';
 
 @Component({
   selector: 'app-empleado-datos-integrados-page',
@@ -40,6 +41,7 @@ import { EmpleadoSaludIntegradoComponent } from './components/empleado-salud-int
     EmpleadoBancoIntegradoComponent,
     EmpleadoPensionIntegradoComponent,
     EmpleadoSaludIntegradoComponent,
+    EmpleadoJornadaExcepcionIntegradoComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -159,6 +161,26 @@ import { EmpleadoSaludIntegradoComponent } from './components/empleado-salud-int
               [empleadoId]="empleadoId()!"
               [personaId]="personaId()"
               (hasRecord)="hasPlanilla.set($event)"
+            />
+          </mat-expansion-panel>
+
+          <!-- Horario Especial (M04 Asistencia — decisión RR.HH. 2026-08-08) -->
+          <mat-expansion-panel>
+            <mat-expansion-panel-header>
+              <mat-panel-title>
+                <mat-icon fontIcon="schedule" class="panel-icon" /> Horario Especial
+                @if (hasHorarioEspecial()) {
+                  <mat-icon fontIcon="check_circle" class="status-icon" />
+                }
+              </mat-panel-title>
+              <mat-panel-description>
+                Excepciones de horario de entrada/salida autorizadas por RR. HH.
+              </mat-panel-description>
+            </mat-expansion-panel-header>
+
+            <app-empleado-jornada-excepcion-integrado
+              [empleadoId]="empleadoId()!"
+              (hasRecord)="hasHorarioEspecial.set($event)"
             />
           </mat-expansion-panel>
 
@@ -295,6 +317,7 @@ export class EmpleadoDatosIntegradosPageComponent implements OnInit {
   readonly hasPension = signal(false);
   readonly hasPlanilla = signal(false);
   readonly hasSalud = signal(false);
+  readonly hasHorarioEspecial = signal(false);
 
   ngOnInit(): void {
     const idStr = this.route.snapshot.paramMap.get('personaId');

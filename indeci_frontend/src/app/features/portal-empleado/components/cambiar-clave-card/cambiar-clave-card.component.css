@@ -1,0 +1,114 @@
+:host {
+  display: block;
+}
+
+.seguridad-card {
+  border-radius: 16px;
+}
+
+.estado-cerrado {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.estado-cerrado__info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #263238;
+}
+
+.estado-cerrado__info mat-icon {
+  color: #005b96;
+}
+
+.estado-cerrado__info strong {
+  display: block;
+  font-size: 14px;
+}
+
+.estado-cerrado__info p {
+  margin: 2px 0 0;
+  color: #6c757d;
+  letter-spacing: 0.12em;
+}
+
+.campos-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px 18px;
+}
+
+.campo-completo {
+  grid-column: 1 / -1;
+}
+
+mat-form-field {
+  width: 100%;
+}
+
+.mensaje-error-inline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #fdecea;
+  color: #c62828;
+  font-size: 13px;
+}
+
+.aviso-sesiones {
+  margin: 14px 0 0;
+  color: #6c757d;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.acciones-formulario {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.acciones-formulario button {
+  min-width: 135px;
+}
+
+.acciones-formulario mat-spinner {
+  display: inline-block;
+  margin-right: 8px;
+}
+
+@media (max-width: 700px) {
+  .campos-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .campo-completo {
+    grid-column: auto;
+  }
+
+  .acciones-formulario {
+    flex-direction: column-reverse;
+  }
+
+  .acciones-formulario button {
+    width: 100%;
+  }
+
+  .estado-cerrado {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .estado-cerrado button {
+    width: 100%;
+  }
+}

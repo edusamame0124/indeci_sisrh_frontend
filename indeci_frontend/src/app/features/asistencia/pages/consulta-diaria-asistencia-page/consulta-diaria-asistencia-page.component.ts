@@ -20,11 +20,13 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatPaginatorModule, type PageEvent } from '@angular/material/paginator';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { EmptyStateComponent } from '../../../../shared/components/empty-state/empty-state.component';
 import { ErrorMessageService } from '../../../../core/services/error-message.service';
+import { NotificacionService } from '../../../../core/services/notificacion.service';
 import { isErrorResponse } from '../../../../core/models/error-response.model';
 import { AsistenciaApiService } from '../../services/asistencia-api.service';
 import { AsistenciaTabService } from '../../services/asistencia-tab.service';
@@ -75,6 +77,7 @@ function primerDiaMesIso(): string {
     MatNativeDateModule,
     MatPaginatorModule,
     MatProgressSpinnerModule,
+    MatSlideToggleModule,
     MatTableModule,
     MatTooltipModule,
     EmptyStateComponent,
@@ -89,6 +92,7 @@ export class ConsultaDiariaAsistenciaPageComponent {
   private readonly router = inject(Router);
   private readonly dialog = inject(MatDialog);
   private readonly snack = inject(MatSnackBar);
+  private readonly notif = inject(NotificacionService);
   private readonly errors = inject(ErrorMessageService);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -104,15 +108,20 @@ export class ConsultaDiariaAsistenciaPageComponent {
     'papeleta',
     'tReal',
     'tEcono',
+    'recalcular',
     'editar',
     'ver',
   ] as const;
+
+  /** Claves "empleadoId-periodo" con un recálculo en curso (deshabilita el botón de esas filas). */
+  readonly recalculando = signal<ReadonlySet<string>>(new Set());
 
   // Rango por defecto: mes actual (día 1 → hoy).
   readonly fechaInicioModel = signal<Date | null>(parseIsoDate(primerDiaMesIso()));
   readonly fechaFinModel = signal<Date | null>(parseIsoDate(hoyIso()));
   readonly filtroDni = signal('');
   readonly filtroNombre = signal('');
+  readonly filtroHorarioEspecial = signal(false);
   readonly consultaEjecutada = signal(false);
   readonly consultaHora = signal<string | null>(null);
 
@@ -204,6 +213,15 @@ export class ConsultaDiariaAsistenciaPageComponent {
     this.load();
   }
 
+  /** El toggle aplica de inmediato (si ya hay una consulta ejecutada), como cualquier filtro. */
+  onToggleHorarioEspecial(activo: boolean): void {
+    this.filtroHorarioEspecial.set(activo);
+    if (this.consultaEjecutada() && this.rangoValido()) {
+      this.pageIndex.set(0);
+      this.load();
+    }
+  }
+
   onPage(ev: PageEvent): void {
     this.pageIndex.set(ev.pageIndex);
     this.pageSize.set(ev.pageSize);
@@ -221,6 +239,7 @@ export class ConsultaDiariaAsistenciaPageComponent {
       fechaFin,
       dni: this.filtroDni().trim() || undefined,
       q: this.filtroNombre().trim() || undefined,
+      soloHorarioEspecial: this.filtroHorarioEspecial() || undefined,
       page: this.pageIndex(),
       size: this.pageSize(),
     }).pipe(takeUntilDestroyed(this.destroyRef))
@@ -246,6 +265,52 @@ export class ConsultaDiariaAsistenciaPageComponent {
             isErrorResponse(body)
               ? this.errors.translate(body.mensaje)
               : this.errors.translate(null),
+          );
+        },
+      });
+  }
+
+  /** Clave que agrupa las filas de un mismo empleado+período (una cabecera). */
+  private claveRecalculo(row: AsistenciaDiariaRow): string {
+    return `${row.empleadoId}-${row.periodo}`;
+  }
+
+  recalculandoFila(row: AsistenciaDiariaRow): boolean {
+    return this.recalculando().has(this.claveRecalculo(row));
+  }
+
+  /**
+   * Recalcula tardanza/descuentos del empleado+período desde las marcas guardadas —
+   * necesario tras registrar un Horario Especial para fechas ya importadas (la
+   * excepción no reescribe en cascada lo ya cargado; RR.HH. dispara el recálculo
+   * a propósito, con feedback explícito de bloqueo y éxito).
+   */
+  recalcular(row: AsistenciaDiariaRow): void {
+    const clave = this.claveRecalculo(row);
+    if (this.recalculando().has(clave)) return;
+
+    this.recalculando.update((set) => new Set(set).add(clave));
+    this.api.recalcular(row.empleadoId, row.periodo)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.recalculando.update((set) => {
+            const next = new Set(set);
+            next.delete(clave);
+            return next;
+          });
+          this.notif.exito('Asistencia y tardanzas recalculadas exitosamente.');
+          if (this.rangoValido()) this.load();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.recalculando.update((set) => {
+            const next = new Set(set);
+            next.delete(clave);
+            return next;
+          });
+          const body = err.error;
+          this.notif.error(
+            isErrorResponse(body) ? this.errors.translate(body.mensaje) : this.errors.translate(null),
           );
         },
       });

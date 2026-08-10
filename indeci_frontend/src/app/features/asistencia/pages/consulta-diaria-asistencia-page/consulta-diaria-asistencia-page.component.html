@@ -62,6 +62,16 @@
       />
     </mat-form-field>
 
+    <div class="diaria__toggle-field">
+      <mat-slide-toggle
+        [checked]="filtroHorarioEspecial()"
+        (change)="onToggleHorarioEspecial($event.checked)"
+      >
+        Solo con horario especial vigente
+      </mat-slide-toggle>
+      <span class="diaria__toggle-hint">Filtra por día: solo filas cubiertas por una excepción activa</span>
+    </div>
+
     <button
       mat-flat-button
       color="primary"
@@ -132,7 +142,32 @@
 
         <ng-container matColumnDef="nombre">
           <th mat-header-cell *matHeaderCellDef scope="col">Nombre</th>
-          <td mat-cell *matCellDef="let row">{{ row.nombreCompleto || '—' }}</td>
+          <td mat-cell *matCellDef="let row">
+            {{ row.nombreCompleto || '—' }}
+            @if (row.tieneHorarioEspecial) {
+              <span
+                class="diaria__chip-especial"
+                [matTooltip]="'Horario especial vigente este día: ' + row.horarioEspecialIngreso + ' – ' + row.horarioEspecialSalida"
+                matTooltipPosition="above"
+              >
+                <mat-icon fontIcon="schedule" aria-hidden="true" />
+                {{ row.horarioEspecialIngreso }}–{{ row.horarioEspecialSalida }}
+              </span>
+            }
+            @if (row.origen === 'TURNO_24H') {
+              <span
+                class="diaria__chip-turno24h"
+                [class.diaria__chip-turno24h--descanso]="row.tipoDia === 'DESCANSO'"
+                [matTooltip]="row.tipoDia === 'DESCANSO'
+                  ? 'Descanso post-guardia — día siguiente a una guardia COEN de 24h reconciliada automáticamente.'
+                  : 'Guardia COEN de 24h reconciliada automáticamente (RIS INDECI) — absorbe la jornada completa.'"
+                matTooltipPosition="above"
+              >
+                <mat-icon fontIcon="nights_stay" aria-hidden="true" />
+                {{ row.tipoDia === 'DESCANSO' ? 'Descanso post-guardia' : 'Turno 24h' }}
+              </span>
+            }
+          </td>
         </ng-container>
 
         <ng-container matColumnDef="lote">
@@ -205,6 +240,28 @@
         <ng-container matColumnDef="tEcono">
           <th mat-header-cell *matHeaderCellDef scope="col">T.Econo</th>
           <td mat-cell *matCellDef="let row" class="diaria__num">{{ fmtMin(row.minutosSalidaAnticipada) }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="recalcular">
+          <th mat-header-cell *matHeaderCellDef scope="col">Recalcular</th>
+          <td mat-cell *matCellDef="let row">
+            <button
+              mat-stroked-button
+              type="button"
+              (click)="recalcular(row)"
+              [disabled]="recalculandoFila(row)"
+              [matTooltip]="'Recalcula tardanza y descuentos del período ' + row.periodo + ' desde las marcas (aplica Horario Especial vigente)'"
+              matTooltipPosition="above"
+              aria-label="Recalcular asistencia de {{ row.nombreCompleto || row.dni }}"
+            >
+              @if (recalculandoFila(row)) {
+                <mat-progress-spinner diameter="18" mode="indeterminate" aria-hidden="true" />
+              } @else {
+                <mat-icon fontIcon="restart_alt" aria-hidden="true" />
+              }
+              Recalcular
+            </button>
+          </td>
         </ng-container>
 
         <ng-container matColumnDef="editar">

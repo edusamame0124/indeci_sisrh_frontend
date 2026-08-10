@@ -1,0 +1,91 @@
+.t24-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px 4px;
+}
+
+.t24-page__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.t24-page__header h2 {
+  margin: 0 0 4px;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--sisrh-text, #1f2937);
+}
+
+.t24-page__desc {
+  margin: 0;
+  max-width: 640px;
+  font-size: 0.875rem;
+  color: var(--sisrh-text-muted, #64748b);
+}
+
+.t24-page__ref {
+  margin: 4px 0 0;
+  font-size: 0.75rem;
+  color: var(--sisrh-text-soft, #94a3b8);
+  font-style: italic;
+}
+
+.t24-page__error {
+  padding: 10px 14px;
+  border: 1px solid var(--status-danger, #a32d2d);
+  background: var(--status-danger-bg, #fbe9e9);
+  color: var(--status-danger, #a32d2d);
+  border-radius: 6px;
+  font-size: 0.875rem;
+}
+
+.t24-page__loading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 24px 0;
+  color: var(--sisrh-text-muted, #64748b);
+  font-size: 0.875rem;
+}
+
+.t24-page__table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--sisrh-border, #d9e1ea);
+  border-radius: 8px;
+}
+
+.t24-page__table {
+  width: 100%;
+}
+
+.t24-page__badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.t24-page__badge--vigente {
+  border: 1px solid var(--status-success, #157347);
+  background: var(--status-success-bg, #e7f5ee);
+  color: var(--status-success, #157347);
+}
+
+.t24-page__badge--futura {
+  border: 1px solid var(--status-info, #185fa5);
+  background: var(--status-info-bg, #e6f1fb);
+  color: var(--status-info, #185fa5);
+}
+
+.t24-page__badge--vencida {
+  border: 1px solid var(--sisrh-text-soft, #94a3b8);
+  background: var(--sisrh-surface-muted, #f8fafc);
+  color: var(--sisrh-text-muted, #64748b);
+}

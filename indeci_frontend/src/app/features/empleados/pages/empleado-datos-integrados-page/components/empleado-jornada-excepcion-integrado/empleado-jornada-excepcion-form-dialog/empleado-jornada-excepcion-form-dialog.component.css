@@ -1,0 +1,32 @@
+.jec__content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 480px;
+}
+
+.jec__hint {
+  margin: 0 0 8px;
+  font-size: 13px;
+  color: var(--sisrh-text-muted, #64748b);
+}
+
+.jec__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.jec__content mat-form-field {
+  width: 100%;
+}
+
+@media (max-width: 560px) {
+  .jec__content {
+    min-width: unset;
+  }
+
+  .jec__row {
+    grid-template-columns: 1fr;
+  }
+}

@@ -72,6 +72,11 @@ export interface MiPerfilUpdateInput {
   contactoEmergenciaParentesco: string | null;
   contactoEmergenciaTelefono: string | null;
 }
+/** Body de POST /api/rrhh/persona/me/clave — cambio de contraseña voluntario. */
+export interface CambiarClavePropiaInput {
+  claveActual: string;
+  claveNueva: string;
+}
 /** Body POST/PUT alineado a `PersonaEmpleadoDto` (camelCase). */
 export interface PersonaEmpleadoInput {
   nombreCompleto: string;

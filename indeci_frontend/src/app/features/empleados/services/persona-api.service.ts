@@ -4,6 +4,7 @@ import { map, type Observable } from 'rxjs';
 import type { ApiResponse } from '../../../core/models/api-response.model';
 import { extractApiData } from '../../../core/http/map-api-response';
 import type {
+  CambiarClavePropiaInput,
   MiPerfilUpdateInput,
   PersonaEmpleado,
   PersonaEmpleadoInput,
@@ -78,4 +79,11 @@ actualizarFotoMiPerfil(file: File): Observable<null> {
     )
     .pipe(map(extractApiData));
 }
+
+  /** Autoservicio — cambio de contraseña voluntario (exige conocer la clave actual). */
+  cambiarMiClave(body: CambiarClavePropiaInput): Observable<null> {
+    return this.http
+      .post<ApiResponse<null>>('/api/rrhh/persona/me/clave', body)
+      .pipe(map(extractApiData));
+  }
 }

@@ -164,6 +164,70 @@
   cursor: help;
 }
 
+.diaria__toggle-field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px 4px 0;
+}
+
+.diaria__toggle-hint {
+  font-size: 11px;
+  color: var(--text-secondary, #94a3b8);
+  padding-left: 44px;
+}
+
+.diaria__chip-especial {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  padding: 2px 8px;
+  border: 1px solid var(--status-info, #185fa5);
+  border-radius: 999px;
+  background: var(--status-info-bg, #e6f1fb);
+  color: var(--status-info, #185fa5);
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  cursor: help;
+  width: fit-content;
+}
+.diaria__chip-especial mat-icon {
+  font-size: 13px;
+  width: 13px;
+  height: 13px;
+}
+
+.diaria__chip-turno24h {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  margin-left: 4px;
+  padding: 2px 8px;
+  border: 1px solid #5b3fa0;
+  border-radius: 999px;
+  background: #efe9fa;
+  color: #5b3fa0;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: help;
+  width: fit-content;
+}
+
+.diaria__chip-turno24h--descanso {
+  border-color: var(--sisrh-text-soft, #94a3b8);
+  background: var(--sisrh-surface-muted, #f8fafc);
+  color: var(--sisrh-text-muted, #64748b);
+}
+
+.diaria__chip-turno24h mat-icon {
+  font-size: 13px;
+  width: 13px;
+  height: 13px;
+}
+
 @media (max-width: 768px) {
   .diaria__field,
   .diaria__field--dni,

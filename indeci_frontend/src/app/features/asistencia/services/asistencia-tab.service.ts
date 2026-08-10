@@ -4,7 +4,8 @@ import { Injectable, signal } from '@angular/core';
  * Controla la pestaña activa del shell de Carga de asistencia para permitir
  * navegación cruzada entre pestañas (p. ej., "Ver asistencia" desde la carga masiva).
  * Orden de pestañas: 0 = Jornada y tolerancias · 1 = Carga masiva CSV ·
- * 2 = Consulta diaria de asistencia · 3 = Asistencia por empleado · 4 = Historial.
+ * 2 = Consulta diaria de asistencia · 3 = Asistencia por empleado · 4 = Historial ·
+ * 5 = Turno 24h (siempre al final — no reindexar sin actualizar los saltos de abajo).
  */
 @Injectable({ providedIn: 'root' })
 export class AsistenciaTabService {

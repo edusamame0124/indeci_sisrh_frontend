@@ -39,6 +39,10 @@ export interface AsistenciaDiariaRow {
   readonly papeletaDecisionUsuario: string | null;
   readonly papeletaDecisionFecha: string | null;
   readonly tieneTeletrabajo?: boolean;
+  // Horario Especial vigente ese día (INDECI_EMPLEADO_JORNADA_EXCEPCION).
+  readonly tieneHorarioEspecial?: boolean;
+  readonly horarioEspecialIngreso?: string | null;
+  readonly horarioEspecialSalida?: string | null;
 }
 
 export interface AsistenciaDiariaFiltro {
@@ -47,6 +51,8 @@ export interface AsistenciaDiariaFiltro {
   readonly fechaFin?: string;
   readonly dni?: string;
   readonly q?: string;
+  /** Solo filas cuyo día cae dentro de un Horario Especial vigente para ese empleado. */
+  readonly soloHorarioEspecial?: boolean;
   readonly page?: number;
   readonly size?: number;
 }

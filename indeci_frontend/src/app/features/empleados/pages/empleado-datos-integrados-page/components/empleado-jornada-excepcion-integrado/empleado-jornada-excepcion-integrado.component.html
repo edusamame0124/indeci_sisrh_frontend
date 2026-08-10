@@ -1,0 +1,83 @@
+<div class="jei">
+  <div class="jei__toolbar">
+    <p class="jei__hint">
+      Excepciones de horario de entrada/salida autorizadas por RR. HH. para este trabajador.
+    </p>
+    <button mat-flat-button color="primary" type="button" (click)="agregar()">
+      <mat-icon fontIcon="add" />
+      Agregar horario especial
+    </button>
+  </div>
+
+  @if (loading()) {
+    <div class="jei__loading" aria-busy="true">
+      <mat-progress-spinner mode="indeterminate" diameter="32" aria-label="Cargando" />
+    </div>
+  } @else if (filas().length === 0) {
+    <app-empty-state
+      icon="schedule"
+      title="Sin horarios especiales registrados"
+      description="Este trabajador aplica el horario del régimen. Registre uno solo si RR. HH. autorizó una excepción."
+    />
+  } @else {
+    <div class="jei__table-wrap">
+      <table mat-table [dataSource]="filas()" class="jei__table">
+        <ng-container matColumnDef="vigencia">
+          <th mat-header-cell *matHeaderCellDef>Vigencia</th>
+          <td mat-cell *matCellDef="let row">
+            <span
+              class="jei__badge"
+              [class.jei__badge--success]="row.estadoVigencia === 'VIGENTE'"
+              [class.jei__badge--info]="row.estadoVigencia === 'FUTURA'"
+              [class.jei__badge--muted]="row.estadoVigencia === 'VENCIDA'"
+            >
+              {{ vigenciaLabel(row) }}
+            </span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="periodo">
+          <th mat-header-cell *matHeaderCellDef>Del — al</th>
+          <td mat-cell *matCellDef="let row">{{ row.fechaInicio }} — {{ row.fechaFin }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="horario">
+          <th mat-header-cell *matHeaderCellDef>Horario</th>
+          <td mat-cell *matCellDef="let row">{{ row.horaIngreso }} – {{ row.horaSalida }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="documento">
+          <th mat-header-cell *matHeaderCellDef>Documento de autorización</th>
+          <td mat-cell *matCellDef="let row">{{ row.documentoAutorizacion }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="acciones">
+          <th mat-header-cell *matHeaderCellDef>Acciones</th>
+          <td mat-cell *matCellDef="let row">
+            <button
+              mat-icon-button
+              type="button"
+              matTooltip="Editar horario especial"
+              aria-label="Editar horario especial"
+              (click)="editar(row)"
+            >
+              <mat-icon fontIcon="edit" />
+            </button>
+            <button
+              mat-icon-button
+              type="button"
+              matTooltip="Eliminar horario especial"
+              aria-label="Eliminar horario especial"
+              (click)="eliminar(row)"
+            >
+              <mat-icon fontIcon="delete" />
+            </button>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+        <tr mat-row *matRowDef="let row; columns: columnas"></tr>
+      </table>
+    </div>
+  }
+</div>

@@ -1,0 +1,63 @@
+<h2 mat-dialog-title>{{ esEdicion ? 'Editar turno 24h' : 'Agregar turno 24h' }}</h2>
+<form [formGroup]="form" (ngSubmit)="confirmar()">
+  <mat-dialog-content class="t24__content">
+    <p class="t24__hint">
+      Guardia continua de 24h (COEN). Mientras esté vigente, el día de inicio de la guardia se
+      clasifica como Laboral y el día siguiente como Descanso post-guardia — RIS INDECI, sin
+      alterar el número de horas trabajadas.
+    </p>
+
+    <app-empleado-autocomplete
+      label="Empleado"
+      [empleados]="empleados"
+      [selectedId]="form.controls.empleadoId.value"
+      (selectedIdChange)="onEmpleadoChange($event)"
+    />
+    @if (form.controls.empleadoId.touched && form.controls.empleadoId.invalid) {
+      <mat-error class="t24__error">Debe seleccionar un empleado.</mat-error>
+    }
+
+    <div class="t24__row">
+      <mat-form-field appearance="outline">
+        <mat-label>Fecha de inicio</mat-label>
+        <input matInput type="date" formControlName="fechaInicio" required />
+        @if (form.controls.fechaInicio.touched && form.controls.fechaInicio.invalid) {
+          <mat-error>Este campo es obligatorio.</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Fecha de fin</mat-label>
+        <input matInput type="date" formControlName="fechaFin" required />
+        @if (form.controls.fechaFin.touched && form.controls.fechaFin.invalid) {
+          <mat-error>Este campo es obligatorio.</mat-error>
+        }
+      </mat-form-field>
+    </div>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Documento de autorización</mat-label>
+      <input
+        matInput
+        maxlength="200"
+        placeholder="Ej. Resolución Jefatural N° 123-2026"
+        formControlName="documentoAutorizacion"
+        required
+      />
+      @if (form.controls.documentoAutorizacion.touched && form.controls.documentoAutorizacion.invalid) {
+        <mat-error>Debe indicar el documento que autoriza el turno 24h.</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Motivo (opcional)</mat-label>
+      <textarea matInput rows="2" maxlength="500" formControlName="motivo"></textarea>
+    </mat-form-field>
+  </mat-dialog-content>
+  <mat-dialog-actions align="end">
+    <button mat-button type="button" (click)="cancelar()">Cancelar</button>
+    <button mat-flat-button color="primary" type="submit" [disabled]="form.invalid">
+      {{ esEdicion ? 'Guardar cambios' : 'Registrar turno 24h' }}
+    </button>
+  </mat-dialog-actions>
+</form>

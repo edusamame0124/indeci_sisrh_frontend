@@ -16,6 +16,7 @@ import type {
   PersonaEmpleado,
 } from '../../../../features/empleados/models/persona-empleado.model';
 import { PersonaApiService } from '../../../../features/empleados/services/persona-api.service';
+import { CambiarClaveCardComponent } from '../../components/cambiar-clave-card/cambiar-clave-card.component';
 
 @Component({
   selector: 'app-mi-perfil',
@@ -30,6 +31,7 @@ import { PersonaApiService } from '../../../../features/empleados/services/perso
     MatInputModule,
     MatProgressSpinnerModule,
     MatSnackBarModule,
+    CambiarClaveCardComponent,
   ],
   templateUrl: './mi-perfil-page.component.html',
   styleUrl: './mi-perfil-page.component.css',

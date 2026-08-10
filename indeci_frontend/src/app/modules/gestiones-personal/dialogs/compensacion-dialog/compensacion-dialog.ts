@@ -9,6 +9,7 @@ import { MatIconModule } from '@angular/material/icon';
 import {
   CrearSolicitudRrhhRequest,
   DetalleCompensacionRequest,
+  MiJornadaRefrigerio,
   SolicitudesRrhhService,
   SolicitudRrhh,
   TipoSolicitudRrhh,
@@ -42,9 +43,10 @@ export class CompensacionDialog {
   guardando = signal(false);
   error = signal<string | null>(null);
 
-  // Jornada laboral máxima diaria (Art. 25 Constitución / D.Leg. 276-728): el permiso
-  // compensable por horas no puede exceder un día completo de trabajo.
-  private readonly MAX_HORAS_COMPENSABLE = 8;
+  // Refrigerio vigente (régimen u Horario Especial) por fecha ISO — normativa SERVIR: un
+  // permiso por horas puede cruzar el refrigerio, pero ese tramo no cuenta como tiempo
+  // efectivo (2026-08-09). Cache para no repetir la consulta por cada recálculo.
+  private readonly refrigerioPorFecha = new Map<string, MiJornadaRefrigerio>();
 
   tituloDialog = 'Permiso personal compensable por horas';
 
@@ -97,7 +99,6 @@ export class CompensacionDialog {
       this.horaFin = s.horaFin ?? '';
       this.motivo = s.motivo ?? '';
       this.observacion = s.observacion ?? '';
-      this.calcularHorasPermiso();
 
       if (s.detallesCompensacion && s.detallesCompensacion.length > 0) {
         this.detallesCompensacion = s.detallesCompensacion.map((det) => ({
@@ -107,6 +108,27 @@ export class CompensacionDialog {
           cantidadHoras: det.cantidadHoras,
           cantidadHorasTexto: this.formatearHoras(det.cantidadHoras ?? 0),
         }));
+      }
+
+      // Precarga el refrigerio de cada fecha involucrada antes del primer cálculo, para
+      // que las horas mostradas al abrir el diálogo ya sean las efectivas (no de reloj).
+      const fechas = new Set(
+        [this.fechaInicio, ...this.detallesCompensacion.map((d) => d.fechaCompensacion)].filter(
+          (f): f is string => !!f,
+        ),
+      );
+      let pendientes = fechas.size;
+      if (pendientes === 0) {
+        this.calcularHorasPermiso();
+      } else {
+        fechas.forEach((fecha) =>
+          this.cargarRefrigerio(fecha, () => {
+            pendientes -= 1;
+            if (pendientes === 0) {
+              this.recalcularTodo();
+            }
+          }),
+        );
       }
     }
   }
@@ -133,6 +155,43 @@ export class CompensacionDialog {
   }
   onFechaInicioChange(): void {
     this.fechaFin = this.fechaInicio;
+    this.cargarRefrigerio(this.fechaInicio, () => this.calcularHorasPermiso());
+  }
+
+  onFechaCompensacionChange(detalle: DetalleCompensacionForm): void {
+    this.cargarRefrigerio(detalle.fechaCompensacion, () => this.calcularHorasDetalle(detalle));
+  }
+
+  /**
+   * Carga (con cache) el refrigerio vigente de una fecha y ejecuta `onLoaded` al terminar
+   * — igual si la fecha ya estaba en cache (se ejecuta de inmediato) que si hay que
+   * consultarla al backend. Fallback silencioso a "sin refrigerio" ante error, para no
+   * bloquear el formulario por un problema de red.
+   */
+  private cargarRefrigerio(fecha: string, onLoaded: () => void): void {
+    if (!fecha) {
+      onLoaded();
+      return;
+    }
+    if (this.refrigerioPorFecha.has(fecha)) {
+      onLoaded();
+      return;
+    }
+    this.service.obtenerMiRefrigerio(fecha).subscribe({
+      next: (res) => {
+        this.refrigerioPorFecha.set(fecha, res.data);
+        onLoaded();
+      },
+      error: () => {
+        this.refrigerioPorFecha.set(fecha, { refrigerioInicio: null, refrigerioFin: null });
+        onLoaded();
+      },
+    });
+  }
+
+  private recalcularTodo(): void {
+    this.calcularHorasPermiso();
+    this.detallesCompensacion.forEach((detalle) => this.calcularHorasDetalle(detalle));
   }
 
   calcularHorasPermiso(): void {
@@ -142,7 +201,7 @@ export class CompensacionDialog {
       return;
     }
 
-    const horas = this.calcularDiferenciaHoras(this.horaInicio, this.horaFin);
+    const horas = this.calcularDiferenciaHoras(this.fechaInicio, this.horaInicio, this.horaFin);
 
     if (horas <= 0) {
       this.cantidadHoras = null;
@@ -153,21 +212,7 @@ export class CompensacionDialog {
 
     this.cantidadHoras = horas;
     this.cantidadHorasTexto = this.formatearHoras(horas);
-
-    if (horas > this.MAX_HORAS_COMPENSABLE) {
-      this.error.set(
-        `El permiso compensable por horas no puede exceder las ${this.MAX_HORAS_COMPENSABLE} horas ` +
-          `(jornada máxima diaria). Solicitadas: ${this.cantidadHorasTexto}.`,
-      );
-      return;
-    }
-
     this.error.set(null);
-  }
-
-  /** true si las horas solicitadas superan la jornada máxima diaria (bloquea Guardar). */
-  excedeMaximoHoras(): boolean {
-    return (this.cantidadHoras ?? 0) > this.MAX_HORAS_COMPENSABLE;
   }
 
   calcularHorasDetalle(detalle: DetalleCompensacionForm): void {
@@ -177,7 +222,11 @@ export class CompensacionDialog {
       return;
     }
 
-    const horas = this.calcularDiferenciaHoras(detalle.horaInicio, detalle.horaFin);
+    const horas = this.calcularDiferenciaHoras(
+      detalle.fechaCompensacion,
+      detalle.horaInicio,
+      detalle.horaFin,
+    );
 
     if (horas <= 0) {
       detalle.cantidadHoras = null;
@@ -193,15 +242,38 @@ export class CompensacionDialog {
     this.error.set(null);
   }
 
-  calcularDiferenciaHoras(horaInicio: string, horaFin: string): number {
-    const [hi, mi] = horaInicio.split(':').map(Number);
-    const [hf, mf] = horaFin.split(':').map(Number);
+  private aMinutos(hora: string): number {
+    const [h, m] = hora.split(':').map(Number);
+    return h * 60 + m;
+  }
 
-    const inicioMinutos = hi * 60 + mi;
-    const finMinutos = hf * 60 + mf;
-    const diferenciaMinutos = finMinutos - inicioMinutos;
+  /**
+   * Horas EFECTIVAS entre [horaInicio, horaFin) en `fecha`: resta de reloj menos la
+   * intersección con el refrigerio vigente ese día (régimen u Horario Especial) — mismo
+   * criterio que `SolicitudRrhhService.calcularHoras()` en el backend, para que el número
+   * que ve el usuario coincida con lo que se va a guardar.
+   */
+  calcularDiferenciaHoras(fecha: string, horaInicio: string, horaFin: string): number {
+    const inicioMinutos = this.aMinutos(horaInicio);
+    const finMinutos = this.aMinutos(horaFin);
+    const minutosBrutos = finMinutos - inicioMinutos;
 
-    return diferenciaMinutos / 60;
+    if (minutosBrutos <= 0) {
+      return minutosBrutos / 60;
+    }
+
+    const refrigerio = this.refrigerioPorFecha.get(fecha);
+    let minutosRefrigerio = 0;
+
+    if (refrigerio?.refrigerioInicio && refrigerio?.refrigerioFin) {
+      const refrigerioInicioMin = this.aMinutos(refrigerio.refrigerioInicio);
+      const refrigerioFinMin = this.aMinutos(refrigerio.refrigerioFin);
+      const solapeInicio = Math.max(inicioMinutos, refrigerioInicioMin);
+      const solapeFin = Math.min(finMinutos, refrigerioFinMin);
+      minutosRefrigerio = Math.max(0, solapeFin - solapeInicio);
+    }
+
+    return (minutosBrutos - minutosRefrigerio) / 60;
   }
 
   formatearHoras(valor: number): string {
@@ -271,14 +343,6 @@ export class CompensacionDialog {
 
     if (!this.cantidadHoras || this.cantidadHoras <= 0) {
       this.error.set('La hora de ingreso no puede ser menor o igual que la hora de salida.');
-      return;
-    }
-
-    if (this.excedeMaximoHoras()) {
-      this.error.set(
-        `El permiso compensable por horas no puede exceder las ${this.MAX_HORAS_COMPENSABLE} horas ` +
-          `(jornada máxima diaria). Solicitadas: ${this.cantidadHorasTexto}.`,
-      );
       return;
     }
 

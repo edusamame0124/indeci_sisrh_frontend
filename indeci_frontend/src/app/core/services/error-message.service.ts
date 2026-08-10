@@ -18,6 +18,12 @@ export class ErrorMessageService {
     'OTP ya está configurado': 'Ya tienes el segundo factor activo en otra sesión.',
     'Usuario ya cambió su contraseña':
       'Tu contraseña ya fue cambiada. Inicia sesión normalmente.',
+    'La contraseña actual no es correcta':
+      'La contraseña actual no es correcta.',
+    'La nueva contraseña debe ser distinta a la actual':
+      'La nueva contraseña debe ser distinta a la actual.',
+    'Tiene una contraseña temporal pendiente de cambio. Vuelva a iniciar sesión para completarla.':
+      'Tienes una contraseña temporal pendiente de cambio. Cierra sesión y vuelve a ingresar para completarla.',
     'Refresh inválido': 'Tu sesión expiró. Inicia sesión nuevamente.',
     'Refresh expirado': 'Tu sesión expiró. Inicia sesión nuevamente.',
     'Token inválido': 'Tu sesión expiró. Inicia sesión nuevamente.',

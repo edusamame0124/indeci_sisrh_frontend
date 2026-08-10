@@ -65,6 +65,9 @@ export class AsistenciaApiService {
     if (params.q?.trim()) {
       httpParams['q'] = params.q.trim();
     }
+    if (params.soloHorarioEspecial) {
+      httpParams['soloHorarioEspecial'] = 'true';
+    }
     return this.http
       .get<ApiResponse<AsistenciaDiariaPage>>(`${this.baseUrl}/diaria`, { params: httpParams })
       .pipe(map(extractApiData));
@@ -157,6 +160,18 @@ export class AsistenciaApiService {
   backfillSalidaAnticipada(): Observable<number> {
     return this.http
       .post<ApiResponse<number>>(`${this.baseUrl}/backfill-salida-anticipada`, {})
+      .pipe(map(extractApiData));
+  }
+
+  /**
+   * Backfill ÚNICO (temporal, SUPER_ADMIN, independiente de los anteriores) — corrige días ya
+   * persistidos como FALTA de guardias COEN 24h para empleados con turno 24h activo, usando el
+   * mismo reconciliador que corre en cada import nuevo. Idempotente. Devuelve la cantidad de
+   * días corregidos.
+   */
+  backfillTurno24h(): Observable<number> {
+    return this.http
+      .post<ApiResponse<number>>(`${this.baseUrl}/backfill-turno-24h`, {})
       .pipe(map(extractApiData));
   }
 }

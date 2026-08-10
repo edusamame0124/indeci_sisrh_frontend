@@ -1,0 +1,127 @@
+<mat-card class="seguridad-card">
+  <mat-card-header>
+    <mat-card-title>Seguridad de la cuenta</mat-card-title>
+    <mat-card-subtitle>Actualiza tu contraseña de acceso al sistema.</mat-card-subtitle>
+  </mat-card-header>
+
+  <mat-card-content>
+    @if (!expandido()) {
+      <div class="estado-cerrado">
+        <div class="estado-cerrado__info">
+          <mat-icon aria-hidden="true">lock</mat-icon>
+          <div>
+            <strong>Contraseña</strong>
+            <p>••••••••••</p>
+          </div>
+        </div>
+
+        <button mat-stroked-button type="button" (click)="activar()">
+          <mat-icon>key</mat-icon>
+          Cambiar contraseña
+        </button>
+      </div>
+    } @else {
+      <form [formGroup]="form" (ngSubmit)="guardar()" novalidate>
+        <div class="campos-grid">
+          <mat-form-field appearance="outline" class="campo-completo">
+            <mat-label>Contraseña actual</mat-label>
+            <input
+              matInput
+              [type]="claveActualVisible() ? 'text' : 'password'"
+              formControlName="claveActual"
+              autocomplete="current-password"
+            />
+            <button
+              mat-icon-button
+              matSuffix
+              type="button"
+              (click)="toggleClaveActualVisible()"
+              [attr.aria-label]="claveActualVisible() ? 'Ocultar contraseña actual' : 'Mostrar contraseña actual'"
+            >
+              <mat-icon>{{ claveActualVisible() ? 'visibility_off' : 'visibility' }}</mat-icon>
+            </button>
+
+            @if (form.controls.claveActual.touched && form.controls.claveActual.hasError('required')) {
+              <mat-error>Ingresa tu contraseña actual.</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Nueva contraseña</mat-label>
+            <input
+              matInput
+              [type]="nuevaClaveVisible() ? 'text' : 'password'"
+              formControlName="claveNueva"
+              autocomplete="new-password"
+            />
+            <button
+              mat-icon-button
+              matSuffix
+              type="button"
+              (click)="toggleNuevaClaveVisible()"
+              [attr.aria-label]="nuevaClaveVisible() ? 'Ocultar nueva contraseña' : 'Mostrar nueva contraseña'"
+            >
+              <mat-icon>{{ nuevaClaveVisible() ? 'visibility_off' : 'visibility' }}</mat-icon>
+            </button>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Confirmar nueva contraseña</mat-label>
+            <input
+              matInput
+              [type]="confirmarClaveVisible() ? 'text' : 'password'"
+              formControlName="claveConfirmar"
+              autocomplete="new-password"
+              [attr.aria-invalid]="passwordsMismatch()"
+            />
+            <button
+              mat-icon-button
+              matSuffix
+              type="button"
+              (click)="toggleConfirmarClaveVisible()"
+              [attr.aria-label]="confirmarClaveVisible() ? 'Ocultar confirmación' : 'Mostrar confirmación'"
+            >
+              <mat-icon>{{ confirmarClaveVisible() ? 'visibility_off' : 'visibility' }}</mat-icon>
+            </button>
+
+            @if (passwordsMismatch()) {
+              <mat-error>Las contraseñas no coinciden.</mat-error>
+            }
+          </mat-form-field>
+
+          @if (complexityResult(); as resultado) {
+            <div class="campo-completo">
+              <app-password-strength [result]="resultado" />
+            </div>
+          }
+        </div>
+
+        @if (errorMensaje()) {
+          <p class="mensaje-error-inline" role="alert">
+            <mat-icon aria-hidden="true">error_outline</mat-icon>
+            {{ errorMensaje() }}
+          </p>
+        }
+
+        <p class="aviso-sesiones">
+          Al cambiar tu contraseña se cerrarán tus demás sesiones activas por seguridad.
+        </p>
+
+        <div class="acciones-formulario">
+          <button mat-stroked-button type="button" [disabled]="enviando()" (click)="cancelar()">
+            Cancelar
+          </button>
+
+          <button mat-flat-button color="primary" type="submit" [disabled]="form.invalid || enviando()">
+            @if (enviando()) {
+              <mat-spinner diameter="20"></mat-spinner>
+            } @else {
+              <mat-icon>save</mat-icon>
+            }
+            {{ enviando() ? 'Guardando...' : 'Guardar contraseña' }}
+          </button>
+        </div>
+      </form>
+    }
+  </mat-card-content>
+</mat-card>

@@ -183,6 +183,49 @@
         }
       </mat-card-content>
     </mat-card>
+
+    <mat-card class="asistencia-shell__backfill">
+      <mat-card-content>
+        <div class="asistencia-shell__backfill-header">
+          <mat-icon aria-hidden="true">nights_stay</mat-icon>
+          <div>
+            <strong>Backfill único — Guardias COEN 24h mal clasificadas como Falta</strong>
+            <p>
+              Acción temporal de mantenimiento (solo SUPER_ADMIN), independiente de los backfills
+              de arriba. Corrige días ya registrados como Falta que en realidad son guardias
+              continuas de 24h (08:30 → 08:30) de empleados con turno 24h activo en la pestaña
+              "Turno 24h": el día de inicio pasa a Laboral y el día siguiente a Descanso
+              post-guardia (RIS INDECI). No toca periodos CERRADO/APROBADO. Es seguro ejecutarla
+              más de una vez.
+            </p>
+          </div>
+        </div>
+
+        <button
+          mat-flat-button
+          color="warn"
+          type="button"
+          (click)="ejecutarBackfillTurno24h()"
+          [disabled]="backfillTurno24hEjecutando()"
+        >
+          @if (backfillTurno24hEjecutando()) {
+            <mat-spinner diameter="18" />
+          } @else {
+            <mat-icon>play_arrow</mat-icon>
+          }
+          {{ backfillTurno24hEjecutando() ? 'Ejecutando...' : 'Ejecutar backfill' }}
+        </button>
+
+        @if (backfillTurno24hResultado() !== null) {
+          <p class="asistencia-shell__backfill-ok">
+            ✓ Listo — {{ backfillTurno24hResultado() }} día(s) corregido(s).
+          </p>
+        }
+        @if (backfillTurno24hError()) {
+          <p class="asistencia-shell__backfill-error">✗ {{ backfillTurno24hError() }}</p>
+        }
+      </mat-card-content>
+    </mat-card>
   }
 
   <section class="asistencia-shell__tabs">
@@ -207,6 +250,9 @@
       </mat-tab>
       <mat-tab label="Historial de importaciones">
         <app-historial-importaciones-page />
+      </mat-tab>
+      <mat-tab label="Turno 24h">
+        <app-turno-24h-page />
       </mat-tab>
     </mat-tab-group>
   </section>

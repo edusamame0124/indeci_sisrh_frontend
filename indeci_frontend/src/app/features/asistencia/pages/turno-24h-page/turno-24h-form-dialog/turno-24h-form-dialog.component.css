@@ -1,0 +1,37 @@
+.t24__content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 480px;
+}
+
+.t24__hint {
+  margin: 0 0 8px;
+  font-size: 13px;
+  color: var(--sisrh-text-muted, #64748b);
+}
+
+.t24__error {
+  font-size: 12px;
+  margin: -4px 0 8px;
+}
+
+.t24__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.t24__content mat-form-field {
+  width: 100%;
+}
+
+@media (max-width: 560px) {
+  .t24__content {
+    min-width: unset;
+  }
+
+  .t24__row {
+    grid-template-columns: 1fr;
+  }
+}

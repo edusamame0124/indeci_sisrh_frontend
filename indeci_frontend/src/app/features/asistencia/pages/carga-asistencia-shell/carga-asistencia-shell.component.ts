@@ -10,6 +10,7 @@ import { CargaAsistenciaPageComponent } from '../carga-asistencia-page/carga-asi
 import { JornadaRegimenConfigPageComponent } from '../jornada-regimen-config-page/jornada-regimen-config-page.component';
 import { CargaMasivaCsvPageComponent } from '../carga-masiva-csv-page/carga-masiva-csv-page.component';
 import { HistorialImportacionesPageComponent } from '../historial-importaciones-page/historial-importaciones-page.component';
+import { Turno24hPageComponent } from '../turno-24h-page/turno-24h-page.component';
 import { AsistenciaTabService } from '../../services/asistencia-tab.service';
 import { AsistenciaApiService } from '../../services/asistencia-api.service';
 import { AuthService } from '../../../../core/services/auth.service';
@@ -29,6 +30,7 @@ import { AuthService } from '../../../../core/services/auth.service';
     JornadaRegimenConfigPageComponent,
     CargaMasivaCsvPageComponent,
     HistorialImportacionesPageComponent,
+    Turno24hPageComponent,
   ],
   templateUrl: './carga-asistencia-shell.component.html',
   styleUrl: './carga-asistencia-shell.component.css',
@@ -152,6 +154,35 @@ export class CargaAsistenciaShellComponent {
       error: (err) => {
         this.backfillSalidaAnticipadaEjecutando.set(false);
         this.backfillSalidaAnticipadaError.set(
+          err?.error?.mensaje ?? err?.error?.message ?? 'No se pudo ejecutar el backfill.',
+        );
+      },
+    });
+  }
+
+  /**
+   * Backfill ÚNICO (temporal, independiente de los anteriores) — corrige días ya persistidos
+   * como FALTA de guardias COEN 24h para empleados con turno 24h activo, usando el mismo
+   * reconciliador que corre en cada import nuevo. Mismo criterio de visibilidad: solo
+   * SUPER_ADMIN.
+   */
+  readonly backfillTurno24hEjecutando = signal(false);
+  readonly backfillTurno24hResultado = signal<number | null>(null);
+  readonly backfillTurno24hError = signal<string | null>(null);
+
+  ejecutarBackfillTurno24h(): void {
+    this.backfillTurno24hEjecutando.set(true);
+    this.backfillTurno24hResultado.set(null);
+    this.backfillTurno24hError.set(null);
+
+    this.asistenciaApi.backfillTurno24h().subscribe({
+      next: (corregidos) => {
+        this.backfillTurno24hEjecutando.set(false);
+        this.backfillTurno24hResultado.set(corregidos);
+      },
+      error: (err) => {
+        this.backfillTurno24hEjecutando.set(false);
+        this.backfillTurno24hError.set(
           err?.error?.mensaje ?? err?.error?.message ?? 'No se pudo ejecutar el backfill.',
         );
       },

@@ -179,6 +179,12 @@ export interface PeriodoProgramado {
   tipoGoce: string | null;
 }
 
+/** Espejo de MiJornadaRefrigerioDto — refrigerio vigente del solicitante para una fecha. */
+export interface MiJornadaRefrigerio {
+  refrigerioInicio: string | null;
+  refrigerioFin: string | null;
+}
+
 export interface DetalleCompensacionRequest {
   fechaCompensacion: string;
   horaInicio: string;
@@ -259,6 +265,18 @@ export class SolicitudesRrhhService {
    */
   obtenerMiTeletrabajo(): Observable<ApiResponse<boolean>> {
     return this.http.get<ApiResponse<boolean>>(`${this.apiUrl}/rrhh/solicitudes/mi-teletrabajo`);
+  }
+
+  /**
+   * Refrigerio vigente (régimen u Horario Especial) del solicitante para una fecha —
+   * alimenta el cálculo de horas efectivas del permiso por horas en el diálogo de
+   * Compensación, para que el número mostrado coincida con el que persistirá el backend.
+   */
+  obtenerMiRefrigerio(fecha: string): Observable<ApiResponse<MiJornadaRefrigerio>> {
+    return this.http.get<ApiResponse<MiJornadaRefrigerio>>(
+      `${this.apiUrl}/rrhh/solicitudes/mi-refrigerio`,
+      { params: new HttpParams().set('fecha', fecha) },
+    );
   }
 
   listarTiposSolicitud(): Observable<ApiResponse<TipoSolicitudRrhh[]>> {

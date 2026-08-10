@@ -1,0 +1,88 @@
+<h2 mat-dialog-title>{{ esEdicion ? 'Editar horario especial' : 'Agregar horario especial' }}</h2>
+<form [formGroup]="form" (ngSubmit)="confirmar()">
+  <mat-dialog-content class="jec__content">
+    <p class="jec__hint">
+      Excepción individual de horario, autorizada por RR. HH. Mientras esté vigente, reemplaza
+      la hora de ingreso/salida del régimen para el cálculo de tardanza.
+    </p>
+
+    <div class="jec__row">
+      <mat-form-field appearance="outline">
+        <mat-label>Fecha de inicio</mat-label>
+        <input matInput type="date" formControlName="fechaInicio" required />
+        @if (form.controls.fechaInicio.touched && form.controls.fechaInicio.invalid) {
+          <mat-error>Este campo es obligatorio.</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Fecha de fin</mat-label>
+        <input matInput type="date" formControlName="fechaFin" required />
+        @if (form.controls.fechaFin.touched && form.controls.fechaFin.invalid) {
+          <mat-error>Este campo es obligatorio.</mat-error>
+        }
+      </mat-form-field>
+    </div>
+
+    <div class="jec__row">
+      <mat-form-field appearance="outline">
+        <mat-label>Hora de ingreso</mat-label>
+        <input matInput placeholder="HH:mm" formControlName="horaIngreso" required />
+        @if (form.controls.horaIngreso.touched && form.controls.horaIngreso.invalid) {
+          <mat-error>Ingrese una hora válida (HH:mm).</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Hora de salida</mat-label>
+        <input matInput placeholder="HH:mm" formControlName="horaSalida" required />
+        @if (form.controls.horaSalida.touched && form.controls.horaSalida.invalid) {
+          <mat-error>Ingrese una hora válida (HH:mm).</mat-error>
+        }
+      </mat-form-field>
+    </div>
+
+    <div class="jec__row">
+      <mat-form-field appearance="outline">
+        <mat-label>Inicio de refrigerio (opcional)</mat-label>
+        <input matInput placeholder="HH:mm" formControlName="refrigerioInicio" />
+        @if (form.controls.refrigerioInicio.touched && form.controls.refrigerioInicio.invalid) {
+          <mat-error>Ingrese una hora válida (HH:mm).</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Fin de refrigerio (opcional)</mat-label>
+        <input matInput placeholder="HH:mm" formControlName="refrigerioFin" />
+        @if (form.controls.refrigerioFin.touched && form.controls.refrigerioFin.invalid) {
+          <mat-error>Ingrese una hora válida (HH:mm).</mat-error>
+        }
+      </mat-form-field>
+    </div>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Documento de autorización</mat-label>
+      <input
+        matInput
+        maxlength="200"
+        placeholder="Ej. Resolución Jefatural N° 123-2026"
+        formControlName="documentoAutorizacion"
+        required
+      />
+      @if (form.controls.documentoAutorizacion.touched && form.controls.documentoAutorizacion.invalid) {
+        <mat-error>Debe indicar el documento que autoriza el horario especial.</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Motivo (opcional)</mat-label>
+      <textarea matInput rows="2" maxlength="500" formControlName="motivo"></textarea>
+    </mat-form-field>
+  </mat-dialog-content>
+  <mat-dialog-actions align="end">
+    <button mat-button type="button" (click)="cancelar()">Cancelar</button>
+    <button mat-flat-button color="primary" type="submit" [disabled]="form.invalid">
+      {{ esEdicion ? 'Guardar cambios' : 'Registrar horario especial' }}
+    </button>
+  </mat-dialog-actions>
+</form>

@@ -13,7 +13,7 @@
     </label>
 
     <label class="field">
-      <span>Hora de salida</span>
+      <span>Hora de entrada</span>
       <input
         type="time"
         [(ngModel)]="horaInicio"
@@ -22,7 +22,7 @@
     </label>
 
     <label class="field">
-      <span>Hora de ingreso</span>
+      <span>Hora de salida</span>
       <input
         type="time"
         [(ngModel)]="horaFin"
@@ -64,6 +64,7 @@
           <input
             type="date"
             [(ngModel)]="detalle.fechaCompensacion"
+            (ngModelChange)="onFechaCompensacionChange(detalle)"
           />
         </label>
 
@@ -172,7 +173,7 @@
     color="primary"
     type="button"
     (click)="guardar()"
-    [disabled]="guardando() || excedeMaximoHoras()"
+    [disabled]="guardando()"
   >
     <mat-icon>save</mat-icon>
     {{ guardando() ? 'Guardando...' : esEdicion() ? 'Guardar cambios' : 'Guardar borrador' }}
