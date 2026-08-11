@@ -51,7 +51,7 @@ export class AsistenciaApiService {
 
   /** Consulta de asistencia por rango [fechaInicio, fechaFin] y filtros opcionales. */
   listarDiaria(params: AsistenciaDiariaFiltro): Observable<AsistenciaDiariaPage> {
-    const httpParams: Record<string, string> = {
+    const httpParams: Record<string, string | readonly string[]> = {
       fechaInicio: params.fechaInicio,
       page: String(params.page ?? 0),
       size: String(params.size ?? 10),
@@ -68,6 +68,9 @@ export class AsistenciaApiService {
     if (params.soloHorarioEspecial) {
       httpParams['soloHorarioEspecial'] = 'true';
     }
+    if (params.tiposDia?.length) {
+      httpParams['tiposDia'] = params.tiposDia;
+    }
     return this.http
       .get<ApiResponse<AsistenciaDiariaPage>>(`${this.baseUrl}/diaria`, { params: httpParams })
       .pipe(map(extractApiData));
@@ -76,6 +79,14 @@ export class AsistenciaApiService {
   /** Reporte de asistencia consolidado por período (XLSX, blob — lleva el JWT vía interceptor). */
   descargarResumenPeriodoXlsx(fechaInicio: string, fechaFin: string): Observable<Blob> {
     return this.http.get(`${this.baseUrl}/diaria/xlsx`, {
+      params: { fechaInicio, fechaFin },
+      responseType: 'blob',
+    });
+  }
+
+  /** Reporte de marcaciones diarias (XLSX, 1 fila por día x empleado, blob — lleva el JWT vía interceptor). */
+  descargarMarcacionesXlsx(fechaInicio: string, fechaFin: string): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/diaria/marcaciones-xlsx`, {
       params: { fechaInicio, fechaFin },
       responseType: 'blob',
     });

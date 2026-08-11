@@ -3,8 +3,14 @@ import type { SpringPageDto } from '../../../core/models/spring-page.model';
 export interface AdminUserSummary {
   readonly id: number;
   readonly username: string;
+  readonly nombreCompleto?: string | null;
   readonly status: string;
   readonly sistemas?: readonly AccesoSistema[];
+}
+
+/** Body de POST /api/admin/users/{id}/clave — soporte SUPER_ADMIN. */
+export interface AdminSetPasswordRequest {
+  readonly claveNueva: string;
 }
 
 export interface AdminUserDetail extends AdminUserSummary {

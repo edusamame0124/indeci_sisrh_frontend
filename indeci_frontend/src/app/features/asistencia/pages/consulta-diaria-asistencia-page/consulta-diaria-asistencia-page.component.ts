@@ -20,6 +20,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatPaginatorModule, type PageEvent } from '@angular/material/paginator';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatSelectModule } from '@angular/material/select';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
@@ -31,7 +32,13 @@ import { isErrorResponse } from '../../../../core/models/error-response.model';
 import { AsistenciaApiService } from '../../services/asistencia-api.service';
 import { AsistenciaTabService } from '../../services/asistencia-tab.service';
 import type { AsistenciaDiariaRow } from '../../models/asistencia-diaria.model';
-import { badgeClass, condicionLabel, fmtMin } from '../../../../shared/utils/asistencia-display.utils';
+import { TIPOS_DIA } from '../../models/asistencia.model';
+import {
+  badgeClass,
+  condicionDotColor,
+  condicionLabel,
+  fmtMin,
+} from '../../../../shared/utils/asistencia-display.utils';
 import {
   AsistenciaDiariaEditDialogComponent,
 } from './components/asistencia-diaria-edit-dialog/asistencia-diaria-edit-dialog.component';
@@ -77,6 +84,7 @@ function primerDiaMesIso(): string {
     MatNativeDateModule,
     MatPaginatorModule,
     MatProgressSpinnerModule,
+    MatSelectModule,
     MatSlideToggleModule,
     MatTableModule,
     MatTooltipModule,
@@ -122,6 +130,14 @@ export class ConsultaDiariaAsistenciaPageComponent {
   readonly filtroDni = signal('');
   readonly filtroNombre = signal('');
   readonly filtroHorarioEspecial = signal(false);
+  readonly filtroTiposDia = signal<readonly string[]>([]);
+
+  /** Opciones del filtro de Condición: código TIPO_DIA + etiqueta + color del punto (mismo criterio que la tabla). */
+  readonly condicionOptions = TIPOS_DIA.map((tipo) => ({
+    value: tipo as string,
+    label: condicionLabel(tipo),
+    dotColor: condicionDotColor(tipo),
+  }));
   readonly consultaEjecutada = signal(false);
   readonly consultaHora = signal<string | null>(null);
 
@@ -139,6 +155,7 @@ export class ConsultaDiariaAsistenciaPageComponent {
   readonly loading = signal(false);
   readonly loadError = signal<string | null>(null);
   readonly exportando = signal(false);
+  readonly exportandoMarcaciones = signal(false);
 
   constructor() {
     effect(() => {
@@ -222,6 +239,29 @@ export class ConsultaDiariaAsistenciaPageComponent {
     }
   }
 
+  onTiposDiaChange(tipos: readonly string[]): void {
+    this.filtroTiposDia.set(tipos);
+  }
+
+  /** Quita una condición de la fila de chips aplicados y vuelve a consultar (como cualquier chip removible). */
+  quitarCondicion(tipo: string): void {
+    this.filtroTiposDia.update((tipos) => tipos.filter((t) => t !== tipo));
+    this.reconsultarSiCorresponde();
+  }
+
+  limpiarCondiciones(): void {
+    if (!this.filtroTiposDia().length) return;
+    this.filtroTiposDia.set([]);
+    this.reconsultarSiCorresponde();
+  }
+
+  private reconsultarSiCorresponde(): void {
+    if (this.consultaEjecutada() && this.rangoValido()) {
+      this.pageIndex.set(0);
+      this.load();
+    }
+  }
+
   onPage(ev: PageEvent): void {
     this.pageIndex.set(ev.pageIndex);
     this.pageSize.set(ev.pageSize);
@@ -240,6 +280,7 @@ export class ConsultaDiariaAsistenciaPageComponent {
       dni: this.filtroDni().trim() || undefined,
       q: this.filtroNombre().trim() || undefined,
       soloHorarioEspecial: this.filtroHorarioEspecial() || undefined,
+      tiposDia: this.filtroTiposDia().length ? this.filtroTiposDia() : undefined,
       page: this.pageIndex(),
       size: this.pageSize(),
     }).pipe(takeUntilDestroyed(this.destroyRef))
@@ -366,6 +407,37 @@ export class ConsultaDiariaAsistenciaPageComponent {
         },
         error: (err: unknown) => {
           this.exportando.set(false);
+          const body = err instanceof HttpErrorResponse ? err.error : null;
+          this.snack.open(
+            isErrorResponse(body) ? this.errors.translate(body.mensaje) : this.errors.translate(null),
+            'Cerrar',
+            { duration: 5000 },
+          );
+        },
+      });
+  }
+
+  /** Exporta el reporte de marcaciones diarias (XLSX) del rango seleccionado. */
+  exportarMarcacionesXlsx(): void {
+    const fechaInicio = toIsoDate(this.fechaInicioModel());
+    const fechaFin = toIsoDate(this.fechaFinModel());
+    if (!fechaInicio || !fechaFin || !this.rangoValido() || this.exportandoMarcaciones()) return;
+
+    this.exportandoMarcaciones.set(true);
+    this.api.descargarMarcacionesXlsx(fechaInicio, fechaFin)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (blob) => {
+          const url = URL.createObjectURL(blob);
+          const enlace = document.createElement('a');
+          enlace.href = url;
+          enlace.download = `marcaciones_asistencia_${fechaInicio}_${fechaFin}.xlsx`;
+          enlace.click();
+          URL.revokeObjectURL(url);
+          this.exportandoMarcaciones.set(false);
+        },
+        error: (err: unknown) => {
+          this.exportandoMarcaciones.set(false);
           const body = err instanceof HttpErrorResponse ? err.error : null;
           this.snack.open(
             isErrorResponse(body) ? this.errors.translate(body.mensaje) : this.errors.translate(null),

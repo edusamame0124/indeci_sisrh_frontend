@@ -62,6 +62,23 @@
       />
     </mat-form-field>
 
+    <mat-form-field appearance="outline" class="diaria__field diaria__field--condicion">
+      <mat-label>Condición</mat-label>
+      <mat-select
+        multiple
+        [ngModel]="filtroTiposDia()"
+        (ngModelChange)="onTiposDiaChange($event)"
+        aria-label="Filtrar por condición"
+      >
+        @for (opt of condicionOptions; track opt.value) {
+          <mat-option [value]="opt.value">
+            <span class="diaria__condicion-dot" [style.background]="opt.dotColor" aria-hidden="true"></span>
+            {{ opt.label }}
+          </mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
     <div class="diaria__toggle-field">
       <mat-slide-toggle
         [checked]="filtroHorarioEspecial()"
@@ -99,6 +116,22 @@
       {{ exportando() ? 'Generando...' : 'Exportar reporte' }}
     </button>
 
+    <button
+      mat-stroked-button
+      type="button"
+      (click)="exportarMarcacionesXlsx()"
+      [disabled]="!rangoValido() || exportandoMarcaciones()"
+      matTooltip="Descarga el detalle de marcaciones (entrada/salida, horario, condición) del rango seleccionado"
+      matTooltipPosition="above"
+    >
+      @if (exportandoMarcaciones()) {
+        <mat-progress-spinner diameter="18" mode="indeterminate" />
+      } @else {
+        <mat-icon fontIcon="fingerprint" aria-hidden="true" />
+      }
+      {{ exportandoMarcaciones() ? 'Generando...' : 'Exportar marcaciones' }}
+    </button>
+
     @if (!rangoValido()) {
       <span class="diaria__hint">La fecha fin debe ser posterior o igual a la de inicio.</span>
     }
@@ -127,6 +160,26 @@
     <p class="diaria__count" role="status" aria-live="polite">
       {{ total() }} registro{{ total() === 1 ? '' : 's' }}
     </p>
+
+    @if (filtroTiposDia().length) {
+      <div class="diaria__applied-row" role="group" aria-label="Condiciones filtradas">
+        <span class="diaria__applied-label">Filtrando por condición:</span>
+        @for (tipo of filtroTiposDia(); track tipo) {
+          <button
+            type="button"
+            [class]="badgeClass(tipo) + ' diaria__chip--removable'"
+            (click)="quitarCondicion(tipo)"
+            [attr.aria-label]="'Quitar filtro de condición ' + condicionLabel(tipo)"
+          >
+            {{ condicionLabel(tipo) }}
+            <span class="diaria__chip-x" aria-hidden="true">✕</span>
+          </button>
+        }
+        <button type="button" class="diaria__applied-clear" (click)="limpiarCondiciones()">
+          Limpiar todo
+        </button>
+      </div>
+    }
 
     <div class="diaria__table-wrap" role="region" aria-label="Tabla de asistencia del rango" tabindex="0">
       <table mat-table [dataSource]="rows()" class="diaria__table">

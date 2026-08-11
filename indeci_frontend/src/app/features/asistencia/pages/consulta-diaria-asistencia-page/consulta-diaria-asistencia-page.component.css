@@ -52,6 +52,18 @@
   max-width: 320px;
 }
 
+.diaria__field--condicion {
+  width: 200px;
+}
+
+.diaria__condicion-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 8px;
+}
+
 .diaria__count {
   margin: 0 0 8px;
   font-size: 13px;
@@ -119,6 +131,44 @@
 .diaria__badge--vacaciones {
   background: #ede7f6;
   color: #4527a0;
+}
+
+.diaria__applied-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 12px;
+}
+
+.diaria__applied-label {
+  font-size: 12px;
+  color: var(--text-secondary, #94a3b8);
+}
+
+.diaria__chip--removable {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: none;
+  cursor: pointer;
+  font: inherit;
+}
+
+.diaria__chip-x {
+  opacity: 0.65;
+  font-weight: 400;
+}
+
+.diaria__applied-clear {
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary, #4a5568);
+  text-decoration: underline;
+  padding: 0;
 }
 
 .diaria__lote {
@@ -231,7 +281,8 @@
 @media (max-width: 768px) {
   .diaria__field,
   .diaria__field--dni,
-  .diaria__field--nombre {
+  .diaria__field--nombre,
+  .diaria__field--condicion {
     width: 100%;
     max-width: none;
   }

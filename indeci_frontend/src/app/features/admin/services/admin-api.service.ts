@@ -18,6 +18,7 @@ import type {
   AccesoSistema,
   AccesosPutRequest,
   AdminPersonaLookup,
+  AdminSetPasswordRequest,
   AdminUserCreateRequest,
   AdminUserDetail,
   AdminUserPage,
@@ -119,6 +120,13 @@ export class AdminApiService {
   resetUserPassword(id: number): Observable<void> {
     return this.http
       .post<ApiResponse<unknown>>(`${BASE}/users/${id}/reset-password`, {})
+      .pipe(map(() => undefined));
+  }
+
+  /** Soporte SUPER_ADMIN — define una clave temporal utilizable de inmediato. */
+  setUserPassword(id: number, body: AdminSetPasswordRequest): Observable<void> {
+    return this.http
+      .post<ApiResponse<unknown>>(`${BASE}/users/${id}/clave`, body)
       .pipe(map(() => undefined));
   }
 

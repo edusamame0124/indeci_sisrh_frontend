@@ -5,6 +5,7 @@
 // =====================================================
 
 @use '@angular/material' as mat;
+@use 'ngx-toastr/toastr';
 
 // ----- Material Symbols Outlined (woff2 en public/fonts; MatIconRegistry: material-symbols-outlined) -----
 @font-face {

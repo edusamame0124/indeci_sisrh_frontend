@@ -53,6 +53,8 @@ export interface AsistenciaDiariaFiltro {
   readonly q?: string;
   /** Solo filas cuyo día cae dentro de un Horario Especial vigente para ese empleado. */
   readonly soloHorarioEspecial?: boolean;
+  /** Condiciones (TIPO_DIA) a incluir; vacío/omitido = todas. */
+  readonly tiposDia?: readonly string[];
   readonly page?: number;
   readonly size?: number;
 }

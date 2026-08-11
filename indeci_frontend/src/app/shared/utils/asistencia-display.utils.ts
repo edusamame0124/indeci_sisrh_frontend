@@ -56,6 +56,30 @@ export function badgeClass(tipo: string | null | undefined): string {
   }
 }
 
+/** Color del punto identificador de la condición (mismo criterio semántico que {@link badgeClass}). */
+export function condicionDotColor(tipo: string | null | undefined): string {
+  switch (tipo) {
+    case 'LABORAL':
+    case 'TELETRABAJO':
+    case 'ASISTENCIA_JUSTIFICADA':
+      return '#1b5e20';
+    case 'TARDANZA':
+    case 'OMISION_MARCACION':
+      return '#e65100';
+    case 'FALTA':
+    case 'SANCION_PAD':
+    case 'OBSERVADO':
+      return '#b71c1c';
+    case 'PERMISO':
+    case 'LICENCIA':
+      return '#0d47a1';
+    case 'VACACIONES':
+      return '#4527a0';
+    default:
+      return '#64748b';
+  }
+}
+
 /** Formatea minutos como "1h 20m" / "45m" / "—" (para tardanza, salida anticipada, etc.). */
 export function fmtMin(value: number | null | undefined): string {
   if (value == null || value <= 0) return '—';

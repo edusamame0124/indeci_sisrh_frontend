@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   inject,
   signal,
 } from '@angular/core';
@@ -22,10 +23,12 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { AdminApiService } from '../../services/admin-api.service';
 import { ErrorMessageService } from '../../../../core/services/error-message.service';
 import { ClientTelemetryService } from '../../../../core/services/client-telemetry.service';
+import { AuthService } from '../../../../core/services/auth.service';
 import type { AccesoSistema, AdminUserSummary, SistemaAdmin } from '../../models/admin.models';
 import { isErrorResponse } from '../../../../core/models/error-response.model';
 import { EmptyStateComponent } from '../../../../shared/components/empty-state/empty-state.component';
 import { AdminPersonaCrudDialogComponent } from './components/admin-persona-crud-dialog/admin-persona-crud-dialog.component';
+import { AdminSetPasswordDialogComponent } from './components/admin-set-password-dialog/admin-set-password-dialog.component';
 
 @Component({
   selector: 'app-admin-users-page',
@@ -67,7 +70,7 @@ import { AdminPersonaCrudDialogComponent } from './components/admin-persona-crud
         <mat-card-content>
           <div class="toolbar sisrh-toolbar">
             <mat-form-field appearance="outline" class="toolbar__search">
-              <mat-label>Buscar por usuario</mat-label>
+              <mat-label>Buscar por usuario o nombre</mat-label>
               <input
                 matInput
                 type="search"
@@ -146,6 +149,10 @@ import { AdminPersonaCrudDialogComponent } from './components/admin-persona-crud
                   <th mat-header-cell *matHeaderCellDef scope="col">Usuario</th>
                   <td mat-cell *matCellDef="let row">{{ row.username }}</td>
                 </ng-container>
+                <ng-container matColumnDef="nombreCompleto">
+                  <th mat-header-cell *matHeaderCellDef scope="col">Nombre Completo</th>
+                  <td mat-cell *matCellDef="let row">{{ row.nombreCompleto || '—' }}</td>
+                </ng-container>
                 <ng-container matColumnDef="status">
                   <th mat-header-cell *matHeaderCellDef scope="col">Estado</th>
                   <td mat-cell *matCellDef="let row">
@@ -181,6 +188,18 @@ import { AdminPersonaCrudDialogComponent } from './components/admin-persona-crud
                     >
                       <mat-icon fontIcon="manage_accounts" aria-hidden="true" />
                     </a>
+
+                    @if (esSuperAdmin()) {
+                      <button
+                        mat-icon-button
+                        type="button"
+                        (click)="abrirCambiarClave(row)"
+                        [attr.aria-label]="'Cambiar contraseña de ' + row.username"
+                        [matTooltip]="'Cambiar contraseña de ' + row.username"
+                      >
+                        <mat-icon fontIcon="key" aria-hidden="true" />
+                      </button>
+                    }
                   </td>
                 </ng-container>
                 <tr mat-header-row *matHeaderRowDef="columns"></tr>
@@ -229,8 +248,12 @@ export class AdminUsersPageComponent {
   private readonly errors = inject(ErrorMessageService);
   private readonly telemetry = inject(ClientTelemetryService);
   private readonly dialog = inject(MatDialog);
+  private readonly auth = inject(AuthService);
 
-  readonly columns = ['username', 'status', 'accesos', 'acciones'] as const;
+  /** Soporte de mesa de ayuda: solo SUPER_ADMIN puede reiniciar contraseñas ajenas. */
+  readonly esSuperAdmin = computed(() => this.auth.roles().includes('SUPER_ADMIN'));
+
+  readonly columns = ['username', 'nombreCompleto', 'status', 'accesos', 'acciones'] as const;
   readonly rows = signal<readonly AdminUserSummary[]>([]);
   readonly sistemasCat = signal<readonly SistemaAdmin[]>([]);
   readonly loading = signal(true);
@@ -252,6 +275,17 @@ export class AdminUsersPageComponent {
       width: '1000px',
       disableClose: true,
       panelClass: 'sisrh-dialog-shell--large',
+    });
+  }
+
+  abrirCambiarClave(row: AdminUserSummary): void {
+    this.telemetry.track('ADMIN_MODULE_UI', {
+      extra: { action: 'USER_SET_PASSWORD_OPEN', userId: row.id },
+    });
+    this.dialog.open(AdminSetPasswordDialogComponent, {
+      width: 'min(480px, 92vw)',
+      disableClose: true,
+      data: { userId: row.id, username: row.username, nombreCompleto: row.nombreCompleto },
     });
   }
 
