@@ -72,7 +72,11 @@ export class AsistenciaEmpleadoPeriodoDialogComponent {
 
   /** Resalta los días que impactan la planilla (faltas y tardanzas). */
   filaClass(dia: AsistenciaDia): string {
-    if (dia.tipoDia === 'FALTA' || dia.tipoDia === 'SANCION_PAD') return 'epd__row epd__row--falta';
+    // RIS INDECI Art. 25.5 (2026-08-07): Omisión de marca sin justificar descuenta igual que
+    // Falta — mismo resaltado.
+    if (dia.tipoDia === 'FALTA' || dia.tipoDia === 'SANCION_PAD' || dia.tipoDia === 'OMISION_MARCACION') {
+      return 'epd__row epd__row--falta';
+    }
     if ((dia.minutosTardanza ?? 0) > 0 || dia.tipoDia === 'TARDANZA') return 'epd__row epd__row--tardanza';
     return 'epd__row';
   }

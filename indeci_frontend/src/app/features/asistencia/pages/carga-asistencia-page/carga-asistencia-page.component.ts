@@ -66,10 +66,17 @@ interface ResumenAsistencia {
 /** Tipos que cuentan como dÃ­a efectivamente laborado. */
 const TIPOS_LABORADOS: ReadonlySet<TipoDia> = new Set<TipoDia>(['LABORAL', 'TARDANZA']);
 
-/** Tipos que descuentan como falta (D.Leg. 276 Art. 24) — FALTA y SANCION_PAD. */
+/**
+ * Tipos que descuentan como falta (D.Leg. 276 Art. 24) — FALTA, SANCION_PAD y, desde el
+ * 2026-08-07 (RIS INDECI Art. 25.5), OMISION_MARCACION sin justificar. Espejo de la misma
+ * regla en `AsistenciaResumenCalculator` (backend) — este set solo existe para el resumen "en
+ * tiempo real" mientras RR.HH. edita el calendario; el backend sigue siendo la fuente de
+ * verdad al guardar.
+ */
 const TIPOS_DESCUENTAN_COMO_FALTA: ReadonlySet<TipoDia> = new Set<TipoDia>([
   'FALTA',
   'SANCION_PAD',
+  'OMISION_MARCACION',
 ]);
 
 /**

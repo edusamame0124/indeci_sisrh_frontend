@@ -50,6 +50,14 @@ export class CargaAsistenciaShellComponent {
    */
   readonly puedeVerBackfill = () => false;
 
+  /**
+   * Excepción puntual (2026-08-12): el backfill de "Omisión de marca como Falta" (RIS INDECI
+   * Art. 25.5) sí se vuelve a mostrar, solo para SUPER_ADMIN, porque hace falta correrlo para
+   * poner al día las cabeceras que ya estaban cargadas antes del fix. Los otros 5 backfills
+   * siguen ocultos (`puedeVerBackfill`).
+   */
+  readonly puedeVerBackfillOmisionComoFalta = () => this.auth.roles().includes('SUPER_ADMIN');
+
   readonly backfillEjecutando = signal(false);
   readonly backfillResultado = signal<number | null>(null);
   readonly backfillError = signal<string | null>(null);
