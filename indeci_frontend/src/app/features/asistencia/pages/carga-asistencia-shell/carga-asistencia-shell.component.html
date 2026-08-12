@@ -226,6 +226,50 @@
         }
       </mat-card-content>
     </mat-card>
+
+    <mat-card class="asistencia-shell__backfill">
+      <mat-card-content>
+        <div class="asistencia-shell__backfill-header">
+          <mat-icon aria-hidden="true">calculate</mat-icon>
+          <div>
+            <strong>Backfill único — Recalcular Omisión de marca como Falta</strong>
+            <p>
+              Acción temporal de mantenimiento (solo SUPER_ADMIN), independiente de los backfills
+              de arriba. RIS INDECI Art. 25.5: la Omisión de marca sin justificar ya cuenta como
+              Falta en cada importación/edición nueva, pero las cabeceras cargadas ANTES de este
+              fix se quedaron con el total y el descuento de faltas desactualizado. Este backfill
+              recalcula de una sola vez todas las cabeceras activas con algún día en Omisión de
+              marca — sin necesidad de editar día por día. No toca periodos CERRADO/APROBADO. Es
+              seguro ejecutarla más de una vez.
+            </p>
+          </div>
+        </div>
+
+        <button
+          mat-flat-button
+          color="warn"
+          type="button"
+          (click)="ejecutarBackfillOmisionComoFalta()"
+          [disabled]="backfillOmisionComoFaltaEjecutando()"
+        >
+          @if (backfillOmisionComoFaltaEjecutando()) {
+            <mat-spinner diameter="18" />
+          } @else {
+            <mat-icon>play_arrow</mat-icon>
+          }
+          {{ backfillOmisionComoFaltaEjecutando() ? 'Ejecutando...' : 'Ejecutar backfill' }}
+        </button>
+
+        @if (backfillOmisionComoFaltaResultado() !== null) {
+          <p class="asistencia-shell__backfill-ok">
+            ✓ Listo — {{ backfillOmisionComoFaltaResultado() }} cabecera(s) recalculada(s).
+          </p>
+        }
+        @if (backfillOmisionComoFaltaError()) {
+          <p class="asistencia-shell__backfill-error">✗ {{ backfillOmisionComoFaltaError() }}</p>
+        }
+      </mat-card-content>
+    </mat-card>
   }
 
   <section class="asistencia-shell__tabs">

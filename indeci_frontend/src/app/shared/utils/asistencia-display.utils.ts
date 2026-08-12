@@ -40,11 +40,12 @@ export function badgeClass(tipo: string | null | undefined): string {
     case 'ASISTENCIA_JUSTIFICADA': // omisión ya cubierta por papeleta 004 → verde
       return 'diaria__badge diaria__badge--ok';
     case 'TARDANZA':
-    case 'OMISION_MARCACION': // pendiente de papeleta 004 → naranja (warning, no fatal)
       return 'diaria__badge diaria__badge--warn';
     case 'FALTA':
     case 'SANCION_PAD':
     case 'OBSERVADO': // requiere acción de RR.HH. (autorizar/no autorizar, o revisar salida anticipada)
+    case 'OMISION_MARCACION': // RIS INDECI Art. 25.5: es inasistencia — mismo tratamiento que Falta
+      // (sigue mostrándose como "Omisión de marca" para trazabilidad; ver condicionLabel).
       return 'diaria__badge diaria__badge--danger';
     case 'PERMISO':
     case 'LICENCIA':
@@ -64,11 +65,11 @@ export function condicionDotColor(tipo: string | null | undefined): string {
     case 'ASISTENCIA_JUSTIFICADA':
       return '#1b5e20';
     case 'TARDANZA':
-    case 'OMISION_MARCACION':
       return '#e65100';
     case 'FALTA':
     case 'SANCION_PAD':
     case 'OBSERVADO':
+    case 'OMISION_MARCACION':
       return '#b71c1c';
     case 'PERMISO':
     case 'LICENCIA':

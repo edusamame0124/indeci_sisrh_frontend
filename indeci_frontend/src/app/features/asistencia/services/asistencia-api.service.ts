@@ -185,4 +185,16 @@ export class AsistenciaApiService {
       .post<ApiResponse<number>>(`${this.baseUrl}/backfill-turno-24h`, {})
       .pipe(map(extractApiData));
   }
+
+  /**
+   * Backfill ÚNICO (temporal, SUPER_ADMIN, independiente de los anteriores) — RIS INDECI
+   * Art. 25.5: recalcula DIAS_FALTA/DESCUENTO_FALTA de las cabeceras activas con algún día en
+   * Omisión de marca, cargadas antes de que ese cómputo empezara a correr solo. Idempotente.
+   * Devuelve la cantidad de cabeceras recalculadas.
+   */
+  backfillOmisionComoFalta(): Observable<number> {
+    return this.http
+      .post<ApiResponse<number>>(`${this.baseUrl}/backfill-omision-como-falta`, {})
+      .pipe(map(extractApiData));
+  }
 }

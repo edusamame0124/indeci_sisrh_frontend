@@ -43,13 +43,12 @@ export class CargaAsistenciaShellComponent {
   private readonly auth = inject(AuthService);
 
   /**
-   * Backfill ÚNICO (temporal) — reconcilia papeletas ya APROBADAS contra la asistencia:
-   * Vacaciones/Licencia (justifican el día) y papeletas tipo permiso (p.ej. Comisión de
-   * Servicio) que autorizan automáticamente la tardanza que cubren. Visible solo para
-   * SUPER_ADMIN (mismo permiso que exige el endpoint). Quitar este bloque + el método del
-   * servicio una vez ejecutado en cada ambiente — no es una función permanente del módulo.
+   * Backfills ÚNICOS (temporales) de mantenimiento de asistencia. Ocultos de la UI a pedido
+   * (2026-08-12) — los endpoints y la lógica de cada uno siguen intactos en el backend, solo se
+   * dejó de mostrar la tarjeta. Para reactivar la visibilidad, volver a
+   * `this.auth.roles().includes('SUPER_ADMIN')`.
    */
-  readonly puedeVerBackfill = () => this.auth.roles().includes('SUPER_ADMIN');
+  readonly puedeVerBackfill = () => false;
 
   readonly backfillEjecutando = signal(false);
   readonly backfillResultado = signal<number | null>(null);
@@ -183,6 +182,35 @@ export class CargaAsistenciaShellComponent {
       error: (err) => {
         this.backfillTurno24hEjecutando.set(false);
         this.backfillTurno24hError.set(
+          err?.error?.mensaje ?? err?.error?.message ?? 'No se pudo ejecutar el backfill.',
+        );
+      },
+    });
+  }
+
+  /**
+   * Backfill ÚNICO (temporal, independiente de los anteriores) — RIS INDECI Art. 25.5:
+   * recalcula DIAS_FALTA/DESCUENTO_FALTA de las cabeceras activas con algún día en Omisión de
+   * marca, cargadas antes de que ese cómputo empezara a correr solo en cada import/edición.
+   * Mismo criterio de visibilidad: solo SUPER_ADMIN.
+   */
+  readonly backfillOmisionComoFaltaEjecutando = signal(false);
+  readonly backfillOmisionComoFaltaResultado = signal<number | null>(null);
+  readonly backfillOmisionComoFaltaError = signal<string | null>(null);
+
+  ejecutarBackfillOmisionComoFalta(): void {
+    this.backfillOmisionComoFaltaEjecutando.set(true);
+    this.backfillOmisionComoFaltaResultado.set(null);
+    this.backfillOmisionComoFaltaError.set(null);
+
+    this.asistenciaApi.backfillOmisionComoFalta().subscribe({
+      next: (corregidas) => {
+        this.backfillOmisionComoFaltaEjecutando.set(false);
+        this.backfillOmisionComoFaltaResultado.set(corregidas);
+      },
+      error: (err) => {
+        this.backfillOmisionComoFaltaEjecutando.set(false);
+        this.backfillOmisionComoFaltaError.set(
           err?.error?.mensaje ?? err?.error?.message ?? 'No se pudo ejecutar el backfill.',
         );
       },
